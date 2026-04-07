@@ -1,0 +1,24 @@
+{
+  "id": "holy-triangle",
+  "name": "圣三角形",
+  "englishName": "Holy Triangle",
+  "description": "洞察问题的过去、现在与未来，理解因果循环的深度逻辑。",
+  "icon": "change_history",
+  "positions": [
+    {
+      "id": "past",
+      "name": "过去 (Root)",
+      "description": "根基与起源。"
+    },
+    {
+      "id": "present",
+      "name": "现在 (Path)",
+      "description": "当下的交点。"
+    },
+    {
+      "id": "future",
+      "name": "未来 (Sky)",
+      "description": "潜在的流向。"
+    }
+  ]
+}

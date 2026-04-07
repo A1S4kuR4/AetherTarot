@@ -1,0 +1,59 @@
+{
+  "id": "celtic-cross",
+  "name": "赛尔特十字",
+  "englishName": "Celtic Cross",
+  "description": "全方位的命运剖析，涵盖潜意识、外界环境及最终结果。",
+  "icon": "grid_view",
+  "positions": [
+    {
+      "id": "core",
+      "name": "核心",
+      "description": "问题的现状。"
+    },
+    {
+      "id": "challenge",
+      "name": "挑战",
+      "description": "面临的阻碍。"
+    },
+    {
+      "id": "conscious",
+      "name": "意识",
+      "description": "你的目标和想法。"
+    },
+    {
+      "id": "unconscious",
+      "name": "潜意识",
+      "description": "深层的影响。"
+    },
+    {
+      "id": "past",
+      "name": "过去",
+      "description": "已发生的事情。"
+    },
+    {
+      "id": "future",
+      "name": "未来",
+      "description": "即将发生的事情。"
+    },
+    {
+      "id": "self",
+      "name": "自我",
+      "description": "你的态度。"
+    },
+    {
+      "id": "environment",
+      "name": "环境",
+      "description": "外部的影响。"
+    },
+    {
+      "id": "hopes",
+      "name": "希望与恐惧",
+      "description": "你的内心期待。"
+    },
+    {
+      "id": "outcome",
+      "name": "结果",
+      "description": "最终的发展。"
+    }
+  ]
+}

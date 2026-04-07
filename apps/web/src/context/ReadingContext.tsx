@@ -8,8 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { SPREADS, TAROT_CARDS } from "@/constants";
-import type { DrawnCard, Reading, Spread } from "@/types";
+import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
+import type {
+  DrawnCard,
+  Reading,
+  ReadingResponsePayload,
+  Spread,
+} from "@aethertarot/shared-types";
 
 const HISTORY_STORAGE_KEY = "aether_tarot_history";
 
@@ -119,7 +124,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         throw new Error("Failed to interpret reading.");
       }
 
-      const payload = (await response.json()) as { interpretation: string };
+      const payload = (await response.json()) as ReadingResponsePayload;
       const result = payload.interpretation;
 
       setInterpretation(result);
@@ -159,10 +164,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   };
 
   const selectHistoryReading = (reading: Reading) => {
-    const spread = SPREADS.find((item) => item.id === reading.spreadId) ?? null;
+    const spread = findSpreadById(reading.spreadId) ?? null;
     const reconstructedCards: DrawnCard[] = reading.cards
       .map((savedCard) => {
-        const card = TAROT_CARDS.find((item) => item.id === savedCard.cardId);
+        const card = findCardById(savedCard.cardId);
 
         if (!card) {
           return null;

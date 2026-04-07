@@ -1,15 +1,18 @@
 {
-  "name": "web",
+  "name": "@aethertarot/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node ./scripts/run-next.cjs dev",
+    "build": "node ./scripts/run-next.cjs build",
+    "start": "node ./scripts/run-next.cjs start",
     "lint": "eslint",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aethertarot/domain-tarot": "0.1.0",
+    "@aethertarot/prompting": "0.1.0",
+    "@aethertarot/shared-types": "0.1.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "clsx": "^2.1.1",
@@ -22,8 +25,8 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@playwright/test": "^1.59.1",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
