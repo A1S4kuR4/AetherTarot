@@ -1,0 +1,14 @@
+{
+  "id": "single",
+  "name": "单牌启示",
+  "englishName": "Single Card",
+  "description": "针对当下的能量或简单的问题，提供直接且纯粹的指引。",
+  "icon": "filter_1",
+  "positions": [
+    {
+      "id": "focus",
+      "name": "核心指引",
+      "description": "问题的核心能量。"
+    }
+  ]
+}

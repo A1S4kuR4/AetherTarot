@@ -2,9 +2,11 @@
 
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { SPREADS } from "@/constants";
+import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+
+const spreads = getAllSpreads();
 
 export default function HomeView() {
   const router = useRouter();
@@ -76,7 +78,7 @@ export default function HomeView() {
             选择你的牌阵 • Choose Your Spread
           </h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {SPREADS.map((spread) => (
+            {spreads.map((spread) => (
               <motion.button
                 key={spread.id}
                 type="button"

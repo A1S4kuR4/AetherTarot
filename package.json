@@ -1,0 +1,13 @@
+{
+  "name": "aethertarot",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @aethertarot/web",
+    "test:e2e": "npm run test:e2e -w @aethertarot/web"
+  }
+}

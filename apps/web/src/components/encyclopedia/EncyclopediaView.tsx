@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { TAROT_CARDS } from "@/constants";
+import { getAllCards } from "@aethertarot/domain-tarot";
+import type { TarotCard } from "@aethertarot/shared-types";
 import { cn } from "@/lib/utils";
-import type { TarotCard } from "@/types";
+
+const tarotCards = getAllCards();
 
 export default function EncyclopediaView() {
-  const [selectedCard, setSelectedCard] = useState<TarotCard>(TAROT_CARDS[0]);
+  const [selectedCard, setSelectedCard] = useState<TarotCard>(tarotCards[0]);
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 p-8 lg:flex-row lg:p-12">
@@ -19,7 +21,7 @@ export default function EncyclopediaView() {
         </header>
 
         <div className="grid max-h-[60vh] grid-cols-4 gap-3 overflow-y-auto pr-4 md:grid-cols-6 lg:grid-cols-4">
-          {TAROT_CARDS.map((card) => (
+          {tarotCards.map((card) => (
             <button
               key={card.id}
               type="button"

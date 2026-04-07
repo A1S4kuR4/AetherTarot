@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { CARD_BACK_IMAGE, TAROT_CARDS } from "@/constants";
+import { getAllCards } from "@aethertarot/domain-tarot";
+import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
+import { CARD_BACK_IMAGE } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
-import type { DrawnCard, TarotCard } from "@/types";
 
 export default function RitualView() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function RitualView() {
   const [deck, setDeck] = useState<TarotCard[]>([]);
 
   useEffect(() => {
-    setDeck([...TAROT_CARDS].sort(() => Math.random() - 0.5));
+    setDeck([...getAllCards()].sort(() => Math.random() - 0.5));
   }, []);
 
   useEffect(() => {
@@ -205,4 +206,3 @@ export default function RitualView() {
     </section>
   );
 }
-

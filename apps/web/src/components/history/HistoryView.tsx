@@ -1,8 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { HISTORY_THUMBNAIL, SPREADS } from "@/constants";
+import { getAllSpreads } from "@aethertarot/domain-tarot";
+import { HISTORY_THUMBNAIL } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
+
+const spreads = getAllSpreads();
 
 export default function HistoryView() {
   const router = useRouter();
@@ -52,7 +55,7 @@ export default function HistoryView() {
                     </span>
                   </div>
                   <h3 className="mb-2 font-serif text-xl text-primary">
-                    {SPREADS.find((spread) => spread.id === reading.spreadId)?.name}
+                    {spreads.find((spread) => spread.id === reading.spreadId)?.name}
                   </h3>
                   <p className="line-clamp-2 text-sm italic text-on-surface-variant">
                     “{reading.question}”
