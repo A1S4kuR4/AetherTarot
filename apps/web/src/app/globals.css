@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&family=Manrope:wght@300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Noto Serif SC", serif;
+  --font-sans: "Inter", sans-serif;
+  --font-label: "Manrope", sans-serif;
+
+  --color-background: #13131b;
+  --color-on-background: #e4e1ed;
+  --color-primary: #cbbeff;
+  --color-primary-container: #140049;
+  --color-on-primary: #330b91;
+  --color-secondary: #fff9ef;
+  --color-secondary-fixed: #ffe16d;
+  --color-secondary-fixed-dim: #e9c400;
+  --color-tertiary: #ddb7ff;
+  --color-on-surface: #e4e1ed;
+  --color-on-surface-variant: #c9c5cd;
+  --color-surface-container-lowest: #0d0d16;
+  --color-surface-container-low: #1b1b23;
+  --color-surface-container: #1f1f27;
+  --color-surface-container-high: #292932;
+  --color-surface-container-highest: #34343d;
+  --color-outline-variant: #47464d;
+  --color-surface-variant: #2a2a33;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-background font-sans selection:bg-primary/30;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-surface-container-highest/40 backdrop-blur-xl;
+  }
+
+  .celestial-bg {
+    background: radial-gradient(circle at 50% 50%, #1f1f27 0%, #13131b 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .celestial-bg::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDAUIsVYCxz9fc3Q7nADGbASgEQK4eln5Zxgu3X3oyOhWkZrxOLbyRHY1jJM1KZR_vBFj-uyJNCEgUemaPBY5ox7kCSXKxicARVm3TDPuRq2SmbCfSY9e3dyrbPa-pBfSiu2LmJr5iW2EpGZ_zrOaSVkw5G5picnSa24C3jHy_ZfdW1xDlv_TfAeA1hnAGF71G1XzRe2jCMzRlsqXOJchkBiN8e7HhBZr8y3X1Poapv1WdYMWtOw4_n_KXfyGF4d3BuzqXmnxJNMHFA);
+    @apply opacity-30 pointer-events-none;
+  }
+
+  .markdown-body h1 {
+    @apply font-serif text-3xl text-secondary mb-6 mt-8;
+  }
+  .markdown-body h2 {
+    @apply font-serif text-2xl text-primary mb-4 mt-6;
+  }
+  .markdown-body h3 {
+    @apply font-serif text-xl text-secondary-fixed mb-3 mt-5;
+  }
+  .markdown-body p {
+    @apply text-on-surface-variant leading-relaxed mb-4;
+  }
+  .markdown-body ul,
+  .markdown-body ol {
+    @apply text-on-surface-variant leading-relaxed mb-4 pl-6;
+  }
+  .markdown-body li {
+    @apply mb-2;
+  }
+  .markdown-body strong {
+    @apply text-on-surface font-semibold;
+  }
+  .markdown-body em {
+    @apply text-primary/80;
+  }
+  .markdown-body blockquote {
+    @apply border-l-2 border-primary/30 pl-4 italic text-on-surface-variant/80 my-4;
+  }
+}
