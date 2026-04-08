@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllCards } from "@aethertarot/domain-tarot";
@@ -15,10 +15,22 @@ export default function RitualView() {
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>([]);
+  const drawnCardsRef = useRef<DrawnCard[]>([]);
+  const deckRef = useRef<TarotCard[]>([]);
 
   useEffect(() => {
-    setDeck([...getAllCards()].sort(() => Math.random() - 0.5));
+    const shuffledDeck = [...getAllCards()].sort(() => Math.random() - 0.5);
+    setDeck(shuffledDeck);
+    deckRef.current = shuffledDeck;
   }, []);
+
+  useEffect(() => {
+    drawnCardsRef.current = drawnCards;
+  }, [drawnCards]);
+
+  useEffect(() => {
+    deckRef.current = deck;
+  }, [deck]);
 
   useEffect(() => {
     if (!question.trim() || !selectedSpread) {
@@ -30,30 +42,45 @@ export default function RitualView() {
     return null;
   }
 
+  const isComplete = drawnCards.length === selectedSpread.positions.length;
+  const canDraw = !isShuffling && !isComplete && deck.length > 0;
+
   const handleShuffle = () => {
     setIsShuffling(true);
 
     window.setTimeout(() => {
-      setDeck((currentDeck) => [...currentDeck].sort(() => Math.random() - 0.5));
+      setDeck((currentDeck) => {
+        const nextDeck = [...currentDeck].sort(() => Math.random() - 0.5);
+        deckRef.current = nextDeck;
+        return nextDeck;
+      });
       setIsShuffling(false);
     }, 1000);
   };
 
   const handleDraw = () => {
-    if (isShuffling || drawnCards.length >= selectedSpread.positions.length) {
+    const currentDrawnCards = drawnCardsRef.current;
+    const currentDeck = deckRef.current;
+
+    if (
+      isShuffling ||
+      currentDrawnCards.length >= selectedSpread.positions.length ||
+      currentDeck.length === 0
+    ) {
       return;
     }
 
-    const nextPosition = selectedSpread.positions[drawnCards.length];
-    const randomIndex = Math.floor(Math.random() * deck.length);
-    const card = deck[randomIndex];
+    const nextPosition = selectedSpread.positions[currentDrawnCards.length];
+    const randomIndex = Math.floor(Math.random() * currentDeck.length);
+    const card = currentDeck[randomIndex];
 
-    if (!card) {
+    if (!card || !nextPosition) {
       return;
     }
 
+    const remainingDeck = currentDeck.filter((_, index) => index !== randomIndex);
     const nextDrawnCards = [
-      ...drawnCards,
+      ...currentDrawnCards,
       {
         positionId: nextPosition.id,
         card,
@@ -61,6 +88,9 @@ export default function RitualView() {
       },
     ];
 
+    deckRef.current = remainingDeck;
+    drawnCardsRef.current = nextDrawnCards;
+    setDeck(remainingDeck);
     setDrawnCards(nextDrawnCards);
 
     if (nextDrawnCards.length === selectedSpread.positions.length) {
@@ -132,13 +162,11 @@ export default function RitualView() {
         </div>
 
         <div className="relative flex h-[300px] w-full max-w-5xl items-center justify-center">
-          <div className="absolute top-[-60px] z-50 flex gap-4">
+          <div className="absolute top-[-60px] z-50 flex flex-wrap justify-center gap-4">
             <button
               type="button"
               onClick={handleShuffle}
-              disabled={
-                isShuffling || drawnCards.length === selectedSpread.positions.length
-              }
+              disabled={isShuffling || isComplete}
               className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-primary to-primary-container px-10 py-4 font-label text-sm font-bold uppercase tracking-[0.15em] text-on-primary shadow-lg transition-all duration-500 hover:scale-105 disabled:opacity-50"
             >
               <span
@@ -151,6 +179,15 @@ export default function RitualView() {
               </span>
               <span>Shuffle Deck</span>
             </button>
+            <button
+              type="button"
+              onClick={handleDraw}
+              disabled={!canDraw}
+              className="group relative flex items-center gap-3 rounded-full border border-secondary-fixed/30 bg-surface-container-high px-10 py-4 font-label text-sm font-bold uppercase tracking-[0.15em] text-secondary-fixed shadow-lg transition-all duration-500 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined">style</span>
+              <span>抽取一张牌</span>
+            </button>
           </div>
 
           <div className="relative flex h-full w-full items-center justify-center">
@@ -158,6 +195,7 @@ export default function RitualView() {
               <motion.button
                 key={index}
                 type="button"
+                aria-label="从牌堆抽牌"
                 animate={
                   isShuffling
                     ? {
@@ -173,9 +211,7 @@ export default function RitualView() {
                   zIndex: 10 + index,
                 }}
                 onClick={handleDraw}
-                disabled={
-                  isShuffling || drawnCards.length === selectedSpread.positions.length
-                }
+                disabled={!canDraw}
               >
                 <div className="h-full w-full overflow-hidden rounded-lg border border-primary/20 bg-surface-container-lowest">
                   <img

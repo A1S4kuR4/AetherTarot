@@ -32,21 +32,70 @@ export interface DrawnCard {
   isReversed: boolean;
 }
 
-export interface Reading {
-  id: string;
-  date: string;
-  question: string;
-  spreadId: string;
-  cards: { positionId: string; cardId: string; isReversed: boolean }[];
-  interpretation: string;
+export type CardOrientation = "upright" | "reversed";
+
+export type QuestionType =
+  | "relationship"
+  | "career"
+  | "self_growth"
+  | "decision"
+  | "other";
+
+export interface ReadingRequestCardInput {
+  positionId: string;
+  cardId: string;
+  isReversed: boolean;
 }
 
 export interface ReadingRequestPayload {
   question: string;
-  spread: Spread;
-  drawnCards: DrawnCard[];
+  spreadId: string;
+  drawnCards: ReadingRequestCardInput[];
 }
 
-export interface ReadingResponsePayload {
+export interface ReadingCardResult {
+  card_id: string;
+  name: string;
+  english_name: string;
+  orientation: CardOrientation;
+  position_id: string;
+  position: string;
+  position_meaning: string;
   interpretation: string;
+}
+
+export interface StructuredReading {
+  reading_id: string;
+  locale: string;
+  question: string;
+  question_type: QuestionType;
+  spread: Spread;
+  cards: ReadingCardResult[];
+  themes: string[];
+  synthesis: string;
+  reflective_guidance: string[];
+  follow_up_questions: string[];
+  safety_note: string | null;
+  confidence_note: string | null;
+  session_capsule: string | null;
+}
+
+export interface ReadingHistoryEntry {
+  id: string;
+  createdAt: string;
+  spreadId: string;
+  drawnCards: ReadingRequestCardInput[];
+  reading: StructuredReading;
+}
+
+export type ReadingErrorCode =
+  | "invalid_request"
+  | "provider_unavailable"
+  | "generation_failed";
+
+export interface ReadingErrorPayload {
+  error: {
+    code: ReadingErrorCode;
+    message: string;
+  };
 }
