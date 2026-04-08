@@ -26,6 +26,7 @@
 1. `docs/30-agent/context-strategy.md`
 2. `docs/30-agent/output-schema.md`
 3. `docs/40-architecture/architecture.md`
+4. `docs/00-overview/repo-local-skills.md`
 
 ### 面向安全与评测
 
@@ -60,9 +61,9 @@
 
 运行时数据层。用于放置首轮上线所需的牌组与牌阵 JSON 资产，作为当前权威运行时数据来源。
 
-### `codex/skills/`
+### `.agents/skills/`
 
-Codex 可复用流程层。用于封装 ingest、prompt 修订、评测归类、写 ADR 等技能。
+仓库内 repo-local skills / agent workflows 的统一位置。用于封装 ingest、prompt 修订、评测归类、写 ADR 等技能。
 
 ---
 
@@ -97,6 +98,13 @@ Codex 可复用流程层。用于封装 ingest、prompt 修订、评测归类、
 
 - `docs/50-safety/safety-principles.md`
 - `docs/20-domain/reading-contract.md`
+
+### 我想新增或迁移 repo-local skill
+
+先读：
+
+- `docs/00-overview/repo-local-skills.md`
+- `AGENTS.md`
 
 ---
 

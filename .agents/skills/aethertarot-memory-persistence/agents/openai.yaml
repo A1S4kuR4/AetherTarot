@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory Persistence"
+  short_description: "Define capsule, history, and long-term memory boundaries."
+  default_prompt: "Use $aethertarot-memory-persistence to design or revise session capsules, replay history, and bounded long-term memory rules."

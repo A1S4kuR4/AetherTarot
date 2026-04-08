@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reading State"
+  short_description: "Model AetherTarot reading state and schema-safe flow."
+  default_prompt: "Use $aethertarot-reading-state to design or revise the reading pipeline, canonical state fields, and schema-safe output flow."

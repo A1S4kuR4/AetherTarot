@@ -1,0 +1,4 @@
+interface:
+  display_name: "Safety Escalation"
+  short_description: "Constrain high-risk readings with safety notes and escalation."
+  default_prompt: "Use $aethertarot-safety-escalation to revise high-risk reading behavior, safety-note rules, and escalation or review paths."
