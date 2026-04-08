@@ -11,42 +11,72 @@ import {
 import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import type {
   DrawnCard,
-  Reading,
-  ReadingResponsePayload,
+  ReadingErrorPayload,
+  ReadingHistoryEntry,
+  ReadingRequestCardInput,
   Spread,
+  StructuredReading,
 } from "@aethertarot/shared-types";
 
-const HISTORY_STORAGE_KEY = "aether_tarot_history";
+const HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
 
 type ReadingContextValue = {
   question: string;
   selectedSpread: Spread | null;
   drawnCards: DrawnCard[];
-  interpretation: string;
+  reading: StructuredReading | null;
+  errorMessage: string | null;
   isLoading: boolean;
-  history: Reading[];
+  history: ReadingHistoryEntry[];
   setQuestion: (question: string) => void;
   setSelectedSpread: (spread: Spread | null) => void;
   startRitual: () => boolean;
   completeRitual: (cards: DrawnCard[]) => void;
   interpretReading: () => Promise<boolean>;
-  selectHistoryReading: (reading: Reading) => void;
+  selectHistoryReading: (reading: ReadingHistoryEntry) => void;
   resetReading: () => void;
 };
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
 
-function serializeHistory(history: Reading[]) {
+function serializeHistory(history: ReadingHistoryEntry[]) {
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function toRequestDrawnCards(drawnCards: DrawnCard[]): ReadingRequestCardInput[] {
+  return drawnCards.map((drawnCard) => ({
+    positionId: drawnCard.positionId,
+    cardId: drawnCard.card.id,
+    isReversed: drawnCard.isReversed,
+  }));
+}
+
+function getErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const candidate = payload as Partial<ReadingErrorPayload>;
+
+  if (
+    candidate.error &&
+    typeof candidate.error === "object" &&
+    typeof candidate.error.message === "string"
+  ) {
+    return candidate.error.message;
+  }
+
+  return null;
 }
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
-  const [interpretation, setInterpretation] = useState("");
+  const [reading, setReading] = useState<StructuredReading | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState<Reading[]>([]);
+  const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
   const interpretInFlightRef = useRef(false);
 
   useEffect(() => {
@@ -57,7 +87,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      setHistory(JSON.parse(savedHistory) as Reading[]);
+      setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
     } catch {
       localStorage.removeItem(HISTORY_STORAGE_KEY);
     }
@@ -66,14 +96,16 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const setQuestion = (value: string) => {
     setQuestionState(value);
     setDrawnCards([]);
-    setInterpretation("");
+    setReading(null);
+    setErrorMessage(null);
     setIsLoading(false);
   };
 
   const setSelectedSpread = (spread: Spread | null) => {
     setSelectedSpreadState(spread);
     setDrawnCards([]);
-    setInterpretation("");
+    setReading(null);
+    setErrorMessage(null);
     setIsLoading(false);
   };
 
@@ -83,14 +115,16 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     setDrawnCards([]);
-    setInterpretation("");
+    setReading(null);
+    setErrorMessage(null);
     setIsLoading(false);
     return true;
   };
 
   const completeRitual = (cards: DrawnCard[]) => {
     setDrawnCards(cards);
-    setInterpretation("");
+    setReading(null);
+    setErrorMessage(null);
     setIsLoading(false);
   };
 
@@ -106,8 +140,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
     interpretInFlightRef.current = true;
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
+      const requestDrawnCards = toRequestDrawnCards(drawnCards);
       const response = await fetch("/api/reading", {
         method: "POST",
         headers: {
@@ -115,36 +151,30 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           question,
-          spread: selectedSpread,
-          drawnCards,
+          spreadId: selectedSpread.id,
+          drawnCards: requestDrawnCards,
         }),
       });
 
+      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
+
       if (!response.ok) {
-        throw new Error("Failed to interpret reading.");
+        throw new Error(
+          getErrorMessage(payload) ?? "连接星辰时发生了偏移，请稍后再试。",
+        );
       }
 
-      const payload = (await response.json()) as ReadingResponsePayload;
-      const result = payload.interpretation;
+      const nextReading = payload as StructuredReading;
 
-      setInterpretation(result);
+      setReading(nextReading);
       setHistory((currentHistory) => {
         const nextHistory = [
           {
-            id: Date.now().toString(),
-            date: new Date().toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }),
-            question,
+            id: nextReading.reading_id,
+            createdAt: new Date().toISOString(),
             spreadId: selectedSpread.id,
-            cards: drawnCards.map((card) => ({
-              positionId: card.positionId,
-              cardId: card.card.id,
-              isReversed: card.isReversed,
-            })),
-            interpretation: result,
+            drawnCards: requestDrawnCards,
+            reading: nextReading,
           },
           ...currentHistory,
         ];
@@ -154,8 +184,13 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       });
 
       return true;
-    } catch {
-      setInterpretation("连接星辰时发生了偏移，请稍后再试。");
+    } catch (error) {
+      setReading(null);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "连接星辰时发生了偏移，请稍后再试。",
+      );
       return false;
     } finally {
       setIsLoading(false);
@@ -163,9 +198,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const selectHistoryReading = (reading: Reading) => {
-    const spread = findSpreadById(reading.spreadId) ?? null;
-    const reconstructedCards: DrawnCard[] = reading.cards
+  const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
+    const spread = findSpreadById(historyEntry.spreadId) ?? null;
+    const reconstructedCards: DrawnCard[] = historyEntry.drawnCards
       .map((savedCard) => {
         const card = findCardById(savedCard.cardId);
 
@@ -181,10 +216,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       })
       .filter((card): card is DrawnCard => card !== null);
 
-    setQuestionState(reading.question);
+    setQuestionState(historyEntry.reading.question);
     setSelectedSpreadState(spread);
     setDrawnCards(reconstructedCards);
-    setInterpretation(reading.interpretation);
+    setReading(historyEntry.reading);
+    setErrorMessage(null);
     setIsLoading(false);
   };
 
@@ -192,7 +228,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setQuestionState("");
     setSelectedSpreadState(null);
     setDrawnCards([]);
-    setInterpretation("");
+    setReading(null);
+    setErrorMessage(null);
     setIsLoading(false);
   };
 
@@ -202,7 +239,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         question,
         selectedSpread,
         drawnCards,
-        interpretation,
+        reading,
+        errorMessage,
         isLoading,
         history,
         setQuestion,

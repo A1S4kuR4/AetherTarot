@@ -1,0 +1,111 @@
+import "server-only";
+
+import type { StructuredReading } from "@aethertarot/shared-types";
+
+const SELF_HARM_PATTERN =
+  /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|suicide|kill myself/i;
+const HEALTH_PATTERN =
+  /健康|疾病|生病|诊断|怀孕|治疗|症状|medical|doctor/i;
+const LEGAL_PATTERN = /法律|官司|起诉|诉讼|律师|合同|legal/i;
+const FINANCIAL_PATTERN = /财务|投资|股票|理财|借贷|贷款|赔偿|finance|money/i;
+const MANIPULATION_PATTERN =
+  /跟踪|监控|报复|试探|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/i;
+
+function withSafetyOverride(
+  reading: StructuredReading,
+  safetyNote: string,
+  reflectiveGuidance?: string[],
+  followUpQuestions?: string[],
+) {
+  return {
+    ...reading,
+    safety_note: safetyNote,
+    reflective_guidance:
+      reflectiveGuidance ?? reading.reflective_guidance,
+    follow_up_questions:
+      followUpQuestions ?? reading.follow_up_questions,
+  };
+}
+
+export function applySafetyReview({
+  question,
+  reading,
+}: {
+  question: string;
+  reading: StructuredReading;
+}) {
+  if (SELF_HARM_PATTERN.test(question)) {
+    return withSafetyOverride(
+      reading,
+      "如果你现在正处在想要伤害自己、无法确保自身安全，或强烈绝望的状态，这次塔罗解读不能替代现实支持。请优先联系你信任的人、当地紧急服务或危机干预热线，先把安全放在第一位。",
+      [
+        "先把注意力放回现实支持，联系一个此刻可以陪伴你的人或专业帮助渠道。",
+        "如果你感到自己可能会立刻伤害自己，请不要独自承受，优先寻求紧急协助。",
+        "等安全感稍微恢复后，再回头整理这次问题真正牵动你的核心是什么。",
+      ],
+      [
+        "现在谁是你可以立刻联系、并明确告诉对方你需要陪伴的人？",
+      ],
+    );
+  }
+
+  if (MANIPULATION_PATTERN.test(question)) {
+    return withSafetyOverride(
+      reading,
+      "AetherTarot 不会帮助你确认第三方的绝对想法，也不鼓励跟踪、操控、报复、试探或其他会伤害他人边界的做法。更值得关注的是这段关系里你自己的安全、需求与界限。",
+      [
+        "先确认这件事是否已经影响到你或他人的现实安全与边界。",
+        "把关注点从控制对方的反应，转向你能怎样保护自己、表达需求与设定界限。",
+        ...reading.reflective_guidance.slice(0, 1),
+      ].slice(0, 4),
+      [
+        "如果不再试图控制对方，你最需要为自己守住的底线是什么？",
+      ],
+    );
+  }
+
+  if (HEALTH_PATTERN.test(question)) {
+    return withSafetyOverride(
+      reading,
+      "这次解读可以帮助你整理焦虑与关注点，但不能替代医疗判断、诊断或治疗建议。若问题已经涉及身体症状、怀孕、用药或疾病风险，请尽快咨询合格专业人士。",
+      [
+        "先把你最担心的症状、变化或疑问整理成具体问题，再交给合格专业人士判断。",
+        ...reading.reflective_guidance.slice(0, 2),
+      ].slice(0, 4),
+      [
+        "在现实层面，你最需要尽快确认的健康信息是什么？",
+      ],
+    );
+  }
+
+  if (LEGAL_PATTERN.test(question)) {
+    return withSafetyOverride(
+      reading,
+      "这次解读更适合作为整理顾虑与决策维度的线索，不能替代法律意见。若你正面临合同、诉讼、权益或责任判断，请结合真实资料咨询合格法律专业人士。",
+      [
+        "先把你已经确认的事实、证据和仍不确定的部分分开整理。",
+        ...reading.reflective_guidance.slice(0, 2),
+      ].slice(0, 4),
+      [
+        "在进入下一步前，你最需要补齐的现实信息或专业意见是什么？",
+      ],
+    );
+  }
+
+  if (FINANCIAL_PATTERN.test(question)) {
+    return withSafetyOverride(
+      reading,
+      "塔罗不能替代财务、投资或风险管理建议。若问题涉及借贷、投资、赔偿或重大金钱决策，请把这次解读当作整理顾虑的辅助线索，并结合现实数据与专业意见判断。",
+      [
+        "先确认这笔决定里最关键的风险、期限与承受边界是什么。",
+        ...reading.reflective_guidance.slice(0, 2),
+      ].slice(0, 4),
+      [
+        "如果只看现实数据与风险，你最需要先核实哪一项信息？",
+      ],
+    );
+  }
+
+  return reading;
+}
+

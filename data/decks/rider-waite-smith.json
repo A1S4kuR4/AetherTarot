@@ -180,5 +180,83 @@
       "盔甲：防御和准备。"
     ],
     "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBklOCEawbOgLZNV7sfCVMG-sGdtB2qN7vR7Joeu75V8u0lF_p9QotS2uSqp2ptSqcpJcfPDgwNZJA8Cn4LXSps0WxGXUxe0eHolbXOSvidq7jFUthuVpLbo-XQQWtTKTpy_FKLq1HsEMqOxuwZmOsFQJS0_St_C8OSotW2-XBC0hzvSLTRfcL_ZJwmf0fnezBWGPv6ZRZbuAwSCKELSZVnS16JedTbFMwmR5_5cd6Pz7soszmXldIroBpJM5OgmaiI1BTQOVltZyNl"
+  },
+  {
+    "id": "lovers",
+    "name": "恋人",
+    "englishName": "The Lovers",
+    "arcana": "Major Arcana VI",
+    "element": "Air",
+    "description": "恋人代表关系、选择与价值对齐。它提醒人们在联结与决定之中，看清自己真正认同的方向。",
+    "uprightKeywords": [
+      "关系",
+      "选择",
+      "契合",
+      "承诺"
+    ],
+    "reversedKeywords": [
+      "摇摆",
+      "失衡",
+      "逃避承诺",
+      "价值冲突"
+    ],
+    "symbolism": [
+      "天使：更高层面的见证。",
+      "山峰：成长需要跨越。",
+      "树木：欲望与生命力。"
+    ],
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDq6bM2tXh2mPKB8z2Q3l4D8qK0t3n7hWv3v5rQ1a8q1o9x3rU6uJv8hZ2n7wQ4fN9cY8pL2xG7sK5mD4rT8qP3bF6nC1vJ7xR2kL9mN5sT4uY7pQ2wE6rT9yU3iO6pL1mC4vB8nK2xZ5qA7wS0eR3tY6uI9oP2"
+  },
+  {
+    "id": "justice",
+    "name": "正义",
+    "englishName": "Justice",
+    "arcana": "Major Arcana XI",
+    "element": "Air",
+    "description": "正义代表清晰、责任与因果平衡。它强调基于事实与原则做出判断，而不是被情绪仓促带走。",
+    "uprightKeywords": [
+      "清晰",
+      "责任",
+      "平衡",
+      "判断"
+    ],
+    "reversedKeywords": [
+      "偏见",
+      "逃避责任",
+      "失衡",
+      "含糊"
+    ],
+    "symbolism": [
+      "天平：衡量与平衡。",
+      "宝剑：理性与决断。",
+      "红袍：行动后的后果。"
+    ],
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC9nM4qT2vP7xD5sL1kR8mQ6zB4pN3wH7yJ2fL9tC6vK1qR5sD8mF2hJ4pL7xN9bV3cM6qT1wY8rP2kL5dF7gH0jS3aZ6xC9vB2nM5qR8tY1uI4oP7aS0dF3gH6jK9lL2"
+  },
+  {
+    "id": "moon",
+    "name": "月亮",
+    "englishName": "The Moon",
+    "arcana": "Major Arcana XVIII",
+    "element": "Water",
+    "description": "月亮代表不确定、投射与潜藏的感受。它提示我们在迷雾中放慢判断，分辨直觉、恐惧与事实。",
+    "uprightKeywords": [
+      "直觉",
+      "梦境",
+      "模糊",
+      "潜流"
+    ],
+    "reversedKeywords": [
+      "误读",
+      "焦虑放大",
+      "混乱",
+      "自我欺骗"
+    ],
+    "symbolism": [
+      "月光：朦胧而真实的照见。",
+      "犬与狼：驯化与本能。",
+      "小径：穿越未知的过程。"
+    ],
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuB7pL4mQ9tD2vN6xC1rF8gH3jK5sL0aZ7wY2uI6oP4qR9tV1mN8bC5xD2fG7hJ3kL6pQ0rS4tU8vW1xY5zA2bC6dE9fG3hJ7kL1mN4pQ8rT2uV5wX9yZ0aB3cD6eF1"
   }
 ]

@@ -9,15 +9,15 @@
 ## 2. 架构目标
 
 - 支持长上下文、多轮会话和结构化输出
-- 将规则、知识、提示词、评测与应用逻辑解耦
-- 支持后续多模型和混合部署方案
+- 将 transport、编排、领域规则、安全检查与前端展示解耦
+- 支持后续多 provider 和最小 LangGraph 接入
 - 支持 Codex 这类代码 Agent 长期维护
 
 ---
 
-## 3. 推荐分层
+## 3. 当前分层
 
-### 产品/应用层
+### 产品 / 应用层
 
 负责：
 
@@ -25,21 +25,49 @@
 - 问题输入
 - 抽牌展示
 - 解读结果渲染
-- 会话历史与反馈采集
+- 本地历史记录与回放
 
-当前落地：`apps/web` 是唯一活跃应用；轻量 API route 暂留在应用层内，不单独拆为 `apps/api`。
+当前落地：`apps/web`
 
-### Agent 编排层
+### BFF Route 层
 
 负责：
 
-- 会话状态管理
-- 模型调用编排
-- 上下文组装
-- 工具路由
-- 输出格式化
+- `POST /api/reading` 的 request parsing
+- 输入 schema 校验
+- 错误映射
+- HTTP response 返回
 
-当前落地：首轮只抽离 `packages/prompting` 中的 mock 解读模板，暂不创建完整 `agent-core`。
+边界：只做 transport / validation / response mapping，不直接拼装解读内容。
+
+### Reading Service 层
+
+负责：
+
+- 问题分类
+- 权威牌阵 / 牌面上下文还原
+- provider 调用
+- 生成后安全检查
+- 最终 schema 校验
+
+当前落地：`apps/web/src/server/reading/`
+
+固定流水线：
+
+1. 问题分类
+2. canonical context 组装
+3. provider.generate
+4. safety review
+5. structured response validate
+
+### Provider 层
+
+负责：
+
+- 根据服务配置选择实际解读生成器
+- 将统一的 reading context 转换为结构化 reading draft
+
+当前阶段：默认仅启用 `placeholder` provider；还未接入外部 LLM。
 
 ### 领域规则层
 
@@ -48,10 +76,10 @@
 - 牌义规则
 - 牌阵规则
 - 解释框架
-- 问题分类
+- 问题分类规则
 - 风格与边界规则
 
-当前落地：`packages/domain-tarot` 负责读取 `data/` 中的牌组与牌阵资产，应用层不再内联维护权威塔罗数据。
+当前落地：`packages/domain-tarot` + `docs/20-domain/`
 
 ### 知识层
 
@@ -60,51 +88,48 @@
 - 原始知识源保存
 - wiki 化知识沉淀
 - 索引与日志
-- 人工/Agent 共编修订
+- 人工 / Agent 共编修订
 
-当前落地：`knowledge/` 继续承担知识编译职责；运行时所需的最小牌组与牌阵资产先落在 `data/`。
+当前落地：`knowledge/`
 
 ### 评测与治理层
 
 负责：
 
-- 质量评测
-- 安全检查
-- 回归验证
-- 指标追踪
-- 失败归类
+- 结构化输出回归
+- 安全检查回归
+- 质量评测与失败归类
+- 文档与实现同步
 
 ---
 
-## 4. 核心数据流
+## 4. 当前 reading 数据流
 
-建议的数据流如下：
-
-1. 用户输入问题与背景
-2. 用户选择或系统决定牌阵
-3. 系统获得抽牌结果
-4. Agent 组装上下文
-5. 模型生成逐牌解释与整体综合
-6. 结果经过安全/结构检查
-7. 输出给前端
-8. 会话结束后生成 session capsule
-9. 评测与日志系统记录本次结果
+1. 用户输入问题并完成抽牌
+2. 前端仅提交 `question + spreadId + drawnCards[{positionId, cardId, isReversed}]`
+3. Route 进行基础 schema 校验
+4. Service 从 `domain-tarot` 还原权威 `Spread` / `TarotCard`
+5. Provider 生成结构化 reading draft
+6. Safety review 根据风险类别补 `safety_note` 或收敛 guidance
+7. 结果通过统一 schema 校验后返回前端
+8. 前端按结构化字段渲染，并写入 localStorage history
 
 ---
 
 ## 5. 边界原则
 
-- Prompt 负责行为引导，不负责承载全部业务真相
-- 领域规则应尽量外部化到文档、schema 或知识层
-- 长期记忆不应与原始聊天记录混为一谈
-- 安全规则必须可单独演化与审计
+- `apps/web` 仍是唯一活跃应用，当前不拆 `apps/api`
+- Route 不能重新承载业务真相
+- 安全规则必须在生成后单独检查，不能只靠 prompt 自觉
+- 前端不再依赖 markdown 作为主协议
+- 历史记录与 API success payload 必须分开建模
+- 新增 provider 或 LangGraph 时，应复用现有 service 边界，而不是从 route 重新起一套流程
 
 ---
 
 ## 6. 待补充
 
-- [ ] 模块图
 - [ ] 部署拓扑
-- [ ] API 边界
-- [ ] 失败重试策略
+- [ ] provider 配置说明
+- [ ] session capsule 与长期记忆接入方式
 - [ ] 观测指标与告警设计

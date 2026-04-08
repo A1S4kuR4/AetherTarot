@@ -1,110 +1,148 @@
 # 🔮 灵语塔罗 (AetherTarot Agent)
 
-**基于长上下文（Long Context）与推理模型驱动的深度塔罗占卜智能体**
+**基于长上下文、结构化输出与反思式解读的深度塔罗智能体**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Model: DeepSeek-R1 / Claude-3.5](https://img.shields.io/badge/Model-DeepSeek--R1%20%7C%20Claude--3.5-blue)](https://www.anthropic.com/)
-![Approach: LLM-Wiki](https://img.shields.io/badge/Approach-LLM--Wiki%20(Long%20Context)-orange)
+AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可解释、可追踪、可评测、可长期迭代**的塔罗 Agent。
+
+---
 
 ## 🌟 项目愿景
-不同于市面上简单的“关键词匹配”占卜机器人，**灵语塔罗** 旨在利用大语言模型（LLM）的超长上下文能力，将 78 张塔罗牌的深层象征、神秘学背景与牌阵逻辑逻辑完全“内化”。通过 **Karpathy 的 LLM-Wiki 模式**，Agent 能够实现对复杂牌阵的全局洞察，为用户提供具备文学性、启发性和情感共鸣的深度解读。
 
-> 目标：构建一个**可解释、可追踪、可评测、可长期迭代**的塔罗 Agent，而不是一个只会“说漂亮话”的一次性聊天机器
+不同于常见的逐牌堆砌式塔罗机器人，AetherTarot 试图把以下能力组合起来：
 
----
+- 长上下文下的稳定问题理解
+- 结合牌阵位置的整体综合
+- 反思式、非断言式的表达方式
+- 结构化输出与可回放历史
+- 独立可审计的安全边界
 
-## 🛠 技术架构：从 RAG 转向 Long Context
-本项目摒弃传统的向量数据库检索（RAG），采用**全量知识注入方案**：
--   **Knowledge Base:** 结构化的 `Tarot_Encyclopedia.md`（涵盖 78 张牌的正逆位、图像象征、数秘学、元素属性）。
--   **Context Strategy:** 利用 **Prompt Caching（提示词缓存）** 技术，将万字百科常驻模型上下文，实现零延迟、低成本的全局推理。
--   **Reasoning Engine:** 采用推理模型（如 DeepSeek-R1）进行“三遍消化法”解读：
-    1.  **解析象征：** 识别牌面所有视觉符号。
-    2.  **建立联结：** 分析牌阵中不同牌的能量流动与冲突。
-    3.  **合成解读：** 结合用户语境输出最终回答。
+产品定位不是“保证命中未来结果的预言系统”，而是“基于塔罗语义进行反思与叙事整理的智能体”。
 
 ---
 
-## 🚀 核心功能规划
+## 📍 当前主线状态（2026-04-08）
 
-### 1. 智能牌阵系统 (Core Logic)
--   **自适应抽牌：** 支持单牌、圣三角、凯尔特十字等经典牌阵。
--   **真随机算法：** 结合物理随机数接口，模拟真实的洗牌感。
--   **正逆位判定：** 严谨的布尔值逻辑控制。
+项目已经进入“知识层领先、运行时偏轻”的阶段。
 
-### 2. 深度解读引擎 (Insight Engine)
--   **全量知识对齐：** 基于内置 Wiki，确保解读不脱离神秘学基础。
--   **多轮追问：** 支持基于当前牌阵进行深度对话，Agent 记得每一张牌的位置与意义。
+知识层现状：
 
-### 3. 多模态增强 (Vision Integration) - *进阶*
--   **实体牌识别：** 用户上传自己拍摄的占卜照片，Agent 自动识别牌名及位置。
--   **灵感卡片生成：** 根据占卜结果，AI 自动绘出一张“今日能量指引卡”。
+- 78/78 牌义页已完成
+- 10 张概念页已完成
+- 9 张牌阵页已完成
 
----
+当前主线不再默认继续做大规模 ingest，而是切到运行时闭环：
 
-## 📅 开发路线图 (Roadmap)
+1. 真实 reading backend 入口
+2. 结构化 reading schema 落地
+3. 最小编排能力预留
+4. 前端按结构化结果稳定展示与回放
 
-### 第一阶段：知识工程 (Knowledge & Prompt)
-- [ ] 整理 `Tarot_Wiki.md`：包含 78 张牌的 500 字以上深度描述。
-- [ ] 编写 **System Prompt**：定义占卜师的人设、解读风格和输出格式。
-- [ ] 在 Playground 测试全量注入模式下的解读准确率。
-
-### 第二阶段：逻辑流构建 (Workflow)
-- [ ] 开发 Python 脚本实现抽牌逻辑（工具调用/Function Calling）。
-- [ ] 设计对话状态机：确保“问题澄清 -> 洗牌 -> 抽牌 -> 解读”的闭环过程。
-- [ ] 接入 **DeepSeek API** 并配置缓存优化成本。
-
-### 第三阶段：记忆与持久化 (Memory)
-- [ ] 集成 **Mem0** 或数据库，记录用户的性格标签和历史占卜记录。
-- [ ] 实现“回声占卜”：当用户问及旧事，Agent 能对比新旧牌阵的变化。
-
-### 第四阶段：表现层开发 (Frontend)
-- [ ] 使用 **Streamlit** 或 **Next.js** 构建沉浸式 UI。
-- [ ] 增加牌面翻转动画与神秘学氛围视觉设计。
+换句话说，当前瓶颈不是“缺更多知识”，而是“现有知识还没有被系统稳定消费”。
 
 ---
 
-## 📂 目录结构预设
+## 🛠 当前运行时架构
+
+### `apps/web`
+
+唯一活跃应用，承载：
+
+- 首页 / 抽牌 / reveal / reading / history / encyclopedia 页面
+- 轻量 BFF Route：`POST /api/reading`
+- 本地结构化 history 回放
+
+### `packages/domain-tarot`
+
+运行时塔罗数据访问层，负责从 `data/` 读取权威牌组与牌阵资产。
+
+### `packages/prompting`
+
+当前占位 provider 的结构化解读生成逻辑。
+
+### `packages/shared-types`
+
+reading request / response、history 与塔罗基础实体的共享类型。
+
+### `knowledge/`
+
+知识编译层，沉淀牌义、概念、牌阵等 wiki 页面。
+
+### `docs/`
+
+项目真相层，记录产品目标、架构边界、输出协议、安全原则与评测标准。
+
+---
+
+## 🚀 当前能力边界
+
+已具备：
+
+- 单牌、圣三角、赛尔特十字牌阵
+- 结构化 reading API
+- 结构化结果页与本地历史回放
+- 生成后安全检查与 `safety_note`
+
+当前不做：
+
+- 外部 LLM provider 接入
+- 独立 `apps/api`
+- 独立 `agent-core` 服务
+- LangGraph 复杂图
+- 服务端 reading 持久化
+
+---
+
+## 📂 目录结构
+
 ```text
 AetherTarot/
 ├─ README.md
 ├─ AGENTS.md
 ├─ docs/
-│  ├─ 00-overview/
-│  ├─ 10-product/
-│  ├─ 20-domain/
-│  ├─ 30-agent/
-│  ├─ 40-architecture/
-│  ├─ 50-safety/
-│  ├─ 60-evals/
-│  ├─ 70-ops/
-│  └─ 80-decisions/adr/
 ├─ knowledge/
+├─ data/
 ├─ apps/
+│  └─ web/
 ├─ packages/
-├─ evals/
-└─ codex/skills/
+│  ├─ shared-types/
+│  ├─ domain-tarot/
+│  └─ prompting/
+├─ memory/
+└─ codex/
 ```
 
-> 当前模板主要覆盖 `README.md`、根目录 `AGENTS.md` 与 `docs/` 首批核心文档。
+---
+
+## 🧭 推荐阅读顺序
+
+进入仓库后，优先阅读：
+
+1. `README.md`
+2. `AGENTS.md`
+3. `docs/00-overview/project-map.md`
+4. `docs/20-domain/reading-contract.md`
+5. `docs/20-domain/interpretation-framework.md`
+6. `docs/30-agent/output-schema.md`
+7. `docs/40-architecture/architecture.md`
+8. `docs/50-safety/safety-principles.md`
+
+如果你要继续主线推进，再看：
+
+- `memory/mainline-priority-plan-2026-04-08.md`
+- `memory/SESSION_INDEX.md`
 
 ---
 
-## 📝 开发者准则
-1.  **逻辑严谨：** 所有的解读必须基于 `docs/Tarot_Wiki.md`，禁止 AI 凭空捏造不存在的神秘学符号。
-2.  **人文关怀：** Agent 设置中必须包含“心理健康免责声明”，对于极端负面情绪提供正向引导。
-3.  **极简架构：** 优先使用 Long Context 解决问题，非必要不引入复杂的向量检索。
-4.  **文档先行：** 重要模块先写职责与边界，再开始编码。
-5.  **输出可评测：**任何关键输出都应尽量结构化。
-6.  **规则外部化：**不要把业务真相藏在 prompt 里。
-7.  **知识可沉淀：**把牌义、牌阵、风格与安全边界写入知识层。
-8.  **变更可追踪：**重要选择用 ADR 记录。
+## 📝 开发原则
+
+- 规则外部化：不要把业务真相只藏在 prompt 中
+- 文档先行：改核心逻辑前先对齐 docs / ADR
+- 安全独立：安全边界必须可单独审计与回归
+- 输出稳定：前端、history、评测共享同一套 reading schema
+- 先闭环再扩张：优先让已有知识真正进入运行时
 
 ---
 
-## 🤝 参与学习
-如果你对 AI Agent 开发、神秘学或 Prompt Engineering 感兴趣，欢迎通过以下方式参与：
-- **提交 Issue:** 反馈解读逻辑中的 Bug。
-- **PR 贡献:** 丰富 `Tarot_Wiki.md` 的牌意维度。
+## 🤝 说明
 
----
-*注：本项目仅供 AI 技术交流与学习，占卜结果不作为现实生活决策依据。*
+本项目仅用于 AI 技术交流与学习。塔罗解读用于反思与启发，不替代医疗、法律、财务或其他专业建议。

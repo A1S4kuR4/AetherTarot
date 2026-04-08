@@ -2,21 +2,21 @@
 
 ## 1. 文档目的
 
-定义 AetherTarot 结果输出的标准结构，确保前端渲染、日志记录、质量评测与回放分析使用同一套字段语义。
+定义 AetherTarot reading backend 的标准成功输出，确保前端渲染、历史记录、日志记录、质量评测与回放分析使用同一套字段语义。
 
 ---
 
-## 2. 设计原则
+## 2. 当前约束
 
-- 对用户可读
-- 对系统可解析
-- 对评测可比较
-- 对多语言可扩展
-- 对安全检查可拦截
+- `POST /api/reading` 成功时直接返回结构化 reading 对象，不再返回单一 `interpretation: string`
+- 首轮默认 `locale = zh-CN`
+- `session_capsule` 在本阶段固定为 `null`
+- `cards[]` 的顺序必须与牌阵位置顺序一致
+- 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
 
 ---
 
-## 3. 建议字段
+## 3. 标准字段
 
 ```json
 {
@@ -25,13 +25,26 @@
   "question": "string",
   "question_type": "relationship | career | self_growth | decision | other",
   "spread": {
+    "id": "string",
     "name": "string",
-    "positions": []
+    "englishName": "string",
+    "description": "string",
+    "icon": "string",
+    "positions": [
+      {
+        "id": "string",
+        "name": "string",
+        "description": "string"
+      }
+    ]
   },
   "cards": [
     {
+      "card_id": "string",
       "name": "string",
+      "english_name": "string",
       "orientation": "upright | reversed",
+      "position_id": "string",
       "position": "string",
       "position_meaning": "string",
       "interpretation": "string"
@@ -43,7 +56,7 @@
   "follow_up_questions": ["string"],
   "safety_note": "string | null",
   "confidence_note": "string | null",
-  "session_capsule": "string | null"
+  "session_capsule": null
 }
 ```
 
@@ -53,15 +66,19 @@
 
 ### `question_type`
 
-用于帮助模型与前端理解问题类别，也可用于评测分桶。
+用于帮助后端和前端理解问题类别，也可作为评测分桶字段。
+
+### `spread`
+
+返回运行时实际使用的权威牌阵快照，避免前端和历史记录依赖客户端自带的临时牌阵对象。
 
 ### `cards[].interpretation`
 
-单张牌在当前问题与当前位置下的解释，不应仅复制基础牌义。
+单张牌在当前问题与当前位置下的解释，不应只是基础牌义拼贴。
 
 ### `themes`
 
-从整体牌阵中提炼出的核心主题标签，建议 2-4 个。
+从整体牌阵中提炼出的主题标签，建议 2-4 个。
 
 ### `synthesis`
 
@@ -69,15 +86,15 @@
 
 ### `reflective_guidance`
 
-可执行但不命令式的建议。建议以短句列表形式表达。
+可执行但不命令式的建议列表。高风险场景下应优先收敛到现实支持与边界澄清。
 
 ### `follow_up_questions`
 
-帮助用户继续反思或进入下一轮的追问问题。
+帮助用户继续反思或进入下一轮追问的问题列表。
 
 ### `safety_note`
 
-当问题涉及敏感边界或需要提醒时出现。
+当问题涉及危机、健康、法律、财务或关系操控等边界时返回。
 
 ### `confidence_note`
 
@@ -85,10 +102,17 @@
 
 ---
 
-## 5. 待补充约束
+## 5. 设计边界
+
+- 结构化输出是产品协议，不应退化回 markdown-only 返回
+- 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
+- 若后续引入 LangGraph，节点输出也应收敛到本协议，而不是创造第二套 reading shape
+
+---
+
+## 6. 待补充
 
 - [ ] 字段长度限制
 - [ ] 多语言兼容字段
-- [ ] 富文本 / markdown 策略
-- [ ] 面向评测的规范化版本
 - [ ] 流式输出拆分协议
+- [ ] 面向评测的规范化版本
