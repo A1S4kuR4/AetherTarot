@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ingest Wiki"
+  short_description: "Compile raw tarot sources into structured wiki pages."
+  default_prompt: "Use $ingest-wiki to compile selected files from knowledge/raw into knowledge/wiki pages and update the knowledge governance files."

@@ -98,6 +98,8 @@ reading request / response、history 与塔罗基础实体的共享类型。
 AetherTarot/
 ├─ README.md
 ├─ AGENTS.md
+├─ .agents/
+│  └─ skills/
 ├─ docs/
 ├─ knowledge/
 ├─ data/
@@ -107,9 +109,12 @@ AetherTarot/
 │  ├─ shared-types/
 │  ├─ domain-tarot/
 │  └─ prompting/
-├─ memory/
-└─ codex/
+└─ memory/
 ```
+
+仓库内的 repo-local skills 统一放在 `.agents/skills/`；这是当前唯一的 canonical skill root。
+
+如需新增、迁移或维护 repo-local skills，先读 `docs/00-overview/repo-local-skills.md`。
 
 ---
 
