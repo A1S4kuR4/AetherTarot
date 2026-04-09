@@ -76,15 +76,16 @@ export default function HistoryView() {
 
       {history.length > 0 && recentTheme && (
         <div className="mb-10 rounded-3xl border border-terracotta/20 bg-gradient-to-r from-terracotta/5 to-paper p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="material-symbols-outlined text-terracotta/80 text-xl">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="material-symbols-outlined text-xl text-terracotta/80">
               psychology
             </span>
             <h3 className="font-serif text-xl text-ink">阶段觉察追踪</h3>
           </div>
           <p className="font-sans text-sm leading-[1.8] text-text-body">
             系统注意到，在过去的 30 天里，你有 <strong className="text-terracotta">{recentTheme.count}</strong> 次问及了与「<strong>{QUESTION_TYPE_LABELS[recentTheme.type]}</strong>」相关的议题。
-            <br /><br />
+            <br />
+            <br />
             如果某个主题在你的生命中反复回旋，或许它不是在向你索求答案，而是在邀请你更深地注视它的结构。你可以随时点击下方的某条历史记录，更新你的「反思手记」。
           </p>
         </div>
@@ -111,10 +112,9 @@ export default function HistoryView() {
                   selectHistoryReading(historyEntry);
                   router.push("/reading");
                 }}
-                className="group relative w-full cursor-pointer rounded-2xl border border-paper-border bg-paper-raised p-5 text-left transition-all duration-200 hover:shadow-sm hover:border-terracotta/20"
+                className="group relative w-full cursor-pointer rounded-2xl border border-paper-border bg-paper-raised p-5 text-left transition-all duration-200 hover:border-terracotta/20 hover:shadow-sm"
               >
                 <div className="flex items-start gap-5">
-                  {/* Thumbnail */}
                   <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-xl border border-paper-border">
                     <img
                       src={HISTORY_THUMBNAIL}
@@ -124,7 +124,6 @@ export default function HistoryView() {
                     />
                   </div>
 
-                  {/* Content */}
                   <div className="min-w-0 flex-1">
                     <div className="mb-1.5 flex items-start justify-between gap-4">
                       <span className="font-sans text-[11px] font-medium text-text-muted">
@@ -139,11 +138,10 @@ export default function HistoryView() {
                       {spread?.name ?? historyEntry.reading.spread.name}
                     </h3>
 
-                    <p className="line-clamp-2 text-sm italic text-text-muted leading-relaxed">
-                      "{historyEntry.reading.question}"
+                    <p className="line-clamp-2 text-sm italic leading-relaxed text-text-muted">
+                      {`"${historyEntry.reading.question}"`}
                     </p>
 
-                    {/* Theme chips */}
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {historyEntry.reading.themes.map((theme) => (
                         <span
