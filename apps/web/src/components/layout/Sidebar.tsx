@@ -5,59 +5,83 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Inquiry", icon: "auto_awesome" },
-  { href: "/ritual", label: "Ritual", icon: "style" },
-  { href: "/reveal", label: "Reveal", icon: "visibility" },
-  { href: "/reading", label: "Reading", icon: "auto_stories" },
+  { href: "/", label: "首页", icon: "home" },
+  { href: "/history", label: "历史", icon: "history" },
+  { href: "/encyclopedia", label: "百科", icon: "auto_stories" },
 ] as const;
 
+/**
+ * Mobile-only slide-out drawer navigation.
+ * Hidden on desktop; toggled via Topbar hamburger button.
+ */
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed top-0 left-0 z-40 hidden h-full w-24 flex-col items-center justify-center gap-12 border-r border-outline-variant/10 bg-surface-container-low/40 py-24 backdrop-blur-md md:flex">
-      <div className="absolute top-8 flex flex-col items-center gap-1">
-        <span className="material-symbols-outlined text-xl text-secondary-fixed">
-          stars
-        </span>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div
+        id="mobile-sidebar-backdrop"
+        className="fixed inset-0 z-[60] hidden bg-ink/40 backdrop-blur-sm md:hidden"
+        onClick={() => {
+          document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
+          document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
+        }}
+      />
 
-      <nav className="flex flex-col gap-10">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
+      {/* Drawer */}
+      <aside
+        id="mobile-sidebar"
+        className="fixed top-0 right-0 z-[70] flex h-full w-72 translate-x-full flex-col bg-paper-raised border-l border-paper-border p-8 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden"
+      >
+        <button
+          type="button"
+          className="absolute top-5 right-5 rounded-xl p-2 text-text-muted hover:bg-paper-muted"
+          aria-label="关闭菜单"
+          onClick={() => {
+            document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
+            document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
+          }}
+        >
+          <span className="material-symbols-outlined text-xl">close</span>
+        </button>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "group flex flex-col items-center gap-2 transition-all duration-500 ease-in-out",
-                isActive
-                  ? "scale-110 text-secondary-fixed drop-shadow-[0_0_10px_rgba(233,196,0,0.5)]"
-                  : "text-outline-variant hover:text-primary",
-              )}
-            >
-              <span className="material-symbols-outlined text-2xl">
-                {item.icon}
-              </span>
-              <span className="font-label text-[10px] uppercase tracking-[0.2em]">
+        <nav className="flex flex-col gap-2">
+          {navItems.map((item) => {
+            const isActive = item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => {
+                  document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
+                  document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-terracotta/10 text-terracotta"
+                    : "text-text-body hover:bg-paper-muted",
+                )}
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {item.icon}
+                </span>
                 {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="mt-auto pb-8">
-        <div className="h-10 w-10 overflow-hidden rounded-full border border-outline-variant/30">
-          <img
-            alt="User Profile"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6WnnsSpR4-nVZumwdLvhtNWjs_lT-hPBVD2OFKZfSvzFU32TvAC7gVuH8zRzfky7HLynbZMAJ_MlZ-XO3fTxbkWOcFT1b4x-cP0AUZqADjEm7EJI026kHPJZSukyd-upQ77z6lEj5w5_sJJr1foOjW6J5E3HSCgMEPtpewRJYa8ZUFjn8x7jz0pewgJBju-nOYPPTzLouTHyjCCuTr_jwyab2UJHtJsqaP7ZsYgueANfssUnKjU50cWqlAuIdLwL2qzzBjspEysJK"
-            referrerPolicy="no-referrer"
-          />
+        <div className="mt-auto pt-8 border-t border-paper-border">
+          <p className="text-xs text-text-muted leading-relaxed">
+            本解读用于反思与启发，不替代医疗、法律、财务或其他专业建议。
+          </p>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
