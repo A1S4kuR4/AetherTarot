@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { QuestionType } from "@aethertarot/shared-types";
@@ -25,7 +25,25 @@ export default function InterpretationView() {
     errorMessage,
     isLoading,
     interpretReading,
+    history,
+    updateHistoryNotes,
   } = useReading();
+
+  const currentHistoryEntry = reading ? history.find(h => h.id === reading.reading_id) : null;
+  const [notes, setNotes] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  useEffect(() => {
+    setNotes(currentHistoryEntry?.user_notes ?? "");
+  }, [currentHistoryEntry?.id]);
+
+  const handleSaveNotes = () => {
+    if (currentHistoryEntry) {
+      setIsSavingNote(true);
+      updateHistoryNotes(currentHistoryEntry.id, notes);
+      setTimeout(() => setIsSavingNote(false), 1200);
+    }
+  };
 
   useEffect(() => {
     if (!selectedSpread) {
@@ -154,12 +172,16 @@ export default function InterpretationView() {
                   );
 
                   return (
-                    <article
+                    <motion.article
                       key={`${card.position_id}-${card.card_id}`}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
                       className="rounded-2xl border border-paper-border bg-paper p-5"
                     >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                        <div className="min-w-0 flex-1 space-y-3">
+                        <div className="min-w-0 flex-1 space-y-4">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="chip-warm text-[10px]">
                               {card.position}
@@ -176,12 +198,22 @@ export default function InterpretationView() {
                               {card.english_name}
                             </p>
                           </div>
-                          <p className="text-sm italic text-text-muted">
-                            {card.position_meaning}
-                          </p>
-                          <p className="text-base leading-[1.8] text-text-body">
-                            {card.interpretation}
-                          </p>
+                          <div className="rounded-r-lg border-l-2 border-paper-border bg-paper-raised/50 py-2.5 pl-4 pr-3">
+                            <p className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted mb-1.5 opacity-80">
+                              / 原型奥义
+                            </p>
+                            <p className="font-sans text-sm leading-relaxed text-text-body">
+                              {card.position_meaning}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-terracotta/10 bg-terracotta/5 p-4 shadow-sm">
+                            <p className="font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta mb-2 opacity-80">
+                              / 当前推断
+                            </p>
+                            <p className="font-serif text-base italic leading-[1.8] text-ink">
+                              {card.interpretation}
+                            </p>
+                          </div>
                         </div>
                         {drawnCard ? (
                           <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-xl border border-paper-border md:ml-4">
@@ -197,7 +229,7 @@ export default function InterpretationView() {
                           </div>
                         ) : null}
                       </div>
-                    </article>
+                    </motion.article>
                   );
                 })}
               </div>
@@ -253,14 +285,19 @@ export default function InterpretationView() {
 
             {/* Safety Note */}
             {reading.safety_note ? (
-              <section className="safety-note">
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-safety">
-                  边界提醒
-                </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">
-                  温馨提示
-                </h2>
-                <p className="mt-4 text-base leading-[1.85] text-text-body">
+              <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
+                <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">
+                  <span className="material-symbols-outlined text-red-500/80">warning</span>
+                  <div>
+                    <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500/80">
+                      边界强制声明
+                    </p>
+                    <h2 className="mt-0.5 font-serif text-lg text-red-300">
+                      必读提示
+                    </h2>
+                  </div>
+                </div>
+                <p className="mt-4 text-base leading-[1.85] text-red-200/90 font-medium">
                   {reading.safety_note}
                 </p>
               </section>
@@ -276,6 +313,41 @@ export default function InterpretationView() {
                 <p className="mt-4 text-base leading-[1.85] text-text-body">
                   {reading.confidence_note}
                 </p>
+              </section>
+            ) : null}
+
+            {/* Journal / Notes */}
+            {currentHistoryEntry ? (
+              <section className="reading-card bg-paper-raised">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                      反思手记
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl text-ink">你的回望与觉察</h2>
+                  </div>
+                  {isSavingNote && (
+                    <span className="font-sans text-xs text-terracotta flex items-center gap-1 opacity-80">
+                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                      已保存
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="随着时间推移，牌意在现实中是如何展开的？写下你的感悟..."
+                  className="w-full h-32 p-4 rounded-xl border border-paper-border bg-paper focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 outline-none resize-none font-serif text-base text-ink leading-relaxed"
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNote || !notes.trim()}
+                    className="rounded-full bg-paper border border-paper-border px-5 py-2 text-sm font-medium text-ink transition-all hover:bg-paper-raised disabled:opacity-50"
+                  >
+                    更新手记
+                  </button>
+                </div>
               </section>
             ) : null}
           </motion.div>
