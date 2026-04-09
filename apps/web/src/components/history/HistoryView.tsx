@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { HISTORY_THUMBNAIL } from "@/constants";
@@ -15,9 +17,51 @@ function formatHistoryDate(createdAt: string) {
   }).format(new Date(createdAt));
 }
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  relationship: "关系议题",
+  career: "职业议题",
+  self_growth: "自我成长",
+  decision: "行动选择",
+  other: "综合议题",
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function analyzeRecentThemes(history: any[]) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const recentReadings = history.filter((entry) => {
+    return new Date(entry.createdAt) >= thirtyDaysAgo;
+  });
+
+  const typeCounts: Record<string, number> = {};
+  for (const entry of recentReadings) {
+    const qt = entry.reading?.question_type;
+    if (qt && qt !== "other") {
+      typeCounts[qt] = (typeCounts[qt] || 0) + 1;
+    }
+  }
+
+  let topType = null;
+  let maxCount = 0;
+  for (const [qt, count] of Object.entries(typeCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      topType = qt;
+    }
+  }
+
+  if (maxCount >= 2 && topType) {
+    return { type: topType, count: maxCount };
+  }
+  return null;
+}
+
 export default function HistoryView() {
   const router = useRouter();
   const { history, selectHistoryReading } = useReading();
+
+  const recentTheme = useMemo(() => analyzeRecentThemes(history), [history]);
 
   return (
     <section className="mx-auto w-full max-w-3xl px-6 py-16 lg:px-8">
@@ -29,6 +73,22 @@ export default function HistoryView() {
           你的每一次探索都被安静地记录在这里
         </p>
       </header>
+
+      {history.length > 0 && recentTheme && (
+        <div className="mb-10 rounded-3xl border border-terracotta/20 bg-gradient-to-r from-terracotta/5 to-paper p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="material-symbols-outlined text-terracotta/80 text-xl">
+              psychology
+            </span>
+            <h3 className="font-serif text-xl text-ink">阶段觉察追踪</h3>
+          </div>
+          <p className="font-sans text-sm leading-[1.8] text-text-body">
+            系统注意到，在过去的 30 天里，你有 <strong className="text-terracotta">{recentTheme.count}</strong> 次问及了与「<strong>{QUESTION_TYPE_LABELS[recentTheme.type]}</strong>」相关的议题。
+            <br /><br />
+            如果某个主题在你的生命中反复回旋，或许它不是在向你索求答案，而是在邀请你更深地注视它的结构。你可以随时点击下方的某条历史记录，更新你的「反思手记」。
+          </p>
+        </div>
+      )}
 
       <div className="space-y-4">
         {history.length === 0 ? (
