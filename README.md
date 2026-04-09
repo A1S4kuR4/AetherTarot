@@ -20,9 +20,9 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-08）
+## 📍 当前主线状态（2026-04-09）
 
-项目已经进入“知识层领先、运行时偏轻”的阶段。
+项目已经进入“两条并行主线协同推进”的阶段。
 
 知识层现状：
 
@@ -30,14 +30,21 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 10 张概念页已完成
 - 9 张牌阵页已完成
 
-当前主线不再默认继续做大规模 ingest，而是切到运行时闭环：
+当前并行主线：
 
-1. 真实 reading backend 入口
-2. 结构化 reading schema 落地
-3. 最小编排能力预留
-4. 前端按结构化结果稳定展示与回放
+1. 技术主线：`M1` Real Reading API 与 `M2` Structured Reading Schema 已完成；下一步是 `M3` Minimal LangGraph，`M4` Runtime Alignment 持续收口。
+2. UX / 产品主线：`Paper / Midnight` 双面设计系统已确立，`Home / Ritual / Reveal / Interpretation / Journey` 已完成一轮重大重构，但 `docs/10-product/ux-risk-status.md` 中的剩余风险仍在持续处理。
 
-换句话说，当前瓶颈不是“缺更多知识”，而是“现有知识还没有被系统稳定消费”。
+`2026-04-09` 同步完成的关键收口包括：
+
+- 引入 `ADR-0002` Dual-Tier Safety Escalation
+- 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
+- 完成 Web CI / Playwright / lockfile 的一轮系统排障
+
+换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
+
+- 如何把现有 service pipeline 稳定映射为最小 LangGraph
+- 如何把已成立的仪式感与结果体验继续推进为更稳定的产品机制
 
 ---
 
@@ -80,6 +87,8 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - 单牌、圣三角、赛尔特十字牌阵
 - 结构化 reading API
 - 结构化结果页与本地历史回放
+- Dual-Tier Safety Escalation（`403 Hard Stop` / `200 Sober Check`）
+- `sober_check` 与 `presentation_mode` 已进入正式输出协议
 - 生成后安全检查与 `safety_note`
 
 当前不做：
@@ -89,6 +98,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - 独立 `agent-core` 服务
 - LangGraph 复杂图
 - 服务端 reading 持久化
+- 把当前 UX 主线视为已收口；仍在持续处理 `docs/10-product/ux-risk-status.md` 中的剩余风险
 
 ---
 
@@ -130,6 +140,11 @@ AetherTarot/
 6. `docs/30-agent/output-schema.md`
 7. `docs/40-architecture/architecture.md`
 8. `docs/50-safety/safety-principles.md`
+
+如果你要做 Web UI / UX，再补读：
+
+- `DESIGN.md`
+- `docs/10-product/ux-risk-status.md`
 
 如果你要继续主线推进，再看：
 

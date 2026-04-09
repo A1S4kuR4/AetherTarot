@@ -32,6 +32,11 @@ AetherTarot Agent 是一个以**长上下文、深度推理、反思式塔罗解
 8. `docs/50-safety/safety-principles.md`
 9. 与目标模块相关的 ADR
 
+如果任务涉及 Web UI / UX / 前端呈现，再补读：
+
+- `DESIGN.md`
+- `docs/10-product/ux-risk-status.md`
+
 ---
 
 ## 3. 全局改动规则
