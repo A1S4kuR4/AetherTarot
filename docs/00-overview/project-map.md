@@ -29,15 +29,22 @@
 3. `docs/40-architecture/architecture.md`
 4. `docs/00-overview/repo-local-skills.md`
 
+### 面向 UI / 前端 / 体验开发
+
+1. `DESIGN.md`
+2. `docs/10-product/ux-risk-status.md`
+3. `docs/30-agent/output-schema.md`
+
 ### 面向安全与评测
 
 1. `docs/50-safety/safety-principles.md`
-2. `docs/60-evals/rubrics.md`
+2. `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md`
+3. `docs/60-evals/rubrics.md`
 
 ### 面向产品风险 / UX 评审
 
 1. `docs/10-product/risk-list.md`
-2. `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
+2. `docs/10-product/ux-risk-status.md`
 
 ---
 
@@ -114,14 +121,29 @@
 
 - `docs/50-safety/safety-principles.md`
 - `docs/20-domain/reading-contract.md`
+- `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md`
+
+### 我想了解当前设计系统
+
+先读：
+
+- `DESIGN.md`
+- `docs/10-product/ux-risk-status.md`
 
 ### 我想评估当前产品风险或 UX 是否成立
 
 先读：
 
 - `docs/10-product/risk-list.md`
-- `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
+- `docs/10-product/ux-risk-status.md`
 - `docs/10-product/vision.md`
+
+### 我想排查 CI 问题
+
+先读：
+
+- `docs/70-ops/github-ci-troubleshooting-2026-04-09.md`
+- `docs/70-ops/dev-setup.md`
 
 ### 我想新增或迁移 repo-local skill
 
