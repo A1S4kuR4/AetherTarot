@@ -11,7 +11,7 @@ export default function JourneyView() {
 
   const handleSelectHistory = (entry: ReadingHistoryEntry) => {
     selectHistoryReading(entry);
-    router.push("/interpretation");
+    router.push("/reading");
   };
 
   const handleNewReading = () => {
@@ -101,3 +101,4 @@ export default function JourneyView() {
     </main>
   );
 }
+
