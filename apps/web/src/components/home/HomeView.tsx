@@ -26,9 +26,8 @@ export default function HomeView() {
   const [progress, setProgress] = useState(0);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  
+
   const [showSafetyModal, setShowSafetyModal] = useState(false);
-  const [safetyTriggerTerm, setSafetyTriggerTerm] = useState("");
 
   const startPress = () => {
     if (!question.trim() || !selectedSpread) return;
@@ -38,7 +37,7 @@ export default function HomeView() {
     pressInterval.current = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100;
-        return prev + (100 / 15);
+        return prev + 100 / 15;
       });
     }, 100);
 
@@ -50,12 +49,11 @@ export default function HomeView() {
   const stopPress = (completed = false) => {
     if (pressInterval.current) clearInterval(pressInterval.current);
     if (pressTimer.current) clearTimeout(pressTimer.current);
-    
+
     if (completed) {
       setProgress(100);
       const match = question.match(SENSITIVE_TERM_REGEX);
       if (match) {
-        setSafetyTriggerTerm(match[0]);
         setShowSafetyModal(true);
         setIsPressing(false);
         setProgress(0);
@@ -91,7 +89,6 @@ export default function HomeView() {
   return (
     <section className="flex min-h-[92vh] flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl space-y-12 text-center">
-        {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +103,6 @@ export default function HomeView() {
           </p>
         </motion.div>
 
-        {/* Question Input */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,7 +110,7 @@ export default function HomeView() {
         >
           <div className="relative mx-auto max-w-xl">
             <textarea
-              className="w-full resize-none rounded-2xl border border-paper-border bg-paper-raised px-5 py-4 font-sans text-base text-ink placeholder:text-text-placeholder focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10 focus:outline-none transition-all duration-200"
+              className="w-full resize-none rounded-2xl border border-paper-border bg-paper-raised px-5 py-4 font-sans text-base text-ink placeholder:text-text-placeholder transition-all duration-200 focus:border-terracotta/40 focus:outline-none focus:ring-2 focus:ring-terracotta/10"
               placeholder="今天，你想向内心询问什么？"
               rows={3}
               value={question}
@@ -123,7 +119,6 @@ export default function HomeView() {
           </div>
         </motion.div>
 
-        {/* Spread Selection */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -161,7 +156,7 @@ export default function HomeView() {
                 <h3 className="mb-2 font-serif text-lg text-ink">
                   {spread.name}
                 </h3>
-                <p className="text-sm font-sans text-text-muted leading-relaxed">
+                <p className="font-sans text-sm leading-relaxed text-text-muted">
                   {spread.description}
                 </p>
                 {spread.id === "holy-triangle" && (
@@ -174,7 +169,6 @@ export default function HomeView() {
           </div>
         </motion.div>
 
-        {/* CTA Button */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,16 +184,16 @@ export default function HomeView() {
             onTouchEnd={() => stopPress()}
             disabled={!question.trim() || !selectedSpread}
             className={cn(
-              "btn-primary relative overflow-hidden px-10 py-4 text-base transition-all select-none",
-              isPressing && "shadow-inner"
+              "btn-primary relative select-none overflow-hidden px-10 py-4 text-base transition-all",
+              isPressing && "shadow-inner",
             )}
             animate={{
               scale: isPressing ? 0.95 : 1,
             }}
           >
-            <div 
-              className="absolute inset-0 bg-ink/10 origin-left"
-              style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}
+            <div
+              className="absolute inset-0 origin-left bg-ink/10"
+              style={{ width: `${progress}%`, transition: "width 0.1s linear" }}
             />
             <span className="relative z-10">
               {isPressing ? "正在收束意图..." : "长按开始仪式"}
@@ -207,13 +201,11 @@ export default function HomeView() {
           </motion.button>
         </motion.div>
 
-        {/* Microcopy */}
-        <p className="min-h-[20px] text-xs text-text-muted leading-relaxed transition-all">
+        <p className="min-h-[20px] text-xs leading-relaxed text-text-muted transition-all">
           {isPressing ? "塔罗是内心的镜像，深呼吸..." : "解读用于反思与启发，不替代专业建议"}
         </p>
       </div>
 
-      {/* Safety Modal */}
       {showSafetyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
           <motion.div
@@ -228,7 +220,7 @@ export default function HomeView() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-red-900/20 bg-paper p-8 shadow-2xl"
           >
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50/50 text-red-500 border border-red-100">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500">
               <span className="material-symbols-outlined text-3xl">warning</span>
             </div>
             <h3 className="mb-3 text-center font-serif text-2xl text-ink">
@@ -236,7 +228,8 @@ export default function HomeView() {
             </h3>
             <p className="mb-6 text-center text-sm leading-relaxed text-text-body">
               系统察觉到你的意图涉及到重大的现实变动或决策。
-              <br /><br />
+              <br />
+              <br />
               请牢记：塔罗无法为你承担生命的重量，它只是一面映照能量场现状的镜子。真正的选择权与结果始终握在你的手中。
             </p>
             <div className="flex flex-col gap-3">
