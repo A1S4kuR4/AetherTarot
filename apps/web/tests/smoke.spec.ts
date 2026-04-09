@@ -186,7 +186,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
   });
 
-  test("routes returning users to JourneyView and exposes the new-reading entry", async ({
+    test("routes returning users to JourneyView and exposes the new-reading entry", async ({
     page,
   }) => {
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
@@ -206,6 +206,15 @@ test.describe("AetherTarot smoke flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /开启新的抽牌/i })).toBeVisible();
 
+    await page.getByRole("heading", { name: /接下来一周我应该把重点放在哪里/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(
+      page.getByText('"接下来一周我应该把重点放在哪里？"', {
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await page.goto("/");
     await page.getByRole("button", { name: /开启新的抽牌/i }).click();
     await expect(page).toHaveURL(/\/new$/);
     await expect(page.getByRole("heading", { name: /灵语塔罗/i })).toBeVisible();
@@ -573,4 +582,7 @@ test.describe("AetherTarot smoke flow", () => {
     expect(body.presentation_mode).toBe("sober_anchor");
   });
 });
+
+
+
 
