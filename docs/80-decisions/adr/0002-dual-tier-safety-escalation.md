@@ -6,7 +6,7 @@ Accepted
 ## Context
 AetherTarot deals with subjective and often emotionally vulnerable user queries. Previously, safety was mitigated strictly via text-based instructions or late-stage rendering warnings, supplemented by a brittle front-end regex that could easily be bypassed. This led to users externalizing major life decisions to the LLM (outsourcing) and relying on the system as a primary emotional/decision crutch.
 
-During our UX remaining risks review (`docs/10-product/ux-remaining-risk-review-2026-04-09.md`), we established that safety mechanisms must be structured, deterministic, and built into the backend service pipeline, rather than relying on UI layers like `RitualView`. Furthermore, reacting to all policy violations with a hard error (`403 Forbidden`) disrupts the user experience for queries that, while asking for a decision, do not pose immediate life-threatening danger.
+During our UX remaining risk review (`docs/10-product/ux-risk-status.md`), we established that safety mechanisms must be structured, deterministic, and built into the backend service pipeline, rather than relying on UI layers like `RitualView`. Furthermore, reacting to all policy violations with a hard error (`403 Forbidden`) disrupts the user experience for queries that, while asking for a decision, do not pose immediate life-threatening danger.
 
 ## Decision
 We are implementing a **Dual-Tier Safety Escalation Mechanism** deep within the `service.ts` pipeline, driven by the `safety.ts` boundary analyzer.

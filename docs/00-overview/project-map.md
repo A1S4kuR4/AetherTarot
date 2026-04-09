@@ -29,15 +29,22 @@
 3. `docs/40-architecture/architecture.md`
 4. `docs/00-overview/repo-local-skills.md`
 
+### 面向 UI / 前端 / 体验开发
+
+1. `DESIGN.md`
+2. `docs/10-product/ux-risk-status.md`
+3. `docs/30-agent/output-schema.md`
+
 ### 面向安全与评测
 
 1. `docs/50-safety/safety-principles.md`
-2. `docs/60-evals/rubrics.md`
+2. `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md`
+3. `docs/60-evals/rubrics.md`
 
 ### 面向产品风险 / UX 评审
 
 1. `docs/10-product/risk-list.md`
-2. `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
+2. `docs/10-product/ux-risk-status.md`
 
 ---
 
@@ -46,6 +53,16 @@
 ### `docs/`
 
 项目真相层。记录产品目标、领域规则、架构边界、安全原则、评测标准与决策历史。
+
+### `memory/`
+
+过程记忆层。用于保存阶段性工作日志、优先级计划、里程碑健康度、会话索引与短期 backlog。
+
+约束：
+
+- `memory/` 记录“当时发生了什么”
+- `docs/` 记录“以后应该查什么”
+- 重要规则、长期可复用方案与稳定边界，不应只留在 `memory/`，必须沉淀到 `docs/`
 
 ### `knowledge/`
 
@@ -104,14 +121,29 @@
 
 - `docs/50-safety/safety-principles.md`
 - `docs/20-domain/reading-contract.md`
+- `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md`
+
+### 我想了解当前设计系统
+
+先读：
+
+- `DESIGN.md`
+- `docs/10-product/ux-risk-status.md`
 
 ### 我想评估当前产品风险或 UX 是否成立
 
 先读：
 
 - `docs/10-product/risk-list.md`
-- `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
+- `docs/10-product/ux-risk-status.md`
 - `docs/10-product/vision.md`
+
+### 我想排查 CI 问题
+
+先读：
+
+- `docs/70-ops/github-ci-troubleshooting-2026-04-09.md`
+- `docs/70-ops/dev-setup.md`
 
 ### 我想新增或迁移 repo-local skill
 

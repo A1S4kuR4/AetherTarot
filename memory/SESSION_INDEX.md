@@ -1,83 +1,89 @@
 # Session Index
 
-- `last_updated`: `2026-04-08`
+- `last_updated`: `2026-04-09`
 - `owner`: `Codex`
-- `scope`: `memory/` session entry index
+- `scope`: `shared memory/ session entry index`
 
 ## 1. 说明
 
-本文件作为 `memory/` 目录的入口索引，用于快速定位当前最重要的执行文档与阶段性工作记录。
+本文件作为 `memory/` 目录的共享入口索引，用于快速定位当前最重要的执行文档与阶段性工作记录。
+
+约定：
+
+- 本文件优先索引已提交到仓库的共享 `memory/` 文档
+- 某些本地工作底稿可继续存在于 `memory/`，但不应成为共享导航的必经入口
 
 推荐进入顺序：
 
 1. 先看主线优先级文档，确认当前产品主线。
-2. 再看里程碑健康度报告，判断哪些模块已经完成、哪些仍待推进。
-3. 然后看 ingest backlog，理解知识层资产现状与历史批次。
-4. 最后看最近一份 work log，理解上一轮实际完成情况与项目进度。
+2. 再看最近一份共享 work log，理解上一轮实际完成情况与项目进度。
+3. 如涉及 UX / 安全主线，再看对应的 docs 与 ADR。
+4. 如需继续本地 ingest，再额外查看本地 working notes。
 
 ## 2. 当前核心文档
 
 ### 2.1 Mainline Priority Plan
 
 - 文件：`memory/mainline-priority-plan-2026-04-08.md`
-- 用途：定义知识层阶段结束后的产品主线优先级
+- 用途：定义知识层阶段结束后的产品主线优先级与并行推进关系
 - 当前重点：
-  - 先做后端 / Agent 接口层
-  - 再做结构化输出
-  - 然后接最小 LangGraph
+  - `M3` Minimal LangGraph 作为当前技术主线
+  - `2026-04-09` 启动的 UX / 产品主线与技术主线并行推进
+  - 不再把 ingest backlog 作为默认主线入口
 
-### 2.2 Milestone Health Report
+### 2.2 Latest Work Log
 
-- 文件：`memory/milestone-health-report-2026-04-08.md`
-- 用途：按“知识层阶段 + M1-M4”视角记录当前项目健康度
+- 文件：`memory/work-log-2026-04-09.md`
+- 用途：记录 `2026-04-09` 的设计系统迁移、UX 重构、安全架构升级与 CI 排障收口
 - 当前重点：
-  - 知识层首轮闭环已完成
-  - `M1 / M2` 已完成
-  - `M3` 未开始
-  - `M4` 部分完成
+  - `Paper / Midnight` 设计系统成为唯一 canonical 设计方向
+  - `Home / Ritual / Reveal / Interpretation / Journey` 完成一轮 UX 主线重构
+  - `ADR-0002`、`sober_check`、`presentation_mode` 与 CI 排障已完成文档收口
 
-### 2.3 Ingest Backlog
-
-- 文件：`memory/knowledge-ingest-backlog.md`
-- 用途：知识层 ingest 的连续执行队列
-- 当前重点：
-  - 牌义页 `78/78` 已完成
-  - 概念页已扩展到 `10` 张
-  - 牌阵页已扩展到 `9` 张
-
-### 2.4 Latest Work Log
+### 2.3 Previous Shared Work Log
 
 - 文件：`memory/work-log-2026-04-08.md`
-- 用途：记录本次对话的实际工作、repo-local skill 引入、skill root 迁移与文档收口情况
+- 用途：记录 repo-local skill 引入、skill root 迁移与文档收口情况
 - 当前进度摘要：
   - 引入了 3 个 AetherTarot 专属 repo-local skills
   - 将原有 `ingest-wiki` 迁移到 `.agents/skills/`
   - 已补齐 repo-local skills 的当前约定文档
+
+### 2.4 Optional Local Working Notes
+
+- 文件（如本地存在）：
+  - `memory/knowledge-ingest-backlog.md`
+  - `memory/milestone-health-report-2026-04-08.md`
+- 用途：
+  - 作为本地 operator notes 或专题底稿使用
+  - 不作为共享索引的默认必经入口
 
 ## 3. 当前项目状态入口
 
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/milestone-health-report-2026-04-08.md`，确认各里程碑和模块当前状态
-3. 按 `M1 -> M2 -> M3 -> M4` 理解后续迭代顺序
-4. 再回看 `memory/knowledge-ingest-backlog.md`，只把 ingest 作为按需补洞来源
+2. 再看 `memory/work-log-2026-04-09.md`，确认 `2026-04-09` 的 UX / 安全 / CI 主线收口
+3. 配合 `docs/10-product/ux-risk-status.md` 与 `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md` 理解当前并行主线
+4. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线后续顺序
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 
 1. 先看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/knowledge-ingest-backlog.md`
+2. 仅在确认 ingest 仍是当前缺口时，再看本地 `memory/knowledge-ingest-backlog.md`
 3. 执行时同步维护：
    - `knowledge/index.md`
    - `knowledge/log.md`
 
 如果你的目标是快速了解上一轮做了什么，建议直接查看：
 
-- `memory/work-log-2026-04-08.md`
+- `memory/work-log-2026-04-09.md`
+- `docs/10-product/ux-risk-status.md`
 
 ## 4. 维护约定
 
 - 新增新的主线级记忆文档时，应优先更新本文件中的推荐阅读顺序。
-- 新增 backlog 文档时，应在本文件补充入口链接。
 - 新增工作日志时，应在本文件更新“Latest Work Log”。
+- 新增共享 work log 时，应提交到仓库而不是只保留本地。
+- 本地 working notes 可以继续存在，但不应让共享索引依赖其存在。
 - 若后续 `memory/` 增加更多专题记录，可在此文件下继续扩展索引分组。
