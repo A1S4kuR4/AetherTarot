@@ -86,6 +86,7 @@ export interface ReadingHistoryEntry {
   spreadId: string;
   drawnCards: ReadingRequestCardInput[];
   reading: StructuredReading;
+  user_notes?: string;
 }
 
 export type ReadingErrorCode =

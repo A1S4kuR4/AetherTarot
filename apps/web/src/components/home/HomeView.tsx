@@ -1,10 +1,14 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
+
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+
+const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
 
 const spreads = getAllSpreads();
 
@@ -18,6 +22,64 @@ export default function HomeView() {
     startRitual,
   } = useReading();
 
+  const [isPressing, setIsPressing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [safetyTriggerTerm, setSafetyTriggerTerm] = useState("");
+
+  const startPress = () => {
+    if (!question.trim() || !selectedSpread) return;
+    setIsPressing(true);
+    setProgress(0);
+
+    pressInterval.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) return 100;
+        return prev + (100 / 15);
+      });
+    }, 100);
+
+    pressTimer.current = setTimeout(() => {
+      stopPress(true);
+    }, 1500);
+  };
+
+  const stopPress = (completed = false) => {
+    if (pressInterval.current) clearInterval(pressInterval.current);
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    
+    if (completed) {
+      setProgress(100);
+      const match = question.match(SENSITIVE_TERM_REGEX);
+      if (match) {
+        setSafetyTriggerTerm(match[0]);
+        setShowSafetyModal(true);
+        setIsPressing(false);
+        setProgress(0);
+      } else {
+        handleStart();
+      }
+    } else {
+      setIsPressing(false);
+      setProgress(0);
+    }
+  };
+
+  const handleSafetyConfirm = () => {
+    setShowSafetyModal(false);
+    handleStart();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pressInterval.current) clearInterval(pressInterval.current);
+      if (pressTimer.current) clearTimeout(pressTimer.current);
+    };
+  }, []);
+
   const handleStart = () => {
     if (!startRitual()) {
       return;
@@ -27,98 +89,175 @@ export default function HomeView() {
   };
 
   return (
-    <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-6 py-12">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute right-1/4 bottom-1/4 h-[500px] w-[500px] rounded-full bg-tertiary/5 blur-[150px]" />
-      </div>
-
-      <div className="z-10 w-full max-w-4xl space-y-12 text-center">
+    <section className="flex min-h-[92vh] flex-col items-center justify-center px-6 py-16">
+      <div className="w-full max-w-2xl space-y-12 text-center">
+        {/* Hero */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           className="space-y-4"
         >
-          <h1 className="font-serif text-5xl font-bold tracking-tight text-secondary md:text-7xl">
-            灵语塔罗{" "}
-            <span className="font-normal italic opacity-80">(AetherTarot)</span>
+          <h1 className="font-serif text-5xl font-semibold tracking-tight text-ink md:text-6xl">
+            灵语塔罗
           </h1>
-          <p className="font-serif text-xl italic tracking-wide text-primary md:text-2xl">
-            开启你的探索之路
+          <p className="font-serif text-lg text-text-muted md:text-xl">
+            开启你的反思与探索之路
           </p>
         </motion.div>
 
-        <div className="group relative mx-auto max-w-2xl">
-          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/20 via-secondary-fixed/20 to-tertiary/20 blur opacity-40 transition duration-1000 group-hover:opacity-75" />
-          <div className="relative flex items-center rounded-full border border-outline-variant/20 bg-surface-container-lowest p-2 transition-all duration-500 focus-within:border-primary/50">
-            <span className="material-symbols-outlined ml-6 text-on-surface-variant/50">
-              search_spark
-            </span>
-            <input
-              className="w-full border-none bg-transparent px-6 py-4 text-lg text-on-surface placeholder:text-on-surface-variant/40 focus:ring-0 focus:outline-none"
-              placeholder="今天，你想向宇宙询问什么？"
-              type="text"
+        {/* Question Input */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+        >
+          <div className="relative mx-auto max-w-xl">
+            <textarea
+              className="w-full resize-none rounded-2xl border border-paper-border bg-paper-raised px-5 py-4 font-sans text-base text-ink placeholder:text-text-placeholder focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10 focus:outline-none transition-all duration-200"
+              placeholder="今天，你想向内心询问什么？"
+              rows={3}
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
             />
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={!question.trim() || !selectedSpread}
-              className="rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 font-label font-semibold text-on-primary shadow-lg transition-transform duration-500 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              启示
-            </button>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-8 pt-12">
-          <h2 className="font-label text-xs uppercase tracking-[0.3em] text-secondary-fixed/60">
-            选择你的牌阵 • Choose Your Spread
+        {/* Spread Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          className="space-y-6"
+        >
+          <h2 className="font-sans text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
+            选择牌阵 · Choose Your Spread
           </h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {spreads.map((spread) => (
-              <motion.button
+              <button
                 key={spread.id}
                 type="button"
-                whileHover={{ y: -5 }}
                 onClick={() => setSelectedSpread(spread)}
                 className={cn(
-                  "glass-panel flex cursor-pointer flex-col items-center rounded-xl border p-8 text-center transition-all duration-500",
+                  "group flex flex-col items-center rounded-2xl border p-6 text-center transition-all duration-200",
                   selectedSpread?.id === spread.id
-                    ? "border-secondary-fixed/40 bg-surface-container-low/60 ring-1 ring-secondary-fixed/20"
-                    : "border-outline-variant/10 hover:border-secondary-fixed/40",
+                    ? "border-terracotta/40 bg-terracotta/5 shadow-sm"
+                    : "border-paper-border bg-paper-raised hover:border-paper-border hover:shadow-sm",
                 )}
               >
                 <div
                   className={cn(
-                    "mb-6 flex h-16 w-16 items-center justify-center rounded-full border transition-colors",
+                    "mb-4 flex h-12 w-12 items-center justify-center rounded-full transition-colors",
                     selectedSpread?.id === spread.id
-                      ? "border-secondary-fixed/30 bg-surface-container-highest text-secondary-fixed"
-                      : "border-outline-variant/20 bg-surface-container-high group-hover:text-secondary-fixed",
+                      ? "bg-terracotta/10 text-terracotta"
+                      : "bg-paper-muted text-text-muted group-hover:text-text-body",
                   )}
                 >
-                  <span className="material-symbols-outlined text-3xl">
+                  <span className="material-symbols-outlined text-2xl">
                     {spread.icon}
                   </span>
                 </div>
-                <h3 className="mb-3 font-serif text-xl text-secondary">
-                  {spread.name} ({spread.englishName})
+                <h3 className="mb-2 font-serif text-lg text-ink">
+                  {spread.name}
                 </h3>
-                <p className="text-sm leading-relaxed text-on-surface-variant">
+                <p className="text-sm font-sans text-text-muted leading-relaxed">
                   {spread.description}
                 </p>
                 {spread.id === "holy-triangle" && (
-                  <span className="mt-4 inline-block rounded-full bg-secondary-fixed/10 px-3 py-1 font-label text-[10px] uppercase tracking-widest text-secondary-fixed">
+                  <span className="chip-accent mt-3 text-[10px]">
                     最受青睐
                   </span>
                 )}
-              </motion.button>
+              </button>
             ))}
           </div>
-        </div>
+        </motion.div>
+
+        {/* CTA Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
+          className="relative inline-block"
+        >
+          <motion.button
+            type="button"
+            onMouseDown={startPress}
+            onMouseUp={() => stopPress()}
+            onMouseLeave={() => stopPress()}
+            onTouchStart={startPress}
+            onTouchEnd={() => stopPress()}
+            disabled={!question.trim() || !selectedSpread}
+            className={cn(
+              "btn-primary relative overflow-hidden px-10 py-4 text-base transition-all select-none",
+              isPressing && "shadow-inner"
+            )}
+            animate={{
+              scale: isPressing ? 0.95 : 1,
+            }}
+          >
+            <div 
+              className="absolute inset-0 bg-ink/10 origin-left"
+              style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}
+            />
+            <span className="relative z-10">
+              {isPressing ? "正在收束意图..." : "长按开始仪式"}
+            </span>
+          </motion.button>
+        </motion.div>
+
+        {/* Microcopy */}
+        <p className="min-h-[20px] text-xs text-text-muted leading-relaxed transition-all">
+          {isPressing ? "塔罗是内心的镜像，深呼吸..." : "解读用于反思与启发，不替代专业建议"}
+        </p>
       </div>
+
+      {/* Safety Modal */}
+      {showSafetyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
+            onClick={() => setShowSafetyModal(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-red-900/20 bg-paper p-8 shadow-2xl"
+          >
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50/50 text-red-500 border border-red-100">
+              <span className="material-symbols-outlined text-3xl">warning</span>
+            </div>
+            <h3 className="mb-3 text-center font-serif text-2xl text-ink">
+              这是一次重大的决定
+            </h3>
+            <p className="mb-6 text-center text-sm leading-relaxed text-text-body">
+              系统察觉到你的意图涉及到重大的现实变动或决策。
+              <br /><br />
+              请牢记：塔罗无法为你承担生命的重量，它只是一面映照能量场现状的镜子。真正的选择权与结果始终握在你的手中。
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleSafetyConfirm}
+                className="w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900"
+              >
+                我已知晓，仅作为内省的视角
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSafetyModal(false)}
+                className="w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
+              >
+                返回修改问题
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 }

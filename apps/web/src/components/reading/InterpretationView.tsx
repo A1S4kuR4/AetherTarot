@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { QuestionType } from "@aethertarot/shared-types";
@@ -25,7 +25,25 @@ export default function InterpretationView() {
     errorMessage,
     isLoading,
     interpretReading,
+    history,
+    updateHistoryNotes,
   } = useReading();
+
+  const currentHistoryEntry = reading ? history.find(h => h.id === reading.reading_id) : null;
+  const [notes, setNotes] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  useEffect(() => {
+    setNotes(currentHistoryEntry?.user_notes ?? "");
+  }, [currentHistoryEntry?.id]);
+
+  const handleSaveNotes = () => {
+    if (currentHistoryEntry) {
+      setIsSavingNote(true);
+      updateHistoryNotes(currentHistoryEntry.id, notes);
+      setTimeout(() => setIsSavingNote(false), 1200);
+    }
+  };
 
   useEffect(() => {
     if (!selectedSpread) {
@@ -56,95 +74,104 @@ export default function InterpretationView() {
   }
 
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-12 px-6 pt-32 pb-24 lg:flex-row lg:px-24">
-      <div className="flex-1 space-y-14">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3 text-sm uppercase tracking-widest text-secondary-fixed-dim">
-            <span className="material-symbols-outlined text-xs">
-              auto_fix_high
-            </span>
-            深度见解 Deep Insight
-          </div>
-          <h1 className="font-serif text-5xl leading-tight text-secondary md:text-7xl">
-            灵魂的结构化映照
+    <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pt-24 pb-20 lg:flex-row lg:px-16">
+      {/* Main Content Column */}
+      <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
+        {/* Header */}
+        <header className="space-y-5">
+          <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
+            解读结果
           </h1>
-          <p className="max-w-2xl border-l-2 border-primary/30 py-2 pl-6 text-lg italic text-on-surface-variant">
-            “这次解读不是替你宣布结果，而是帮助你更清楚地看见正在成形的主题、张力与可选择的动作。”
-          </p>
-          <div className="grid gap-4 rounded-2xl border border-outline-variant/10 bg-surface-container-low/60 p-5 md:grid-cols-[1fr_auto] md:items-end">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                The Inquiry
-              </p>
-              <p className="mt-2 text-base italic text-on-surface">“{question}”</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {reading ? (
-                <span className="rounded-full border border-secondary-fixed/20 bg-secondary-fixed/10 px-3 py-1 text-xs uppercase tracking-widest text-secondary-fixed">
-                  {QUESTION_TYPE_LABELS[reading.question_type]}
+          <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic text-text-muted leading-relaxed">
+            这次解读不是替你宣布结果，而是帮助你更清楚地看见正在成形的主题、张力与可选择的动作。
+          </blockquote>
+
+          {/* Question & Meta */}
+          <div className="reading-card">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                  你的提问
+                </p>
+                <p className="mt-1.5 text-base text-ink leading-relaxed">
+                  "{question}"
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {reading ? (
+                  <span className="chip-accent text-[11px]">
+                    {QUESTION_TYPE_LABELS[reading.question_type]}
+                  </span>
+                ) : null}
+                <span className="chip-warm text-[11px]">
+                  {selectedSpread.name}
                 </span>
-              ) : null}
-              <span className="rounded-full border border-outline-variant/20 px-3 py-1 text-xs uppercase tracking-widest text-on-surface-variant">
-                {selectedSpread.name}
-              </span>
+              </div>
             </div>
           </div>
         </header>
 
+        {/* Loading */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center space-y-6 py-20">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-            <p className="animate-pulse font-serif text-xl italic text-primary">
-              正在连接阿卡西记录...
+          <div className="flex flex-col items-center justify-center space-y-5 py-20">
+            <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-paper-border border-t-terracotta" />
+            <p className="font-serif text-lg text-text-muted">
+              正在生成解读...
             </p>
           </div>
         ) : errorMessage ? (
-          <div className="rounded-3xl border border-primary/20 bg-surface-container-low p-8">
-            <h2 className="font-serif text-3xl text-secondary">连接受阻</h2>
-            <p className="mt-4 leading-relaxed text-on-surface-variant">
+          /* Error */
+          <div className="reading-card">
+            <h2 className="font-serif text-2xl text-ink">连接受阻</h2>
+            <p className="mt-3 text-text-body leading-relaxed">
               {errorMessage}
             </p>
             <button
               type="button"
               onClick={() => void interpretReading()}
-              className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 font-label text-sm uppercase tracking-[0.18em] text-on-primary transition-transform duration-300 hover:scale-[1.02]"
+              className="btn-primary mt-5"
             >
               重新尝试
             </button>
           </div>
         ) : reading ? (
+          /* Reading Result */
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-12"
+            transition={{ duration: 0.4 }}
+            className="space-y-8"
           >
-            <section className="rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                    Themes
-                  </p>
-                  <h2 className="mt-2 font-serif text-3xl text-secondary">主题聚焦</h2>
-                </div>
+            {/* Themes / Climate */}
+            <section className="relative rounded-3xl border border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper p-8 shadow-sm my-16">
+              <div className="absolute top-0 left-8 -translate-y-1/2 flex items-center gap-2 bg-paper px-3 py-1 border border-paper-border rounded-full shadow-sm">
+                <span className="material-symbols-outlined text-[14px] text-terracotta/70">accolade</span>
+                <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
+                  当前气候场
+                </span>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <h2 className="mt-4 font-serif text-3xl text-ink text-center">
+                核心主题聚焦
+              </h2>
+              <p className="mt-3 text-sm text-text-body leading-relaxed text-center max-w-lg mx-auto">
+                在深入每一张牌的具体启示之前，请先感受这组牌共同编织的全局氛围与核心张力。
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
                 {reading.themes.map((theme) => (
-                  <span
-                    key={theme}
-                    className="rounded-full border border-secondary-fixed/20 bg-secondary-fixed/10 px-4 py-2 text-sm text-secondary-fixed"
-                  >
+                  <span key={theme} className="chip-accent px-4 py-2 text-[13px] bg-terracotta/5 border-terracotta/20 shadow-sm transition-all hover:bg-terracotta/10">
                     {theme}
                   </span>
                 ))}
               </div>
             </section>
 
-            <section className="space-y-6 rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
+            {/* Card Interpretations */}
+            <section className="reading-card space-y-5">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                  Cards
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                  逐牌
                 </p>
-                <h2 className="mt-2 font-serif text-3xl text-secondary">逐牌展开</h2>
+                <h2 className="mt-1 font-serif text-2xl text-ink">逐牌展开</h2>
               </div>
               <div className="space-y-5">
                 {reading.cards.map((card) => {
@@ -153,37 +180,51 @@ export default function InterpretationView() {
                   );
 
                   return (
-                    <article
+                    <motion.article
                       key={`${card.position_id}-${card.card_id}`}
-                      className="rounded-2xl border border-outline-variant/10 bg-surface-container p-6"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      className="rounded-2xl border border-paper-border bg-paper p-5"
                     >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                        <div className="min-w-0 flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="rounded-full bg-surface-variant px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
+                        <div className="min-w-0 flex-1 space-y-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="chip-warm text-[10px]">
                               {card.position}
                             </span>
-                            <span className="text-xs uppercase tracking-[0.2em] text-secondary-fixed/70">
+                            <span className="font-sans text-[11px] font-medium text-text-muted">
                               {card.orientation === "reversed" ? "逆位" : "正位"}
                             </span>
                           </div>
                           <div>
-                            <h3 className="font-serif text-2xl text-secondary">
+                            <h3 className="font-serif text-xl text-ink">
                               {card.name}
                             </h3>
-                            <p className="text-sm italic text-on-surface-variant">
+                            <p className="text-sm text-text-muted">
                               {card.english_name}
                             </p>
                           </div>
-                          <p className="text-sm italic text-on-surface-variant/80">
-                            {card.position_meaning}
-                          </p>
-                          <p className="leading-relaxed text-on-surface-variant">
-                            {card.interpretation}
-                          </p>
+                          <div className="rounded-r-lg border-l-2 border-paper-border bg-paper-raised/50 py-2.5 pl-4 pr-3">
+                            <p className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted mb-1.5 opacity-80">
+                              / 原型奥义
+                            </p>
+                            <p className="font-sans text-sm leading-relaxed text-text-body">
+                              {card.position_meaning}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-terracotta/10 bg-terracotta/5 p-4 shadow-sm">
+                            <p className="font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta mb-2 opacity-80">
+                              / 当前推断
+                            </p>
+                            <p className="font-serif text-base italic leading-[1.8] text-ink">
+                              {card.interpretation}
+                            </p>
+                          </div>
                         </div>
                         {drawnCard ? (
-                          <div className="w-full max-w-[140px] shrink-0 overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-low md:ml-4">
+                          <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-xl border border-paper-border md:ml-4">
                             <img
                               src={drawnCard.card.imageUrl}
                               alt={drawnCard.card.name}
@@ -196,50 +237,53 @@ export default function InterpretationView() {
                           </div>
                         ) : null}
                       </div>
-                    </article>
+                    </motion.article>
                   );
                 })}
               </div>
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
-              <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                Synthesis
+            {/* Synthesis */}
+            <section className="reading-card">
+              <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                综合
               </p>
-              <h2 className="mt-2 font-serif text-3xl text-secondary">综合解读</h2>
-              <p className="mt-6 leading-8 text-on-surface-variant">
+              <h2 className="mt-1 font-serif text-2xl text-ink">综合解读</h2>
+              <p className="mt-4 text-base leading-[1.85] text-text-body">
                 {reading.synthesis}
               </p>
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
-              <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                Guidance
+            {/* Guidance */}
+            <section className="reading-card">
+              <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                指引
               </p>
-              <h2 className="mt-2 font-serif text-3xl text-secondary">反思指引</h2>
-              <ul className="mt-6 space-y-4">
+              <h2 className="mt-1 font-serif text-2xl text-ink">反思指引</h2>
+              <ul className="mt-4 space-y-3">
                 {reading.reflective_guidance.map((guidance) => (
                   <li
                     key={guidance}
-                    className="flex gap-3 border-l border-secondary-fixed/20 pl-4 leading-relaxed text-on-surface-variant"
+                    className="flex gap-3 border-l-2 border-terracotta/20 pl-4 text-base leading-relaxed text-text-body"
                   >
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary-fixed" />
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta/50" />
                     <span>{guidance}</span>
                   </li>
                 ))}
               </ul>
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
-              <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                Follow-up
+            {/* Follow-up Questions */}
+            <section className="reading-card">
+              <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                延伸
               </p>
-              <h2 className="mt-2 font-serif text-3xl text-secondary">延伸追问</h2>
-              <ul className="mt-6 space-y-4">
+              <h2 className="mt-1 font-serif text-2xl text-ink">延伸追问</h2>
+              <ul className="mt-4 space-y-3">
                 {reading.follow_up_questions.map((prompt) => (
                   <li
                     key={prompt}
-                    className="rounded-2xl border border-outline-variant/10 bg-surface-container px-5 py-4 leading-relaxed text-on-surface-variant"
+                    className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body"
                   >
                     {prompt}
                   </li>
@@ -247,57 +291,106 @@ export default function InterpretationView() {
               </ul>
             </section>
 
+            {/* Safety Note */}
             {reading.safety_note ? (
-              <section className="rounded-3xl border border-primary/20 bg-primary/5 p-8">
-                <p className="text-xs uppercase tracking-[0.25em] text-primary/70">
-                  Safety
-                </p>
-                <h2 className="mt-2 font-serif text-3xl text-secondary">边界提醒</h2>
-                <p className="mt-6 leading-8 text-on-surface-variant">
+              <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
+                <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">
+                  <span className="material-symbols-outlined text-red-500/80">warning</span>
+                  <div>
+                    <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500/80">
+                      边界强制声明
+                    </p>
+                    <h2 className="mt-0.5 font-serif text-lg text-red-300">
+                      必读提示
+                    </h2>
+                  </div>
+                </div>
+                <p className="mt-4 text-base leading-[1.85] text-red-200/90 font-medium">
                   {reading.safety_note}
                 </p>
               </section>
             ) : null}
 
+            {/* Confidence Note */}
             {reading.confidence_note ? (
-              <section className="rounded-3xl border border-outline-variant/10 bg-surface-container-low/70 p-8">
-                <p className="text-xs uppercase tracking-[0.25em] text-secondary-fixed/70">
-                  Confidence
+              <section className="reading-card">
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                  说明
                 </p>
-                <h2 className="mt-2 font-serif text-3xl text-secondary">解读说明</h2>
-                <p className="mt-6 leading-8 text-on-surface-variant">
+                <h2 className="mt-1 font-serif text-2xl text-ink">解读说明</h2>
+                <p className="mt-4 text-base leading-[1.85] text-text-body">
                   {reading.confidence_note}
                 </p>
+              </section>
+            ) : null}
+
+            {/* Journal / Notes */}
+            {currentHistoryEntry ? (
+              <section className="reading-card bg-paper-raised">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                      反思手记
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl text-ink">你的回望与觉察</h2>
+                  </div>
+                  {isSavingNote && (
+                    <span className="font-sans text-xs text-terracotta flex items-center gap-1 opacity-80">
+                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                      已保存
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="随着时间推移，牌意在现实中是如何展开的？写下你的感悟..."
+                  className="w-full h-32 p-4 rounded-xl border border-paper-border bg-paper focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 outline-none resize-none font-serif text-base text-ink leading-relaxed"
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNote || !notes.trim()}
+                    className="rounded-full bg-paper border border-paper-border px-5 py-2 text-sm font-medium text-ink transition-all hover:bg-paper-raised disabled:opacity-50"
+                  >
+                    更新手记
+                  </button>
+                </div>
               </section>
             ) : null}
           </motion.div>
         ) : null}
       </div>
 
-      <aside className="w-full space-y-8 lg:w-80">
-        <div className="rounded-xl border border-outline-variant/10 bg-surface-container-low p-6">
-          <h4 className="mb-6 font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-            Ceremony Progress
+      {/* Sidebar */}
+      <aside className="w-full space-y-6 lg:w-72 lg:sticky lg:top-24 lg:self-start">
+        {/* Step Progress */}
+        <div className="reading-card">
+          <h4 className="mb-4 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+            解读流程
           </h4>
-          <div className="space-y-4">
-            {["The Inquiry", "The Ritual", "The Reveal", "Deep Insight"].map(
+          <div className="space-y-3">
+            {["提问", "仪式", "揭示", "解读"].map(
               (step, index) => (
                 <div
                   key={step}
-                  className={cn("flex items-center gap-3", index < 3 && "opacity-40")}
+                  className={cn(
+                    "flex items-center gap-2.5",
+                    index < 3 && "opacity-40",
+                  )}
                 >
                   <div
                     className={cn(
                       "h-2 w-2 rounded-full",
                       index === 3
-                        ? "bg-secondary-fixed shadow-[0_0_8px_#ffe16d]"
-                        : "bg-primary",
+                        ? "bg-terracotta"
+                        : "bg-paper-border",
                     )}
                   />
                   <span
                     className={cn(
-                      "text-xs font-label",
-                      index === 3 && "font-bold text-secondary-fixed",
+                      "font-sans text-xs",
+                      index === 3 && "font-medium text-terracotta",
                     )}
                   >
                     {step}
@@ -308,22 +401,22 @@ export default function InterpretationView() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-outline-variant/10 bg-surface-container-low p-6">
-          <h4 className="mb-2 font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-            The Active Spread
+        {/* Card Thumbnails */}
+        <div className="reading-card">
+          <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+            {selectedSpread.name}
           </h4>
-          <p className="mb-4 text-sm text-secondary-fixed">{selectedSpread.name}</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {drawnCards.map((drawnCard) => (
               <div
                 key={drawnCard.positionId}
-                className="group aspect-[2/3] overflow-hidden rounded-lg border border-outline-variant/20 bg-surface-container transition-colors hover:border-primary/50"
+                className="group aspect-[2/3] overflow-hidden rounded-lg border border-paper-border transition-shadow hover:shadow-sm"
               >
                 <img
                   src={drawnCard.card.imageUrl}
                   alt={drawnCard.card.name}
                   className={cn(
-                    "h-full w-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0",
+                    "h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.02]",
                     drawnCard.isReversed && "rotate-180",
                   )}
                   referrerPolicy="no-referrer"
@@ -333,8 +426,9 @@ export default function InterpretationView() {
           </div>
         </div>
 
-        <div className="rounded-r-xl border-l border-secondary-fixed/30 bg-secondary-fixed/5 p-6">
-          <p className="font-serif text-sm leading-relaxed italic text-secondary-fixed/80">
+        {/* Quote */}
+        <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">
+          <p className="font-serif text-sm leading-relaxed italic text-text-muted">
             真理并不是被强行规定的结论，而是从你的处境中慢慢浮现的方向感。
           </p>
         </div>

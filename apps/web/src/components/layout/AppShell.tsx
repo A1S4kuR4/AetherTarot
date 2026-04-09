@@ -2,9 +2,12 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
-import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
+import Sidebar from "@/components/layout/Sidebar";
 import { ReadingProvider } from "@/context/ReadingContext";
+
+/** Routes that use Midnight Mode (dark immersive surface) */
+const MIDNIGHT_ROUTES = ["/ritual", "/reveal"];
 
 export default function AppShell({
   children,
@@ -12,34 +15,31 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isMidnight = MIDNIGHT_ROUTES.includes(pathname);
 
   return (
     <ReadingProvider>
-      <div className="min-h-screen celestial-bg selection:bg-primary/30">
+      <div
+        className={
+          isMidnight ? "midnight-surface min-h-screen" : "paper-surface min-h-screen"
+        }
+      >
+        <Topbar isMidnight={isMidnight} />
         <Sidebar />
-        <Topbar />
 
-        <main className="min-h-screen pt-20 md:pl-24">
+        <main className="min-h-screen pt-16">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.45, ease: "easeInOut" }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
             >
               {children}
             </motion.div>
           </AnimatePresence>
         </main>
-
-        <div className="fixed right-8 bottom-8 z-50 flex gap-4">
-          <div className="glass-panel flex h-12 w-12 items-center justify-center rounded-full border border-outline-variant/20 text-secondary-fixed animate-pulse">
-            <span className="material-symbols-outlined text-xl">
-              auto_awesome
-            </span>
-          </div>
-        </div>
       </div>
     </ReadingProvider>
   );
