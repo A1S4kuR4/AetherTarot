@@ -11,6 +11,41 @@ const FINANCIAL_PATTERN = /财务|投资|股票|理财|借贷|贷款|赔偿|fina
 const MANIPULATION_PATTERN =
   /跟踪|监控|报复|试探|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/i;
 
+const MAJOR_DECISION_PATTERN =
+  /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂/i;
+
+export type IntentFrictionResult =
+  | { type: "hard_stop"; reason: string; referral_links?: string[] }
+  | { type: "sober_check"; sober_check: string; presentation_mode: "sober_anchor" }
+  | { type: "pass" };
+
+export function analyzeIntentFriction(question: string): IntentFrictionResult {
+  if (SELF_HARM_PATTERN.test(question) || HEALTH_PATTERN.test(question)) {
+    return {
+      type: "hard_stop",
+      reason: "系统检测到可能涉及身体安全或紧急健康的风险。塔罗无法提供医疗或安全判断，请立即寻求专业的医疗或心理急救支持。",
+      referral_links: ["https://crisis-center-example.org"],
+    };
+  }
+
+  if (MANIPULATION_PATTERN.test(question)) {
+    return {
+      type: "hard_stop",
+      reason: "AetherTarot 不提供对第三方行为的监控、控制或操控推演。我们需要尊重他人的隐私与边界。",
+    };
+  }
+
+  if (LEGAL_PATTERN.test(question) || FINANCIAL_PATTERN.test(question) || MAJOR_DECISION_PATTERN.test(question)) {
+    return {
+      type: "sober_check",
+      sober_check: "你的问题似乎涉及重大的财务、法律或人生的关键转折（如分开、转行、诉讼）。在抽取塔罗牌前，请你先写下：如果不管塔罗怎么说，你目前心里最真实的顾虑或底线计划是什么？",
+      presentation_mode: "sober_anchor",
+    };
+  }
+
+  return { type: "pass" };
+}
+
 function withSafetyOverride(
   reading: StructuredReading,
   safetyNote: string,

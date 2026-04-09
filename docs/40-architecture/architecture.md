@@ -47,17 +47,17 @@
 - 问题分类
 - 权威牌阵 / 牌面上下文还原
 - provider 调用
-- 生成后安全检查
+- 安全分级检查 (Dual-Tier Safety Checks)
 - 最终 schema 校验
 
 当前落地：`apps/web/src/server/reading/`
 
 固定流水线：
 
-1. 问题分类
+1. 意图分类与前置安全检查 (Safety Pre-check, 可能直接抛出 403 Hard Stop)
 2. canonical context 组装
 3. provider.generate
-4. safety review
+4. safety review (包含 200 Sober Check 拦截标注与 `presentation_mode` 派生)
 5. structured response validate
 
 ### Provider 层
@@ -108,11 +108,12 @@
 1. 用户输入问题并完成抽牌
 2. 前端仅提交 `question + spreadId + drawnCards[{positionId, cardId, isReversed}]`
 3. Route 进行基础 schema 校验
-4. Service 从 `domain-tarot` 还原权威 `Spread` / `TarotCard`
-5. Provider 生成结构化 reading draft
-6. Safety review 根据风险类别补 `safety_note` 或收敛 guidance
-7. 结果通过统一 schema 校验后返回前端
-8. 前端按结构化字段渲染，并写入 localStorage history
+4. Service 层 (`safety.ts`) 执行意图检测。若遇生死危机，抛出 403 Hard Stop 并直接断开链路返回；若遇重大决策依赖，记录降级状态。
+5. Service 从 `domain-tarot` 还原权威 `Spread` / `TarotCard`
+6. Provider 生成结构化 reading draft，应用降级状态生成 `sober_check`，并根据语义赋予 `presentation_mode`
+7. Safety review 补充常规 `safety_note`
+8. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
+9. 前端 (`ReadingContext`) 解析返回值，对 403 部署转介屏障；对带有 `sober_check` 的反馈激活“现实校验”交互摩擦；依据 `presentation_mode` 渲染不同版式，最后写入 localStorage history
 
 ---
 
