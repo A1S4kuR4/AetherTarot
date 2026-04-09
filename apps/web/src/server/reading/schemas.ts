@@ -62,4 +62,6 @@ export const structuredReadingSchema = z.object({
   safety_note: z.string().min(1).nullable(),
   confidence_note: z.string().min(1).nullable(),
   session_capsule: z.string().min(1).nullable(),
+  sober_check: z.string().min(1).nullable().optional(),
+  presentation_mode: z.enum(["standard", "void_narrative", "sober_anchor"]).optional(),
 });

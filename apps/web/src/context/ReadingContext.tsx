@@ -26,7 +26,9 @@ type ReadingContextValue = {
   drawnCards: DrawnCard[];
   reading: StructuredReading | null;
   errorMessage: string | null;
+  safetyIntercept: { reason: string; referral_links?: string[] } | null;
   isLoading: boolean;
+  isHydrated: boolean;
   history: ReadingHistoryEntry[];
   setQuestion: (question: string) => void;
   setSelectedSpread: (spread: Spread | null) => void;
@@ -76,7 +78,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState<StructuredReading | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [safetyIntercept, setSafetyIntercept] = useState<{ reason: string; referral_links?: string[] } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
   const interpretInFlightRef = useRef(false);
 
@@ -84,6 +88,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
 
     if (!savedHistory) {
+      setIsHydrated(true);
       return;
     }
 
@@ -91,6 +96,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
     } catch {
       localStorage.removeItem(HISTORY_STORAGE_KEY);
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
 
@@ -99,6 +106,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
   };
 
@@ -107,6 +115,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
   };
 
@@ -118,6 +127,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
     return true;
   };
@@ -126,6 +136,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards(cards);
     setReading(null);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
   };
 
@@ -142,6 +153,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretInFlightRef.current = true;
     setIsLoading(true);
     setErrorMessage(null);
+    setSafetyIntercept(null);
 
     try {
       const requestDrawnCards = toRequestDrawnCards(drawnCards);
@@ -160,6 +172,14 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
 
       if (!response.ok) {
+        if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
+          setSafetyIntercept({
+            reason: payload.error.intercept_reason ?? payload.error.message,
+            referral_links: payload.error.referral_links,
+          });
+          return false;
+        }
+
         throw new Error(
           getErrorMessage(payload) ?? "连接星辰时发生了偏移，请稍后再试。",
         );
@@ -222,6 +242,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards(reconstructedCards);
     setReading(historyEntry.reading);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
   };
 
@@ -231,6 +252,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
+    setSafetyIntercept(null);
     setIsLoading(false);
   };
 
@@ -252,7 +274,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         drawnCards,
         reading,
         errorMessage,
+        safetyIntercept,
         isLoading,
+        isHydrated,
         history,
         setQuestion,
         setSelectedSpread,

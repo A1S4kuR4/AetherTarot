@@ -56,7 +56,9 @@
   "follow_up_questions": ["string"],
   "safety_note": "string | null",
   "confidence_note": "string | null",
-  "session_capsule": null
+  "session_capsule": null,
+  "sober_check": "string | null",
+  "presentation_mode": "standard | void_narrative | sober_anchor"
 }
 ```
 
@@ -94,11 +96,19 @@
 
 ### `safety_note`
 
-当问题涉及危机、健康、法律、财务或关系操控等边界时返回。
+当问题涉及常规安全边界时返回，通常作为后置补充说明。
 
 ### `confidence_note`
 
 用于表达不确定性与解释范围，不应伪装成绝对结论。
+
+### `sober_check`
+
+用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
+
+### `presentation_mode`
+
+呈现模式信标（`standard` | `void_narrative` | `sober_anchor`）。它是正式协议的一部分，将被记录与回放。前端根据该信标调取不同的视觉布局范式，在形式与留白上配合语义张力，绝不仅是虚假的前置 UI Hint。
 
 ---
 
