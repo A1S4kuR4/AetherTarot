@@ -9,20 +9,18 @@ import { CARD_BACK_IMAGE } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
+function shuffleDeck() {
+  return [...getAllCards()].sort(() => Math.random() - 0.5);
+}
+
 export default function RitualView() {
   const router = useRouter();
   const { question, selectedSpread, completeRitual } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [deck, setDeck] = useState<TarotCard[]>([]);
+  const [deck, setDeck] = useState<TarotCard[]>(() => shuffleDeck());
   const drawnCardsRef = useRef<DrawnCard[]>([]);
-  const deckRef = useRef<TarotCard[]>([]);
-
-  useEffect(() => {
-    const shuffledDeck = [...getAllCards()].sort(() => Math.random() - 0.5);
-    setDeck(shuffledDeck);
-    deckRef.current = shuffledDeck;
-  }, []);
+  const deckRef = useRef<TarotCard[]>(deck);
 
   useEffect(() => {
     drawnCardsRef.current = drawnCards;
@@ -49,8 +47,8 @@ export default function RitualView() {
     setIsShuffling(true);
 
     window.setTimeout(() => {
-      setDeck((currentDeck) => {
-        const nextDeck = [...currentDeck].sort(() => Math.random() - 0.5);
+      setDeck(() => {
+        const nextDeck = shuffleDeck();
         deckRef.current = nextDeck;
         return nextDeck;
       });
@@ -103,10 +101,8 @@ export default function RitualView() {
 
   return (
     <section className="relative flex min-h-screen flex-col items-center px-6 py-20">
-      {/* Step Header */}
       <div className="relative z-10 mb-10 flex w-full max-w-3xl flex-col items-center text-center">
-        {/* Step indicator pill */}
-        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 border border-midnight-border bg-midnight-panel">
+        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
           <span
             className={cn(
               "h-1.5 w-1.5 rounded-full",
@@ -121,17 +117,14 @@ export default function RitualView() {
         <h1 className="mb-3 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
           仪式
         </h1>
-        <p className="max-w-md text-sm text-text-inverse-muted leading-relaxed">
+        <p className="max-w-md text-sm leading-relaxed text-text-inverse-muted">
           静下心来，专注于你的问题，感受卡牌中的能量。
         </p>
       </div>
 
-      {/* Drawn Card Slots */}
       <div className="relative z-10 mb-14 flex flex-wrap items-end justify-center gap-6 md:gap-10">
         {selectedSpread.positions.map((position) => {
-          const drawn = drawnCards.find(
-            (card) => card.positionId === position.id,
-          );
+          const drawn = drawnCards.find((card) => card.positionId === position.id);
 
           return (
             <div key={position.id} className="flex flex-col items-center gap-3">
@@ -169,7 +162,6 @@ export default function RitualView() {
         })}
       </div>
 
-      {/* Action Buttons */}
       <div className="relative z-50 mb-12 flex flex-wrap justify-center gap-4">
         <button
           type="button"
@@ -198,7 +190,6 @@ export default function RitualView() {
         </button>
       </div>
 
-      {/* Card Orbit Ring */}
       <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[450px]">
         {Array.from({ length: 22 }).map((_, index) => {
           const baseAngle = (index / 22) * 360;
@@ -220,7 +211,7 @@ export default function RitualView() {
                   ? { duration: 12, repeat: Infinity, ease: "linear" }
                   : { duration: 0.8, type: "spring" },
               }}
-              className="absolute h-36 w-[90px] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:h-48 md:w-[120px] will-change-transform"
+              className="absolute h-36 w-[90px] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:h-48 md:w-[120px]"
               style={{
                 transformOrigin: "center 220px",
                 transform: `rotate(${baseAngle}deg)`,
@@ -236,7 +227,7 @@ export default function RitualView() {
                   alt="Tarot Back"
                   className={cn(
                     "h-full w-full object-cover opacity-70 transition-opacity duration-300",
-                    isShuffling ? "opacity-90" : "hover:opacity-100"
+                    isShuffling ? "opacity-90" : "hover:opacity-100",
                   )}
                   referrerPolicy="no-referrer"
                 />
@@ -246,8 +237,7 @@ export default function RitualView() {
         })}
       </div>
 
-      {/* Insight panel */}
-      <div className="relative z-10 mt-16 mx-auto w-full max-w-md">
+      <div className="relative z-10 mx-auto mt-16 w-full max-w-md">
         <div className="midnight-panel text-center">
           <p className="text-sm leading-relaxed text-text-inverse-muted">
             你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。
