@@ -42,3 +42,15 @@ next-env.d.ts
 # Prototype dependencies (keep prototype source, ignore deps)
 prototype/node_modules/
 prototype/dist/
+
+# Personal workspace metadata
+.obsidian/
+
+# Local scratch docs
+DESIGN.txt
+DESIGN_2.txt
+
+# Personal rolling notes
+memory/work-log-*.md
+memory/*-health-report-*.md
+memory/knowledge-ingest-backlog.md
