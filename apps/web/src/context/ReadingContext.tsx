@@ -35,6 +35,7 @@ type ReadingContextValue = {
   interpretReading: () => Promise<boolean>;
   selectHistoryReading: (reading: ReadingHistoryEntry) => void;
   resetReading: () => void;
+  updateHistoryNotes: (id: string, notes: string) => void;
 };
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
@@ -233,6 +234,16 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
+  const updateHistoryNotes = (id: string, notes: string) => {
+    setHistory((currentHistory) => {
+      const nextHistory = currentHistory.map((entry) => 
+        entry.id === id ? { ...entry, user_notes: notes } : entry
+      );
+      serializeHistory(nextHistory);
+      return nextHistory;
+    });
+  };
+
   return (
     <ReadingContext.Provider
       value={{
@@ -250,6 +261,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         interpretReading,
         selectHistoryReading,
         resetReading,
+        updateHistoryNotes,
       }}
     >
       {children}

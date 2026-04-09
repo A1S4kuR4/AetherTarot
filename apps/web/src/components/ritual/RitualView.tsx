@@ -198,40 +198,52 @@ export default function RitualView() {
         </button>
       </div>
 
-      {/* Card Fan */}
-      <div className="relative flex h-[260px] w-full max-w-4xl items-center justify-center md:h-[300px]">
-        {Array.from({ length: 15 }).map((_, index) => (
-          <motion.button
-            key={index}
-            type="button"
-            aria-label="从牌堆抽牌"
-            animate={
-              isShuffling
-                ? {
-                    x: [0, (index - 7) * 20, 0],
-                    rotate: [index * 5 - 35, 0, index * 5 - 35],
-                  }
-                : {}
-            }
-            transition={{ duration: 0.5, repeat: isShuffling ? Infinity : 0 }}
-            className="absolute h-48 w-[120px] cursor-pointer rounded-2xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:h-56 md:w-[140px]"
-            style={{
-              transform: `rotate(${(index - 7) * 5}deg) translateX(${(index - 7) * 28}px)`,
-              zIndex: 10 + index,
-            }}
-            onClick={handleDraw}
-            disabled={!canDraw}
-          >
-            <div className="h-full w-full overflow-hidden rounded-xl border border-midnight-border-subtle bg-midnight-elevated">
-              <img
-                src={CARD_BACK_IMAGE}
-                alt="Tarot Back"
-                className="h-full w-full object-cover opacity-70"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          </motion.button>
-        ))}
+      {/* Card Orbit Ring */}
+      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[450px]">
+        {Array.from({ length: 22 }).map((_, index) => {
+          const baseAngle = (index / 22) * 360;
+          return (
+            <motion.button
+              key={index}
+              type="button"
+              aria-label="从牌堆抽牌"
+              initial={{ rotate: baseAngle }}
+              animate={
+                isShuffling
+                  ? {
+                      rotate: [baseAngle, baseAngle + 360],
+                    }
+                  : { rotate: baseAngle }
+              }
+              transition={{
+                rotate: isShuffling
+                  ? { duration: 12, repeat: Infinity, ease: "linear" }
+                  : { duration: 0.8, type: "spring" },
+              }}
+              className="absolute h-36 w-[90px] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:h-48 md:w-[120px] will-change-transform"
+              style={{
+                transformOrigin: "center 220px",
+                transform: `rotate(${baseAngle}deg)`,
+                top: "10px",
+                zIndex: isShuffling ? 10 : 10 + index,
+              }}
+              onClick={handleDraw}
+              disabled={!canDraw}
+            >
+              <div className="h-full w-full overflow-hidden rounded-lg border border-midnight-border-subtle bg-midnight-elevated">
+                <img
+                  src={CARD_BACK_IMAGE}
+                  alt="Tarot Back"
+                  className={cn(
+                    "h-full w-full object-cover opacity-70 transition-opacity duration-300",
+                    isShuffling ? "opacity-90" : "hover:opacity-100"
+                  )}
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Insight panel */}
