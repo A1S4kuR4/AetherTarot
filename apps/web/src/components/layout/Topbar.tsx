@@ -4,56 +4,80 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const secondaryNav = [
-  { href: "/history", label: "History" },
-  { href: "/encyclopedia", label: "Encyclopedia" },
+const navItems = [
+  { href: "/", label: "首页", englishLabel: "Home" },
+  { href: "/history", label: "历史", englishLabel: "History" },
+  { href: "/encyclopedia", label: "百科", englishLabel: "Encyclopedia" },
 ] as const;
 
-export default function Topbar() {
+export default function Topbar({ isMidnight = false }: { isMidnight?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed top-0 z-50 flex h-20 w-full items-center justify-between bg-background/60 px-6 shadow-[0_4px_30px_rgba(228,225,237,0.06)] backdrop-blur-xl md:px-8">
+    <nav
+      className={cn(
+        "fixed top-0 z-50 flex h-16 w-full items-center justify-between px-6 transition-colors duration-300 md:px-10",
+        isMidnight
+          ? "bg-night/80 backdrop-blur-md border-b border-midnight-border"
+          : "bg-paper/80 backdrop-blur-md border-b border-paper-border",
+      )}
+    >
+      {/* Logo */}
       <Link
         href="/"
-        className="font-serif text-2xl italic text-primary drop-shadow-[0_0_8px_rgba(203,190,255,0.4)]"
+        className={cn(
+          "font-serif text-xl font-semibold tracking-tight transition-colors",
+          isMidnight ? "text-text-inverse" : "text-ink",
+        )}
       >
-        AetherTarot
+        灵语塔罗
       </Link>
 
-      <div className="hidden items-center gap-8 font-label tracking-wide md:flex">
-        {secondaryNav.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "transition-colors duration-500",
-              pathname === item.href
-                ? "text-secondary-fixed"
-                : "text-on-surface-variant hover:text-primary",
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
+      {/* Desktop Navigation */}
+      <div className="hidden items-center gap-8 md:flex">
+        {navItems.map((item) => {
+          const isActive = item.href === "/"
+            ? pathname === "/"
+            : pathname.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "font-sans text-[13px] font-medium tracking-wide transition-colors duration-200",
+                isActive
+                  ? isMidnight
+                    ? "text-text-inverse"
+                    : "text-terracotta"
+                  : isMidnight
+                    ? "text-text-inverse-muted hover:text-text-inverse"
+                    : "text-text-muted hover:text-text-strong",
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
 
-      <div className="flex items-center gap-4">
-        <Link
-          href="/history"
-          className="rounded-full p-2 transition-all duration-300 hover:bg-surface-container-highest/40 md:hidden"
-        >
-          <span className="material-symbols-outlined text-primary">history</span>
-        </Link>
-        <button
-          type="button"
-          className="rounded-full p-2 transition-all duration-300 hover:bg-surface-container-highest/40"
-        >
-          <span className="material-symbols-outlined text-primary">
-            account_circle
-          </span>
-        </button>
-      </div>
+      {/* Mobile menu button */}
+      <button
+        type="button"
+        className={cn(
+          "rounded-xl p-2 transition-colors md:hidden",
+          isMidnight
+            ? "text-text-inverse hover:bg-midnight-elevated"
+            : "text-text-muted hover:bg-paper-muted",
+        )}
+        aria-label="打开菜单"
+        onClick={() => {
+          const sidebar = document.getElementById("mobile-sidebar");
+          sidebar?.classList.toggle("translate-x-full");
+        }}
+      >
+        <span className="material-symbols-outlined text-xl">menu</span>
+      </button>
     </nav>
   );
 }

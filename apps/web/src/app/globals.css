@@ -1,86 +1,239 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&family=Manrope:wght@300;500;700&display=swap');
+/* ============================================================
+   AetherTarot — Design Token System
+   Based on DESIGN.md (Paper/Midnight Dual-Surface)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import "tailwindcss";
 
+/* ---- Tailwind v4 @theme: Design Tokens ---- */
 @theme {
-  --font-serif: "Noto Serif SC", serif;
-  --font-sans: "Inter", sans-serif;
-  --font-label: "Manrope", sans-serif;
+  /* Typography */
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Fraunces", "Songti SC", ui-serif, serif;
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "Berkeley Mono", "SFMono-Regular", "JetBrains Mono", ui-monospace, monospace;
 
-  --color-background: #13131b;
-  --color-on-background: #e4e1ed;
-  --color-primary: #cbbeff;
-  --color-primary-container: #140049;
-  --color-on-primary: #330b91;
-  --color-secondary: #fff9ef;
-  --color-secondary-fixed: #ffe16d;
-  --color-secondary-fixed-dim: #e9c400;
-  --color-tertiary: #ddb7ff;
-  --color-on-surface: #e4e1ed;
-  --color-on-surface-variant: #c9c5cd;
-  --color-surface-container-lowest: #0d0d16;
-  --color-surface-container-low: #1b1b23;
-  --color-surface-container: #1f1f27;
-  --color-surface-container-high: #292932;
-  --color-surface-container-highest: #34343d;
-  --color-outline-variant: #47464d;
-  --color-surface-variant: #2a2a33;
+  /* ---- Paper Mode (Light / Default) ---- */
+  --color-ink: #181713;
+  --color-paper: #F5F2E8;
+  --color-paper-raised: #FBF8F1;
+  --color-paper-muted: #ECE7DB;
+  --color-paper-border: #E6E0D4;
+
+  /* Brand Accents */
+  --color-terracotta: #C96442;
+  --color-terracotta-hover: #B4572F;
+  --color-indigo: #7170FF;
+  --color-indigo-muted: rgba(113, 112, 255, 0.16);
+
+  /* Text — Light */
+  --color-text-strong: #181713;
+  --color-text-body: #35322C;
+  --color-text-muted: #6E685D;
+  --color-text-placeholder: #8A8377;
+  --color-text-accent: #A24E33;
+
+  /* Semantic */
+  --color-success: #58734F;
+  --color-warning: #A36A1F;
+  --color-safety: #B86A5B;
+  --color-safety-bg: #FDF0ED;
+  --color-error: #B4432C;
+  --color-info: #DCE3F7;
+
+  /* ---- Midnight Mode (Dark / Ritual) ---- */
+  --color-night: #0B0D12;
+  --color-midnight-panel: #12151D;
+  --color-midnight-elevated: #1A1E28;
+  --color-midnight-border: rgba(255, 255, 255, 0.08);
+  --color-midnight-border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Text — Dark */
+  --color-text-inverse: #F4F6F8;
+  --color-text-inverse-muted: #A7AFBC;
+
+  /* Focus */
+  --color-focus-halo: rgba(113, 112, 255, 0.28);
 }
 
+/* ============================================================
+   Base Layer
+   ============================================================ */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-background text-on-background font-sans selection:bg-primary/30;
+    @apply bg-paper text-text-body font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: rgba(201, 100, 66, 0.18);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-halo);
+    outline-offset: 2px;
   }
 }
 
+/* ============================================================
+   Component Layer — Surface Modes
+   ============================================================ */
 @layer components {
-  .glass-panel {
-    @apply bg-surface-container-highest/40 backdrop-blur-xl;
+  /* ---- Paper Surface (default for reading pages) ---- */
+  .paper-surface {
+    @apply bg-paper text-text-body;
   }
 
-  .celestial-bg {
-    background: radial-gradient(circle at 50% 50%, #1f1f27 0%, #13131b 100%);
-    position: relative;
-    overflow: hidden;
+  /* ---- Midnight Surface (ritual/reveal pages) ---- */
+  .midnight-surface {
+    background-color: var(--color-night);
+    color: var(--color-text-inverse);
   }
 
-  .celestial-bg::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDAUIsVYCxz9fc3Q7nADGbASgEQK4eln5Zxgu3X3oyOhWkZrxOLbyRHY1jJM1KZR_vBFj-uyJNCEgUemaPBY5ox7kCSXKxicARVm3TDPuRq2SmbCfSY9e3dyrbPa-pBfSiu2LmJr5iW2EpGZ_zrOaSVkw5G5picnSa24C3jHy_ZfdW1xDlv_TfAeA1hnAGF71G1XzRe2jCMzRlsqXOJchkBiN8e7HhBZr8y3X1Poapv1WdYMWtOw4_n_KXfyGF4d3BuzqXmnxJNMHFA);
-    @apply opacity-30 pointer-events-none;
+  /* ---- Buttons ---- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-terracotta text-white
+           px-5 py-3 rounded-xl
+           font-sans text-sm font-medium tracking-wide
+           transition-all duration-200
+           hover:bg-terracotta-hover hover:shadow-lg
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-paper-raised text-ink
+           border border-paper-border
+           px-5 py-3 rounded-xl
+           font-sans text-sm font-medium tracking-wide
+           transition-all duration-200
+           hover:bg-paper-muted
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary-dark {
+    @apply inline-flex items-center justify-center gap-2
+           bg-midnight-panel text-text-inverse
+           border border-midnight-border
+           px-5 py-3 rounded-xl
+           font-sans text-sm font-medium tracking-wide
+           transition-all duration-200
+           hover:bg-midnight-elevated
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-text-muted
+           px-4 py-2.5 rounded-xl
+           font-sans text-sm font-medium
+           transition-all duration-200
+           hover:bg-paper-muted hover:text-text-body
+           active:scale-[0.98];
+  }
+
+  .btn-ritual {
+    @apply inline-flex items-center justify-center gap-2
+           text-text-inverse
+           px-6 py-3.5 rounded-[14px]
+           font-sans text-sm font-medium tracking-wide
+           transition-all duration-200
+           hover:shadow-lg
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(180deg, rgba(113,112,255,0.16), rgba(113,112,255,0.10));
+    border: 1px solid rgba(113,112,255,0.28);
+  }
+
+  /* ---- Cards & Containers ---- */
+  .reading-card {
+    @apply bg-paper-raised border border-paper-border rounded-[20px] p-6;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.03),
+      0 2px 6px rgba(24,23,19,0.04);
+  }
+
+  .midnight-panel {
+    @apply rounded-[18px] p-6;
+    background: var(--color-midnight-panel);
+    border: 1px solid var(--color-midnight-border);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  }
+
+  /* ---- Safety Note ---- */
+  .safety-note {
+    @apply rounded-[20px] p-6;
+    background: var(--color-safety-bg);
+    border: 1px solid rgba(184, 106, 91, 0.25);
+  }
+
+  .safety-note h3,
+  .safety-note h2 {
+    @apply font-sans font-semibold text-safety;
+  }
+
+  /* ---- Chips & Badges ---- */
+  .chip-warm {
+    @apply inline-flex items-center
+           px-3 py-1 rounded-full
+           text-xs font-medium tracking-wide
+           bg-paper-muted text-text-body;
+  }
+
+  .chip-accent {
+    @apply inline-flex items-center
+           px-3 py-1 rounded-full
+           text-xs font-medium tracking-wide
+           bg-terracotta/10 text-text-accent;
+  }
+
+  .chip-dark {
+    @apply inline-flex items-center
+           px-3 py-1 rounded-full
+           text-xs font-medium tracking-wide
+           text-text-inverse-muted;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--color-midnight-border-subtle);
+  }
+
+  /* ---- Markdown Body ---- */
   .markdown-body h1 {
-    @apply font-serif text-3xl text-secondary mb-6 mt-8;
+    @apply font-serif text-3xl text-ink mb-6 mt-8;
   }
   .markdown-body h2 {
-    @apply font-serif text-2xl text-primary mb-4 mt-6;
+    @apply font-serif text-2xl text-text-accent mb-4 mt-6;
   }
   .markdown-body h3 {
-    @apply font-serif text-xl text-secondary-fixed mb-3 mt-5;
+    @apply font-serif text-xl text-text-strong mb-3 mt-5;
   }
   .markdown-body p {
-    @apply text-on-surface-variant leading-relaxed mb-4;
+    @apply text-text-body leading-relaxed mb-4;
   }
   .markdown-body ul,
   .markdown-body ol {
-    @apply text-on-surface-variant leading-relaxed mb-4 pl-6;
+    @apply text-text-body leading-relaxed mb-4 pl-6;
   }
   .markdown-body li {
     @apply mb-2;
   }
   .markdown-body strong {
-    @apply text-on-surface font-semibold;
+    @apply text-ink font-semibold;
   }
   .markdown-body em {
-    @apply text-primary/80;
+    @apply text-text-accent;
   }
   .markdown-body blockquote {
-    @apply border-l-2 border-primary/30 pl-4 italic text-on-surface-variant/80 my-4;
+    @apply border-l-2 border-terracotta/30 pl-4 italic text-text-muted my-4;
   }
 }

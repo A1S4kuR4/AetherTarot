@@ -102,141 +102,145 @@ export default function RitualView() {
   };
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center px-6 py-12">
-      <div className="relative z-10 mb-12 flex w-full max-w-6xl flex-col items-center text-center">
-        <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-outline-variant/20 bg-surface-container-low px-4 py-1.5">
-          <span className="h-2 w-2 rounded-full bg-secondary-fixed shadow-[0_0_8px_#ffe16d]" />
-          <span className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface-variant">
-            Active Ritual
+    <section className="relative flex min-h-screen flex-col items-center px-6 py-20">
+      {/* Step Header */}
+      <div className="relative z-10 mb-10 flex w-full max-w-3xl flex-col items-center text-center">
+        {/* Step indicator pill */}
+        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 border border-midnight-border bg-midnight-panel">
+          <span
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              isComplete ? "bg-success" : "bg-indigo",
+            )}
+          />
+          <span className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-inverse-muted">
+            {drawnCards.length} / {selectedSpread.positions.length} 张牌
           </span>
         </div>
-        <h1 className="mb-4 font-serif text-4xl text-secondary md:text-6xl">
-          洗牌与抽牌 (The Ritual)
+
+        <h1 className="mb-3 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
+          仪式
         </h1>
-        <p className="max-w-xl text-lg italic text-on-surface-variant opacity-80">
+        <p className="max-w-md text-sm text-text-inverse-muted leading-relaxed">
           静下心来，专注于你的问题，感受卡牌中的能量。
         </p>
       </div>
 
-      <div className="relative z-10 flex w-full flex-grow flex-col items-center justify-start pb-32">
-        <div className="mt-8 mb-16 flex flex-wrap items-end justify-center gap-8 md:gap-16">
-          {selectedSpread.positions.map((position) => {
-            const drawn = drawnCards.find(
-              (card) => card.positionId === position.id,
-            );
+      {/* Drawn Card Slots */}
+      <div className="relative z-10 mb-14 flex flex-wrap items-end justify-center gap-6 md:gap-10">
+        {selectedSpread.positions.map((position) => {
+          const drawn = drawnCards.find(
+            (card) => card.positionId === position.id,
+          );
 
-            return (
-              <div key={position.id} className="flex flex-col items-center gap-4">
-                <div
-                  className={cn(
-                    "relative flex h-40 w-24 items-center justify-center overflow-hidden rounded-xl border bg-surface-container-lowest transition-all duration-500 md:h-52 md:w-32",
-                    drawn
-                      ? "border-primary shadow-[0_0_20px_rgba(203,190,255,0.2)]"
-                      : "border-dashed border-outline-variant/40",
-                  )}
-                >
-                  {drawn ? (
-                    <img
-                      src={CARD_BACK_IMAGE}
-                      alt="Tarot Back"
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <span className="font-label text-[10px] uppercase tracking-tighter text-outline-variant opacity-40">
-                      {position.name}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    "font-label text-[10px] uppercase tracking-[0.2em]",
-                    drawn ? "text-secondary-fixed" : "text-on-surface-variant/60",
-                  )}
-                >
-                  {position.name}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="relative flex h-[300px] w-full max-w-5xl items-center justify-center">
-          <div className="absolute top-[-60px] z-50 flex flex-wrap justify-center gap-4">
-            <button
-              type="button"
-              onClick={handleShuffle}
-              disabled={isShuffling || isComplete}
-              className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-primary to-primary-container px-10 py-4 font-label text-sm font-bold uppercase tracking-[0.15em] text-on-primary shadow-lg transition-all duration-500 hover:scale-105 disabled:opacity-50"
-            >
-              <span
+          return (
+            <div key={position.id} className="flex flex-col items-center gap-3">
+              <div
                 className={cn(
-                  "material-symbols-outlined",
-                  isShuffling && "animate-spin",
+                  "relative flex h-36 w-[90px] items-center justify-center overflow-hidden rounded-2xl border transition-all duration-300 md:h-48 md:w-[120px]",
+                  drawn
+                    ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
+                    : "border-dashed border-midnight-border",
                 )}
               >
-                refresh
-              </span>
-              <span>Shuffle Deck</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDraw}
-              disabled={!canDraw}
-              className="group relative flex items-center gap-3 rounded-full border border-secondary-fixed/30 bg-surface-container-high px-10 py-4 font-label text-sm font-bold uppercase tracking-[0.15em] text-secondary-fixed shadow-lg transition-all duration-500 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined">style</span>
-              <span>抽取一张牌</span>
-            </button>
-          </div>
-
-          <div className="relative flex h-full w-full items-center justify-center">
-            {Array.from({ length: 15 }).map((_, index) => (
-              <motion.button
-                key={index}
-                type="button"
-                aria-label="从牌堆抽牌"
-                animate={
-                  isShuffling
-                    ? {
-                        x: [0, (index - 7) * 20, 0],
-                        rotate: [index * 5 - 35, 0, index * 5 - 35],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.5, repeat: isShuffling ? Infinity : 0 }}
-                className="absolute h-52 w-32 cursor-pointer rounded-xl border border-outline-variant/30 bg-surface-container p-1.5 shadow-2xl md:h-64 md:w-40"
-                style={{
-                  transform: `rotate(${(index - 7) * 5}deg) translateX(${(index - 7) * 30}px)`,
-                  zIndex: 10 + index,
-                }}
-                onClick={handleDraw}
-                disabled={!canDraw}
-              >
-                <div className="h-full w-full overflow-hidden rounded-lg border border-primary/20 bg-surface-container-lowest">
+                {drawn ? (
                   <img
                     src={CARD_BACK_IMAGE}
                     alt="Tarot Back"
-                    className="h-full w-full object-cover opacity-80"
+                    className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                </div>
-              </motion.button>
-            ))}
-          </div>
-        </div>
+                ) : (
+                  <span className="font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
+                    {position.name}
+                  </span>
+                )}
+              </div>
+              <span
+                className={cn(
+                  "font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
+                  drawn ? "text-indigo" : "text-text-inverse-muted/50",
+                )}
+              >
+                {position.name}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
-        <div className="mt-24 mx-auto w-full max-w-lg">
-          <div className="glass-panel rounded-xl border-t-2 border-secondary-fixed/40 p-8 text-center">
-            <h3 className="mb-2 font-serif text-xl text-secondary">
-              Aether Insight
-            </h3>
-            <p className="text-sm leading-relaxed italic text-on-surface-variant">
-              灵性已与你的提问对齐。你已选择 {drawnCards.length} /{" "}
-              {selectedSpread.positions.length} 张牌。{selectedSpread.name}
-              将揭示你的问题在过去、当下与潜在线索中的走向。
-            </p>
-          </div>
+      {/* Action Buttons */}
+      <div className="relative z-50 mb-12 flex flex-wrap justify-center gap-4">
+        <button
+          type="button"
+          onClick={handleShuffle}
+          disabled={isShuffling || isComplete}
+          className="btn-ritual"
+        >
+          <span
+            className={cn(
+              "material-symbols-outlined text-lg",
+              isShuffling && "animate-spin",
+            )}
+          >
+            refresh
+          </span>
+          <span>洗牌</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleDraw}
+          disabled={!canDraw}
+          className="btn-secondary-dark"
+        >
+          <span className="material-symbols-outlined text-lg">style</span>
+          <span>抽取一张牌</span>
+        </button>
+      </div>
+
+      {/* Card Fan */}
+      <div className="relative flex h-[260px] w-full max-w-4xl items-center justify-center md:h-[300px]">
+        {Array.from({ length: 15 }).map((_, index) => (
+          <motion.button
+            key={index}
+            type="button"
+            aria-label="从牌堆抽牌"
+            animate={
+              isShuffling
+                ? {
+                    x: [0, (index - 7) * 20, 0],
+                    rotate: [index * 5 - 35, 0, index * 5 - 35],
+                  }
+                : {}
+            }
+            transition={{ duration: 0.5, repeat: isShuffling ? Infinity : 0 }}
+            className="absolute h-48 w-[120px] cursor-pointer rounded-2xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] md:h-56 md:w-[140px]"
+            style={{
+              transform: `rotate(${(index - 7) * 5}deg) translateX(${(index - 7) * 28}px)`,
+              zIndex: 10 + index,
+            }}
+            onClick={handleDraw}
+            disabled={!canDraw}
+          >
+            <div className="h-full w-full overflow-hidden rounded-xl border border-midnight-border-subtle bg-midnight-elevated">
+              <img
+                src={CARD_BACK_IMAGE}
+                alt="Tarot Back"
+                className="h-full w-full object-cover opacity-70"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Insight panel */}
+      <div className="relative z-10 mt-16 mx-auto w-full max-w-md">
+        <div className="midnight-panel text-center">
+          <p className="text-sm leading-relaxed text-text-inverse-muted">
+            你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。
+            {selectedSpread.name} 将揭示你的问题在不同维度中的走向。
+          </p>
         </div>
       </div>
     </section>

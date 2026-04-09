@@ -11,25 +11,28 @@ export default function EncyclopediaView() {
   const [selectedCard, setSelectedCard] = useState<TarotCard>(tarotCards[0]);
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 p-8 lg:flex-row lg:p-12">
-      <div className="w-full space-y-8 lg:w-1/3">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16 lg:flex-row lg:px-8">
+      {/* Card Grid */}
+      <div className="w-full space-y-6 lg:w-1/3">
         <header>
-          <h1 className="mb-2 font-serif text-4xl text-secondary">塔罗百科</h1>
-          <p className="text-sm uppercase tracking-widest text-on-surface-variant opacity-80">
-            Tarot Encyclopedia
+          <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
+            塔罗百科
+          </h1>
+          <p className="font-sans text-sm text-text-muted">
+            探索 78 张塔罗牌的象征与含义
           </p>
         </header>
 
-        <div className="grid max-h-[60vh] grid-cols-4 gap-3 overflow-y-auto pr-4 md:grid-cols-6 lg:grid-cols-4">
+        <div className="grid max-h-[60vh] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:grid-cols-4">
           {tarotCards.map((card) => (
             <button
               key={card.id}
               type="button"
               onClick={() => setSelectedCard(card)}
               className={cn(
-                "aspect-[2/3] cursor-pointer overflow-hidden rounded-lg border-2 transition-all duration-300",
+                "aspect-[2/3] cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200",
                 selectedCard.id === card.id
-                  ? "scale-105 border-secondary-fixed shadow-lg shadow-secondary-fixed/20"
+                  ? "scale-[1.04] border-terracotta shadow-sm"
                   : "border-transparent opacity-60 hover:opacity-100",
               )}
             >
@@ -44,70 +47,74 @@ export default function EncyclopediaView() {
         </div>
       </div>
 
-      <div className="glass-panel flex-1 rounded-3xl border border-outline-variant/10 p-8 md:p-12">
-        <div className="flex flex-col gap-12 md:flex-row">
-          <div className="w-full md:w-1/2">
-            <div className="relative aspect-[2/3.5] overflow-hidden rounded-2xl border border-secondary-fixed/20 shadow-2xl">
+      {/* Card Detail */}
+      <div className="flex-1 rounded-3xl border border-paper-border bg-paper-raised p-8 md:p-10">
+        <div className="flex flex-col gap-10 md:flex-row">
+          {/* Card Image */}
+          <div className="w-full md:w-5/12">
+            <div className="relative aspect-[2/3.4] overflow-hidden rounded-2xl border border-paper-border shadow-sm">
               <img
                 src={selectedCard.imageUrl}
                 alt={selectedCard.name}
                 className="h-full w-full object-cover"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
             </div>
           </div>
 
-          <div className="flex-1 space-y-8">
+          {/* Card Info */}
+          <div className="flex-1 space-y-7">
             <div>
-              <span className="font-label text-xs uppercase tracking-widest text-secondary-fixed/60">
-                {selectedCard.arcana} • {selectedCard.element}
+              <span className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+                {selectedCard.arcana} · {selectedCard.element}
               </span>
-              <h2 className="mt-2 font-serif text-5xl text-secondary">
+              <h2 className="mt-1.5 font-serif text-4xl text-ink">
                 {selectedCard.name}
               </h2>
-              <p className="font-serif text-xl italic text-primary/60">
+              <p className="font-serif text-lg text-text-accent">
                 {selectedCard.englishName}
               </p>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="font-label text-xs uppercase tracking-widest text-on-surface-variant">
-                Description
+            {/* Description */}
+            <div className="space-y-2">
+              <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+                描述
               </h4>
-              <p className="leading-relaxed text-on-surface-variant">
+              <p className="text-base leading-[1.8] text-text-body">
                 {selectedCard.description}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <h4 className="font-label text-xs uppercase tracking-widest text-secondary-fixed">
-                  Upright Keywords
+            {/* Keywords Grid */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2.5">
+                <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-terracotta">
+                  正位关键词
                 </h4>
-                <ul className="space-y-1">
+                <ul className="space-y-1.5">
                   {selectedCard.uprightKeywords.map((keyword) => (
                     <li
                       key={keyword}
-                      className="flex items-center gap-2 text-sm text-on-surface"
+                      className="flex items-center gap-2 text-sm text-text-body"
                     >
-                      <span className="h-1 w-1 rounded-full bg-secondary-fixed" />
+                      <span className="h-1 w-1 rounded-full bg-terracotta/50" />
                       {keyword}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="space-y-3">
-                <h4 className="font-label text-xs uppercase tracking-widest text-primary">
-                  Reversed Keywords
+              <div className="space-y-2.5">
+                <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-accent">
+                  逆位关键词
                 </h4>
-                <ul className="space-y-1">
+                <ul className="space-y-1.5">
                   {selectedCard.reversedKeywords.map((keyword) => (
                     <li
                       key={keyword}
-                      className="flex items-center gap-2 text-sm text-on-surface"
+                      className="flex items-center gap-2 text-sm text-text-body"
                     >
-                      <span className="h-1 w-1 rounded-full bg-primary" />
+                      <span className="h-1 w-1 rounded-full bg-text-accent/50" />
                       {keyword}
                     </li>
                   ))}
@@ -115,15 +122,16 @@ export default function EncyclopediaView() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="font-label text-xs uppercase tracking-widest text-on-surface-variant">
-                Symbolism
+            {/* Symbolism */}
+            <div className="space-y-2.5">
+              <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+                象征意义
               </h4>
               <ul className="space-y-2">
                 {selectedCard.symbolism.map((symbolism, index) => (
                   <li
                     key={`${selectedCard.id}-${index}`}
-                    className="border-l border-outline-variant/30 pl-4 text-sm italic text-on-surface-variant/80"
+                    className="border-l-2 border-paper-border pl-4 text-sm leading-relaxed text-text-muted"
                   >
                     {symbolism}
                   </li>
