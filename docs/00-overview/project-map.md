@@ -18,8 +18,9 @@
 1. `README.md`
 2. `AGENTS.md`
 3. `docs/10-product/vision.md`
-4. `docs/20-domain/reading-contract.md`
-5. `docs/20-domain/interpretation-framework.md`
+4. `docs/10-product/risk-list.md`
+5. `docs/20-domain/reading-contract.md`
+6. `docs/20-domain/interpretation-framework.md`
 
 ### 面向 Agent / Prompt / Memory 相关开发
 
@@ -32,6 +33,11 @@
 
 1. `docs/50-safety/safety-principles.md`
 2. `docs/60-evals/rubrics.md`
+
+### 面向产品风险 / UX 评审
+
+1. `docs/10-product/risk-list.md`
+2. `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
 
 ---
 
@@ -98,6 +104,14 @@
 
 - `docs/50-safety/safety-principles.md`
 - `docs/20-domain/reading-contract.md`
+
+### 我想评估当前产品风险或 UX 是否成立
+
+先读：
+
+- `docs/10-product/risk-list.md`
+- `docs/10-product/ux-remaining-risk-review-2026-04-09.md`
+- `docs/10-product/vision.md`
 
 ### 我想新增或迁移 repo-local skill
 

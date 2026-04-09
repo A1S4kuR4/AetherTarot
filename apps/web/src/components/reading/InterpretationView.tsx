@@ -142,15 +142,23 @@ export default function InterpretationView() {
             transition={{ duration: 0.4 }}
             className="space-y-8"
           >
-            {/* Themes */}
-            <section className="reading-card">
-              <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                主题
+            {/* Themes / Climate */}
+            <section className="relative rounded-3xl border border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper p-8 shadow-sm my-16">
+              <div className="absolute top-0 left-8 -translate-y-1/2 flex items-center gap-2 bg-paper px-3 py-1 border border-paper-border rounded-full shadow-sm">
+                <span className="material-symbols-outlined text-[14px] text-terracotta/70">accolade</span>
+                <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
+                  当前气候场
+                </span>
+              </div>
+              <h2 className="mt-4 font-serif text-3xl text-ink text-center">
+                核心主题聚焦
+              </h2>
+              <p className="mt-3 text-sm text-text-body leading-relaxed text-center max-w-lg mx-auto">
+                在深入每一张牌的具体启示之前，请先感受这组牌共同编织的全局氛围与核心张力。
               </p>
-              <h2 className="mt-1 font-serif text-2xl text-ink">主题聚焦</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
                 {reading.themes.map((theme) => (
-                  <span key={theme} className="chip-accent">
+                  <span key={theme} className="chip-accent px-4 py-2 text-[13px] bg-terracotta/5 border-terracotta/20 shadow-sm transition-all hover:bg-terracotta/10">
                     {theme}
                   </span>
                 ))}
