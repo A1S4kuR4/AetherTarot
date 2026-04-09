@@ -1,14 +1,14 @@
 # Mainline Priority Plan
 
-- `last_updated`: `2026-04-08`
+- `last_updated`: `2026-04-09`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 next / M4 partial`
-- `verification`: `npm run build` passed, `npm run test:e2e -- --workers=1 --reporter=list` passed (`17/17`)
+- `execution_status`: `M1 completed / M2 completed / M3 next / M4 partial / UX track active`
+- `verification`: `npm run build` passed, `npm run test:e2e -- --workers=1 --reporter=list` passed, `2026-04-09` Web CI 排障完成
 
 ## 1. 当前状态快照
 
-截至 `2026-04-08` 本轮执行结束，项目主线已经从“知识层领先、运行时偏轻”推进到“运行时闭环已打通第一段”的阶段。
+截至 `2026-04-09` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“运行时闭环已打通第一段，并形成并行 UX 主线”的阶段。
 
 知识层现状：
 
@@ -32,6 +32,16 @@
 - 为了让 `celtic-cross` 的 10 张牌流程能真实跑通，示例牌库已从 `7` 张补到 `10` 张；这解决了测试阻塞，但不等于产品层面的完整牌库建设已经完成。
 
 当前瓶颈已经不再是“先补更多知识页”，而是“在已稳定的结构化 reading contract 上接入最小 LangGraph 与后续运行时能力”。
+
+`2026-04-09` 的补充更新表明，项目已经形成第二条并行主线：
+
+- `Paper / Midnight` 双面设计系统成为当前 canonical UI 方向
+- `HomeView`、`RitualView`、`RevealView`、`InterpretationView` 与 `JourneyView` 完成一轮 UX / 产品重构
+- `ADR-0002` Dual-Tier Safety Escalation 已落地到当前文档真相层
+- `sober_check` 与 `presentation_mode` 已进入正式 output schema
+- Web CI、Playwright 与 cross-platform lockfile 问题已完成一轮系统排障
+
+因此，当前瓶颈不再只有“技术主线尚未接图”，还包括“如何把已成立的仪式感、留存入口与安全摩擦进一步机制化为稳定产品体验”。
 
 ## 2. 主线优先级
 
@@ -80,7 +90,32 @@
 - 下一阶段应直接把现有 pipeline 映射成最小图，而不是回头重写 payload、route 或 UI
 - M3 的目标应是“接图”，不是“重新设计 schema”
 
-### 当前第二优先级：P1. 前端消费升级 / Runtime Alignment
+### 当前并行第二主线：P1. UX / Product Risk Closure
+
+目标：把 `2026-04-09` 已经启动的 UX 主线从“显著改善体验”继续推进到“关闭关键产品风险”。
+
+当前状态：已启动，仍在推进。
+
+已完成：
+
+- 设计语言已从旧的 Cinematic / glassmorphism 方向切换为 `Paper / Midnight` 双面系统
+- `HomeView`、`RitualView`、`RevealView`、`InterpretationView` 与 `JourneyView` 已完成一轮重大重构
+- 决策外包风险已不再只靠后置文案，而是引入 `Hard Stop / Sober Check` 机制
+- `docs/10-product/ux-risk-status.md` 已成为当前 UX 剩余风险的集中状态文档
+
+当前仍待处理：
+
+- `R1 / R3 / R5 / R6 / R10 / R11 / R12` 等剩余风险尚未完全关闭
+- history / journey 价值仍需继续从“单次结果存档”推进到“阶段性关系入口”
+- 某些结构化阅读节奏仍然偏模板化，前台编排差异还需要继续增强
+
+执行原则：
+
+- UX 主线与 `M3` 技术主线并行推进，不互相覆盖叙事
+- 已确定的设计系统、安全架构与 output schema 语义不回退
+- 后续 UX 迭代应优先围绕风险关闭与机制成立，而不是重复大范围视觉漂移
+
+### 当前第三优先级：P2. 前端消费升级 / Runtime Alignment
 
 目标：让阅读页、历史页、百科页开始消费真实结构化解读与更多运行时牌阵。
 
@@ -188,12 +223,13 @@
 
 ## 6. 下一步建议
 
-下一阶段建议不要重新打开 M1 / M2 的边界讨论，而是直接进入 M3：
+下一阶段建议不要重新打开 M1 / M2 的边界讨论，而是按“两条并行主线”继续推进：
 
-1. 以当前 `apps/web/src/server/reading/service.ts` 的流水线为蓝本接入最小 LangGraph
-2. 保持 `POST /api/reading` 的 request / response contract 稳定
-3. 在 M3 完成后，再决定百科是否接知识层、以及新增哪些高价值牌阵
-4. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki
+1. 技术主线：以当前 `apps/web/src/server/reading/service.ts` 的流水线为蓝本接入最小 LangGraph
+2. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定
+3. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 中的剩余风险做机制化收口，而不是再换一轮视觉方向
+4. 在 M3 完成后，再决定百科是否接知识层、以及新增哪些高价值牌阵
+5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki
 
 ## 7. 成功标准（更新后）
 
@@ -201,6 +237,7 @@
 
 - 新同事进入仓库后，不会再把 `M1` 当成待启动事项
 - 任何实现者都能清楚知道：`M1 / M2` 已完成，下一步是 `M3`
+- 任何实现者都能清楚知道：`M3` 技术主线与 `2026-04-09` 启动的 UX 主线是并行关系
 - 文档与当前仓库实物状态一致，不重复旧的 ingest 优先级叙事
 - 优先级说明与 `README`、`docs/40-architecture/architecture.md`、`docs/30-agent/output-schema.md`、`docs/50-safety/safety-principles.md` 不冲突
 

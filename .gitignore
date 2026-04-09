@@ -46,11 +46,6 @@ prototype/dist/
 # Personal workspace metadata
 .obsidian/
 
-# Local scratch docs
-DESIGN.txt
-DESIGN_2.txt
-
-# Personal rolling notes
-memory/work-log-*.md
+# Local operator notes
 memory/*-health-report-*.md
 memory/knowledge-ingest-backlog.md
