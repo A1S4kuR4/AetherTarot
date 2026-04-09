@@ -24,10 +24,14 @@ export default function InterpretationView() {
     reading,
     errorMessage,
     isLoading,
+    safetyIntercept,
     interpretReading,
     history,
     updateHistoryNotes,
   } = useReading();
+
+  const [soberInput, setSoberInput] = useState("");
+  const [isSoberCheckPassed, setIsSoberCheckPassed] = useState(false);
 
   const currentHistoryEntry = reading ? history.find(h => h.id === reading.reading_id) : null;
   const [notes, setNotes] = useState("");
@@ -119,6 +123,34 @@ export default function InterpretationView() {
               正在生成解读...
             </p>
           </div>
+        ) : safetyIntercept ? (
+          /* Hard Stop / Crisis Intercept */
+          <div className="reading-card border-red-900/30 bg-red-950/10 ring-1 ring-inset ring-red-900/20">
+            <div className="flex items-center gap-3 border-b border-red-900/20 pb-4">
+              <span className="material-symbols-outlined text-red-500 text-3xl">gavel</span>
+              <h2 className="font-serif text-2xl text-red-400">界限阻断</h2>
+            </div>
+            <p className="mt-5 text-base leading-relaxed text-red-200">
+              {safetyIntercept.reason}
+            </p>
+            {safetyIntercept.referral_links && safetyIntercept.referral_links.length > 0 && (
+              <div className="mt-6 space-y-2">
+                <p className="font-sans text-xs uppercase tracking-wider text-red-400/80">现实支持资源：</p>
+                <div className="flex flex-col gap-2">
+                  {safetyIntercept.referral_links.map(link => (
+                    <a key={link} href={link} target="_blank" rel="noopener noreferrer" className="text-sm underline text-red-300 hover:text-red-200">
+                      {link}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="mt-8">
+              <button onClick={() => router.replace("/")} className="rounded-full bg-paper border border-paper-border px-6 py-2.5 text-sm font-medium text-ink transition hover:bg-paper-raised">
+                离开并返回首页
+              </button>
+            </div>
+          </div>
         ) : errorMessage ? (
           /* Error */
           <div className="reading-card">
@@ -135,15 +167,42 @@ export default function InterpretationView() {
             </button>
           </div>
         ) : reading ? (
+          reading.sober_check && !isSoberCheckPassed ? (
+            /* Sober Check Friction Panel */
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="reading-card border-terracotta/40 bg-paper-raised/80 py-12 px-8 shadow-sm flex flex-col items-center justify-center text-center my-16"
+            >
+              <span className="material-symbols-outlined text-terracotta text-4xl mb-6">psychiatry</span>
+              <h2 className="font-serif text-2xl text-ink mb-4">降温与检视 (Sober Check)</h2>
+              <p className="text-base text-text-body max-w-lg leading-[1.8] mb-8">
+                {reading.sober_check}
+              </p>
+              <textarea
+                value={soberInput}
+                onChange={(e) => setSoberInput(e.target.value)}
+                placeholder="我的真实顾虑 / 底线计划是..."
+                className="w-full max-w-xl h-32 p-4 rounded-xl border border-paper-border bg-paper focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 outline-none resize-none font-serif text-base text-ink"
+              />
+              <button
+                disabled={soberInput.length < 5}
+                onClick={() => setIsSoberCheckPassed(true)}
+                className="btn-primary mt-8 w-full max-w-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                确认并解开牌面
+              </button>
+            </motion.div>
+          ) : (
           /* Reading Result */
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="space-y-8"
+            className={cn("space-y-8", reading.presentation_mode === "void_narrative" && "space-y-16 lg:px-4", reading.presentation_mode === "sober_anchor" && "opacity-90 grayscale-[20%]")}
           >
             {/* Themes / Climate */}
-            <section className="relative rounded-3xl border border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper p-8 shadow-sm my-16">
+            <section className={cn("relative rounded-3xl border shadow-sm my-16", reading.presentation_mode === "sober_anchor" ? "border-paper-border bg-paper p-8" : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper p-8")}>
               <div className="absolute top-0 left-8 -translate-y-1/2 flex items-center gap-2 bg-paper px-3 py-1 border border-paper-border rounded-full shadow-sm">
                 <span className="material-symbols-outlined text-[14px] text-terracotta/70">accolade</span>
                 <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
@@ -244,7 +303,7 @@ export default function InterpretationView() {
             </section>
 
             {/* Synthesis */}
-            <section className="reading-card">
+            <section className={cn("reading-card", reading.presentation_mode === "sober_anchor" && "bg-paper border-paper-border")}>
               <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                 综合
               </p>
@@ -255,7 +314,7 @@ export default function InterpretationView() {
             </section>
 
             {/* Guidance */}
-            <section className="reading-card">
+            <section className={cn("reading-card", reading.presentation_mode === "void_narrative" && "bg-transparent border-none shadow-none px-0", reading.presentation_mode === "sober_anchor" && "bg-paper border-paper-border")}>
               <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                 指引
               </p>
@@ -264,9 +323,11 @@ export default function InterpretationView() {
                 {reading.reflective_guidance.map((guidance) => (
                   <li
                     key={guidance}
-                    className="flex gap-3 border-l-2 border-terracotta/20 pl-4 text-base leading-relaxed text-text-body"
+                    className={cn("flex gap-3 text-base leading-relaxed text-text-body", reading.presentation_mode === "void_narrative" ? "border-l-0 pl-0" : "border-l-2 border-terracotta/20 pl-4")}
                   >
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta/50" />
+                    {!reading.presentation_mode || reading.presentation_mode !== "void_narrative" ? (
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta/50" />
+                    ) : null}
                     <span>{guidance}</span>
                   </li>
                 ))}
@@ -274,7 +335,7 @@ export default function InterpretationView() {
             </section>
 
             {/* Follow-up Questions */}
-            <section className="reading-card">
+            <section className={cn("reading-card", reading.presentation_mode === "void_narrative" && "bg-transparent border-none shadow-none px-0", reading.presentation_mode === "sober_anchor" && "bg-paper border-paper-border")}>
               <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                 延伸
               </p>
@@ -359,6 +420,7 @@ export default function InterpretationView() {
               </section>
             ) : null}
           </motion.div>
+          )
         ) : null}
       </div>
 

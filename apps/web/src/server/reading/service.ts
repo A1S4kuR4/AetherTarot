@@ -10,7 +10,7 @@ import { classifyQuestion } from "@/server/reading/classifier";
 import { ReadingServiceError } from "@/server/reading/errors";
 import { getReadingProvider } from "@/server/reading/provider";
 import { structuredReadingSchema } from "@/server/reading/schemas";
-import { applySafetyReview } from "@/server/reading/safety";
+import { analyzeIntentFriction, applySafetyReview } from "@/server/reading/safety";
 
 function hydrateCanonicalContext(payload: ReadingRequestPayload) {
   const spread = findSpreadById(payload.spreadId);
@@ -115,6 +115,18 @@ export async function generateStructuredReading(
   const question = payload.question.trim();
   const questionType = classifyQuestion(question);
   const { spread, drawnCards } = hydrateCanonicalContext(payload);
+
+  const frictionResult = analyzeIntentFriction(question);
+  if (frictionResult.type === "hard_stop") {
+    throw new ReadingServiceError(
+      "safety_intercept",
+      "问题触发了高风险安全界限保护。",
+      403,
+      frictionResult.reason,
+      frictionResult.referral_links
+    );
+  }
+
   const provider = getReadingProvider();
 
   try {
@@ -124,6 +136,14 @@ export async function generateStructuredReading(
       spread,
       drawnCards,
     });
+
+    let sober_check: string | null = null;
+    let presentation_mode: "standard" | "void_narrative" | "sober_anchor" = "standard";
+
+    if (frictionResult.type === "sober_check") {
+      sober_check = frictionResult.sober_check;
+      presentation_mode = frictionResult.presentation_mode;
+    }
 
     const reading = structuredReadingSchema.parse({
       reading_id: crypto.randomUUID(),
@@ -139,6 +159,8 @@ export async function generateStructuredReading(
       safety_note: null,
       confidence_note: draft.confidence_note,
       session_capsule: null,
+      sober_check,
+      presentation_mode,
     });
 
     return structuredReadingSchema.parse(

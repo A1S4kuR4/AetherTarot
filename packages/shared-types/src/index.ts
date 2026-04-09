@@ -64,6 +64,8 @@ export interface ReadingCardResult {
   interpretation: string;
 }
 
+export type PresentationMode = "standard" | "void_narrative" | "sober_anchor";
+
 export interface StructuredReading {
   reading_id: string;
   locale: string;
@@ -78,6 +80,8 @@ export interface StructuredReading {
   safety_note: string | null;
   confidence_note: string | null;
   session_capsule: string | null;
+  sober_check?: string | null;
+  presentation_mode?: PresentationMode;
 }
 
 export interface ReadingHistoryEntry {
@@ -92,11 +96,15 @@ export interface ReadingHistoryEntry {
 export type ReadingErrorCode =
   | "invalid_request"
   | "provider_unavailable"
-  | "generation_failed";
+  | "generation_failed"
+  | "safety_intercept";
 
 export interface ReadingErrorPayload {
   error: {
     code: ReadingErrorCode;
     message: string;
+    details?: any;
+    intercept_reason?: string;
+    referral_links?: string[];
   };
 }

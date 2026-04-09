@@ -8,11 +8,15 @@ function buildErrorResponse(
   code: ReadingErrorPayload["error"]["code"],
   message: string,
   status: number,
+  intercept_reason?: string,
+  referral_links?: string[]
 ) {
   const payload: ReadingErrorPayload = {
     error: {
       code,
       message,
+      intercept_reason,
+      referral_links,
     },
   };
 
@@ -44,7 +48,13 @@ export async function POST(request: Request) {
     }
 
     if (isReadingServiceError(error)) {
-      return buildErrorResponse(error.code, error.message, error.status);
+      return buildErrorResponse(
+        error.code,
+        error.message,
+        error.status,
+        error.intercept_reason,
+        error.referral_links
+      );
     }
 
     return buildErrorResponse(
