@@ -1,14 +1,38 @@
 import { expect, test } from "@playwright/test";
 
+async function holdToStart(
+  page: Parameters<typeof test>[0]["page"],
+  durationMs = 1600,
+) {
+  const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+  await expect(startButton).toBeVisible();
+  const startButtonHandle = await startButton.elementHandle();
+
+  if (!startButtonHandle) {
+    throw new Error("Unable to resolve the start button handle.");
+  }
+
+  await startButtonHandle.evaluate((element) => {
+    element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  });
+  await expect(
+    page.getByRole("button", { name: /正在收束意图/i }),
+  ).toBeVisible();
+  await page.waitForTimeout(durationMs);
+  await startButtonHandle.evaluate((element) => {
+    element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+  });
+}
+
 async function startReading(
   page: Parameters<typeof test>[0]["page"],
   question: string,
   spreadName: RegExp,
 ) {
   await page.goto("/");
-  await page.getByPlaceholder("今天，你想向宇宙询问什么？").fill(question);
+  await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
   await page.getByRole("button", { name: spreadName }).click();
-  await page.getByRole("button", { name: /^启示$/ }).click();
+  await holdToStart(page);
 }
 
 async function getSelectedCount(
@@ -122,7 +146,7 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("button", { name: /开始深入解读/i }).click();
     await expect(page).toHaveURL(/\/reading$/);
 
-    await expect(page.getByRole("heading", { name: "主题聚焦" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "核心主题聚焦" })).toBeVisible({
       timeout: 10000,
     });
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
@@ -155,11 +179,36 @@ test.describe("AetherTarot smoke flow", () => {
 
     await expect(page).toHaveURL(/\/reading$/);
     await expect(
-      page.getByText("“接下来一周我应该把重点放在哪里？”", {
+      page.getByText('"接下来一周我应该把重点放在哪里？"', {
         exact: true,
       }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
+  });
+
+  test("routes returning users to JourneyView and exposes the new-reading entry", async ({
+    page,
+  }) => {
+    await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 8000 });
+
+    await page.getByRole("button", { name: /开始深入解读/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible({
+      timeout: 10000,
+    });
+
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: /意识之流 \(The Journey\)/i }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /开启新的抽牌/i })).toBeVisible();
+
+    await page.getByRole("button", { name: /开启新的抽牌/i }).click();
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(page.getByRole("heading", { name: /灵语塔罗/i })).toBeVisible();
   });
 
   test("supports a full celtic-cross reading flow", async ({ page }) => {
@@ -170,12 +219,12 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page).toHaveURL(/\/reveal$/, { timeout: 10000 });
 
     const positionMeanings = page.locator("h4").filter({
-      hasText: /^Position \d+:/,
+      hasText: /^位置 \d+:/,
     });
 
     await expect(positionMeanings).toHaveCount(10);
     await expect(
-      page.getByRole("heading", { name: "Position 10: 结果" }),
+      page.getByRole("heading", { name: "位置 10: 结果" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: /开始深入解读/i }).click();
@@ -191,7 +240,7 @@ test.describe("AetherTarot smoke flow", () => {
     ).toBeVisible();
   });
 
-  test("shows a safety note for high-risk questions", async ({ page }) => {
+  test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
     await startReading(page, "我是不是不该活下去了？", /单牌启示/i);
     await expect(page).toHaveURL(/\/ritual$/);
     await drawCards(page, 1);
@@ -199,10 +248,11 @@ test.describe("AetherTarot smoke flow", () => {
 
     await page.getByRole("button", { name: /开始深入解读/i }).click();
     await expect(page).toHaveURL(/\/reading$/);
-    await expect(page.getByRole("heading", { name: "边界提醒" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "界限阻断" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText(/先把安全放在第一位/)).toBeVisible();
+    await expect(page.getByText(/立即寻求专业的医疗或心理急救支持/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /离开并返回首页/i })).toBeVisible();
   });
 
   test("keeps the start button disabled until question and spread are both valid", async ({
@@ -210,8 +260,8 @@ test.describe("AetherTarot smoke flow", () => {
   }) => {
     await page.goto("/");
 
-    const startButton = page.getByRole("button", { name: /^启示$/ });
-    const input = page.getByPlaceholder("今天，你想向宇宙询问什么？");
+    const startButton = page.getByRole("button", { name: /^长按开始仪式$/ });
+    const input = page.getByPlaceholder("今天，你想向内心询问什么？");
 
     await expect(startButton).toBeDisabled();
 
@@ -492,16 +542,35 @@ test.describe("AetherTarot smoke flow", () => {
     expect(body.safety_note).toBeNull();
   });
 
-  test("adds a safety note for high-risk prompts", async ({ request }) => {
+  test("returns a hard-stop intercept payload for crisis prompts", async ({
+    request,
+  }) => {
     const response = await request.post("/api/reading", {
       data: buildSinglePayload("我是不是不该活下去了？"),
+    });
+
+    expect(response.status()).toBe(403);
+    const body = await response.json();
+
+    expect(body.error.code).toBe("safety_intercept");
+    expect(body.error.intercept_reason).toMatch(/医疗或心理急救支持/);
+    expect(body.error.referral_links).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^https?:\/\//)]),
+    );
+  });
+
+  test("returns sober-check metadata for major decision prompts", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: buildSinglePayload("我应该离婚吗？"),
     });
 
     expect(response.status()).toBe(200);
     const body = await response.json();
 
-    expect(body.safety_note).toMatch(/现实支持|第一位/);
-    expect(body.follow_up_questions).toHaveLength(1);
+    expect(body.sober_check).toMatch(/最真实的顾虑或底线计划/);
+    expect(body.presentation_mode).toBe("sober_anchor");
   });
 });
 
