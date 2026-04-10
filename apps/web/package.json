@@ -13,6 +13,8 @@
     "@aethertarot/domain-tarot": "0.1.0",
     "@aethertarot/prompting": "0.1.0",
     "@aethertarot/shared-types": "0.1.0",
+    "@langchain/core": "^1.1.39",
+    "@langchain/langgraph": "^1.2.8",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "clsx": "^2.1.1",

@@ -25,16 +25,21 @@ export default function InterpretationView() {
     errorMessage,
     isLoading,
     safetyIntercept,
+    soberGate,
+    setSoberGate,
     interpretReading,
     history,
     updateHistoryNotes,
   } = useReading();
 
-  const [soberInput, setSoberInput] = useState("");
-  const [isSoberCheckPassed, setIsSoberCheckPassed] = useState(false);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
+
+  const activeReadingId = reading?.reading_id ?? null;
+  const isSoberGateCurrent = soberGate.readingId === activeReadingId;
+  const soberInput = isSoberGateCurrent ? soberGate.input : "";
+  const isSoberCheckPassed = isSoberGateCurrent ? soberGate.isPassed : false;
 
   const currentHistoryEntry = reading
     ? history.find((entry) => entry.id === reading.reading_id) ?? null
@@ -44,6 +49,7 @@ export default function InterpretationView() {
   const notes = currentHistoryEntryId
     ? noteDrafts[currentHistoryEntryId] ?? savedNotes
     : "";
+  const isSoberInputValid = soberInput.trim().length >= 5;
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -85,7 +91,7 @@ export default function InterpretationView() {
       return;
     }
 
-    if (!reading && !errorMessage && !isLoading) {
+    if (!reading && !errorMessage && !isLoading && !safetyIntercept) {
       void interpretReading();
     }
   }, [
@@ -95,6 +101,7 @@ export default function InterpretationView() {
     isLoading,
     reading,
     router,
+    safetyIntercept,
     selectedSpread,
   ]);
 
@@ -105,6 +112,7 @@ export default function InterpretationView() {
       }
     };
   }, []);
+
 
   if (!selectedSpread || drawnCards.length === 0) {
     return null;
@@ -201,11 +209,7 @@ export default function InterpretationView() {
           </div>
         ) : reading ? (
           reading.sober_check && !isSoberCheckPassed ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm"
-            >
+            <div className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm">
               <span className="material-symbols-outlined mb-6 text-4xl text-terracotta">
                 psychiatry
               </span>
@@ -217,19 +221,19 @@ export default function InterpretationView() {
               </p>
               <textarea
                 value={soberInput}
-                onChange={(e) => setSoberInput(e.target.value)}
+                onChange={(e) => setSoberGate({ readingId: activeReadingId, input: e.target.value, isPassed: false })}
                 placeholder="我的真实顾虑 / 底线计划是..."
                 className="h-32 w-full max-w-xl resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
               />
               <button
                 type="button"
-                disabled={soberInput.length < 5}
-                onClick={() => setIsSoberCheckPassed(true)}
+                disabled={!isSoberInputValid}
+                onClick={() => setSoberGate({ readingId: activeReadingId, input: soberInput, isPassed: true })}
                 className="btn-primary mt-8 w-full max-w-xs transition-all disabled:cursor-not-allowed disabled:opacity-50"
               >
                 确认并解开牌面
               </button>
-            </motion.div>
+            </div>
           ) : (
             <motion.div
               initial={{ opacity: 0 }}

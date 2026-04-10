@@ -116,7 +116,7 @@
 
 - 结构化输出是产品协议，不应退化回 markdown-only 返回
 - 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
-- 若后续引入 LangGraph，节点输出也应收敛到本协议，而不是创造第二套 reading shape
+- 当前最小 LangGraph 节点已收敛到本协议，不创造第二套 reading shape
 
 ---
 

@@ -10,7 +10,7 @@
 
 - 支持长上下文、多轮会话和结构化输出
 - 将 transport、编排、领域规则、安全检查与前端展示解耦
-- 支持后续多 provider 和最小 LangGraph 接入
+- 支持后续多 provider，并已接入最小 LangGraph 编排
 - 支持 Codex 这类代码 Agent 长期维护
 
 ---
@@ -52,13 +52,17 @@
 
 当前落地：`apps/web/src/server/reading/`
 
+当前实现：`generateStructuredReading()` 保持 service 入口不变，内部委托最小 LangGraph。图节点只承载现有流水线的阶段拆分，不改变 `/api/reading` 的 request / response contract，也不引入 checkpoint、streaming、interrupt 或外部 LLM。
+
 固定流水线：
 
-1. 意图分类与前置安全检查 (Safety Pre-check, 可能直接抛出 403 Hard Stop)
+1. 问题分类
 2. canonical context 组装
-3. provider.generate
-4. safety review (包含 200 Sober Check 拦截标注与 `presentation_mode` 派生)
-5. structured response validate
+3. 意图摩擦分析 (可能直接抛出 403 Hard Stop)
+4. provider.generate
+5. structured reading 组装 (包含 200 Sober Check 拦截标注与 `presentation_mode` 派生)
+6. safety review
+7. structured response validate
 
 ### Provider 层
 
@@ -108,8 +112,8 @@
 1. 用户输入问题并完成抽牌
 2. 前端仅提交 `question + spreadId + drawnCards[{positionId, cardId, isReversed}]`
 3. Route 进行基础 schema 校验
-4. Service 层 (`safety.ts`) 执行意图检测。若遇生死危机，抛出 403 Hard Stop 并直接断开链路返回；若遇重大决策依赖，记录降级状态。
-5. Service 从 `domain-tarot` 还原权威 `Spread` / `TarotCard`
+4. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验。
+5. 若意图摩擦遇生死危机或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路；若遇重大决策依赖，记录降级状态。
 6. Provider 生成结构化 reading draft，应用降级状态生成 `sober_check`，并根据语义赋予 `presentation_mode`
 7. Safety review 补充常规 `safety_note`
 8. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
@@ -124,7 +128,7 @@
 - 安全规则必须在生成后单独检查，不能只靠 prompt 自觉
 - 前端不再依赖 markdown 作为主协议
 - 历史记录与 API success payload 必须分开建模
-- 新增 provider 或 LangGraph 时，应复用现有 service 边界，而不是从 route 重新起一套流程
+- 新增 provider、扩展 LangGraph 节点或引入更复杂 graph 能力时，应复用现有 service 边界，而不是从 route 重新起一套流程
 
 ---
 

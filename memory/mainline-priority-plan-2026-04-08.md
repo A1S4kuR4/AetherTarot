@@ -3,7 +3,7 @@
 - `last_updated`: `2026-04-10`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 next / M4 partial / UX track active`
+- `execution_status`: `M1 completed / M2 completed / M3 completed / M4 partial / UX track active`
 - `verification`: `npm run build` passed, `npm run test:e2e -- --workers=1 --reporter=list` passed, `2026-04-09` Web CI 排障完成，`2026-04-10` 资产注入与校验流程记录于最新 work log
 
 ## 1. 当前状态快照
@@ -27,14 +27,14 @@
 - `data/decks/rider-waite-smith.json` 已扩展到 27 张运行时牌：大阿卡纳 0-21 与权杖 Ace-5
 - `apps/web/public/cards/` 已接入 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 已记录 full-bleed 状态、视觉审核与 SHA-256
-- 仓库当前仍没有 LangGraph 实装痕迹
+- 仓库已接入最小 LangGraph 编排，`generateStructuredReading()` 保持 service 入口并委托 graph 执行
 - 当前仍没有服务端 history persistence，也没有拆分 `apps/api`
 
 补充说明：
 
 - 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到 `27` 张；这仍不等于产品层面的完整 `78/78` 运行时牌库建设已经完成。
 
-当前瓶颈已经不再是“先补更多知识页”，而是“在已稳定的结构化 reading contract 上接入最小 LangGraph 与后续运行时能力”。
+当前瓶颈已经不再是“先补更多知识页”或“接入最小 LangGraph”，而是“在已稳定的结构化 reading contract 与最小 graph 边界上推进后续运行时能力”。
 
 `2026-04-09` 的补充更新表明，项目已经形成第二条并行主线：
 
@@ -50,7 +50,7 @@
 - 全站卡牌渲染比例已统一到 `1:1.7`
 - 资产生成与校验已具备根命令：`npm run generate:assets` 与 `npm run validate:assets`
 
-因此，当前瓶颈不再只有“技术主线尚未接图”，还包括“如何把已成立的仪式感、留存入口与安全摩擦进一步机制化为稳定产品体验”。
+因此，当前瓶颈已经转为“如何在最小 graph 已成立后保持 contract 稳定”，以及“如何把已成立的仪式感、留存入口与安全摩擦进一步机制化为稳定产品体验”。
 
 ## 2. 主线优先级
 
@@ -65,7 +65,7 @@
 - Route 已切换为最小 request payload：`question`、`spreadId`、`drawnCards[]`
 - Route 不再信任客户端传入整张牌或整套牌阵，而是在服务端用 `domain-tarot` 还原权威 `Spread` / `TarotCard`
 - 接口已具备请求校验、服务层调用、错误返回与 provider 抽象
-- 已为后续 LangGraph 接入保留稳定调用边界
+- 该稳定调用边界已被 M3 最小 LangGraph 复用
 
 ### 已完成：P0. 结构化输出落地
 
@@ -81,7 +81,7 @@
 - 前端阅读页已按结构分块展示，不再依赖 markdown 作为主显示协议
 - 历史页已保存并回放结构化 reading
 
-### 当前第一优先级：P1. 最小 LangGraph 编排
+### 已完成：P1. 最小 LangGraph 编排
 
 目标：在真实后端接口稳定后，引入最小可用图，而不是先做复杂图。
 
@@ -93,11 +93,13 @@
 4. 安全检查
 5. 输出整形
 
+执行结果：已完成。
+
 当前判断：
 
-- 这条顺序已经在现有 service pipeline 中以非 LangGraph 形式落地
-- 下一阶段应直接把现有 pipeline 映射成最小图，而不是回头重写 payload、route 或 UI
-- M3 的目标应是“接图”，不是“重新设计 schema”
+- 现有 service pipeline 已映射为最小 LangGraph
+- `POST /api/reading` 的 request / response contract 保持不变
+- M3 的结果是“接图”，不是“重新设计 schema”
 
 ### 当前并行第二主线：P1. UX / Product Risk Closure
 
@@ -120,7 +122,7 @@
 
 执行原则：
 
-- UX 主线与 `M3` 技术主线并行推进，不互相覆盖叙事
+- UX 主线与已完成的 `M3` graph 边界并行推进，不互相覆盖叙事
 - 已确定的设计系统、安全架构与 output schema 语义不回退
 - 后续 UX 迭代应优先围绕风险关闭与机制成立，而不是重复大范围视觉漂移
 
@@ -149,7 +151,7 @@
 
 - 后续 ingest 只服务于真实解读质量问题、运行时新增牌阵、或知识缺口复盘
 - 不再把 ingest 作为默认主线
-- 除非 M3 / M4 暴露出明确缺口，否则不建议重新把主线拉回知识扩张
+- 除非 graph 扩展或 M4 暴露出明确缺口，否则不建议重新把主线拉回知识扩张
 
 ## 3. 已锁定的实现边界
 
@@ -193,13 +195,14 @@
 
 ### M3. Minimal LangGraph
 
-状态：未开始
+状态：已完成（`2026-04-10`）
 
-建议进入条件：
+结果：
 
-- 保持现有 request / response contract 不变
-- 以当前 service pipeline 为蓝本接入最小图节点
-- 节点职责仅覆盖分类、上下文、生成、安全、整形，不额外扩图
+- `apps/web/src/server/reading/graph.ts` 已承载最小 LangGraph 编排
+- `apps/web/src/server/reading/service.ts` 保持 `generateStructuredReading()` 入口并委托 graph
+- 图节点覆盖分类、上下文、意图摩擦、生成、结构化组装、安全复核与最终校验
+- 当前不启用 checkpoint、streaming、interrupt、人审或外部 LLM
 
 ### M4. Runtime Alignment
 
@@ -235,12 +238,12 @@
 
 ## 6. 下一步建议
 
-下一阶段建议不要重新打开 M1 / M2 的边界讨论，而是按“两条并行主线”继续推进：
+下一阶段建议不要重新打开 M1 / M2 / M3 的边界讨论，而是按“两条并行主线”继续推进：
 
-1. 技术主线：以当前 `apps/web/src/server/reading/service.ts` 的流水线为蓝本接入最小 LangGraph
-2. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定
+1. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定
+2. 技术主线：在最小 graph 边界上评估后续 provider、memory、session capsule 或观测能力
 3. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 中的剩余风险做机制化收口，而不是再换一轮视觉方向
-4. 在 M3 完成后，再决定百科是否接知识层、以及新增哪些高价值牌阵
+4. 决定百科是否接知识层、以及新增哪些高价值牌阵
 5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki
 
 ## 7. 成功标准（更新后）
@@ -248,8 +251,8 @@
 当以下条件成立时，可以认为这份主线优先级文档已经与仓库现状对齐：
 
 - 新同事进入仓库后，不会再把 `M1` 当成待启动事项
-- 任何实现者都能清楚知道：`M1 / M2` 已完成，下一步是 `M3`
-- 任何实现者都能清楚知道：`M3` 技术主线、`2026-04-09` 启动的 UX 主线与 `2026-04-10` 资产 / Runtime Alignment 收口是并行关系
+- 任何实现者都能清楚知道：`M1 / M2 / M3` 已完成，下一步是保持 contract 稳定并推进 M4 / UX 风险收口
+- 任何实现者都能清楚知道：最小 LangGraph 技术边界、`2026-04-09` 启动的 UX 主线与 `2026-04-10` 资产 / Runtime Alignment 收口是并行关系
 - 文档与当前仓库实物状态一致，不重复旧的 ingest 优先级叙事
 - 优先级说明与 `README`、`docs/40-architecture/architecture.md`、`docs/30-agent/output-schema.md`、`docs/50-safety/safety-principles.md` 不冲突
 
@@ -258,4 +261,4 @@
 - 文件名继续固定为 `mainline-priority-plan-2026-04-08.md`
 - 文档语言默认为中文
 - 这份文档继续作为 `memory/` 中的主线优先级入口
-- 后续若 `M3` 开始实施，优先在本文件上增量更新执行状态，而不是重新起一份平行计划文档
+- 后续若扩展 M3 之后的 graph 能力，优先在本文件上增量更新执行状态，而不是重新起一份平行计划文档
