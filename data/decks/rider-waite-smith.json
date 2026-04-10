@@ -1,107 +1,29 @@
 [
   {
-    "id": "high-priestess",
-    "name": "女祭司",
-    "englishName": "The High Priestess",
-    "arcana": "Major Arcana II",
-    "element": "Water",
-    "description": "女祭司代表着直觉、潜意识、神秘和内在的力量。她坐在智慧与知识的门槛上，守卫着超越感官世界的奥秘。当这张牌出现时，它提醒我们要倾听内在的声音，信任直觉。",
-    "uprightKeywords": [
-      "直觉",
-      "洞察力",
-      "神圣女性",
-      "潜意识"
-    ],
-    "reversedKeywords": [
-      "压抑直觉",
-      "肤浅",
-      "秘密暴露",
-      "沉默"
-    ],
-    "symbolism": [
-      "黑白双柱 (Boaz & Jachin)：代表二元性，如阴阳、生死、明暗。",
-      "妥拉经卷 (Torah)：象征着神圣的律法和被部分遮蔽的真理。",
-      "月亮冠冕：象征着与月亮周期的联系以及对直觉能量的掌控。"
-    ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCUeKgYdkjV79FC0fByBvhnNBoVcKRHeLozDcRZ51Uv-wRY3M_5DWLuXxutrEkyQyEFfSuK70Ou_x1BT0uCjYolKxbSHRG_K3ac8NEtNy3NtQLHZ6cJ4JIGizjqjCylyLj4kuhCt0Iuox7d5PgpGYc9nbddVkwyQ6XArPoXwY0n_xFvVb76CvxcqtM1X6jkIzkhldYi-o-OVSK-fi2ZyiyfwtfDtzzC0WCOYxj9fQmaRHGWp9ERxE2PKn-NV5jEXTU4o6N9jsCy0U0h"
-  },
-  {
-    "id": "hermit",
-    "name": "隐者",
-    "englishName": "The Hermit",
-    "arcana": "Major Arcana IX",
-    "element": "Earth",
-    "description": "隐者代表着孤独、内省和寻求真理。他提着灯笼在黑暗中独行，象征着内在智慧的指引。",
-    "uprightKeywords": [
-      "智慧",
-      "孤独",
-      "内省",
-      "指引"
-    ],
-    "reversedKeywords": [
-      "孤立",
-      "偏执",
-      "鲁莽",
-      "拒绝建议"
-    ],
-    "symbolism": [
-      "灯笼：内在的智慧。",
-      "手杖：权力和平衡。",
-      "雪山：精神的高峰。"
-    ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBAAxhd-XA8x1bWnDuPckvPMSSI_ZeRm1cikntzJ5sy9MvMCZqY1h8T5W3i9aHPHNrjDOyAPl9zYCLUUAd2Ciki_8O9oo_rW2m9kL6SwKpifFPzaIuiDaaEFRdiJk3AdHQDZM5mpccO02ja04qXJyfHXfUXH0PBOxh0LBnMH7E5Sm0PlSNptixbkJVe3eEzx9RQOCb0fYsF2cr8HNeSq7l3NBbLyRwrDCeO2wTkNb7gYBjjRf3N9fM1jwtKmrUCW2gGbk4dYfTSGeOB"
-  },
-  {
-    "id": "star",
-    "name": "星星",
-    "englishName": "The Star",
-    "arcana": "Major Arcana XVII",
+    "id": "fool",
+    "name": "愚者",
+    "englishName": "The Fool",
+    "arcana": "Major Arcana 0",
     "element": "Air",
-    "description": "星星代表着希望、灵感和宁静。在经历风暴后，它带来了治愈和对未来的信心。",
+    "description": "愚者代表着原点、空无与未被限定的可能性。他带着信任感进入新经验，不被过去彻底绑死，带着必要却不沉重的经验走向未知。",
     "uprightKeywords": [
-      "希望",
-      "灵感",
-      "宁静",
-      "治愈"
+      "自发",
+      "开放",
+      "冒险",
+      "信任"
     ],
     "reversedKeywords": [
-      "失望",
-      "缺乏灵感",
-      "悲观",
-      "焦虑"
+      "鲁莽",
+      "逃避责任",
+      "时机不对",
+      "忽略现实"
     ],
     "symbolism": [
-      "大星：宇宙的指引。",
-      "水：情感的流动。",
-      "裸体：纯真和真实。"
+      "白玫瑰：纯真、自由与 0 的原初可能性。",
+      "悬崖边的狗：对过去经验对当下行动拉扯的警示。",
+      "行囊：带着必要却不沉重的过去经验。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCPetdBcsFa5DxU_TDIkTqx4SBbbAHwy8pvE_-nEyIRBCZmh1pyyLw9RfwvrcbLX8JIFaqxzFnSBzx4-QV6rPnZLUwRoV25hfEUh1RjfGQJET28jeQ0jiVScHBRgcBvhDgJkLzx9nfjU7Wi-sGr3gRXiIRi0nPvGFgamlbOZkqS8SJsK7bdfyOQwosddTl6MHh49abMuTQhiZ89HChEIwpmT7rE09bw3oHUtSPDxVi4NrO5mtn8D3T0tpVmS0cXGhLjWH1pWUnYbtRl"
-  },
-  {
-    "id": "world",
-    "name": "世界",
-    "englishName": "The World",
-    "arcana": "Major Arcana XXI",
-    "element": "Earth",
-    "description": "世界代表着完成、成功和统一。它是旅程的终点，也是新循环的开始。",
-    "uprightKeywords": [
-      "完成",
-      "成功",
-      "统一",
-      "旅行"
-    ],
-    "reversedKeywords": [
-      "未完成",
-      "缺乏闭合",
-      "停滞",
-      "延误"
-    ],
-    "symbolism": [
-      "花环：胜利和循环。",
-      "四元素：宇宙的完整。",
-      "舞者：自由和和谐。"
-    ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuA0KWpOsU2BZ54q0grWJ8Q0jNjb8thDfWMUP8RKZIiEATv8PL-MgL8VvVlgKpivhmUdK7QKi5fMLq1mdwFr74A9seG9z9xBPPSxAb0RFqhY1qL9FjMeKD5FZyCfv0YR8CsZsxTM9QkCa5fJjK_3oOu78qpznxSj4fa-_SFU3oTU6c1Mp38uN-dY26VnD_vCFcAkVHwA7Tm0gfqTfRm8jycv9pbsgLwfD4gEGabKtdlzjspu9jEEOod3menlY-5SyiFa6Xh6SYbFkxbJ"
+    "imageUrl": "/cards/major_0_fool.png"
   },
   {
     "id": "magician",
@@ -109,7 +31,7 @@
     "englishName": "The Magician",
     "arcana": "Major Arcana I",
     "element": "Air",
-    "description": "魔术师代表着创造力、行动和意志。他拥有将想法转化为现实的所有工具。",
+    "description": "魔术师代表着创造力、行动和意志。他拥有将想法转化为现实的所有工具，象征着有意识地调动资源与自我能力的觉醒。",
     "uprightKeywords": [
       "创造力",
       "行动",
@@ -118,16 +40,42 @@
     ],
     "reversedKeywords": [
       "操纵",
-      "未开发的潜力",
+      "潜力受限",
       "欺骗",
       "犹豫"
     ],
     "symbolism": [
-      "无限符号：永恒的能量。",
-      "四要素工具：物质世界的掌控。",
-      "指向天地的手势：如其在上，如其在下。"
+      "无限符号：永恒的能量循环。",
+      "四要素工具：对物质世界各种元素的掌控。",
+      "指向天地的手势：传递意志，将灵感具象化为现实。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBKY4fU-hU7DFjRtos0txC5u9Sizo1XG4ZPCimcZQwceegOW20WIxGSUlCkSI8mTetL7QkNlkwSHdtz5fNl4edj-Ny7m-wJUHXKBfsl1k-SPf07-YQSkBTCYWNBXWPYGmxy5dP9qtfCcwGbuV0IcBcIC2Ak5vm97982OwBT9RDjl1uQMK_0-65tfnSN64SbWUDKeeY28FjkYd-hMzB-GFMnuZmwf5NJYEb6kmR8e7zKkcYnPbHJ4weyuLf02O--LIKfnYs64BQSwgT6"
+    "imageUrl": "/cards/major_1_magician.png"
+  },
+  {
+    "id": "high-priestess",
+    "name": "女祭司",
+    "englishName": "The High Priestess",
+    "arcana": "Major Arcana II",
+    "element": "Water",
+    "description": "女祭司代表着直觉、潜意识与内在奥秘。她守护着不可言喻的真理，提醒我们要倾听内在的声音，在沉默中观察生命的深流。",
+    "uprightKeywords": [
+      "直觉",
+      "洞察力",
+      "潜意识",
+      "静止"
+    ],
+    "reversedKeywords": [
+      "压抑直觉",
+      "肤浅",
+      "秘密暴露",
+      "信息干扰"
+    ],
+    "symbolism": [
+      "黑白双柱：代表二元对立的平衡与交界。",
+      "妥拉经卷：象征被部分遮蔽的更高智慧。",
+      "月亮冠冕：象征与自然周期及潜意识的深刻连接。"
+    ],
+    "imageUrl": "/cards/major_2_high_priestess.png"
   },
   {
     "id": "empress",
@@ -135,12 +83,12 @@
     "englishName": "The Empress",
     "arcana": "Major Arcana III",
     "element": "Earth",
-    "description": "皇后代表着丰饶、自然和母性。她是生命的创造者和滋养者。",
+    "description": "皇后代表着丰饶、感官与母性的创造力。她是生命的滋养者，象征着将想法带入物质世界并使其繁茂成长的过程。",
     "uprightKeywords": [
       "丰饶",
-      "自然",
       "母性",
-      "感官"
+      "感官享受",
+      "创造"
     ],
     "reversedKeywords": [
       "创造力受阻",
@@ -149,11 +97,11 @@
       "过度保护"
     ],
     "symbolism": [
-      "石榴：多产。",
-      "皇冠：权威。",
-      "森林：自然的生命力。"
+      "石榴：象征生命的多产与繁衍。",
+      "森林与流水：自然的生生不息与滋养力。",
+      "十二星冠：代表对宇宙周期的统治与调和。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRIhG_YWPNkisKaup_sj4iP3QS__T5kf85_ZY3ukbuYtCY6DzgFwnwVXCjIzMivbt97hbtH1HuzEnHN5h9-vBAiO8cu8TcApJ_rWTymuBDh9OZl6MhGCwZwGWLkCQiazEAmzQEue8L7jkfkQEOLUjFnp5r3J4SP-MUjbQWSaox4p8zfrwUj9oPY_hYXlE3u8KHYdxuwejj-v0z-Itst5Pp3jq_R2GQFWZ1noWnbyy75Nv9sxNo-l0ketwgd9u36J0048yP_-CiWDAR"
+    "imageUrl": "/cards/major_3_empress.png"
   },
   {
     "id": "emperor",
@@ -161,12 +109,12 @@
     "englishName": "The Emperor",
     "arcana": "Major Arcana IV",
     "element": "Fire",
-    "description": "皇帝代表着权威、结构和父亲形象。他是秩序的维护者和保护者。",
+    "description": "皇帝代表着秩序、结构与社会稳定性。他是规则的维护者，象征着用理智与意志建立起来的稳固外在世界。",
     "uprightKeywords": [
       "权威",
-      "结构",
       "秩序",
-      "保护"
+      "结构",
+      "领导力"
     ],
     "reversedKeywords": [
       "专制",
@@ -175,11 +123,37 @@
       "软弱"
     ],
     "symbolism": [
-      "公羊头：白羊座的能量。",
-      "权杖：统治权。",
-      "盔甲：防御和准备。"
+      "公羊头：白羊座的爆发力与统治驱力。",
+      "山岳背影：稳固、无可撼动的社会地位。",
+      "权杖：代表将意志强制执行的权利。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBklOCEawbOgLZNV7sfCVMG-sGdtB2qN7vR7Joeu75V8u0lF_p9QotS2uSqp2ptSqcpJcfPDgwNZJA8Cn4LXSps0WxGXUxe0eHolbXOSvidq7jFUthuVpLbo-XQQWtTKTpy_FKLq1HsEMqOxuwZmOsFQJS0_St_C8OSotW2-XBC0hzvSLTRfcL_ZJwmf0fnezBWGPv6ZRZbuAwSCKELSZVnS16JedTbFMwmR5_5cd6Pz7soszmXldIroBpJM5OgmaiI1BTQOVltZyNl"
+    "imageUrl": "/cards/major_4_emperor.png"
+  },
+  {
+    "id": "hierophant",
+    "name": "教皇",
+    "englishName": "The Hierophant",
+    "arcana": "Major Arcana V",
+    "element": "Earth",
+    "description": "教皇代表传统知识的公开传授。他将真理组织成制度、仪式与语言，提示我们要向成熟的系统学习，在群体规范中获得支持。",
+    "uprightKeywords": [
+      "传统",
+      "教导",
+      "规范",
+      "信仰"
+    ],
+    "reversedKeywords": [
+      "拒绝教条",
+      "由于盲从失去主体性",
+      "新观念",
+      "形式主义"
+    ],
+    "symbolism": [
+      "双柱：传统秩序的界限。",
+      "三重十字权杖：对三重世界的知识掌控。",
+      "跪地的门徒：可被继承与传授的公共知识。"
+    ],
+    "imageUrl": "/cards/major_5_hierophant.png"
   },
   {
     "id": "lovers",
@@ -187,25 +161,129 @@
     "englishName": "The Lovers",
     "arcana": "Major Arcana VI",
     "element": "Air",
-    "description": "恋人代表关系、选择与价值对齐。它提醒人们在联结与决定之中，看清自己真正认同的方向。",
+    "description": "恋人代表关系、对齐与深刻的价值选择。它并不只是关于浪漫，而是关于我们在联结中如何认清自己的本质并做出一致的承诺。",
     "uprightKeywords": [
       "关系",
+      "对齐",
       "选择",
-      "契合",
       "承诺"
     ],
     "reversedKeywords": [
-      "摇摆",
       "失衡",
-      "逃避承诺",
-      "价值冲突"
+      "逃避选择",
+      "价值冲突",
+      "不一致"
     ],
     "symbolism": [
-      "天使：更高层面的见证。",
-      "山峰：成长需要跨越。",
-      "树木：欲望与生命力。"
+      "天使：代表更高层面的指引与见证。",
+      "善恶树：诱惑、欲望与对后果的承担。",
+      "山峰：成长后必须攀登的高度。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDq6bM2tXh2mPKB8z2Q3l4D8qK0t3n7hWv3v5rQ1a8q1o9x3rU6uJv8hZ2n7wQ4fN9cY8pL2xG7sK5mD4rT8qP3bF6nC1vJ7xR2kL9mN5sT4uY7pQ2wE6rT9yU3iO6pL1mC4vB8nK2xZ5qA7wS0eR3tY6uI9oP2"
+    "imageUrl": "/cards/major_6_lovers.png"
+  },
+  {
+    "id": "chariot",
+    "name": "战车",
+    "englishName": "The Chariot",
+    "arcana": "Major Arcana VII",
+    "element": "Water",
+    "description": "战车代表意志对冲突力量的强力整合。它依靠纪律、自律与清晰的目标，在复杂的局面中稳住航向，夺取阶段性胜利。",
+    "uprightKeywords": [
+      "意志",
+      "成功",
+      "掌控",
+      "前进"
+    ],
+    "reversedKeywords": [
+      "失控",
+      "强撑",
+      "方向混乱",
+      "对抗性内耗"
+    ],
+    "symbolism": [
+      "黑白坐骑：互相冲突的欲望、情绪与驱力。",
+      "权杖与星空车篷：意志对命运轨迹的引导。",
+      "未行动的姿态：成功来自意志的稳定，而非单纯盲动。"
+    ],
+    "imageUrl": "/cards/major_7_chariot.png"
+  },
+  {
+    "id": "strength",
+    "name": "力量",
+    "englishName": "Strength",
+    "arcana": "Major Arcana VIII",
+    "element": "Fire",
+    "description": "力量代表内在勇气与温柔的驯服。它展示了如何不靠暴力或强制，而是通过爱、信任与耐性，与内心的本能欲望达成和解。",
+    "uprightKeywords": [
+      "内在勇气",
+      "耐性",
+      "温柔",
+      "整合阴影"
+    ],
+    "reversedKeywords": [
+      "自我怀疑",
+      "情绪失控",
+      "无力感",
+      "压抑"
+    ],
+    "symbolism": [
+      "狮子：象征原始本能、欲望与野性力量。",
+      "无限符号：永恒且柔韧的内在稳定感。",
+      "白袍与花环：纯真信念对生命力的美化与导引。"
+    ],
+    "imageUrl": "/cards/major_8_strength.png"
+  },
+  {
+    "id": "hermit",
+    "name": "隐者",
+    "englishName": "The Hermit",
+    "arcana": "Major Arcana IX",
+    "element": "Earth",
+    "description": "隐者代表着孤独、内省与寻求真相的旅程。他远离喧嚣，在内心深处寻求指引，象征着在寂静中获得的深层智慧。",
+    "uprightKeywords": [
+      "内省",
+      "寻求真相",
+      "孤独",
+      "智者"
+    ],
+    "reversedKeywords": [
+      "孤立",
+      "偏执",
+      "脱离现实",
+      "拒绝指引"
+    ],
+    "symbolism": [
+      "灯笼：照亮前路与真相的内在智慧之光。",
+      "手杖：支撑探索过程的经验与权能。",
+      "雪山：孤独求道的精神巅峰境界。"
+    ],
+    "imageUrl": "/cards/major_9_hermit.png"
+  },
+  {
+    "id": "wheel-of-fortune",
+    "name": "命运之轮",
+    "englishName": "The Wheel of Fortune",
+    "arcana": "Major Arcana X",
+    "element": "Fire",
+    "description": "命运之轮代表生命周期与不可控模式的转动。它预示着潮汐的变化，提醒我们识别轮回中的模式，并在不确定性中保持核心的稳定。",
+    "uprightKeywords": [
+      "转变",
+      "好运",
+      "周期",
+      "因果"
+    ],
+    "reversedKeywords": [
+      "抗拒变化",
+      "反复卡关",
+      "运气欠佳",
+      "被动应付"
+    ],
+    "symbolism": [
+      "巨轮：客观存在的周期性变化规律。",
+      "斯芬克斯：在轮盘顶端观察全局的超越意识。",
+      "四角持书生灵：对宇宙法则的不变认知。"
+    ],
+    "imageUrl": "/cards/major_10_wheel.png"
   },
   {
     "id": "justice",
@@ -213,25 +291,181 @@
     "englishName": "Justice",
     "arcana": "Major Arcana XI",
     "element": "Air",
-    "description": "正义代表清晰、责任与因果平衡。它强调基于事实与原则做出判断，而不是被情绪仓促带走。",
+    "description": "正义代表因果、衡量与清晰的真相。它要求我们诚实面对过去的行为，基于原则而非情绪做出负起责任的持久判断。",
     "uprightKeywords": [
       "清晰",
+      "公正",
       "责任",
-      "平衡",
-      "判断"
+      "平衡"
     ],
     "reversedKeywords": [
       "偏见",
       "逃避责任",
       "失衡",
-      "含糊"
+      "逃避代价"
     ],
     "symbolism": [
-      "天平：衡量与平衡。",
-      "宝剑：理性与决断。",
-      "红袍：行动后的后果。"
+      "天平：严谨的衡量与价值评估。",
+      "宝剑：理智斩断迷惑，确立清晰判定。",
+      "红袍：在做出判断后必须承担的现实后果。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC9nM4qT2vP7xD5sL1kR8mQ6zB4pN3wH7yJ2fL9tC6vK1qR5sD8mF2hJ4pL7xN9bV3cM6qT1wY8rP2kL5dF7gH0jS3aZ6xC9vB2nM5qR8tY1uI4oP7aS0dF3gH6jK9lL2"
+    "imageUrl": "/cards/major_11_justice.png"
+  },
+  {
+    "id": "hanged-man",
+    "name": "倒吊人",
+    "englishName": "The Hanged Man",
+    "arcana": "Major Arcana XII",
+    "element": "Water",
+    "description": "倒吊人代表自愿的暂停、视角的彻底颠覆与顺服。通过放下旧有的姿态与身份，我们才有可能在静止中获得全新的觉悟。",
+    "uprightKeywords": [
+      "暂停",
+      "换视角",
+      "顺服",
+      "放手"
+    ],
+    "reversedKeywords": [
+      "抵触变化",
+      "死守旧模式",
+      "毫无意义的牺牲",
+      "挣扎"
+    ],
+    "symbolism": [
+      "倒挂姿态：对世俗价值观与逻辑的彻底颠覆。",
+      "平静的面容：在非惯常位置上获得的深层宁静。",
+      "T字木：具有生长活力的神圣秩序框架。"
+    ],
+    "imageUrl": "/cards/major_12_hanged_man.png"
+  },
+  {
+    "id": "death",
+    "name": "死神",
+    "englishName": "Death",
+    "arcana": "Major Arcana XIII",
+    "element": "Water",
+    "description": "死神代表旧篇章的彻底终结与转化。它不是毁灭，而是为新生腾挪余地。只有真正放下已经失效的壳，蜕变才有可能发生。",
+    "uprightKeywords": [
+      "终结",
+      "转化",
+      "腾位",
+      "释放"
+    ],
+    "reversedKeywords": [
+      "抗拒终结",
+      "滞后",
+      "舍不得放手",
+      "重复消耗"
+    ],
+    "symbolism": [
+      "骷髅骑马者：不分贵贱的终结力量。",
+      "升起的太阳：终结背后必然蕴含的新生种子。",
+      "白花旗帜：纯净的转化与生命力洗礼。"
+    ],
+    "imageUrl": "/cards/major_13_death.png"
+  },
+  {
+    "id": "temperance",
+    "name": "节制",
+    "englishName": "Temperance",
+    "arcana": "Major Arcana XIV",
+    "element": "Fire",
+    "description": "节制代表对立元素的整合与中道。它教导我们如何稳定地调配生命能量，在纷乱中找到最合适的表现比例，活出清明与方向感。",
+    "uprightKeywords": [
+      "平衡",
+      "调和",
+      "节奏",
+      "中道"
+    ],
+    "reversedKeywords": [
+      "失衡",
+      "极端化",
+      "反应过度",
+      "耗散"
+    ],
+    "symbolism": [
+      "倾倒流体的手势：对生命能量的精准掌握与导流。",
+      "跨越水陆的双足：调和潜意识与现实层面的能力。",
+      "远方的日出之路：中道通往的更清明目标。"
+    ],
+    "imageUrl": "/cards/major_14_temperance.png"
+  },
+  {
+    "id": "devil",
+    "name": "恶魔",
+    "englishName": "The Devil",
+    "arcana": "Major Arcana XV",
+    "element": "Earth",
+    "description": "恶魔代表束缚的心理结构与由于成瘾、控制欲而产生的幻觉。它指出我们所受的困于并非源于现实，而是源于不愿松开的自我契约。",
+    "uprightKeywords": [
+      "束缚",
+      "幻觉",
+      "执念",
+      "物化"
+    ],
+    "reversedKeywords": [
+      "觉察锁链",
+      "阴影工作",
+      "挣脱惯性",
+      "重获选择"
+    ],
+    "symbolism": [
+      "松动的锁链：束缚主要源自由于恐惧而产生的心理认同。",
+      "五角星：意识被物质世界与低阶欲望彻底吞没。",
+      "火把向下：生命之火被耗费在自我毁灭的欲望中。"
+    ],
+    "imageUrl": "/cards/major_15_devil.png"
+  },
+  {
+    "id": "tower",
+    "name": "高塔",
+    "englishName": "The Tower",
+    "arcana": "Major Arcana XVI",
+    "element": "Fire",
+    "description": "高塔代表过时结构的剧烈崩解。当虚假伪饰被闪电击穿，虽然过程震撼，却提供了把人从僵化与压迫中彻底释放出来的天赐机会。",
+    "uprightKeywords": [
+      "突发剧变",
+      "真相揭露",
+      "崩塌",
+      "释放"
+    ],
+    "reversedKeywords": [
+      "抗拒剧变",
+      "残喘维持",
+      "反复震荡",
+      "恐惧坍塌"
+    ],
+    "symbolism": [
+      "被击碎的塔顶：僵化的自我防御与虚假身份的崩溃。",
+      "闪电：来自更高维度的揭露与真相之击。",
+      "下落的人与皇冠：被迫从旧有的社会面具中脱离。"
+    ],
+    "imageUrl": "/cards/major_16_tower.png"
+  },
+  {
+    "id": "star",
+    "name": "星星",
+    "englishName": "The Star",
+    "arcana": "Major Arcana XVII",
+    "element": "Air",
+    "description": "星星代表暴风雨后的宁静、希望与灵性治愈。它是宇宙给予的无条件指引，提醒我们敞开内心，信任生命的温柔流向。",
+    "uprightKeywords": [
+      "希望",
+      "治愈",
+      "宁静",
+      "灵感"
+    ],
+    "reversedKeywords": [
+      "失望",
+      "不安全感",
+      "悲观",
+      "灵感枯竭"
+    ],
+    "symbolism": [
+      "倾倒而出的两壶水：能量的慷慨流动与向地回归。",
+      "八角星：宇宙恒常的指引与灵性觉知。",
+      "裸体身姿：在神圣面前的纯粹本真，不带任何防御。"
+    ],
+    "imageUrl": "/cards/major_17_star.png"
   },
   {
     "id": "moon",
@@ -239,24 +473,232 @@
     "englishName": "The Moon",
     "arcana": "Major Arcana XVIII",
     "element": "Water",
-    "description": "月亮代表不确定、投射与潜藏的感受。它提示我们在迷雾中放慢判断，分辨直觉、恐惧与事实。",
+    "description": "月亮代表模糊的情绪深流、梦境与本能的恐惧。它邀约我们深入探测潜意识，在迷雾中分辨哪些是直觉，哪些是过去的投射。",
     "uprightKeywords": [
       "直觉",
       "梦境",
       "模糊",
-      "潜流"
+      "情绪潜流"
     ],
     "reversedKeywords": [
-      "误读",
+      "混乱加剧",
       "焦虑放大",
-      "混乱",
-      "自我欺骗"
+      "识破幻象",
+      "误解读直觉"
     ],
     "symbolism": [
-      "月光：朦胧而真实的照见。",
-      "犬与狼：驯化与本能。",
-      "小径：穿越未知的过程。"
+      "水中爬出的甲壳生物：从潜意识底层唤醒的古老本能。",
+      "犬与狼：代表人类被驯化的认知与未被驯服的野性。",
+      "穿过双塔的小径：通过未知与恐惧抵达觉醒的必经之路。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuB7pL4mQ9tD2vN6xC1rF8gH3jK5sL0aZ7wY2uI6oP4qR9tV1mN8bC5xD2fG7hJ3kL6pQ0rS4tU8vW1xY5zA2bC6dE9fG3hJ7kL1mN4pQ8rT2uV5wX9yZ0aB3cD6eF1"
+    "imageUrl": "/cards/major_18_moon.png"
+  },
+  {
+    "id": "sun",
+    "name": "太阳",
+    "englishName": "The Sun",
+    "arcana": "Major Arcana XIX",
+    "element": "Fire",
+    "description": "太阳代表经历黑暗后的成熟天真。它是清新、成功与生命力的化身，象征着一切被看清、被照亮并以此获得创造喜悦的时刻。",
+    "uprightKeywords": [
+      "成功",
+      "欢乐",
+      "清晰",
+      "成熟天真"
+    ],
+    "reversedKeywords": [
+      "云遮阳光",
+      "总觉得还不够",
+      "完美主义干扰",
+      "延迟的满足"
+    ],
+    "symbolism": [
+      "白马上的孩子：穿过复杂之后重新获得的单纯与动力。",
+      "向日葵：生命力始终追随光的元本能。",
+      "高悬的烈日：穿透阴霾、让一切显形的本质力量。"
+    ],
+    "imageUrl": "/cards/major_19_sun.png"
+  },
+  {
+    "id": "judgement",
+    "name": "审判",
+    "englishName": "Judgement",
+    "arcana": "Major Arcana XX",
+    "element": "Fire",
+    "description": "审判代表内在号角的响起与由于觉醒带来的清明。它要求我们整合过去的经验，诚实面对生命中已有的因果，从而获得真正的合一与更新。",
+    "uprightKeywords": [
+      "觉醒",
+      "回应召唤",
+      "因果清晰",
+      "承担"
+    ],
+    "reversedKeywords": [
+      "抗拒召唤",
+      "过度自责",
+      "由于恐惧被审判而逃避",
+      "延迟更新"
+    ],
+    "symbolism": [
+      "号角：不可忽视的深层灵魂使命召唤。",
+      "复活的人物：被旧叙事困住的各个自我层面的重生。",
+      "旗帜上的十字：建立在因果平衡之上的最后审视。"
+    ],
+    "imageUrl": "/cards/major_20_judgement.png"
+  },
+  {
+    "id": "world",
+    "name": "世界",
+    "englishName": "The World",
+    "arcana": "Major Arcana XXI",
+    "element": "Earth",
+    "description": "世界代表阶段性的完成、成功与整体性统一。它是漫长旅程的休止符，同时也是下一个螺旋式新循环开启前的饱满平衡状态。",
+    "uprightKeywords": [
+      "完成",
+      "统一",
+      "成功",
+      "旅行"
+    ],
+    "reversedKeywords": [
+      "未完成感",
+      "缺乏闭环",
+      "延误",
+      "停留在表层"
+    ],
+    "symbolism": [
+      "花环：胜利者功德圆满的象征。",
+      "舞者：从二元性中彻底释放出的和谐自由感。",
+      "四角神兽：物质世界的各种元素已得到完美的整合。"
+    ],
+    "imageUrl": "/cards/major_21_world.png"
+  },
+  {
+    "id": "ace-of-wands",
+    "name": "权杖王牌",
+    "englishName": "Ace of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "点燃生命之火的原始火花。它代表热情的爆发与行动的起点，象征着某种强烈的创造冲动或开启新冒险的原始能量。",
+    "uprightKeywords": [
+      "启动",
+      "热情",
+      "灵感",
+      "原动力"
+    ],
+    "reversedKeywords": [
+      "缺乏耐心",
+      "动力耗散",
+      "火力失控",
+      "没被点燃"
+    ],
+    "symbolism": [
+      "云中之手：突如其来的直觉与行动机会。",
+      "正在冒芽的权杖：火元素的生命力及其扩充性。",
+      "远方城堡：明确的目标坐标正在前方显现。"
+    ],
+    "imageUrl": "/cards/minor_wands_ace.png"
+  },
+  {
+    "id": "two-of-wands",
+    "name": "权杖二",
+    "englishName": "Two of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "在成就的基础上扩充版图。它代表评估与决定的时刻，站稳现有领地后，衡量是否愿意向更大、更未知的世界进行新的扩张策略。",
+    "uprightKeywords": [
+      "评估",
+      "扩张意愿",
+      "做决定",
+      "视野"
+    ],
+    "reversedKeywords": [
+      "迟疑不决",
+      "死守安全区",
+      "盲目跳跃",
+      "规划受限"
+    ],
+    "symbolism": [
+      "地球仪：对现有疆域的统合以及对更广袤世界的野心。",
+      "一根固定一根手持：在稳固基底与寻求变化间寻求平衡。",
+      "在高处眺望：战略性视角与未出征前的评估姿态。"
+    ],
+    "imageUrl": "/cards/minor_wands_2.png"
+  },
+  {
+    "id": "three-of-wands",
+    "name": "权杖三",
+    "englishName": "Three of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "表示由于先前的决定，行动已开始产生回流。这是一种有方向的稳定推进，观察反馈的同时，将感官与影响力延展向海的彼岸。",
+    "uprightKeywords": [
+      "拓展",
+      "远见",
+      "等待反馈",
+      "稳定推进"
+    ],
+    "reversedKeywords": [
+      "进展迟缓",
+      "由于犹豫错失良机",
+      "信息断裂",
+      "视野短浅"
+    ],
+    "symbolism": [
+      "海上的船：派出的意图与行动开始产生成果。",
+      "金黄色的海面：充满成功希望的远景空间。",
+      "背影与权杖：身处核心但已将影响力触及外围的状态。"
+    ],
+    "imageUrl": "/cards/minor_wands_3.png"
+  },
+  {
+    "id": "four-of-wands",
+    "name": "权杖四",
+    "englishName": "Four of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "热力找到承载的稳固容器。这代表庆功、安顿与在这个阶段性节点扎根，也是权杖能量在现实中获得的良性稳定框架。",
+    "uprightKeywords": [
+      "安顿",
+      "庆祝",
+      "归属感",
+      "里程碑"
+    ],
+    "reversedKeywords": [
+      "暂时的满足",
+      "缺乏根基的场面话",
+      "延迟庆典",
+      "不稳的局势"
+    ],
+    "symbolism": [
+      "华丽棚架与四柱：神圣秩序中的分享与礼赞场域。",
+      "庆祝的人群：对现阶段成果的集体共创与接纳。",
+      "远方城堡：稳定的家园感或长期发展的基底。"
+    ],
+    "imageUrl": "/cards/minor_wands_4.png"
+  },
+  {
+    "id": "five-of-wands",
+    "name": "权杖五",
+    "englishName": "Five of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "能量碰撞引发的摩擦与角力。它是大家都在动、却没人在听的协调前期，揭示了由于竞逐带来的内耗，以及从混乱里突围的新能量需求。",
+    "uprightKeywords": [
+      "竞争",
+      "模仿战争",
+      "摩擦",
+      "多方纠缠"
+    ],
+    "reversedKeywords": [
+      "化解矛盾",
+      "逃避角斗",
+      "暗流涌动",
+      "由碰撞带来的厌烦"
+    ],
+    "symbolism": [
+      "混乱的权杖：尚未对齐的目标与立场导致的互相干扰。",
+      "挥棒姿态：不带恶意但极其消耗的资源抢位战。",
+      "多样的服装：不同利益诉求在同一空间的混杂碰撞。"
+    ],
+    "imageUrl": "/cards/minor_wands_5.png"
   }
 ]
