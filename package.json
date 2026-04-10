@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "build": "npm run build -w @aethertarot/web",
+    "generate:assets": "node scripts/generate-card-assets.mjs",
+    "validate:assets": "node scripts/validate-card-assets.mjs",
     "test:e2e": "npm run test:e2e -w @aethertarot/web"
   }
 }
