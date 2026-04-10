@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import type { QuestionType } from "@aethertarot/shared-types";
+import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,7 @@ export default function InterpretationView() {
     soberGate,
     setSoberGate,
     interpretReading,
+    submitFollowupAnswers,
     history,
     updateHistoryNotes,
   } = useReading();
@@ -35,6 +36,7 @@ export default function InterpretationView() {
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [followupDrafts, setFollowupDrafts] = useState<Record<string, string>>({});
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -50,6 +52,11 @@ export default function InterpretationView() {
     ? noteDrafts[currentHistoryEntryId] ?? savedNotes
     : "";
   const isSoberInputValid = soberInput.trim().length >= 5;
+  const isInitialAwaitingFollowup = reading?.reading_phase === "initial" && reading.requires_followup;
+  const followupQuestions = reading?.follow_up_questions ?? [];
+  const areFollowupAnswersValid =
+    followupQuestions.length > 0 &&
+    followupQuestions.every((prompt) => (followupDrafts[prompt] ?? "").trim().length >= 2);
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -69,6 +76,25 @@ export default function InterpretationView() {
     }, 1200);
   };
 
+  const handleFollowupChange = (prompt: string, value: string) => {
+    setFollowupDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [prompt]: value,
+    }));
+  };
+
+  const handleSubmitFollowup = () => {
+    if (!reading || !areFollowupAnswersValid) {
+      return;
+    }
+
+    const answers: FollowupAnswer[] = followupQuestions.map((prompt) => ({
+      question: prompt,
+      answer: (followupDrafts[prompt] ?? "").trim(),
+    }));
+
+    void submitFollowupAnswers(answers);
+  };
   const handleNotesChange = (value: string) => {
     if (!currentHistoryEntryId) {
       return;
@@ -105,6 +131,7 @@ export default function InterpretationView() {
     selectedSpread,
   ]);
 
+
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
@@ -123,7 +150,7 @@ export default function InterpretationView() {
       <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
         <header className="space-y-5">
           <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
-            解读结果
+            {reading?.reading_phase === "initial" ? "初步解读" : "解读结果"}
           </h1>
           <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
             这次解读不是替你宣布结果，而是帮助你更清楚地看见正在成形的主题、张力与可选择的动作。
@@ -419,6 +446,41 @@ export default function InterpretationView() {
                 </ul>
               </section>
 
+
+              {isInitialAwaitingFollowup ? (
+                <section className="reading-card border-terracotta/30 bg-terracotta/5">
+                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                    校准
+                  </p>
+                  <h2 className="mt-1 font-serif text-2xl text-ink">回答后进入整合深读</h2>
+                  <p className="mt-3 text-sm leading-relaxed text-text-body">
+                    这些问题来自牌面里的矛盾点。你的回答不会推翻初读，只会帮助系统把解释空间收束得更贴近现实。
+                  </p>
+                  <div className="mt-5 space-y-4">
+                    {followupQuestions.map((prompt, index) => (
+                      <label key={prompt} className="block space-y-2">
+                        <span className="block font-serif text-sm text-ink">
+                          {index + 1}. {prompt}
+                        </span>
+                        <textarea
+                          value={followupDrafts[prompt] ?? ""}
+                          onChange={(event) => handleFollowupChange(prompt, event.target.value)}
+                          placeholder="写下你的现实补充..."
+                          className="h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!areFollowupAnswersValid || isLoading}
+                    onClick={handleSubmitFollowup}
+                    className="btn-primary mt-6 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    生成整合深读
+                  </button>
+                </section>
+              ) : null}
               {reading.safety_note ? (
                 <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
                   <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">

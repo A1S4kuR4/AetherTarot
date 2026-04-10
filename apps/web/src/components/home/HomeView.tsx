@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
+import type { AgentProfile } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
@@ -12,13 +13,33 @@ const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|�
 
 const spreads = getAllSpreads();
 
+const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: string }> = [
+  {
+    id: "lite",
+    name: "快速塔罗师",
+    description: "轻量初读，适合先看一个清晰倾向。",
+  },
+  {
+    id: "standard",
+    name: "标准塔罗师",
+    description: "两阶段校准，先让牌面说话，再结合你的回应。",
+  },
+  {
+    id: "sober",
+    name: "清醒塔罗师",
+    description: "更强调现实边界，适合重大决定或高压力议题。",
+  },
+];
+
 export default function HomeView() {
   const router = useRouter();
   const {
     question,
     selectedSpread,
+    agentProfile,
     setQuestion,
     setSelectedSpread,
+    setAgentProfile,
     startRitual,
   } = useReading();
 
@@ -122,7 +143,40 @@ export default function HomeView() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
+          className="space-y-4"
+        >
+          <h2 className="font-sans text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
+            选择塔罗师 · Choose Your Reader
+          </h2>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {AGENT_PROFILES.map((profile) => (
+              <button
+                key={profile.id}
+                type="button"
+                onClick={() => setAgentProfile(profile.id)}
+                className={cn(
+                  "rounded-2xl border px-4 py-4 text-left transition-all duration-200",
+                  agentProfile === profile.id
+                    ? "border-terracotta/40 bg-terracotta/5 shadow-sm"
+                    : "border-paper-border bg-paper-raised hover:border-paper-border hover:shadow-sm",
+                )}
+              >
+                <span className="block font-serif text-base text-ink">
+                  {profile.name}
+                </span>
+                <span className="mt-1.5 block text-xs leading-relaxed text-text-muted">
+                  {profile.description}
+                </span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
           className="space-y-6"
         >
           <h2 className="font-sans text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
@@ -172,7 +226,7 @@ export default function HomeView() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
+          transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
           className="relative inline-block"
         >
           <motion.button

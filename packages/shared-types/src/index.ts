@@ -41,16 +41,29 @@ export type QuestionType =
   | "decision"
   | "other";
 
+export type AgentProfile = "lite" | "standard" | "sober";
+
+export type ReadingPhase = "initial" | "final";
+
 export interface ReadingRequestCardInput {
   positionId: string;
   cardId: string;
   isReversed: boolean;
 }
 
+export interface FollowupAnswer {
+  question: string;
+  answer: string;
+}
+
 export interface ReadingRequestPayload {
   question: string;
   spreadId: string;
   drawnCards: ReadingRequestCardInput[];
+  agent_profile?: AgentProfile;
+  phase?: ReadingPhase;
+  initial_reading?: StructuredReading;
+  followup_answers?: FollowupAnswer[];
 }
 
 export interface ReadingCardResult {
@@ -71,6 +84,11 @@ export interface StructuredReading {
   locale: string;
   question: string;
   question_type: QuestionType;
+  agent_profile: AgentProfile;
+  reading_phase: ReadingPhase;
+  requires_followup: boolean;
+  initial_reading_id: string | null;
+  followup_answers: FollowupAnswer[] | null;
   spread: Spread;
   cards: ReadingCardResult[];
   themes: string[];

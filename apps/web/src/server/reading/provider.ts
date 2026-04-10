@@ -1,8 +1,13 @@
 import "server-only";
 
-import { buildPlaceholderReadingDraft } from "@aethertarot/prompting";
+import {
+  buildPlaceholderFinalReadingDraft,
+  buildPlaceholderInitialReadingDraft,
+} from "@aethertarot/prompting";
 import type {
+  AgentProfile,
   DrawnCard,
+  FollowupAnswer,
   QuestionType,
   Spread,
   StructuredReading,
@@ -22,21 +27,39 @@ type PlaceholderReadingDraft = Pick<
 export interface HydratedReadingContext {
   question: string;
   questionType: QuestionType;
+  agentProfile: AgentProfile;
   spread: Spread;
   drawnCards: DrawnCard[];
 }
 
+export interface FinalReadingContext extends HydratedReadingContext {
+  initialReading: StructuredReading;
+  followupAnswers: FollowupAnswer[];
+}
+
 interface ReadingProvider {
-  generate(context: HydratedReadingContext): Promise<PlaceholderReadingDraft>;
+  generateInitialRead(context: HydratedReadingContext): Promise<PlaceholderReadingDraft>;
+  generateFinalRead(context: FinalReadingContext): Promise<PlaceholderReadingDraft>;
 }
 
 class PlaceholderReadingProvider implements ReadingProvider {
-  async generate(context: HydratedReadingContext) {
-    return buildPlaceholderReadingDraft({
+  async generateInitialRead(context: HydratedReadingContext) {
+    return buildPlaceholderInitialReadingDraft({
       question: context.question,
       questionType: context.questionType,
+      agentProfile: context.agentProfile,
       spread: context.spread,
       drawnCards: context.drawnCards,
+    });
+  }
+
+  async generateFinalRead(context: FinalReadingContext) {
+    return buildPlaceholderFinalReadingDraft({
+      question: context.question,
+      questionType: context.questionType,
+      agentProfile: context.agentProfile,
+      initialReading: context.initialReading,
+      followupAnswers: context.followupAnswers,
     });
   }
 }
