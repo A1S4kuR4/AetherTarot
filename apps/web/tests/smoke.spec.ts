@@ -264,6 +264,41 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("button", { name: /离开并返回首页/i })).toBeVisible();
   });
 
+  test("requires a nonblank sober-check reflection before revealing a major decision reading", async ({
+    page,
+  }) => {
+    await startReading(page, "我应该离婚吗？", /单牌启示/i);
+    await expect(page.getByRole("heading", { name: "这是一次重大的决定" })).toBeVisible();
+    await page.getByRole("button", { name: /我已知晓，仅作为内省的视角/i }).click();
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 8000 });
+
+    await page.getByRole("button", { name: /开始深入解读/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByRole("heading", { name: /降温与检视/i })).toBeVisible({
+      timeout: 10000,
+    });
+
+    const unlockButton = page.getByRole("button", { name: /确认并解开牌面/i });
+    const reflectionInput = page.getByPlaceholder("我的真实顾虑 / 底线计划是...");
+
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeHidden();
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("     ");
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("顾虑");
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("我需要先确认现实底线");
+    await expect(unlockButton).toBeEnabled();
+    await unlockButton.click();
+
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
+  });
+
   test("keeps the start button disabled until question and spread are both valid", async ({
     page,
   }) => {
@@ -543,11 +578,17 @@ test.describe("AetherTarot smoke flow", () => {
 
     expect(body.question_type).toBeTruthy();
     expect(body.cards).toHaveLength(3);
+    expect(body.cards.map((card: { position_id: string }) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "future",
+    ]);
     expect(body.themes.length).toBeGreaterThanOrEqual(2);
     expect(body.themes.length).toBeLessThanOrEqual(4);
     expect(body.synthesis).toBeTruthy();
     expect(body.reflective_guidance.length).toBeGreaterThanOrEqual(2);
     expect(body.confidence_note).toBeTruthy();
+    expect(body.session_capsule).toBeNull();
     expect(body.safety_note).toBeNull();
   });
 
@@ -566,6 +607,7 @@ test.describe("AetherTarot smoke flow", () => {
     expect(body.error.referral_links).toEqual(
       expect.arrayContaining([expect.stringMatching(/^https?:\/\//)]),
     );
+    expect(body.reading_id).toBeUndefined();
   });
 
   test("returns sober-check metadata for major decision prompts", async ({
