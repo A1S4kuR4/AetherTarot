@@ -128,6 +128,7 @@ export default function RitualView() {
 
           return (
             <div key={position.id} className="flex flex-col items-center gap-3">
+              <div
                 className={cn(
                   "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-2xl border transition-all duration-300 md:w-[120px]",
                   drawn

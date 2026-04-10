@@ -309,6 +309,12 @@ This is the product’s visual centerpiece.
 
 #### Card Frame
 - Ratio: preserve authentic tarot proportions
+- Runtime tarot assets must be 1:1.7 portrait full-bleed PNGs; current production target is 1000x1700.
+- Frontend tarot frames should use `aspect-[1/1.7]` with `object-cover` so the illustration fills the card surface.
+- Square generations are allowed only as intermediate drafts and must not be committed directly to `apps/web/public/cards/`.
+- Every runtime card image must be registered in `data/decks/card-asset-manifest.json` with source provenance, `derivedFromSquare=false`, `fullBleed=true`, an approved visual review status, and a matching SHA-256 hash.
+- Procedural runtime assets may be regenerated with `npm run generate:assets`; external art replacements must update the manifest after visual review.
+- Passing the dimension check alone is not sufficient; distorted resizes, padded square art, or unreviewed replacements must fail asset validation.
 - Radius: 16px–22px depending on size
 - Border: warm light frame on paper pages, cool subtle edge on midnight pages
 - Surface: allow detailed illustration to dominate
