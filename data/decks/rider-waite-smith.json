@@ -23,7 +23,7 @@
       "妥拉经卷 (Torah)：象征着神圣的律法和被部分遮蔽的真理。",
       "月亮冠冕：象征着与月亮周期的联系以及对直觉能量的掌控。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCUeKgYdkjV79FC0fByBvhnNBoVcKRHeLozDcRZ51Uv-wRY3M_5DWLuXxutrEkyQyEFfSuK70Ou_x1BT0uCjYolKxbSHRG_K3ac8NEtNy3NtQLHZ6cJ4JIGizjqjCylyLj4kuhCt0Iuox7d5PgpGYc9nbddVkwyQ6XArPoXwY0n_xFvVb76CvxcqtM1X6jkIzkhldYi-o-OVSK-fi2ZyiyfwtfDtzzC0WCOYxj9fQmaRHGWp9ERxE2PKn-NV5jEXTU4o6N9jsCy0U0h"
+    "imageUrl": "/cards/major_2_high_priestess.png"
   },
   {
     "id": "hermit",
@@ -49,7 +49,7 @@
       "手杖：权力和平衡。",
       "雪山：精神的高峰。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBAAxhd-XA8x1bWnDuPckvPMSSI_ZeRm1cikntzJ5sy9MvMCZqY1h8T5W3i9aHPHNrjDOyAPl9zYCLUUAd2Ciki_8O9oo_rW2m9kL6SwKpifFPzaIuiDaaEFRdiJk3AdHQDZM5mpccO02ja04qXJyfHXfUXH0PBOxh0LBnMH7E5Sm0PlSNptixbkJVe3eEzx9RQOCb0fYsF2cr8HNeSq7l3NBbLyRwrDCeO2wTkNb7gYBjjRf3N9fM1jwtKmrUCW2gGbk4dYfTSGeOB"
+    "imageUrl": "/cards/major_9_hermit.png"
   },
   {
     "id": "star",
@@ -127,7 +127,7 @@
       "四要素工具：物质世界的掌控。",
       "指向天地的手势：如其在上，如其在下。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBKY4fU-hU7DFjRtos0txC5u9Sizo1XG4ZPCimcZQwceegOW20WIxGSUlCkSI8mTetL7QkNlkwSHdtz5fNl4edj-Ny7m-wJUHXKBfsl1k-SPf07-YQSkBTCYWNBXWPYGmxy5dP9qtfCcwGbuV0IcBcIC2Ak5vm97982OwBT9RDjl1uQMK_0-65tfnSN64SbWUDKeeY28FjkYd-hMzB-GFMnuZmwf5NJYEb6kmR8e7zKkcYnPbHJ4weyuLf02O--LIKfnYs64BQSwgT6"
+    "imageUrl": "/cards/major_1_magician.png"
   },
   {
     "id": "empress",
@@ -153,7 +153,7 @@
       "皇冠：权威。",
       "森林：自然的生命力。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBRIhG_YWPNkisKaup_sj4iP3QS__T5kf85_ZY3ukbuYtCY6DzgFwnwVXCjIzMivbt97hbtH1HuzEnHN5h9-vBAiO8cu8TcApJ_rWTymuBDh9OZl6MhGCwZwGWLkCQiazEAmzQEue8L7jkfkQEOLUjFnp5r3J4SP-MUjbQWSaox4p8zfrwUj9oPY_hYXlE3u8KHYdxuwejj-v0z-Itst5Pp3jq_R2GQFWZ1noWnbyy75Nv9sxNo-l0ketwgd9u36J0048yP_-CiWDAR"
+    "imageUrl": "/cards/major_3_empress.png"
   },
   {
     "id": "emperor",
@@ -179,7 +179,7 @@
       "权杖：统治权。",
       "盔甲：防御和准备。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBklOCEawbOgLZNV7sfCVMG-sGdtB2qN7vR7Joeu75V8u0lF_p9QotS2uSqp2ptSqcpJcfPDgwNZJA8Cn4LXSps0WxGXUxe0eHolbXOSvidq7jFUthuVpLbo-XQQWtTKTpy_FKLq1HsEMqOxuwZmOsFQJS0_St_C8OSotW2-XBC0hzvSLTRfcL_ZJwmf0fnezBWGPv6ZRZbuAwSCKELSZVnS16JedTbFMwmR5_5cd6Pz7soszmXldIroBpJM5OgmaiI1BTQOVltZyNl"
+    "imageUrl": "/cards/major_4_emperor.png"
   },
   {
     "id": "lovers",
@@ -205,7 +205,7 @@
       "山峰：成长需要跨越。",
       "树木：欲望与生命力。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDq6bM2tXh2mPKB8z2Q3l4D8qK0t3n7hWv3v5rQ1a8q1o9x3rU6uJv8hZ2n7wQ4fN9cY8pL2xG7sK5mD4rT8qP3bF6nC1vJ7xR2kL9mN5sT4uY7pQ2wE6rT9yU3iO6pL1mC4vB8nK2xZ5qA7wS0eR3tY6uI9oP2"
+    "imageUrl": "/cards/major_6_lovers.png"
   },
   {
     "id": "justice",
@@ -231,7 +231,7 @@
       "宝剑：理性与决断。",
       "红袍：行动后的后果。"
     ],
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC9nM4qT2vP7xD5sL1kR8mQ6zB4pN3wH7yJ2fL9tC6vK1qR5sD8mF2hJ4pL7xN9bV3cM6qT1wY8rP2kL5dF7gH0jS3aZ6xC9vB2nM5qR8tY1uI4oP7aS0dF3gH6jK9lL2"
+    "imageUrl": "/cards/major_11_justice.png"
   },
   {
     "id": "moon",
