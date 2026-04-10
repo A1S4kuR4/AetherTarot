@@ -1,5 +1,4 @@
-export const CARD_BACK_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDJ5qfZ_tC9eu7tMl4jNchwH7eG-LhduNDIomhnaD2-3eHNq38F47elEnvrTAzM_j6Ht16KTaAEpTyjpyBCvTCH9P1JRPZuYQzgF9zk9R4ry6WfC_JO8MPb_dRBt5DX4dHLHUWGKtwcV-alZSxcUDo-64V9oD9o0T1JdY5N1YWwHxyD6yiOzVJOG2ek_80OOBRtHaRQsGex9z9jo5xgc2U_BaDdh99j2cO0XyK1NdeLLwfuY2AYAC2PLDEiWuxdQshvc3qnTGg-F6o7";
+export const CARD_BACK_IMAGE = "/cards/back.png";
 
 export const HISTORY_THUMBNAIL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBSlNznSxIu7WuOoxcEEfVuzf0rnx-2tut032cZfimcZNo8AOmjM-H4Vot7Vb72v36SHTzqWLzmtJSYCO9B8bq8mlIoyVugdlbeHH7m7YjXUF1rvoxA0XDfHwYs8jBXszmjE6-CMLBPq3aH1LLDmPW7AH5nP3qHSerfzFD4in0mW9CE23AAIVn-vANEv6HAZlq2UOZxI4W0oqs9wcsJc-u-jUmQHgNIjnE-It8Ei93R0zixucnZDlV2MTTmlRBYremEFCmI9KxeeclQ";

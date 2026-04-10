@@ -332,7 +332,7 @@ export default function InterpretationView() {
                                 src={drawnCard.card.imageUrl}
                                 alt={drawnCard.card.name}
                                 className={cn(
-                                  "aspect-[2/3] w-full object-cover",
+                                  "aspect-[1/1.7] w-full object-cover",
                                   drawnCard.isReversed && "rotate-180",
                                 )}
                                 referrerPolicy="no-referrer"
@@ -521,7 +521,7 @@ export default function InterpretationView() {
             {drawnCards.map((drawnCard) => (
               <div
                 key={drawnCard.positionId}
-                className="group aspect-[2/3] overflow-hidden rounded-lg border border-paper-border transition-shadow hover:shadow-sm"
+                className="group aspect-[1/1.7] overflow-hidden rounded-lg border border-paper-border transition-shadow hover:shadow-sm"
               >
                 <img
                   src={drawnCard.card.imageUrl}

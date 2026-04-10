@@ -76,7 +76,7 @@ export default function RevealView() {
                   {/* Card */}
                   <div
                     className={cn(
-                      "relative aspect-[2/3.4] w-full overflow-hidden rounded-2xl border shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition-transform duration-500 hover:scale-[1.02]",
+                      "relative aspect-[1/1.7] w-full overflow-hidden rounded-2xl border shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition-transform duration-500 hover:scale-[1.02]",
                       index === 1
                         ? "border-indigo/20"
                         : "border-midnight-border",

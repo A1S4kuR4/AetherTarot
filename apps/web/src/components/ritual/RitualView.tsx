@@ -128,9 +128,8 @@ export default function RitualView() {
 
           return (
             <div key={position.id} className="flex flex-col items-center gap-3">
-              <div
                 className={cn(
-                  "relative flex h-36 w-[90px] items-center justify-center overflow-hidden rounded-2xl border transition-all duration-300 md:h-48 md:w-[120px]",
+                  "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-2xl border transition-all duration-300 md:w-[120px]",
                   drawn
                     ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
                     : "border-dashed border-midnight-border",
@@ -211,7 +210,7 @@ export default function RitualView() {
                   ? { duration: 12, repeat: Infinity, ease: "linear" }
                   : { duration: 0.8, type: "spring" },
               }}
-              className="absolute h-36 w-[90px] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:h-48 md:w-[120px]"
+              className="absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{
                 transformOrigin: "center 220px",
                 transform: `rotate(${baseAngle}deg)`,
