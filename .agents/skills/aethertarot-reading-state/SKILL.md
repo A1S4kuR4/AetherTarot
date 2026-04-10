@@ -28,8 +28,9 @@ Model the runtime in these layers and keep each layer explicit:
 | --- | --- | --- |
 | Request input | `question`, `spreadId`, `drawnCards[]` | `ReadingRequestPayload` |
 | Canonical context | `question_type`, authority spread snapshot, hydrated `DrawnCard[]` | `generateStructuredReading()` |
+| Intent friction | `hard_stop`, `sober_check`, or pass-through safety routing | `analyzeIntentFriction()` |
 | Reading draft | card interpretations, themes, synthesis, guidance, follow-up, confidence | provider output |
-| Safety-reviewed reading | `safety_note` plus narrowed guidance/questions when needed | `applySafetyReview()` |
+| Safety-reviewed reading | `sober_check`, `presentation_mode`, `safety_note`, and narrowed guidance/questions when needed | `analyzeIntentFriction()` + `applySafetyReview()` |
 | Validated product output | stable `StructuredReading` shape for API, history, replay, evals | `structuredReadingSchema` |
 
 Treat `session_capsule` as a named extension point in the state machine. Do not improvise it inside prompts or UI-only code.
@@ -40,9 +41,12 @@ Keep the default execution order aligned with the current service:
 
 1. Classify the user question.
 2. Hydrate canonical spread and card context from runtime authority data.
-3. Generate a structured reading draft.
-4. Apply an independent safety review.
-5. Validate and return the final `StructuredReading`.
+3. Run intent friction analysis.
+4. If intent friction returns `hard_stop`, throw the service error that maps to `403 safety_intercept`.
+5. Generate a structured reading draft through the configured provider.
+6. If intent friction returns `sober_check`, inject `sober_check` and `presentation_mode = "sober_anchor"` into the product payload.
+7. Apply the independent safety review that adds or narrows `safety_note`, guidance, and follow-up questions for ordinary sensitive topics.
+8. Validate and return the final `StructuredReading`.
 
 If you introduce LangGraph, map nodes to this pipeline instead of inventing a second workflow language. A minimal graph should still preserve the same business stages and finish in the same schema.
 
@@ -50,7 +54,7 @@ If you introduce LangGraph, map nodes to this pipeline instead of inventing a se
 
 - Prefer domain fields over opaque blobs. Keep state close to `StructuredReading`, `Spread`, and `DrawnCard`.
 - Keep `cards[]` ordered by spread position order. Do not let node order or async execution reorder user-visible cards.
-- Keep `question_type`, `themes`, `synthesis`, `reflective_guidance`, `follow_up_questions`, `safety_note`, `confidence_note`, and `session_capsule` as product-facing fields, not incidental metadata.
+- Keep `question_type`, `themes`, `synthesis`, `reflective_guidance`, `follow_up_questions`, `safety_note`, `confidence_note`, `session_capsule`, `sober_check`, and `presentation_mode` as product-facing fields, not incidental metadata.
 - Overwrite final reading fields unless accumulation is explicitly required. Most output fields are not append-only.
 - Format prose inside nodes or providers, but keep state keys semantic and stable.
 - Let the route layer validate transport concerns only. Do not move business truth from service back into route or UI.
@@ -63,7 +67,7 @@ Use upstream LangGraph ideas only as implementation scaffolding:
 - Use partial updates from each node; do not mutate and pass around one giant object.
 - Reserve reducers for true accumulation such as internal logs or audit traces. Do not attach append reducers to public fields like `themes` or `cards` unless you want merge behavior.
 - Compile back into one `StructuredReading` contract at the terminal step.
-- Keep safety review as its own node or post-step. Do not bury it inside generation.
+- Keep intent friction and safety review as explicit nodes or steps. Do not bury hard stops, sober checks, or safety notes inside generation.
 
 ## Change Workflow
 
@@ -91,6 +95,8 @@ Before finishing, verify:
 
 1. `POST /api/reading` can still end in one stable `StructuredReading`.
 2. Card order still follows spread position order.
-3. Safety review still runs independently.
-4. History replay would still be able to consume the returned shape.
-5. Any new state field is documented in `docs/` and reflected in shared types or schema code.
+3. Tier 1 hard stops still map to `403 safety_intercept` before generation.
+4. Tier 2 sober checks still return `200` with `sober_check` and `presentation_mode`.
+5. Safety review still runs independently for ordinary sensitive topics.
+6. History replay would still be able to consume the returned shape.
+7. Any new state field is documented in `docs/` and reflected in shared types or schema code.

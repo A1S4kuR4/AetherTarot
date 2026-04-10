@@ -2,26 +2,73 @@
 
 ## 1. 文档目的
 
-本文件定义项目的首版开发约定，帮助人类开发者与代码 Agent 以一致方式协作。
+本文件定义当前 AetherTarot 的本地开发、验证与协作约定，帮助人类开发者与代码 Agent 以一致方式工作。
 
 ---
 
-## 2. 首版建议工具链
+## 2. 当前工具链
 
-待项目初始化后补充：
-
-- 运行时：Node.js / Python / 其他
-- 包管理器：pnpm / npm / uv / poetry
-- 前端框架：待定
-- 后端框架：待定
-- 数据存储：待定
-- 评测运行方式：待定
-
-> 当前模板阶段，重点是先统一文档和目录结构。
+- 包管理：根目录 `npm workspaces`
+- CI Node.js 基线：`20.19.0`
+- 活跃应用：`apps/web`
+- 前端框架：Next.js 16 App Router + React 19
+- 样式链路：Tailwind CSS 4 / PostCSS
+- E2E：Playwright Chromium
+- 共享包：`packages/shared-types`、`packages/domain-tarot`、`packages/prompting`
+- 运行时数据：`data/decks/` 与 `data/spreads/`
+- 当前后端入口：`apps/web/src/app/api/reading/route.ts` 轻量 BFF Route
+- 当前 provider：`placeholder`，尚未接入外部 LLM 或 LangGraph
 
 ---
 
-## 3. 建议协作流程
+## 3. 常用命令
+
+从仓库根目录执行：
+
+```powershell
+npm install
+npm run build
+npm run test:e2e
+npm run validate:assets
+npm run generate:assets
+```
+
+Web workspace 专用命令：
+
+```powershell
+npm run dev -w @aethertarot/web
+npm run lint -w @aethertarot/web
+npm run build -w @aethertarot/web
+npm run test:e2e -w @aethertarot/web
+```
+
+注意：
+
+- `npm run build` 是根命令，会转发到 `@aethertarot/web`。
+- `npm run test:e2e` 是根命令，会转发到 Web Playwright 测试。
+- `npm run validate:assets` 会校验运行时卡牌 JSON、图片存在性、尺寸、manifest hash 与 full-bleed 审核字段。
+- 本地排查 CI 时优先顺序执行 lint / build / e2e，不建议并行跑 Playwright 与其他会清理测试目录的命令。
+
+---
+
+## 4. 环境变量
+
+`apps/web/.env.local.example` 提供当前 Web 应用的环境变量示例。
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Supabase 当前只是骨架能力；未配置这些变量时，应用仍可启动。
+
+可选 provider 配置：
+
+- `AETHERTAROT_READING_PROVIDER=placeholder`
+
+当前唯一可用 provider 是 `placeholder`。配置为其他值会返回 `provider_unavailable`。
+
+---
+
+## 5. 建议协作流程
 
 ### 新功能开发
 
@@ -41,12 +88,13 @@
 ### 修改安全相关逻辑
 
 1. 先检查 `docs/50-safety/safety-principles.md`
-2. 必要时新增 ADR
-3. 补充安全专项样例
+2. 同步检查 `docs/20-domain/reading-contract.md` 与 `docs/60-evals/rubrics.md`
+3. 必要时新增 ADR
+4. 补充安全专项样例
 
 ---
 
-## 4. 分支与提交建议
+## 6. 分支与提交建议
 
 - feat/*：新功能
 - fix/*：问题修复
@@ -62,10 +110,8 @@
 
 ---
 
-## 5. 待补充
+## 7. 待补充
 
-- [ ] 本地启动命令
-- [ ] 测试命令
-- [ ] Lint / format 命令
-- [ ] 环境变量说明
 - [ ] 部署流程
+- [ ] 外部 LLM provider 接入后的运行说明
+- [ ] LangGraph 接入后的本地调试说明

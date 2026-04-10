@@ -66,27 +66,43 @@
 
 ### `knowledge/`
 
-知识编译层。用于沉淀塔罗牌义、牌阵、象征体系、语义风格、安全边界与综合主题。
+知识编译层。用于沉淀塔罗牌义、牌阵、象征体系、语义结构与综合主题。
 
 ### `apps/`
 
 应用层。当前以 `apps/web` 为唯一活跃应用，承载前台与轻量 BFF 路由；`prototype/` 已冻结，不再作为主开发入口。
 
+### `prototype/`
+
+历史原型层。保留 AI Studio / Vite 原型作为迁移参考，不参与当前 workspace，不作为新功能开发入口。
+
 ### `packages/`
 
-复用模块层。当前迁移重点为 `shared-types`、`domain-tarot` 与 `prompting`，用于承载共享类型、塔罗运行时数据访问与 mock 解读模板。
+复用模块层。当前迁移重点为 `shared-types`、`domain-tarot` 与 `prompting`，用于承载共享类型、塔罗运行时数据访问与 placeholder 结构化解读生成逻辑。
 
-### `evals/`
+### `docs/60-evals/`
 
-评测资产层。用于放置样例、测试集、rubrics、报告与回归脚本。
+评测标准层。当前以 `docs/60-evals/rubrics.md` 维护质量与安全评测标准；仓库尚未建立独立根级 `evals/` 资产目录。
 
 ### `data/`
 
 运行时数据层。用于放置首轮上线所需的牌组与牌阵 JSON 资产，作为当前权威运行时数据来源。
 
+### `scripts/`
+
+仓库级脚本层。当前用于生成与校验运行时卡牌资产，例如 `generate-card-assets.mjs` 与 `validate-card-assets.mjs`。
+
+### `.github/`
+
+CI 配置层。当前维护 Web CI workflow，覆盖依赖安装、资产校验、lint、build 与 Playwright smoke tests。
+
 ### `.agents/skills/`
 
 仓库内 repo-local skills / agent workflows 的统一位置。用于封装 ingest、prompt 修订、评测归类、写 ADR 等技能。
+
+### `external/`
+
+外部参考层。当前保留 `langchain-skills` 作为上游参考源，不作为 AetherTarot 的 canonical skill root。
 
 ---
 
