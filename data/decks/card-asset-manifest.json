@@ -1,0 +1,460 @@
+{
+  "version": 1,
+  "target": {
+    "width": 1000,
+    "height": 1700,
+    "aspectRatio": "1:1.7",
+    "fullBleed": true
+  },
+  "generatedAt": "2026-04-10",
+  "entries": [
+    {
+      "assetId": "fool",
+      "imageUrl": "/cards/major_0_fool.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "44f39d02c90d7e8f5cb9050b1d4b39f55fd5a53819b0d856a91b3ce4550da440"
+    },
+    {
+      "assetId": "magician",
+      "imageUrl": "/cards/major_1_magician.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c27debfc4472af7b8be426613287836df388eff23c99a57a7598e4240ad8464c"
+    },
+    {
+      "assetId": "high-priestess",
+      "imageUrl": "/cards/major_2_high_priestess.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a78789bea53723abce3924a01b6c3082edd473ec58064b553332bcb0b275f547"
+    },
+    {
+      "assetId": "empress",
+      "imageUrl": "/cards/major_3_empress.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c1b097aa6422f8aa0e90837fd25142aa1e8ece8a7f4f40ba8252150858944c7d"
+    },
+    {
+      "assetId": "emperor",
+      "imageUrl": "/cards/major_4_emperor.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a48b9542db09e68e3f263b5119eed0c1edb8cb4fc58df0a09a86a8393075ff65"
+    },
+    {
+      "assetId": "hierophant",
+      "imageUrl": "/cards/major_5_hierophant.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "17016ac4be66a23118be6912bd33885f431ef6a75b20b229f39f86abe9f83e78"
+    },
+    {
+      "assetId": "lovers",
+      "imageUrl": "/cards/major_6_lovers.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "cfc722fcac95ce202de3bef47c1f1f4ee826f76608e0ebc043e872afc0b5c046"
+    },
+    {
+      "assetId": "chariot",
+      "imageUrl": "/cards/major_7_chariot.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3794e1e924a6852ee7654b51f6716e02e719b7e5e2635a46c692a503f9277eb9"
+    },
+    {
+      "assetId": "strength",
+      "imageUrl": "/cards/major_8_strength.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "bc8e9cd191918bc2f0d5cc32db6dfd9e9a57e445a721787fa85a23a1df7cb9a4"
+    },
+    {
+      "assetId": "hermit",
+      "imageUrl": "/cards/major_9_hermit.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "aece12cc5c2215a39bea0f3bd5cdf4a2ed2998e3e5b96266d74aeea9164d4baf"
+    },
+    {
+      "assetId": "wheel-of-fortune",
+      "imageUrl": "/cards/major_10_wheel.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "f6742f5b25883c739f8571312f1d6e79aab903794e2624b6981222d442d39fab"
+    },
+    {
+      "assetId": "justice",
+      "imageUrl": "/cards/major_11_justice.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "4bb5b233e6c2f7e96d4e5e0c768fb2f62bfc1c8bc59dc432bdcc100a5078929e"
+    },
+    {
+      "assetId": "hanged-man",
+      "imageUrl": "/cards/major_12_hanged_man.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "00cb2e790a0fc185ce3a8f1033627479e6a7b913bd994a0840da47287709c463"
+    },
+    {
+      "assetId": "death",
+      "imageUrl": "/cards/major_13_death.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "54ef03269edb2b072c39af459754d57620b66e6c58a7666a9ad127e643a45403"
+    },
+    {
+      "assetId": "temperance",
+      "imageUrl": "/cards/major_14_temperance.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "e3eb2cee447d85b04958623de3b8654f40409189ab5712c001480826a6e86478"
+    },
+    {
+      "assetId": "devil",
+      "imageUrl": "/cards/major_15_devil.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "9b2e542f97f0e57ac8746855df529b15e7088ef8e9bc795a9e9189d180cb4609"
+    },
+    {
+      "assetId": "tower",
+      "imageUrl": "/cards/major_16_tower.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "bd04008f2fe05a33cb500d0080797943daaa6e351ba6ec8cd37716d67ed30ac3"
+    },
+    {
+      "assetId": "star",
+      "imageUrl": "/cards/major_17_star.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "8662cc317891a08aaf5689bb398cadbd32a43ec01de906eaed9d37ce8455bcb0"
+    },
+    {
+      "assetId": "moon",
+      "imageUrl": "/cards/major_18_moon.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "054744a0c155680d17bde0e2d485f0dc7001fe489b4a58c610fa17e951028632"
+    },
+    {
+      "assetId": "sun",
+      "imageUrl": "/cards/major_19_sun.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3f6e35826ea380f0729aa8fe7e65910c747a3d0375a309c99c49b7e8fde5f300"
+    },
+    {
+      "assetId": "judgement",
+      "imageUrl": "/cards/major_20_judgement.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "72e65c5133ffc90e7aff9f936262df3f0499698133b7ad5cf49c4722dfc6c12a"
+    },
+    {
+      "assetId": "world",
+      "imageUrl": "/cards/major_21_world.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "be968b96b9555b262907445128a6fc641bab6d4b028925e439026a44456bc7e2"
+    },
+    {
+      "assetId": "ace-of-wands",
+      "imageUrl": "/cards/minor_wands_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3d73dd8b6a8d006491854cbd7b8db23afc6607c0050be099a40ec594c696e318"
+    },
+    {
+      "assetId": "two-of-wands",
+      "imageUrl": "/cards/minor_wands_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "840c85f4bd6e65009736403f303952cfe61fc12979b0e636b81be4b7c4865854"
+    },
+    {
+      "assetId": "three-of-wands",
+      "imageUrl": "/cards/minor_wands_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3f71172f2b20ebfc17578be692d4a60b47edbf6ec2dc77977980337df86e59d0"
+    },
+    {
+      "assetId": "four-of-wands",
+      "imageUrl": "/cards/minor_wands_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "b434fc02c9f482d615ec1ce7234e3de34b34e7e9d78777e893b9ebe632d1ffc3"
+    },
+    {
+      "assetId": "five-of-wands",
+      "imageUrl": "/cards/minor_wands_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c5557b9bd4350fa1d3efe6a42d05dfa876d4fc1da0167c26a7e8237d405faedf"
+    },
+    {
+      "assetId": "card-back",
+      "imageUrl": "/cards/back.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "f22220edec674abf748dfc8d835348848a5dd1231398f83649707817e99c62e1"
+    }
+  ]
+}
