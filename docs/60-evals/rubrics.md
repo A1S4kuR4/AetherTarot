@@ -153,6 +153,8 @@
 
 ## 8. MVP 两阶段与 Agent Profile 评测
 
+配套样例见 docs/60-evals/two-stage-reading-mvp-cases.md。
+
 ### 8.1 两阶段状态稳定性
 
 通过标准：
