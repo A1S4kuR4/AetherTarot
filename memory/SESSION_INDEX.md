@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-09`
+- `last_updated`: `2026-04-10`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -33,14 +33,18 @@
 
 ### 2.2 Latest Work Log
 
+- 文件：`memory/work-log-2026-04-10.md`
+- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构与 1:1.7 比例规范化收口
+- 当前重点：
+  - 大阿尔卡纳 0-21 现已全备且本地化
+  - 权杖组 Ace-5 完成注入
+  - 全站卡牌渲染比例统一为 1:1.7
+
+### 2.3 Previous Shared Work Logs
+
 - 文件：`memory/work-log-2026-04-09.md`
 - 用途：记录 `2026-04-09` 的设计系统迁移、UX 重构、安全架构升级与 CI 排障收口
-- 当前重点：
-  - `Paper / Midnight` 设计系统成为唯一 canonical 设计方向
-  - `Home / Ritual / Reveal / Interpretation / Journey` 完成一轮 UX 主线重构
-  - `ADR-0002`、`sober_check`、`presentation_mode` 与 CI 排障已完成文档收口
-
-### 2.3 Previous Shared Work Log
+- 摘要：Paper / Midnight 系统确立，核心页面重构完成。
 
 - 文件：`memory/work-log-2026-04-08.md`
 - 用途：记录 repo-local skill 引入、skill root 迁移与文档收口情况
@@ -63,8 +67,8 @@
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/work-log-2026-04-09.md`，确认 `2026-04-09` 的 UX / 安全 / CI 主线收口
-3. 配合 `docs/10-product/ux-risk-status.md` 与 `docs/80-decisions/adr/0002-dual-tier-safety-escalation.md` 理解当前并行主线
+2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入与数据重构情况
+3. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
 4. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线后续顺序
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
@@ -77,8 +81,8 @@
 
 如果你的目标是快速了解上一轮做了什么，建议直接查看：
 
+- `memory/work-log-2026-04-10.md`
 - `memory/work-log-2026-04-09.md`
-- `docs/10-product/ux-risk-status.md`
 
 ## 4. 维护约定
 
