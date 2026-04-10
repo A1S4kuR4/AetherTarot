@@ -27,7 +27,8 @@
 1. `docs/30-agent/context-strategy.md`
 2. `docs/30-agent/output-schema.md`
 3. `docs/40-architecture/architecture.md`
-4. `docs/00-overview/repo-local-skills.md`
+4. `docs/30-agent/provider-prompt-contract.md`
+5. `docs/00-overview/repo-local-skills.md`
 
 ### 面向 UI / 前端 / 体验开发
 
