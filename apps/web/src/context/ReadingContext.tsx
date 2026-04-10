@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -19,6 +20,17 @@ import type {
 } from "@aethertarot/shared-types";
 
 const HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
+const EMPTY_SOBER_GATE: SoberGateState = {
+  readingId: null,
+  input: "",
+  isPassed: false,
+};
+
+type SoberGateState = {
+  readingId: string | null;
+  input: string;
+  isPassed: boolean;
+};
 
 type ReadingContextValue = {
   question: string;
@@ -27,6 +39,8 @@ type ReadingContextValue = {
   reading: StructuredReading | null;
   errorMessage: string | null;
   safetyIntercept: { reason: string; referral_links?: string[] } | null;
+  soberGate: SoberGateState;
+  setSoberGate: (gate: SoberGateState) => void;
   isLoading: boolean;
   isHydrated: boolean;
   history: ReadingHistoryEntry[];
@@ -79,10 +93,12 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [reading, setReading] = useState<StructuredReading | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [safetyIntercept, setSafetyIntercept] = useState<{ reason: string; referral_links?: string[] } | null>(null);
+  const [soberGate, setSoberGate] = useState<SoberGateState>(EMPTY_SOBER_GATE);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
   const interpretInFlightRef = useRef(false);
+  const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -102,20 +118,24 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setQuestion = (value: string) => {
+    interpretSignatureRef.current = null;
     setQuestionState(value);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
   const setSelectedSpread = (spread: Spread | null) => {
+    interpretSignatureRef.current = null;
     setSelectedSpreadState(spread);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
@@ -124,23 +144,27 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    interpretSignatureRef.current = null;
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
     return true;
   };
 
   const completeRitual = (cards: DrawnCard[]) => {
+    interpretSignatureRef.current = null;
     setDrawnCards(cards);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
-  const interpretReading = async () => {
+  const interpretReading = useCallback(async () => {
     if (
       interpretInFlightRef.current ||
       !question.trim() ||
@@ -150,13 +174,24 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const requestSignature = JSON.stringify({
+      question: question.trim(),
+      spreadId: selectedSpread.id,
+      drawnCards: requestDrawnCards,
+    });
+
+    if (interpretSignatureRef.current === requestSignature) {
+      return false;
+    }
+
     interpretInFlightRef.current = true;
     setIsLoading(true);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    interpretSignatureRef.current = requestSignature;
 
     try {
-      const requestDrawnCards = toRequestDrawnCards(drawnCards);
       const response = await fetch("/api/reading", {
         method: "POST",
         headers: {
@@ -206,6 +241,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
       return true;
     } catch (error) {
+      interpretSignatureRef.current = null;
       setReading(null);
       setErrorMessage(
         error instanceof Error
@@ -217,9 +253,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  };
+  }, [drawnCards, question, selectedSpread]);
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
+    interpretSignatureRef.current = null;
     const spread = findSpreadById(historyEntry.spreadId) ?? null;
     const reconstructedCards: DrawnCard[] = historyEntry.drawnCards
       .map((savedCard) => {
@@ -243,16 +280,19 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setReading(historyEntry.reading);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
   const resetReading = () => {
+    interpretSignatureRef.current = null;
     setQuestionState("");
     setSelectedSpreadState(null);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
@@ -275,6 +315,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         reading,
         errorMessage,
         safetyIntercept,
+        soberGate,
+        setSoberGate,
         isLoading,
         isHydrated,
         history,

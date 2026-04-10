@@ -20,7 +20,7 @@
 - `/api/reading` 成功时返回 `StructuredReading`，不再返回 markdown-only 文本
 - Tier 1 安全阻断返回 `403 safety_intercept`，前端写入 `safetyIntercept` 并展示不可绕过的界限面板
 - Tier 2 决策外包场景返回 `200`，payload 中包含 `sober_check` 与 `presentation_mode = "sober_anchor"`
-- 当前仍未接入真实 LangGraph、DeepSeek、Claude 或其他外部 LLM provider
+- 当前已接入最小 LangGraph reading 编排；仍未接入 DeepSeek、Claude 或其他外部 LLM provider
 
 ## Supabase Skeleton
 

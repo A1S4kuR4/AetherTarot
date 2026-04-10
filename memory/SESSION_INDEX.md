@@ -27,18 +27,19 @@
 - 文件：`memory/mainline-priority-plan-2026-04-08.md`
 - 用途：定义知识层阶段结束后的产品主线优先级与并行推进关系
 - 当前重点：
-  - `M3` Minimal LangGraph 作为当前技术主线
+  - `M3` Minimal LangGraph 已接入，当前技术主线转向 contract 稳定与后续 runtime 能力
   - `2026-04-09` 启动的 UX / 产品主线与技术主线并行推进
   - 不再把 ingest backlog 作为默认主线入口
 
 ### 2.2 Latest Work Log
 
 - 文件：`memory/work-log-2026-04-10.md`
-- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构与 1:1.7 比例规范化收口
+- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构、1:1.7 比例规范化收口，以及 M3 最小 LangGraph 接入
 - 当前重点：
   - 大阿尔卡纳 0-21 现已全备且本地化
   - 权杖组 Ace-5 完成注入
   - 全站卡牌渲染比例统一为 1:1.7
+  - `generateStructuredReading` 已委托最小 LangGraph，`/api/reading` 公共协议保持不变
 
 ### 2.3 Previous Shared Work Logs
 
@@ -67,9 +68,9 @@
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入与数据重构情况
+2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入、数据重构与 M3 最小 LangGraph 接入情况
 3. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
-4. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线后续顺序
+4. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 
