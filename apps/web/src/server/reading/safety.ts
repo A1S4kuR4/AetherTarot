@@ -4,6 +4,8 @@ import type { StructuredReading } from "@aethertarot/shared-types";
 
 const SELF_HARM_PATTERN =
   /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|suicide|kill myself/i;
+const URGENT_HEALTH_PATTERN =
+  /急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|emergency|can't breathe/i;
 const HEALTH_PATTERN =
   /健康|疾病|生病|诊断|怀孕|治疗|症状|medical|doctor/i;
 const LEGAL_PATTERN = /法律|官司|起诉|诉讼|律师|合同|legal/i;
@@ -20,7 +22,7 @@ export type IntentFrictionResult =
   | { type: "pass" };
 
 export function analyzeIntentFriction(question: string): IntentFrictionResult {
-  if (SELF_HARM_PATTERN.test(question) || HEALTH_PATTERN.test(question)) {
+  if (SELF_HARM_PATTERN.test(question) || URGENT_HEALTH_PATTERN.test(question)) {
     return {
       type: "hard_stop",
       reason: "系统检测到可能涉及身体安全或紧急健康的风险。塔罗无法提供医疗或安全判断，请立即寻求专业的医疗或心理急救支持。",
@@ -69,7 +71,7 @@ export function applySafetyReview({
   question: string;
   reading: StructuredReading;
 }) {
-  if (SELF_HARM_PATTERN.test(question)) {
+  if (SELF_HARM_PATTERN.test(question) || URGENT_HEALTH_PATTERN.test(question)) {
     return withSafetyOverride(
       reading,
       "如果你现在正处在想要伤害自己、无法确保自身安全，或强烈绝望的状态，这次塔罗解读不能替代现实支持。请优先联系你信任的人、当地紧急服务或危机干预热线，先把安全放在第一位。",
@@ -143,4 +145,3 @@ export function applySafetyReview({
 
   return reading;
 }
-

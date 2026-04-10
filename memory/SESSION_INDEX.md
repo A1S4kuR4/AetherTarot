@@ -34,14 +34,26 @@
 ### 2.2 Latest Work Log
 
 - 文件：`memory/work-log-2026-04-10.md`
-- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构、1:1.7 比例规范化收口，以及 M3 最小 LangGraph 接入
+- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构、1:1.7 比例规范化收口、M3 最小 LangGraph 接入，以及 Two-Stage Reading MVP 落地
 - 当前重点：
   - 大阿尔卡纳 0-21 现已全备且本地化
   - 权杖组 Ace-5 完成注入
   - 全站卡牌渲染比例统一为 1:1.7
-  - `generateStructuredReading` 已委托最小 LangGraph，`/api/reading` 公共协议保持不变
+  - `generateStructuredReading` 已委托最小 LangGraph，并扩展为 initial/final 两阶段 reading flow
+  - `POST /api/reading` 仍保持单入口，但 request/response 已加入 `agent_profile` 与 `reading_phase` 等阶段元数据
+  - Lite / Standard / Sober Agent Profile 已进入 MVP 结构，相关规范沉淀在 `docs/30-agent/reading-flow.md` 与 `docs/30-agent/agent-profiles.md`
 
-### 2.3 Previous Shared Work Logs
+
+### 2.3 Near-Term Work Plan
+
+- 文件：`memory/near-term-work-plan-2026-04-10.md`
+- 用途：安排 Two-Stage Reading MVP 之后的最近工作顺序
+- 当前重点：
+  - 先收口并提交当前两阶段 MVP 变更
+  - 再补 contract hardening 与语义 eval
+  - 然后准备真实 provider / prompt baseline
+  - UX 风险收口和 Runtime Alignment 并行但不抢主线
+### 2.4 Previous Shared Work Logs
 
 - 文件：`memory/work-log-2026-04-09.md`
 - 用途：记录 `2026-04-09` 的设计系统迁移、UX 重构、安全架构升级与 CI 排障收口
@@ -54,7 +66,7 @@
   - 将原有 `ingest-wiki` 迁移到 `.agents/skills/`
   - 已补齐 repo-local skills 的当前约定文档
 
-### 2.4 Optional Local Working Notes
+### 2.5 Optional Local Working Notes
 
 - 文件（如本地存在）：
   - `memory/knowledge-ingest-backlog.md`
@@ -68,9 +80,10 @@
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入、数据重构与 M3 最小 LangGraph 接入情况
-3. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
-4. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
+2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入、数据重构、M3 最小 LangGraph 与 Two-Stage Reading MVP 落地情况
+3. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
+4. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
+5. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 

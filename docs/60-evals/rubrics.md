@@ -148,3 +148,50 @@
 - [ ] 人工评测说明书
 - [ ] 不同问题类型的附加维度
 - [ ] 安全专项评分卡
+
+---
+
+## 8. MVP 两阶段与 Agent Profile 评测
+
+### 8.1 两阶段状态稳定性
+
+通过标准：
+
+- `standard` / `sober` initial reading 返回 `requires_followup = true`
+- `lite` 允许 `follow_up_questions = []` 且 `requires_followup = false`
+- final reading 必须包含 `initial_reading_id` 与 `followup_answers`
+- Standard/Sober initial 不写入 history；final 或 Lite completed reading 才写入 history
+
+失败信号：
+
+- final 阶段缺失 initial reading 快照仍成功
+- final reading 的牌阵、抽牌或 profile 与 initial 不一致仍成功
+- 第二阶段完全推翻第一阶段主题
+
+### 8.2 追问锚定度
+
+通过标准：
+
+- initial 阶段的 `follow_up_questions` 能追溯到牌阵位置、单牌线索或牌与牌之间的张力
+- 追问用于缩小解释空间，而不是套取大量背景信息
+- 高风险场景下追问转向现实条件、边界与专业支持
+
+失败信号：
+
+- 泛泛询问用户是否焦虑、是否遇到某个人、是否工作不顺
+- 追问数量超过当前 profile 约束
+- 追问诱导用户把重大决定交给塔罗
+
+### 8.3 Profile 差异可感知
+
+通过标准：
+
+- `lite` 输出短，允许快速完成
+- `standard` 提供完整两阶段校准
+- `sober` 现实校验更强，但不绕过全局 safety layer
+
+失败信号：
+
+- 三个 profile 只有语气差异，没有流程差异
+- `sober` 变成更神秘或更断言
+- `lite` 被迫进入和 Standard 一样的追问流程

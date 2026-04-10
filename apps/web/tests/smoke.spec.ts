@@ -28,8 +28,12 @@ async function startReading(
   page: Parameters<typeof test>[0]["page"],
   question: string,
   spreadName: RegExp,
+  profileName?: RegExp,
 ) {
   await page.goto("/");
+  if (profileName) {
+    await page.getByRole("button", { name: profileName }).click();
+  }
   await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
   await page.getByRole("button", { name: spreadName }).click();
   await holdToStart(page);
@@ -88,6 +92,30 @@ async function drawCards(
   }
 }
 
+async function completeFollowup(
+  page: Parameters<typeof test>[0]["page"],
+  answer = "我会先对照现实情况观察，再做下一步决定。",
+) {
+  await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeVisible();
+
+  const inputs = page.getByPlaceholder("写下你的现实补充...");
+  const count = await inputs.count();
+
+  for (let index = 0; index < count; index += 1) {
+    await inputs.nth(index).fill(`${answer} (${index + 1})`);
+  }
+
+  const submitButton = page.getByRole("button", { name: /生成整合深读/i });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click({ force: true });
+  await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByText(/第二阶段整合深读/)).toBeVisible();
+}
 function buildSinglePayload(question = "我现在最该注意什么？") {
   return {
     question,
@@ -152,7 +180,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "反思指引" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "解读说明" })).toBeVisible();
-
+    await completeFollowup(page);
     await page.goto("/history");
 
     await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
@@ -162,6 +190,23 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
   });
 
+
+  test("completes a lite reading without a blocking follow-up", async ({ page }) => {
+    await startReading(page, "我现在最该注意什么？", /单牌启示/i, /快速塔罗师/i);
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 8000 });
+
+    await page.getByRole("button", { name: /开始深入解读/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
+
+    await page.goto("/history");
+    await expect(page.getByRole("button", { name: /我现在最该注意什么/ })).toBeVisible();
+  });
   test("reopens a saved reading from history", async ({ page }) => {
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
     await expect(page).toHaveURL(/\/ritual$/);
@@ -173,7 +218,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible({
       timeout: 10000,
     });
-
+    await completeFollowup(page);
     await page.goto("/history");
     await page.getByRole("button", { name: /接下来一周我应该把重点放在哪里/i }).click();
 
@@ -199,7 +244,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible({
       timeout: 10000,
     });
-
+    await completeFollowup(page);
     await page.goto("/");
     await expect(
       page.getByRole("heading", { name: /意识之流 \(The Journey\)/i }),
@@ -242,7 +287,7 @@ test.describe("AetherTarot smoke flow", () => {
       timeout: 10000,
     });
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
-
+    await completeFollowup(page);
     await page.goto("/history");
     await expect(
       page.getByRole("button", { name: /我需要如何梳理接下来三个月的整体方向/ }),
@@ -576,6 +621,11 @@ test.describe("AetherTarot smoke flow", () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
 
+    expect(body.agent_profile).toBe("standard");
+    expect(body.reading_phase).toBe("initial");
+    expect(body.requires_followup).toBe(true);
+    expect(body.initial_reading_id).toBeNull();
+    expect(body.followup_answers).toBeNull();
     expect(body.question_type).toBeTruthy();
     expect(body.cards).toHaveLength(3);
     expect(body.cards.map((card: { position_id: string }) => card.position_id)).toEqual([
@@ -590,8 +640,94 @@ test.describe("AetherTarot smoke flow", () => {
     expect(body.confidence_note).toBeTruthy();
     expect(body.session_capsule).toBeNull();
     expect(body.safety_note).toBeNull();
+    expect(body.follow_up_questions.length).toBeGreaterThanOrEqual(1);
+    expect(body.follow_up_questions.length).toBeLessThanOrEqual(2);
   });
 
+
+  test("rejects a final-phase request without the initial reading snapshot", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: {
+        ...buildSinglePayload(),
+        phase: "final",
+        followup_answers: [
+          {
+            question: "这张牌对应哪件现实事情？",
+            answer: "我会先观察现实反馈。",
+          },
+        ],
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error.code).toBe("invalid_request");
+    expect(body.error.message).toBe("phase 为 final 时必须提供 initial_reading。");
+  });
+
+  test("returns a final reading that preserves the initial reading themes", async ({
+    request,
+  }) => {
+    const initialResponse = await request.post("/api/reading", {
+      data: buildHolyTrianglePayload(),
+    });
+    const initial = await initialResponse.json();
+
+    const finalResponse = await request.post("/api/reading", {
+      data: {
+        ...buildHolyTrianglePayload(),
+        agent_profile: "standard",
+        phase: "final",
+        initial_reading: initial,
+        followup_answers: initial.follow_up_questions.map((question: string) => ({
+          question,
+          answer: "我会先把事实和感受分开观察。",
+        })),
+      },
+    });
+
+    expect(finalResponse.status()).toBe(200);
+    const final = await finalResponse.json();
+    expect(final.reading_phase).toBe("final");
+    expect(final.requires_followup).toBe(false);
+    expect(final.initial_reading_id).toBe(initial.reading_id);
+    expect(final.followup_answers).toHaveLength(initial.follow_up_questions.length);
+    expect(final.themes).toEqual(initial.themes);
+    expect(final.synthesis).toMatch(/第二阶段/);
+  });
+
+  test("allows a lite reading to complete without follow-up questions", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: {
+        ...buildSinglePayload(),
+        agent_profile: "lite",
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.agent_profile).toBe("lite");
+    expect(body.reading_phase).toBe("initial");
+    expect(body.requires_followup).toBe(false);
+    expect(body.follow_up_questions).toEqual([]);
+  });
+
+  test("adds safety-note boundaries for ordinary health questions", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: buildSinglePayload("我最近总担心自己的健康状态，该怎么看？"),
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.safety_note).toMatch(/不能替代医疗判断/);
+    expect(body.reflective_guidance[0]).toMatch(/专业人士/);
+  });
   test("returns a hard-stop intercept payload for crisis prompts", async ({
     request,
   }) => {

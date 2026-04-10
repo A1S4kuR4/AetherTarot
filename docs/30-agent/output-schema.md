@@ -10,13 +10,44 @@
 
 - `POST /api/reading` 成功时直接返回结构化 reading 对象，不再返回单一 `interpretation: string`
 - 首轮默认 `locale = zh-CN`
+- MVP 默认 `agent_profile = standard`、`phase = initial`
 - `session_capsule` 在本阶段固定为 `null`
 - `cards[]` 的顺序必须与牌阵位置顺序一致
+- 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
 
 ---
 
-## 3. 标准字段
+## 3. Request 字段
+
+```json
+{
+  "question": "string",
+  "spreadId": "string",
+  "drawnCards": [
+    {
+      "positionId": "string",
+      "cardId": "string",
+      "isReversed": true
+    }
+  ],
+  "agent_profile": "lite | standard | sober",
+  "phase": "initial | final",
+  "initial_reading": "StructuredReading | undefined",
+  "followup_answers": [
+    {
+      "question": "string",
+      "answer": "string"
+    }
+  ]
+}
+```
+
+`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。
+
+---
+
+## 4. Response 标准字段
 
 ```json
 {
@@ -24,6 +55,16 @@
   "locale": "zh-CN",
   "question": "string",
   "question_type": "relationship | career | self_growth | decision | other",
+  "agent_profile": "lite | standard | sober",
+  "reading_phase": "initial | final",
+  "requires_followup": true,
+  "initial_reading_id": "string | null",
+  "followup_answers": [
+    {
+      "question": "string",
+      "answer": "string"
+    }
+  ],
   "spread": {
     "id": "string",
     "name": "string",
@@ -64,7 +105,27 @@
 
 ---
 
-## 4. 字段解释
+## 5. 字段解释
+
+### `agent_profile`
+
+本次 reading 使用的塔罗师 profile。MVP 支持 `lite`、`standard`、`sober`。它影响追问数量、输出深度与现实校验强度，不应只是文风开关。
+
+### `reading_phase`
+
+`initial` 表示第一阶段独立初读；`final` 表示结合用户追问回答后的整合深读。第二阶段必须延续第一阶段主题，不能推翻牌面主轴。
+
+### `requires_followup`
+
+前端流程信标。`standard` 与 `sober` 的 initial reading 默认应为 `true`；`lite` 可为 `false` 并直接作为 completed reading 写入历史。
+
+### `initial_reading_id`
+
+`final` reading 指向其来源 initial reading。`initial` 阶段固定为 `null`。
+
+### `followup_answers`
+
+`final` reading 记录用户针对第一阶段追问提交的现实补充。`initial` 阶段固定为 `null`。
 
 ### `question_type`
 
@@ -80,7 +141,7 @@
 
 ### `themes`
 
-从整体牌阵中提炼出的主题标签，建议 2-4 个。
+从整体牌阵中提炼出的主题标签，建议 2-4 个。`final` 阶段应保留 initial 阶段的核心主题。
 
 ### `synthesis`
 
@@ -92,7 +153,7 @@
 
 ### `follow_up_questions`
 
-帮助用户继续反思或进入下一轮追问的问题列表。
+在 `initial` 阶段用于进入第二阶段的牌面锚定追问；在 `final` 阶段仅作为延伸反思问题，不再阻塞流程。Lite 允许为空数组。
 
 ### `safety_note`
 
@@ -108,19 +169,20 @@
 
 ### `presentation_mode`
 
-呈现模式信标（`standard` | `void_narrative` | `sober_anchor`）。它是正式协议的一部分，将被记录与回放。前端根据该信标调取不同的视觉布局范式，在形式与留白上配合语义张力，绝不仅是虚假的前置 UI Hint。
+呈现模式信标（`standard` | `void_narrative` | `sober_anchor`）。它是正式协议的一部分，将被记录与回放。
 
 ---
 
-## 5. 设计边界
+## 6. 设计边界
 
 - 结构化输出是产品协议，不应退化回 markdown-only 返回
 - 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
-- 当前最小 LangGraph 节点已收敛到本协议，不创造第二套 reading shape
+- 当前 LangGraph 节点必须收敛到本协议，不创造第二套 reading shape
+- final 阶段由前端带回 initial reading 快照；MVP 不引入服务端会话存储
 
 ---
 
-## 6. 待补充
+## 7. 待补充
 
 - [ ] 字段长度限制
 - [ ] 多语言兼容字段

@@ -1,5 +1,7 @@
 import type {
+  AgentProfile,
   DrawnCard,
+  FollowupAnswer,
   QuestionType,
   Spread,
   StructuredReading,
@@ -53,25 +55,31 @@ const QUESTION_TYPE_GUIDANCE: Record<QuestionType, string[]> = {
 
 const QUESTION_TYPE_FOLLOW_UP: Record<QuestionType, string[]> = {
   relationship: [
-    "这段关系里，你最想被真正理解的需求是什么？",
-    "如果把注意力从对方反应移回自己，你最需要守住的边界是什么？",
+    "这张牌所指向的关系张力里，你更像是在担心失去连接，还是担心失去自己的边界？",
+    "如果把注意力从对方反应移回自己，哪张牌的位置最贴近你现在最需要守住的底线？",
   ],
   career: [
-    "哪一部分工作最能暴露你真正想追求的方向？",
-    "接下来两周里，什么现实反馈最值得你重点观察？",
+    "这组牌里最卡住行动的位置，对应到现实工作中是哪一类任务、关系或选择？",
+    "接下来两周里，什么现实反馈最能验证这组牌提示的职业节奏？",
   ],
   self_growth: [
-    "最近最容易被你忽略、但又一直反复出现的感受是什么？",
-    "如果给自己一个更温和的节奏，你现在最需要先放下什么？",
+    "这组牌里最反复出现的情绪线索，最近在你的生活里通常什么时候被触发？",
+    "如果先不急着改变，你最想从哪张牌的位置开始重新理解自己？",
   ],
   decision: [
-    "如果暂时不追求一步到位，你最想先验证哪一个小判断？",
-    "这次选择里，哪些顾虑来自现实，哪些顾虑来自想象中的最坏结果？",
+    "这次牌阵里最提醒你放慢的位置，对应到现实里是哪一个还没有被确认的条件？",
+    "如果暂时不让塔罗替你定答案，你最需要先验证哪一个小判断？",
   ],
   other: [
-    "眼下最值得你继续追问的那条线索是什么？",
-    "如果把这次解读当作一面镜子，你最先看见了自己哪一部分状态？",
+    "眼下最值得你继续追问的那条牌面线索，和现实中的哪件事最有关？",
+    "如果把这次初读当作一面镜子，你最先看见了自己哪一部分状态？",
   ],
+};
+
+const PROFILE_GUIDANCE: Record<AgentProfile, string> = {
+  lite: "这次先保留轻量判断，不急着展开过多分支。",
+  standard: "这次适合先让牌面建立主轴，再用你的补充来校准解释空间。",
+  sober: "这次需要把牌面启发和现实条件并排放置，避免把决定完全交给解读。",
 };
 
 function uniqueStrings(values: string[]) {
@@ -109,8 +117,9 @@ function deriveThemes(questionType: QuestionType, drawnCards: DrawnCard[]) {
   ]).slice(0, 4);
 }
 
-function buildSynthesis(
+function buildInitialSynthesis(
   question: string,
+  agentProfile: AgentProfile,
   spread: Spread,
   themes: string[],
   drawnCards: DrawnCard[],
@@ -125,7 +134,127 @@ function buildSynthesis(
         ? "逆位出现得更集中，说明真正需要处理的也许不是外部事件本身，而是内在节奏与表达方式。"
         : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
 
-  return `围绕“${question}”，${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} 这次更值得关注的主轴是 ${themes.join("、")}。与其急着确认单一答案，不如把它当作一次有层次的观察：哪些线索已经足够清楚，哪些部分仍需要你用更诚实、更稳定的方式慢慢看见。`;
+  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+}
+
+function buildFinalSynthesis({
+  question,
+  initialReading,
+  followupAnswers,
+}: {
+  question: string;
+  initialReading: StructuredReading;
+  followupAnswers: FollowupAnswer[];
+}) {
+  const answerSummary = followupAnswers
+    .map((item) => `“${item.question}”你的回应是：${item.answer}`)
+    .join("；");
+  const primaryTheme = initialReading.themes[0] ?? "当前主轴";
+
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
+}
+
+function buildCards(
+  questionType: QuestionType,
+  spread: Spread,
+  drawnCards: DrawnCard[],
+) {
+  return drawnCards.map((drawnCard) => {
+    const position = spread.positions.find((item) => item.id === drawnCard.positionId);
+
+    return {
+      card_id: drawnCard.card.id,
+      name: drawnCard.card.name,
+      english_name: drawnCard.card.englishName,
+      orientation: drawnCard.isReversed ? "reversed" as const : "upright" as const,
+      position_id: drawnCard.positionId,
+      position: position?.name ?? "未知位置",
+      position_meaning:
+        position?.description ?? "这个位置提醒你留意问题的关键层面。",
+      interpretation: buildCardInterpretation(questionType, spread, drawnCard),
+    };
+  });
+}
+
+function selectFollowUpQuestions(
+  questionType: QuestionType,
+  agentProfile: AgentProfile,
+) {
+  if (agentProfile === "lite") {
+    return [];
+  }
+
+  const count = agentProfile === "sober" ? 2 : 2;
+  return QUESTION_TYPE_FOLLOW_UP[questionType].slice(0, count);
+}
+
+export function buildPlaceholderInitialReadingDraft({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  drawnCards,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+}): PlaceholderReadingDraft {
+  const cards = buildCards(questionType, spread, drawnCards);
+  const themes = deriveThemes(questionType, drawnCards);
+  const baseGuidance = uniqueStrings([
+    `先观察“${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”在现实里最常出现在哪些情境。`,
+    ...QUESTION_TYPE_GUIDANCE[questionType],
+  ]);
+  const reflectiveGuidance = agentProfile === "lite"
+    ? baseGuidance.slice(0, 2)
+    : baseGuidance.slice(0, 4);
+
+  return {
+    cards,
+    themes,
+    synthesis: buildInitialSynthesis(question, agentProfile, spread, themes, drawnCards),
+    reflective_guidance: reflectiveGuidance,
+    follow_up_questions: selectFollowUpQuestions(questionType, agentProfile),
+    confidence_note:
+      "这是第一阶段初读，更适合作为牌面主轴与解释方向；用户补充只能帮助收束，不应把它改写成绝对结论。",
+  };
+}
+
+export function buildPlaceholderFinalReadingDraft({
+  question,
+  questionType,
+  agentProfile,
+  initialReading,
+  followupAnswers,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  initialReading: StructuredReading;
+  followupAnswers: FollowupAnswer[];
+}): PlaceholderReadingDraft {
+  const finalGuidance = uniqueStrings([
+    `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
+    "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
+    agentProfile === "sober"
+      ? "在做重大决定前，先确认现实资源、风险承受边界和可咨询的专业对象。"
+      : "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。",
+    ...initialReading.reflective_guidance.slice(0, 1),
+  ]).slice(0, 4);
+
+  return {
+    cards: initialReading.cards,
+    themes: initialReading.themes,
+    synthesis: buildFinalSynthesis({ question, initialReading, followupAnswers }),
+    reflective_guidance: finalGuidance,
+    follow_up_questions: [
+      "经过这次补充后，你最愿意在现实中先验证哪一个小信号？",
+    ],
+    confidence_note:
+      "这是第二阶段整合深读。它延续第一阶段的牌面主轴，并结合你的补充信息做校正；它仍然不是对未来的确定承诺。",
+  };
 }
 
 export function buildPlaceholderReadingDraft({
@@ -139,37 +268,11 @@ export function buildPlaceholderReadingDraft({
   spread: Spread;
   drawnCards: DrawnCard[];
 }): PlaceholderReadingDraft {
-  const cards: StructuredReading["cards"] = drawnCards.map((drawnCard) => {
-    const position = spread.positions.find((item) => item.id === drawnCard.positionId);
-
-    return {
-      card_id: drawnCard.card.id,
-      name: drawnCard.card.name,
-      english_name: drawnCard.card.englishName,
-      orientation: drawnCard.isReversed ? "reversed" : "upright",
-      position_id: drawnCard.positionId,
-      position: position?.name ?? "未知位置",
-      position_meaning:
-        position?.description ?? "这个位置提醒你留意问题的关键层面。",
-      interpretation: buildCardInterpretation(questionType, spread, drawnCard),
-    };
+  return buildPlaceholderInitialReadingDraft({
+    question,
+    questionType,
+    agentProfile: "standard",
+    spread,
+    drawnCards,
   });
-
-  const themes = deriveThemes(questionType, drawnCards);
-  const reflectiveGuidance = uniqueStrings([
-    `先观察“${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”在现实里最常出现在哪些情境。`,
-    ...QUESTION_TYPE_GUIDANCE[questionType],
-  ]).slice(0, 4);
-  const followUpQuestions = QUESTION_TYPE_FOLLOW_UP[questionType].slice(0, 2);
-
-  return {
-    cards,
-    themes,
-    synthesis: buildSynthesis(question, spread, themes, drawnCards),
-    reflective_guidance: reflectiveGuidance,
-    follow_up_questions: followUpQuestions,
-    confidence_note:
-      "这次解读更适合作为观察当前模式的线索，而不是对未来结果的确定承诺。",
-  };
 }
-
