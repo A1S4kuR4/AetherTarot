@@ -3,8 +3,8 @@
 - `last_updated`: `2026-04-10`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 completed / M4 partial / UX track active`
-- `verification`: `npm run build` passed, `npm run test:e2e -- --workers=1 --reporter=list` passed, `2026-04-09` Web CI 排障完成，`2026-04-10` 资产注入与校验流程记录于最新 work log
+- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 partial / UX track active`
+- `verification`: `npm run build` passed, `npm run lint -w @aethertarot/web` passed with existing img warnings, `npm run test:e2e` passed with `25 passed`, `2026-04-10` Two-Stage Reading MVP / assets / M3 records are in latest work log
 
 ## 1. 当前状态快照
 
@@ -28,6 +28,8 @@
 - `apps/web/public/cards/` 已接入 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 已记录 full-bleed 状态、视觉审核与 SHA-256
 - 仓库已接入最小 LangGraph 编排，`generateStructuredReading()` 保持 service 入口并委托 graph 执行
+- Two-Stage Reading MVP 已落地：`POST /api/reading` 保持单入口，但 request / response 已加入 `agent_profile`、`phase`、`reading_phase` 与 follow-up 元数据
+- Lite / Standard / Sober Agent Profile 已进入运行时结构，Standard / Sober 走 `initial -> followup -> final`，Lite 可 initial-as-final
 - 当前仍没有服务端 history persistence，也没有拆分 `apps/api`
 
 补充说明：
@@ -44,11 +46,12 @@
 - `sober_check` 与 `presentation_mode` 已进入正式 output schema
 - Web CI、Playwright 与 cross-platform lockfile 问题已完成一轮系统排障
 
-`2026-04-10` 的补充更新表明，`M4 Runtime Alignment` 已开始进入资产与数据层：
+`2026-04-10` 的补充更新表明，`M4 Runtime Alignment` 已开始进入资产与数据层，同时 reading contract 已升级到 Two-Stage MVP：
 
 - 大阿卡纳 0-21 与权杖 Ace-5 已完成本地运行时数据和牌面资产注入
 - 全站卡牌渲染比例已统一到 `1:1.7`
-- 资产生成与校验已具备根命令：`npm run generate:assets` 与 `npm run validate:assets`
+- 资产生成与校验已具备根命令：`npm run generate:assets` 与 `npm run validate:assets`。
+- 两阶段 reading 规范已沉淀到 `docs/30-agent/reading-flow.md`、`docs/30-agent/agent-profiles.md`、`docs/30-agent/output-schema.md`、`docs/40-architecture/architecture.md` 与 `docs/60-evals/rubrics.md`
 
 因此，当前瓶颈已经转为“如何在最小 graph 已成立后保持 contract 稳定”，以及“如何把已成立的仪式感、留存入口与安全摩擦进一步机制化为稳定产品体验”。
 
@@ -162,7 +165,7 @@
 - 实际 reading orchestration 已从 route 中抽离到服务层
 - provider 当前为可替换占位实现，尚未接外部 LLM
 - 安全边界已在生成后单独检查，不能只靠 prompt 约束
-- 成功响应协议已稳定为 `StructuredReading`，短期内不应频繁改 shape
+- 成功响应协议已稳定为带阶段元数据的 `StructuredReading`，短期内不应频繁改 shape
 - `session_capsule` 本轮固定为 `null`
 - 默认 `locale` 仍为 `zh-CN`
 - 历史记录当前只做 localStorage 持久化，不做服务端持久化
@@ -204,6 +207,18 @@
 - 图节点覆盖分类、上下文、意图摩擦、生成、结构化组装、安全复核与最终校验
 - 当前不启用 checkpoint、streaming、interrupt、人审或外部 LLM
 
+### M3.5. Two-Stage Reading MVP
+
+状态：已完成（`2026-04-10`）
+
+结果：
+
+- `POST /api/reading` 保持单入口，新增 `agent_profile` 与 `phase` request 字段。
+- `StructuredReading` 增加 `agent_profile`、`reading_phase`、`requires_followup`、`initial_reading_id` 与 `followup_answers`。
+- `standard` / `sober` 走完整两阶段，`lite` 可快速完成。
+- final 阶段会校验 initial reading 与当前 profile / spread / drawn cards 一致。
+- History 只保存 completed reading，Standard/Sober initial 不写入历史。
+
 ### M4. Runtime Alignment
 
 状态：部分启动
@@ -228,9 +243,9 @@
 本轮主线执行后的关键验证如下：
 
 - `npm run build` 已通过
-- `npm run test:e2e -- --workers=1 --reporter=list` 已通过，当前 smoke suite 为 `19/19` 全绿
-- API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配
-- Reading smoke flow 已覆盖：单牌、圣三角、凯尔特十字、历史回放、Tier 1 hard stop 与 Tier 2 sober check
+- `npm run test:e2e` 已通过，当前 smoke suite 为 `25/25` 全绿
+- API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配、final 缺少 initial snapshot、Lite no-followup、final 主题延续、普通健康 safety_note
+- Reading smoke flow 已覆盖：单牌、圣三角、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
 
 这意味着：
 
