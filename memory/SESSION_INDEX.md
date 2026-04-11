@@ -80,7 +80,7 @@
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 `memory/work-log-2026-04-10.md`，确认最新资产注入、数据重构、M3 最小 LangGraph 与 Two-Stage Reading MVP 落地情况
+2. 再看 [work-log-2026-04-11.md](file:///d:/GoogleProject/AetherTarot/memory/work-log-2026-04-11.md)，确认最新 Trinity Spatial Architecture 落地与 /new 页面体验打磨情况。
 3. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
 4. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
 5. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
