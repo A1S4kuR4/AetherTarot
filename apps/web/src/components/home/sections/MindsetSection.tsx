@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 
 export default function MindsetSection() {
   return (
-    <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center">
+    <section className="scroll-snap-section px-6 py-24 text-center">
       <div className="w-full max-w-3xl space-y-12">
         <header className="space-y-4">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">

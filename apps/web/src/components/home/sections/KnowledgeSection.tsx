@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 
 export default function KnowledgeSection() {
   return (
-    <section className="flex min-h-[80vh] flex-col items-center justify-center bg-paper-raised/50 px-6 py-24">
+    <section className="scroll-snap-section bg-paper-raised/50 px-6 py-24">
       <div className="w-full max-w-5xl space-y-20">
         <header className="text-center">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">

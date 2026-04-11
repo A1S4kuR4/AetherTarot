@@ -2,7 +2,7 @@
 
 import { useReading } from "@/context/ReadingContext";
 import JourneyView from "@/components/home/JourneyView";
-import RitualInitializer from "@/components/home/RitualInitializer";
+import NextLink from "next/link";
 
 export default function JourneyPage() {
   const { history, isHydrated } = useReading();
@@ -18,16 +18,28 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[92vh] max-w-5xl flex-col items-center justify-center px-6 pb-20 pt-24 lg:px-16">
-      <header className="mb-16 space-y-4 text-center">
-        <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
-          开启仪式
-        </h1>
-        <p className="mx-auto max-w-lg text-base text-text-muted">
-          选择你的意图与牌阵，在静谧中开启这段向内的旅程。
-        </p>
-      </header>
-      <RitualInitializer />
+    <main className="mx-auto flex min-h-[92vh] max-w-4xl flex-col items-center justify-center px-6 text-center">
+      <div className="space-y-8">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-paper-raised border border-paper-border text-text-placeholder">
+          <span className="material-symbols-outlined text-4xl">history_edu</span>
+        </div>
+        <div className="space-y-4">
+          <h1 className="font-serif text-3xl font-semibold text-ink md:text-4xl">
+            记录尚未开启
+          </h1>
+          <p className="mx-auto max-w-md text-base leading-relaxed text-text-muted">
+            每一个回声都需要从一次真诚的询问开始。目前这里还没有你的占卜记录。
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+          <NextLink href="/" className="btn-secondary px-8 py-3.5">
+            阅读叙事导引
+          </NextLink>
+          <NextLink href="/new" className="btn-primary px-8 py-3.5">
+            开启第一次仪式
+          </NextLink>
+        </div>
+      </div>
     </main>
   );
 }
