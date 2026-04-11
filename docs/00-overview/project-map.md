@@ -34,7 +34,8 @@
 
 1. `DESIGN.md`
 2. `docs/10-product/ux-risk-status.md`
-3. `docs/30-agent/output-schema.md`
+3. `docs/80-decisions/adr/0003-trinity-spatial-architecture.md` (必读：了解三权分立架构)
+4. `docs/30-agent/output-schema.md`
 
 ### 面向安全与评测
 
