@@ -19,8 +19,10 @@ export default function RitualView() {
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleDeck());
+  const [isRevealing, setIsRevealing] = useState(false);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
+  const revealScheduledRef = useRef(false);
 
   useEffect(() => {
     drawnCardsRef.current = drawnCards;
@@ -29,6 +31,32 @@ export default function RitualView() {
   useEffect(() => {
     deckRef.current = deck;
   }, [deck]);
+
+  useEffect(() => {
+    if (!selectedSpread) {
+      return;
+    }
+
+    if (drawnCards.length !== selectedSpread.positions.length) {
+      revealScheduledRef.current = false;
+      return;
+    }
+
+    if (revealScheduledRef.current) {
+      return;
+    }
+
+    revealScheduledRef.current = true;
+    completeRitual(drawnCards);
+
+    const timeoutId = window.setTimeout(() => {
+      router.push("/reveal");
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [completeRitual, drawnCards, router, selectedSpread]);
 
   useEffect(() => {
     if (!question.trim() || !selectedSpread) {
@@ -45,6 +73,8 @@ export default function RitualView() {
 
   const handleShuffle = () => {
     setIsShuffling(true);
+    revealScheduledRef.current = false;
+    setIsRevealing(false);
 
     window.setTimeout(() => {
       setDeck(() => {
@@ -92,10 +122,7 @@ export default function RitualView() {
     setDrawnCards(nextDrawnCards);
 
     if (nextDrawnCards.length === selectedSpread.positions.length) {
-      window.setTimeout(() => {
-        completeRitual(nextDrawnCards);
-        router.push("/reveal");
-      }, 1500);
+      setIsRevealing(true);
     }
   };
 
@@ -188,6 +215,18 @@ export default function RitualView() {
           <span className="material-symbols-outlined text-lg">style</span>
           <span>抽取一张牌</span>
         </button>
+        {isComplete ? (
+          <button
+            type="button"
+            onClick={() => router.push("/reveal")}
+            className="btn-primary"
+          >
+            <span className="material-symbols-outlined text-lg">
+              visibility
+            </span>
+            <span>{isRevealing ? "正在揭示牌阵..." : "继续揭示牌阵"}</span>
+          </button>
+        ) : null}
       </div>
 
       <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[450px]">

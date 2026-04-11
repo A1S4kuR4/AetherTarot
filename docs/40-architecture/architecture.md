@@ -64,9 +64,10 @@
 3. final 阶段一致性验证（仅 `phase = final`）
 4. 意图摩擦分析（可能直接抛出 403 Hard Stop）
 5. provider.generateInitialRead 或 provider.generateFinalRead
-6. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
-7. safety review
-8. structured response validate
+6. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile）
+7. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
+8. safety review
+9. structured response validate
 
 ### Provider 层
 
@@ -76,7 +77,7 @@
 - 将统一的 reading context 转换为结构化 reading draft
 - 区分 initial read 与 final read 的生成语义
 
-当前阶段：默认仅启用 `placeholder` provider；还未接入外部 LLM。
+当前阶段：默认启用 `placeholder` provider，并新增一个可选的单 `llm` baseline。`llm` provider 通过 OpenAI-compatible `chat/completions` HTTP 调用接入，仍不引入 Provider Router、多模型分层、streaming 或 checkpoint。
 
 ### 领域规则层
 
@@ -119,6 +120,7 @@
 2. 前端提交 `question + spreadId + drawnCards + agent_profile + phase`
 3. Route 进行基础 schema 校验
 4. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验
+   当前 graph 会在 provider draft 之后先执行一层 contract validation，防止 provider 越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量。
 5. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
 6. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
 7. Provider 生成 initial 或 final 结构化 draft；final draft 必须接收 initial reading snapshot 和 `followup_answers`
@@ -143,6 +145,6 @@
 ## 6. 待补充
 
 - [ ] 部署拓扑
-- [ ] provider 配置说明
+- [x] provider 配置说明（见 `docs/70-ops/dev-setup.md` 的 llm baseline env 变量）
 - [ ] session capsule 与长期记忆接入方式
 - [ ] 观测指标与告警设计

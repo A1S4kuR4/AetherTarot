@@ -66,8 +66,8 @@ Provider 不负责生成：
 真实 provider 第一版按单 provider baseline 实现：
 
 1. 保留 `placeholder` provider 作为默认 fallback。
-2. 新增一个真实 provider，例如 `llm` 或明确供应商名。
-3. 使用环境变量切换：`AETHERTAROT_READING_PROVIDER=placeholder | llm`。
+2. 新增一个真实 provider，例如 `llm`。当前仓库已提供一个 OpenAI-compatible 单 provider baseline。
+3. 使用环境变量切换：`AETHERTAROT_READING_PROVIDER=placeholder | llm`。当切到 `llm` 时，使用 `AETHERTAROT_LLM_BASE_URL`、`AETHERTAROT_LLM_MODEL`、可选 `AETHERTAROT_LLM_API_KEY` 与 `AETHERTAROT_LLM_TEMPERATURE`。
 4. 真实 provider 内部先支持同步非流式调用。
 5. 不在第一版引入 Provider Router、多模型分层、streaming、checkpoint 或 human review。
 6. 所有真实 provider 输出先经过 provider-local parse / normalize，再交给 graph 的 `structuredReadingSchema.parse()` 做最终校验。
@@ -77,6 +77,7 @@ Provider 不负责生成：
 - 模型不可用、响应不可解析或缺字段时，抛 `ReadingServiceError("generation_failed", ...)` 或 `provider_unavailable`。
 - 不允许在失败时返回 markdown-only reading。
 - 不允许 provider 自行吞掉 safety 风险并返回“温和版”结果。
+- service / graph 现已对 provider draft 执行强制 contract validation；若 cards 顺序、identity、orientation 或 follow-up 数量不符合 phase / profile 规则，会直接拒绝该 draft。
 
 ---
 
@@ -114,6 +115,8 @@ Initial draft 不得：
 - 把用户问题包装成唯一答案
 - 向用户索取大量背景资料
 - 给出医疗、法律、财务或操控建议
+- 输出 `Thinking...`、思维链、模型自述或任何非最终用户文本
+- 把牌名、位置名、位置含义改写成 provider 自造文案
 
 ### Follow-up 规则
 
@@ -129,6 +132,7 @@ Initial draft 不得：
 - 某张牌的正逆位线索
 - 牌与牌之间的张力
 - 牌面提示与现实行动之间的落差
+- 且同一轮的追问彼此不能重复
 
 失败示例：
 
@@ -225,16 +229,24 @@ Provider 不得自行决定：
 
 - 删除未知字段
 - 校验必需字段存在
+- 去重 `themes` / `reflective_guidance` / `follow_up_questions`
 - 将 `themes` 限制为 2-4 个
 - 将 `reflective_guidance` 限制为 2-4 个
 - 将 initial `follow_up_questions` 限制为 profile 允许范围
 - 将 final `follow_up_questions` 限制为 0-1 个延伸问题
 - 保持 `cards[]` 数量和顺序与 `drawnCards` / `spread.positions` 一致
+- 保持 `cards[]` 的 `position_id` / `card_id` / `orientation` 与 authority `drawnCards` 完全一致
+- `cards[]` 的 `name` / `english_name` / `position` / `position_meaning` 视为 authority-owned 字段；provider 如返回变体，normalize 必须覆盖回权威值
 - 缺失或不可修复时抛服务错误，不返回半结构化内容
 
 ---
 
-## 9. 第一版验收
+## 9. 当前本地联调基线
+
+- 截至 `2026-04-11`，本地兼容 API 手工联调中，`gemma4:e4b` 是当前更推荐的 baseline。`llama3.1:8b` 虽可跑通 live smoke，但在中文稳定性、`reflective_guidance` 完整性和局部第三方内心归因上波动更大。
+- 该结论只是当前本地开发建议，不是长期模型选型定论；接入其他模型时仍需重新做 `test:llm` + 人工抽样。
+
+## 10. 第一版验收
 
 真实 provider 第一版必须通过：
 

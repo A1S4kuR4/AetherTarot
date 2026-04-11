@@ -75,7 +75,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ### `packages/prompting`
 
-当前占位 provider 的结构化解读生成逻辑。
+当前 placeholder provider 与 llm prompt builder 的结构化解读生成逻辑。
 
 ### `packages/shared-types`
 
@@ -102,11 +102,12 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - Dual-Tier Safety Escalation（`403 Hard Stop` / `200 Sober Check`）
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
 - 生成后安全检查与 `safety_note`
+- 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
 - 27 张运行时牌与 28 张本地卡牌 PNG 资产，均按 1:1.7 竖版规范接入
 
 当前不做：
 
-- 外部 LLM provider 接入
+- 多 Provider Router / 多模型分层
 - 独立 `apps/api`
 - 独立 `agent-core` 服务
 - LangGraph 复杂图

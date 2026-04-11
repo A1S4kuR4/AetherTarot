@@ -119,3 +119,36 @@
 
 - 任意客户端可伪造 final 阶段并绕过 initial 主轴
 - final 阶段允许更换牌阵、换牌或切换 Agent Profile
+
+---
+
+## 8. Case TS-007：Provider Draft Contract 必须被 Graph 拒绝违规输出
+
+通过标准：
+
+- provider draft 的 `cards[]` 数量、顺序、`position_id`、`card_id` 与 `orientation` 必须和 authority `drawnCards` 一致
+- `standard` / `sober` initial draft 必须返回 `1-2` 条 `follow_up_questions`
+- `lite` initial draft 最多返回 `1` 条 `follow_up_question`
+- final draft 最多返回 `1` 条延伸反思问题
+- 任一违规时 graph/service 在非 e2e 测试层直接抛 `generation_failed`
+
+失败信号：
+
+- provider 能在 draft 层偷偷换牌、乱序或篡改正逆位
+- provider 能返回超出 phase/profile 规则的追问数量而继续成功组装 response
+
+---
+
+## 9. Case TS-008：语义 Fixture 必须覆盖主轴延续、追问锚定与安全收窄
+
+通过标准：
+
+- final reading 至少保留 initial 的核心 theme 或 primary theme
+- standard initial 的 `follow_up_questions` 明确锚定牌面、位置、张力或现实验证点，而不是泛泛问卷
+- `safety_note` 场景下，`reflective_guidance` 与 `follow_up_questions` 明确收窄到现实支持、风险核实、边界澄清或专业意见
+
+失败信号：
+
+- final 虽保留 schema，但在语义上完全偏离 initial 主轴
+- follow-up 只是在套取背景，没有牌面或张力锚点
+- `safety_note` 已出现，但 guidance / follow-up 仍沿用普通场景的宽泛建议
