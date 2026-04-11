@@ -36,7 +36,7 @@ export default function InterpretationView() {
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
-  const [followupDrafts, setFollowupDrafts] = useState<Record<string, string>>({});
+  const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<Record<string, Record<number, string>>>({});
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -54,9 +54,12 @@ export default function InterpretationView() {
   const isSoberInputValid = soberInput.trim().length >= 5;
   const isInitialAwaitingFollowup = reading?.reading_phase === "initial" && reading.requires_followup;
   const followupQuestions = reading?.follow_up_questions ?? [];
+  const activeFollowupDrafts = activeReadingId
+    ? followupDraftsByReadingId[activeReadingId] ?? {}
+    : {};
   const areFollowupAnswersValid =
     followupQuestions.length > 0 &&
-    followupQuestions.every((prompt) => (followupDrafts[prompt] ?? "").trim().length >= 2);
+    followupQuestions.every((_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2);
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -76,10 +79,17 @@ export default function InterpretationView() {
     }, 1200);
   };
 
-  const handleFollowupChange = (prompt: string, value: string) => {
-    setFollowupDrafts((currentDrafts) => ({
+  const handleFollowupChange = (index: number, value: string) => {
+    if (!activeReadingId) {
+      return;
+    }
+
+    setFollowupDraftsByReadingId((currentDrafts) => ({
       ...currentDrafts,
-      [prompt]: value,
+      [activeReadingId]: {
+        ...(currentDrafts[activeReadingId] ?? {}),
+        [index]: value,
+      },
     }));
   };
 
@@ -88,9 +98,9 @@ export default function InterpretationView() {
       return;
     }
 
-    const answers: FollowupAnswer[] = followupQuestions.map((prompt) => ({
+    const answers: FollowupAnswer[] = followupQuestions.map((prompt, index) => ({
       question: prompt,
-      answer: (followupDrafts[prompt] ?? "").trim(),
+      answer: (activeFollowupDrafts[index] ?? "").trim(),
     }));
 
     void submitFollowupAnswers(answers);
@@ -130,8 +140,6 @@ export default function InterpretationView() {
     safetyIntercept,
     selectedSpread,
   ]);
-
-
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
@@ -435,9 +443,9 @@ export default function InterpretationView() {
                 </p>
                 <h2 className="mt-1 font-serif text-2xl text-ink">延伸追问</h2>
                 <ul className="mt-4 space-y-3">
-                  {reading.follow_up_questions.map((prompt) => (
+                  {reading.follow_up_questions.map((prompt, index) => (
                     <li
-                      key={prompt}
+                      key={`${reading.reading_id}-followup-${index}`}
                       className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body"
                     >
                       {prompt}
@@ -458,13 +466,13 @@ export default function InterpretationView() {
                   </p>
                   <div className="mt-5 space-y-4">
                     {followupQuestions.map((prompt, index) => (
-                      <label key={prompt} className="block space-y-2">
+                      <label key={`${reading.reading_id}-answer-${index}`} className="block space-y-2">
                         <span className="block font-serif text-sm text-ink">
                           {index + 1}. {prompt}
                         </span>
                         <textarea
-                          value={followupDrafts[prompt] ?? ""}
-                          onChange={(event) => handleFollowupChange(prompt, event.target.value)}
+                          value={activeFollowupDrafts[index] ?? ""}
+                          onChange={(event) => handleFollowupChange(index, event.target.value)}
                           placeholder="写下你的现实补充..."
                           className="h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
                         />

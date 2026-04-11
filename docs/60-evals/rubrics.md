@@ -77,6 +77,7 @@
 高分标准：
 
 - 返回结构符合 schema
+- provider draft 若越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量，会在 graph/service 层直接失败
 - 至少稳定包含 `question_type`、`cards[]`、`themes`、`synthesis`、`reflective_guidance`
 - 历史记录回放与前端展示不需要退回 markdown fallback
 
@@ -107,6 +108,7 @@
 每次涉及 reading backend、结构化输出或安全策略的改动后，至少检查：
 
 - `POST /api/reading` 是否仍返回稳定 schema
+- graph/service 轻量 contract tests 是否仍能在非 e2e 层打爆 phase/profile/provider 违规输出
 - `question_type` 是否合理
 - `cards[]` 顺序是否与牌阵位置一致
 - `themes` / `synthesis` 是否高于逐牌层级
@@ -183,6 +185,20 @@
 - 泛泛询问用户是否焦虑、是否遇到某个人、是否工作不顺
 - 追问数量超过当前 profile 约束
 - 追问诱导用户把重大决定交给塔罗
+
+### 8.4 自动回归职责分层
+
+通过标准：
+
+- Node 侧 contract tests 负责 phase/profile/provider draft 契约与 graph 状态机错误
+- Playwright API smoke 只负责 request parsing、错误映射与代表性 happy/safety HTTP 行为
+- 语义 fixture tests 负责 final theme continuity、follow-up 锚定度与 safety_note 场景下的 guidance / follow-up 收窄
+
+失败信号：
+
+- 关键两阶段状态机错误只能在完整 e2e 中暴露
+- provider draft 越权输出没有轻量测试保护
+- 语义回归只检查 schema，不检查主轴延续、追问锚定和安全收窄
 
 ### 8.3 Profile 差异可感知
 
