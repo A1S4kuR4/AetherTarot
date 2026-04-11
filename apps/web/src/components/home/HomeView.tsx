@@ -31,14 +31,14 @@ export default function HomeView() {
       { threshold: 0.6 } // High threshold to ensure snap is nearly complete
     );
 
-    const sections = containerRef.current?.querySelectorAll(".scroll-snap-section");
+    const sections = containerRef.current?.querySelectorAll(":scope > .scroll-snap-section");
     sections?.forEach((section) => observer.observe(section));
 
     return () => observer.disconnect();
   }, []);
 
   const scrollToSection = (index: number) => {
-    const sections = containerRef.current?.querySelectorAll(".scroll-snap-section");
+    const sections = containerRef.current?.querySelectorAll(":scope > .scroll-snap-section");
     if (sections?.[index]) {
       sections[index].scrollIntoView({ behavior: "smooth" });
     }
