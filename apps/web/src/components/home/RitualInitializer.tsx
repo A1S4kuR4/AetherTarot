@@ -107,7 +107,7 @@ export default function RitualInitializer() {
   };
 
   return (
-    <div className="w-full max-w-2xl space-y-12 text-center pb-12">
+    <div className="w-full max-w-2xl space-y-4 text-center pb-4">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -116,9 +116,9 @@ export default function RitualInitializer() {
       >
         <div className="relative mx-auto max-w-xl">
           <textarea
-            className="w-full resize-none rounded-2xl border border-paper-border bg-paper-raised px-5 py-4 font-sans text-base text-ink placeholder:text-text-placeholder transition-all duration-200 focus:border-terracotta/40 focus:outline-none focus:ring-2 focus:ring-terracotta/10 shadow-sm"
+            className="w-full resize-none rounded-2xl border border-midnight-border bg-midnight-panel px-4 py-3 font-sans text-base text-text-inverse placeholder:text-text-inverse-muted transition-all duration-200 focus:border-terracotta/40 focus:outline-none focus:ring-2 focus:ring-terracotta/10 shadow-sm"
             placeholder="今天，你想向内心询问什么？"
-            rows={3}
+            rows={2}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
@@ -130,9 +130,9 @@ export default function RitualInitializer() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-        className="space-y-4"
+        className="space-y-3"
       >
-        <h2 className="font-sans text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
+        <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
           选择塔罗师 · Choose Your Reader
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -142,16 +142,22 @@ export default function RitualInitializer() {
               type="button"
               onClick={() => setAgentProfile(profile.id)}
               className={cn(
-                "rounded-2xl border px-4 py-4 text-left transition-all duration-200",
+                "rounded-2xl border px-4 py-3 text-left transition-all duration-200",
                 agentProfile === profile.id
-                  ? "border-terracotta/40 bg-terracotta/5 shadow-sm"
-                  : "border-paper-border bg-paper-raised hover:border-paper-border hover:shadow-sm",
+                  ? "border-terracotta/50 bg-midnight-elevated shadow-sm"
+                  : "border-midnight-border bg-midnight-panel hover:border-midnight-border-subtle hover:shadow-sm",
               )}
             >
-              <span className="block font-serif text-base text-ink">
+              <span className={cn(
+                "block font-serif text-base transition-colors",
+                agentProfile === profile.id ? "text-text-inverse" : "text-text-inverse-muted"
+              )}>
                 {profile.name}
               </span>
-              <span className="mt-1.5 block text-xs leading-relaxed text-text-muted">
+              <span className={cn(
+                "mt-1.5 block text-xs leading-relaxed transition-colors",
+                agentProfile === profile.id ? "text-text-inverse-muted" : "text-text-inverse-muted/60"
+              )}>
                 {profile.description}
               </span>
             </button>
@@ -164,9 +170,9 @@ export default function RitualInitializer() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        <h2 className="font-sans text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
+        <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
           选择牌阵 · Choose Your Spread
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -176,32 +182,41 @@ export default function RitualInitializer() {
               type="button"
               onClick={() => setSelectedSpread(spread)}
               className={cn(
-                "group flex flex-col items-center rounded-2xl border p-6 text-center transition-all duration-200",
+                "group flex flex-col items-center rounded-2xl border p-4 text-center transition-all duration-200",
                 selectedSpread?.id === spread.id
-                  ? "border-terracotta/40 bg-terracotta/5 shadow-sm"
-                  : "border-paper-border bg-paper-raised hover:border-paper-border hover:shadow-sm",
+                  ? "border-terracotta/50 bg-midnight-elevated shadow-sm"
+                  : "border-midnight-border bg-midnight-panel hover:border-midnight-border-subtle hover:shadow-sm",
               )}
             >
               <div
                 className={cn(
-                  "mb-4 flex h-12 w-12 items-center justify-center rounded-full transition-colors",
+                  "mb-3 flex h-10 w-10 items-center justify-center rounded-full transition-colors",
                   selectedSpread?.id === spread.id
-                    ? "bg-terracotta/10 text-terracotta"
-                    : "bg-paper-muted text-text-muted group-hover:text-text-body",
+                    ? "bg-terracotta/20 text-terracotta"
+                    : "bg-white/5 text-text-inverse-muted group-hover:text-text-inverse",
                 )}
               >
                 <span className="material-symbols-outlined text-2xl">
                   {spread.icon}
                 </span>
               </div>
-              <h3 className="mb-2 font-serif text-lg text-ink">
+              <h3 className={cn(
+                "mb-1 font-serif text-base transition-colors",
+                selectedSpread?.id === spread.id ? "text-text-inverse" : "text-text-inverse-muted"
+              )}>
                 {spread.name}
               </h3>
-              <p className="font-sans text-sm leading-relaxed text-text-muted">
+              <p className={cn(
+                "font-sans text-xs leading-relaxed transition-colors",
+                selectedSpread?.id === spread.id ? "text-text-inverse-muted" : "text-text-inverse-muted/60"
+              )}>
                 {spread.description}
               </p>
               {spread.id === "holy-triangle" && (
-                <span className="chip-accent mt-3 text-[10px]">
+                <span className={cn(
+                  "chip-dark mt-2 text-[9px]",
+                  selectedSpread?.id === spread.id && "border-terracotta/30 text-terracotta/80"
+                )}>
                   最受青睐
                 </span>
               )}
@@ -226,7 +241,7 @@ export default function RitualInitializer() {
           onTouchEnd={() => stopPress()}
           disabled={!question.trim() || !selectedSpread}
           className={cn(
-            "btn-primary relative select-none overflow-hidden px-12 py-5 text-base transition-all",
+            "btn-primary relative select-none overflow-hidden px-10 py-4 text-sm transition-all",
             isPressing && "shadow-inner",
           )}
           animate={{
