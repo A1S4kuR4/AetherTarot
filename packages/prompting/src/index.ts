@@ -82,6 +82,11 @@ const PROFILE_GUIDANCE: Record<AgentProfile, string> = {
   sober: "这次需要把牌面启发和现实条件并排放置，避免把决定完全交给解读。",
 };
 
+export interface ReadingPrompt {
+  system: string;
+  user: string;
+}
+
 function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
@@ -184,8 +189,123 @@ function selectFollowUpQuestions(
     return [];
   }
 
-  const count = agentProfile === "sober" ? 2 : 2;
-  return QUESTION_TYPE_FOLLOW_UP[questionType].slice(0, count);
+  return QUESTION_TYPE_FOLLOW_UP[questionType].slice(0, 2);
+}
+
+function formatSpread(spread: Spread) {
+  return [
+    `牌阵：${spread.name} (${spread.englishName})`,
+    `牌阵说明：${spread.description}`,
+    "位置语义：",
+    ...spread.positions.map(
+      (position, index) =>
+        `${index + 1}. ${position.name} [${position.id}] - ${position.description}`,
+    ),
+  ].join("\n");
+}
+
+function formatDrawnCards(spread: Spread, drawnCards: DrawnCard[]) {
+  return drawnCards
+    .map((drawnCard, index) => {
+      const position = spread.positions.find((item) => item.id === drawnCard.positionId);
+      const orientation = drawnCard.isReversed ? "reversed" : "upright";
+      const keywords = getKeywords(drawnCard).join(" / ") || "无";
+
+      return [
+        `Card ${index + 1}:`,
+        `- position_id: ${drawnCard.positionId}`,
+        `- position: ${position?.name ?? "未知位置"}`,
+        `- position_meaning: ${position?.description ?? "未知位置含义"}`,
+        `- card_id: ${drawnCard.card.id}`,
+        `- name: ${drawnCard.card.name}`,
+        `- english_name: ${drawnCard.card.englishName}`,
+        `- orientation: ${orientation}`,
+        `- keywords: ${keywords}`,
+        `- description: ${drawnCard.card.description}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function formatInitialReading(initialReading: StructuredReading) {
+  return [
+    `reading_id: ${initialReading.reading_id}`,
+    `themes: ${initialReading.themes.join(" | ")}`,
+    `synthesis: ${initialReading.synthesis}`,
+    "cards:",
+    ...initialReading.cards.map((card, index) =>
+      `${index + 1}. ${card.position} / ${card.name} / ${card.orientation} / ${card.interpretation}`,
+    ),
+    "reflective_guidance:",
+    ...initialReading.reflective_guidance.map((item, index) => `${index + 1}. ${item}`),
+    "follow_up_questions:",
+    ...initialReading.follow_up_questions.map((item, index) => `${index + 1}. ${item}`),
+    `confidence_note: ${initialReading.confidence_note ?? "无"}`,
+  ].join("\n");
+}
+
+function formatFollowupAnswers(followupAnswers: FollowupAnswer[]) {
+  return followupAnswers
+    .map(
+      (item, index) =>
+        `${index + 1}. question: ${item.question}\n   answer: ${item.answer}`,
+    )
+    .join("\n");
+}
+
+function buildOutputContract({
+  phase,
+  agentProfile,
+}: {
+  phase: "initial" | "final";
+  agentProfile: AgentProfile;
+}) {
+  const followupRule =
+    phase === "final"
+      ? "follow_up_questions: return 0-1 extension question only."
+      : agentProfile === "lite"
+        ? "follow_up_questions: return 0-1 question."
+        : agentProfile === "sober"
+          ? "follow_up_questions: return 1-2 reality-check questions anchored to card tension, boundary, risk, or missing condition."
+          : "follow_up_questions: return 1-2 questions anchored to card tension, position semantics, or missing reality context.";
+
+  return [
+    "Return JSON only. Do not wrap in markdown fences.",
+    "All user-visible prose must be fluent natural Simplified Chinese (zh-CN).",
+    "Never output pseudo-Chinese fragments, transliterated garbage tokens, or placeholder text.",
+    "Never expose chain-of-thought, hidden reasoning, thinking preambles, analysis traces, or model self-identification.",
+    "Do not fabricate hidden motives, private thoughts, or unverified feelings for any third party.",
+    "If relationship tension is inferred, frame it as observable relational dynamics, communication patterns, or unmet needs, not as certainty about what the other person feels or intends.",
+    "Allowed top-level keys only:",
+    "- cards",
+    "- themes",
+    "- synthesis",
+    "- reflective_guidance",
+    "- follow_up_questions",
+    "- confidence_note",
+    "Do not return metadata such as reading_id, locale, question_type, reading_phase, requires_followup, spread, safety_note, session_capsule, sober_check, or presentation_mode.",
+    "cards must be an array aligned with the authority drawn card order.",
+    "Each card item must include: card_id, name, english_name, orientation, position_id, position, position_meaning, interpretation.",
+    "For card metadata fields (card_id, name, english_name, orientation, position_id, position, position_meaning), copy the authority values exactly and do not rewrite, translate, paraphrase, or invent replacements.",
+    "themes: 2-4 short, concrete thematic labels only; avoid headline packaging, stacked metaphors, or decorative category names.",
+    "reflective_guidance: 2-4 items.",
+    followupRule,
+    "If you return more than one follow_up_questions item, each question must be materially distinct.",
+    "confidence_note: one short sentence that preserves uncertainty and avoids certainty claims.",
+  ].join("\n");
+}
+
+function buildSafetyBoundarySummary() {
+  return [
+    "Safety and expression boundaries:",
+    "- Tarot is reflective, not deterministic prophecy.",
+    "- Do not claim certainty about future events or third-party intent.",
+    "- Do not assign inner motives, secret thoughts, or emotional certainty to another person unless the user has already stated them as their own observation.",
+    "- Do not give medical, legal, financial, or manipulative advice.",
+    "- Do not generate safety_note, sober_check, or presentation_mode.",
+    "- Let cards speak first; do not ask for broad background that the cards should already illuminate.",
+    "- Keep every visible sentence readable and natural in Simplified Chinese.",
+  ].join("\n");
 }
 
 export function buildPlaceholderInitialReadingDraft({
@@ -275,4 +395,105 @@ export function buildPlaceholderReadingDraft({
     spread,
     drawnCards,
   });
+}
+
+export function buildInitialReadingPrompt({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  drawnCards,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+}): ReadingPrompt {
+  const profileHint =
+    agentProfile === "lite"
+      ? "Keep the reading concise but still structured."
+      : agentProfile === "sober"
+        ? "Keep a reflective tone, but strengthen reality-check language and boundary awareness."
+        : "Deliver the full two-stage initial read and ask anchored follow-up questions.";
+
+  return {
+    system: [
+      "You are AetherTarot's reading provider for the INITIAL phase.",
+      "Your job is to generate a structured tarot draft where the cards speak first.",
+      buildSafetyBoundarySummary(),
+      buildOutputContract({ phase: "initial", agentProfile }),
+    ].join("\n\n"),
+    user: [
+      `Question: ${question}`,
+      `Question type: ${questionType}`,
+      `Agent profile: ${agentProfile}`,
+      profileHint,
+      formatSpread(spread),
+      "Authority drawn cards:",
+      formatDrawnCards(spread, drawnCards),
+      "Initial reading requirements:",
+      "- Build interpretations from card + position + orientation + question type.",
+      "- Identify 2-4 themes at the spread level, not just per-card fragments.",
+      "- Themes should be plain, compact, and insight-bearing; do not add headline wrappers such as 'current climate field' or other decorative framing labels.",
+      "- Synthesis must summarize the spread arc, major tension, and realistic next orientation; do not list cards one by one.",
+      "- Follow-up questions must be anchored to card tension, position semantics, or missing reality context.",
+      "- Follow-up questions must be distinct from each other.",
+      "- Do not rewrite the provided card names or position labels.",
+      "- Do not state what the other person secretly feels, thinks, wants, or intends; if needed, describe the relational pattern from the querent's point of view.",
+    ].join("\n\n"),
+  };
+}
+
+export function buildFinalReadingPrompt({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  drawnCards,
+  initialReading,
+  followupAnswers,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+  initialReading: StructuredReading;
+  followupAnswers: FollowupAnswer[];
+}): ReadingPrompt {
+  const profileHint =
+    agentProfile === "sober"
+      ? "Keep the tone reflective and reality-anchored; strengthen boundary and risk awareness without becoming deterministic."
+      : "Integrate the user's answers while preserving the initial thematic axis.";
+
+  return {
+    system: [
+      "You are AetherTarot's reading provider for the FINAL phase.",
+      "Your job is to preserve the initial reading axis while refining it with the user's follow-up answers.",
+      buildSafetyBoundarySummary(),
+      buildOutputContract({ phase: "final", agentProfile }),
+    ].join("\n\n"),
+    user: [
+      `Question: ${question}`,
+      `Question type: ${questionType}`,
+      `Agent profile: ${agentProfile}`,
+      profileHint,
+      formatSpread(spread),
+      "Authority drawn cards:",
+      formatDrawnCards(spread, drawnCards),
+      "Initial reading snapshot:",
+      formatInitialReading(initialReading),
+      "Follow-up answers:",
+      formatFollowupAnswers(followupAnswers),
+      "Final reading requirements:",
+      "- Preserve the initial primary themes unless the user answer clearly narrows them.",
+      "- Keep card order and card identity aligned with the initial reading.",
+      "- Use follow-up answers to narrow interpretation space, not to replace the card axis.",
+      "- Keep the synthesis focused on the thematic axis, the clarified tension, and the next grounded reflection; avoid inflated summary packaging or repeated slogan-like labels.",
+      "- Return at most one extension question, and it must not block the flow.",
+      "- Do not rewrite the provided card names or position labels.",
+      "- Do not state what the other person secretly feels, thinks, wants, or intends; if needed, describe the relational pattern from the querent's point of view.",
+    ].join("\n\n"),
+  };
 }

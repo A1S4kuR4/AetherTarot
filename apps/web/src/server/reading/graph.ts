@@ -29,19 +29,11 @@ import {
   applySafetyReview,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
-
-type ReadingDraft = Pick<
-  StructuredReading,
-  | "cards"
-  | "themes"
-  | "synthesis"
-  | "reflective_guidance"
-  | "follow_up_questions"
-  | "confidence_note"
->;
+import type { ReadingDraft, ReadingProvider } from "@/server/reading/types";
 
 const ReadingGraphState = new StateSchema({
   payload: z.custom<ReadingRequestPayload>(),
+  provider: z.custom<ReadingProvider>().optional(),
   question: z.string().optional(),
   questionType: z.custom<QuestionType>().optional(),
   agentProfile: z.custom<AgentProfile>().optional(),
@@ -255,6 +247,92 @@ function shouldRequireFollowup(reading: StructuredReading) {
   );
 }
 
+function getExpectedDraftCardSignature(drawnCards: DrawnCard[]) {
+  return drawnCards
+    .map((drawnCard) =>
+      [
+        drawnCard.positionId,
+        drawnCard.card.id,
+        drawnCard.isReversed ? "reversed" : "upright",
+      ].join(":"),
+    )
+    .join("|");
+}
+
+function getDraftCardSignature(draft: ReadingDraft) {
+  return draft.cards
+    .map((card) => [card.position_id, card.card_id, card.orientation].join(":"))
+    .join("|");
+}
+
+function validateDraftCardsContract({
+  draft,
+  drawnCards,
+}: {
+  draft: ReadingDraft;
+  drawnCards: DrawnCard[];
+}) {
+  if (draft.cards.length !== drawnCards.length) {
+    throw new ReadingServiceError(
+      "generation_failed",
+      "provider draft 的 cards 数量必须与 authority drawnCards 一致。",
+      500,
+    );
+  }
+
+  if (getDraftCardSignature(draft) !== getExpectedDraftCardSignature(drawnCards)) {
+    throw new ReadingServiceError(
+      "generation_failed",
+      "provider draft 的 cards 顺序、identity 或 orientation 与 authority drawnCards 不一致。",
+      500,
+    );
+  }
+}
+
+function validateDraftFollowupContract({
+  draft,
+  phase,
+  agentProfile,
+}: {
+  draft: ReadingDraft;
+  phase: ReadingPhase;
+  agentProfile: AgentProfile;
+}) {
+  const count = draft.follow_up_questions.length;
+
+  if (phase === "final") {
+    if (count > 1) {
+      throw new ReadingServiceError(
+        "generation_failed",
+        "final provider draft 最多只能返回 1 条延伸 follow_up_question。",
+        500,
+      );
+    }
+
+    return;
+  }
+
+  if (agentProfile === "lite") {
+    if (count > 1) {
+      throw new ReadingServiceError(
+        "generation_failed",
+        "lite initial provider draft 最多只能返回 1 条 follow_up_question。",
+        500,
+      );
+    }
+
+    return;
+  }
+
+  if (count < 1 || count > 2) {
+    throw new ReadingServiceError(
+      "generation_failed",
+      "standard/sober initial provider draft 必须返回 1-2 条 follow_up_questions。",
+      500,
+    );
+  }
+}
+
 const classifyQuestionNode: ReadingGraphNode = (state) => {
   const question = state.payload.question.trim();
 
@@ -308,7 +386,7 @@ const analyzeIntentFrictionNode: ReadingGraphNode = (state) => {
 };
 
 const generateDraftNode: ReadingGraphNode = async (state) => {
-  const provider = getReadingProvider();
+  const provider = state.provider ?? getReadingProvider();
   const phase = requireStateValue(state.phase, "phase");
   const baseContext = {
     question: requireStateValue(state.question, "question"),
@@ -331,6 +409,22 @@ const generateDraftNode: ReadingGraphNode = async (state) => {
   return {
     draft: await provider.generateInitialRead(baseContext),
   };
+};
+
+const validateDraftContractNode: ReadingGraphNode = (state) => {
+  const draft = requireStateValue(state.draft, "draft");
+
+  validateDraftCardsContract({
+    draft,
+    drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
+  });
+  validateDraftFollowupContract({
+    draft,
+    phase: requireStateValue(state.phase, "phase"),
+    agentProfile: requireStateValue(state.agentProfile, "agentProfile"),
+  });
+
+  return {};
 };
 
 const buildStructuredReadingNode: ReadingGraphNode = (state) => {
@@ -401,6 +495,7 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addNode("validate_final_phase", validateFinalPhaseNode)
   .addNode("analyze_intent_friction", analyzeIntentFrictionNode)
   .addNode("generate_draft", generateDraftNode)
+  .addNode("validate_draft_contract", validateDraftContractNode)
   .addNode("build_structured_reading", buildStructuredReadingNode)
   .addNode("apply_safety_review", applySafetyReviewNode)
   .addEdge(START, "classify_question")
@@ -408,16 +503,25 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addEdge("hydrate_context", "validate_final_phase")
   .addEdge("validate_final_phase", "analyze_intent_friction")
   .addEdge("analyze_intent_friction", "generate_draft")
-  .addEdge("generate_draft", "build_structured_reading")
+  .addEdge("generate_draft", "validate_draft_contract")
+  .addEdge("validate_draft_contract", "build_structured_reading")
   .addEdge("build_structured_reading", "apply_safety_review")
   .addEdge("apply_safety_review", END)
   .compile();
 
+interface RunReadingGraphOptions {
+  provider?: ReadingProvider;
+}
+
 export async function runReadingGraph(
   payload: ReadingRequestPayload,
+  options?: RunReadingGraphOptions,
 ): Promise<StructuredReading> {
   try {
-    const result = await readingGraph.invoke({ payload });
+    const result = await readingGraph.invoke({
+      payload,
+      provider: options?.provider,
+    });
     return requireStateValue(result.reading, "reading");
   } catch (error) {
     if (error instanceof ReadingServiceError) {
