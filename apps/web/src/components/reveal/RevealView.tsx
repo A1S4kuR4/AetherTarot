@@ -26,9 +26,9 @@ export default function RevealView() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 pt-24 pb-16">
+    <section className="mx-auto w-full max-w-7xl px-6 pt-12 pb-10">
       {/* Header */}
-      <div className="mb-14 flex flex-col items-center text-center">
+      <div className="mb-8 flex flex-col items-center text-center">
         <span className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted">
           牌阵揭示
         </span>
@@ -39,7 +39,7 @@ export default function RevealView() {
 
       <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
         {/* Card Spread Area */}
-        <div className="relative flex min-h-[550px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-midnight-border bg-midnight-panel/50 p-8 lg:col-span-8">
+        <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 p-8 lg:col-span-8">
           {/* Spread Cards */}
           <div className="relative z-10 grid w-full max-w-3xl grid-cols-1 gap-10 md:grid-cols-3">
             {selectedSpread.positions.map((position, index) => {
@@ -101,6 +101,11 @@ export default function RevealView() {
                     <span className="block text-xs text-text-inverse-muted">
                       {drawn.card.englishName}
                     </span>
+                    {drawn.isReversed && (
+                      <span className="mt-1 block font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-indigo/60">
+                        逆位 · REVERSED
+                      </span>
+                    )}
                     <div className="mt-2 flex justify-center gap-1.5">
                       {(drawn.isReversed
                         ? drawn.card.reversedKeywords

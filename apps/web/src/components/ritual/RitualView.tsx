@@ -48,15 +48,7 @@ export default function RitualView() {
 
     revealScheduledRef.current = true;
     completeRitual(drawnCards);
-
-    const timeoutId = window.setTimeout(() => {
-      router.push("/reveal");
-    }, 900);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [completeRitual, drawnCards, router, selectedSpread]);
+  }, [completeRitual, drawnCards, selectedSpread]);
 
   useEffect(() => {
     if (!question.trim() || !selectedSpread) {
@@ -127,8 +119,8 @@ export default function RitualView() {
   };
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center px-6 py-20">
-      <div className="relative z-10 mb-10 flex w-full max-w-3xl flex-col items-center text-center">
+    <section className="relative flex min-h-screen flex-col items-center px-6 pt-12 pb-10">
+      <div className="relative z-10 mb-8 flex w-full max-w-3xl flex-col items-center text-center">
         <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
           <span
             className={cn(
@@ -149,7 +141,7 @@ export default function RitualView() {
         </p>
       </div>
 
-      <div className="relative z-10 mb-14 flex flex-wrap items-end justify-center gap-6 md:gap-10">
+      <div className="relative z-10 mb-10 flex flex-wrap items-end justify-center gap-6 md:gap-10">
         {selectedSpread.positions.map((position) => {
           const drawn = drawnCards.find((card) => card.positionId === position.id);
 
@@ -189,7 +181,7 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-50 mb-12 flex flex-wrap justify-center gap-4">
+      <div className="relative z-50 mb-10 flex flex-wrap justify-center gap-4">
         <button
           type="button"
           onClick={handleShuffle}
@@ -224,7 +216,7 @@ export default function RitualView() {
             <span className="material-symbols-outlined text-lg">
               visibility
             </span>
-            <span>{isRevealing ? "正在揭示牌阵..." : "继续揭示牌阵"}</span>
+            <span>揭示牌阵</span>
           </button>
         ) : null}
       </div>
