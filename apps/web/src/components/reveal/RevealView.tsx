@@ -39,7 +39,7 @@ export default function RevealView() {
 
       <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
         {/* Card Spread Area */}
-        <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 p-8 lg:col-span-8">
+        <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-8 pt-16 pb-8 lg:col-span-8">
           {/* Spread Cards */}
           <div className="relative z-10 grid w-full max-w-3xl grid-cols-1 gap-10 md:grid-cols-3">
             {selectedSpread.positions.map((position, index) => {
@@ -163,7 +163,7 @@ export default function RevealView() {
                   <h4
                     className={cn(
                       "mb-1 font-sans text-[11px] font-medium uppercase tracking-[0.12em]",
-                      index === 1 ? "text-indigo" : "text-text-inverse-muted",
+                      "text-text-inverse-muted",
                     )}
                   >
                     位置 {index + 1}: {position.name}

@@ -103,8 +103,12 @@ export default function HomeView() {
                   <div className="overflow-hidden rounded-[32px] border border-paper-border bg-paper-raised p-2 transition-all duration-500 hover:border-terracotta/30 hover:shadow-xl">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-paper-muted">
                       {/* Symbolic representation of history */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100">
-                        <span className="material-symbols-outlined text-8xl text-text-placeholder">receipt_long</span>
+                      <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
+                        <img 
+                          src="/home/journey_cover.png" 
+                          alt="Journey Cover"
+                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
+                        />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/20 to-transparent p-6">
                         <span className="chip-warm text-[10px] uppercase tracking-widest">
@@ -134,8 +138,12 @@ export default function HomeView() {
                   <div className="overflow-hidden rounded-[32px] border border-ink/5 bg-night p-2 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-midnight-panel">
                       {/* Symbolic representation of new ritual */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-40 group-hover:opacity-80 transition-all duration-700 scale-110 group-hover:scale-100">
-                        <span className="material-symbols-outlined text-8xl text-indigo/60">auto_awesome</span>
+                      <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
+                        <img 
+                          src="/home/ritual_cover.png" 
+                          alt="Ritual Cover"
+                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
+                        />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-6">
                         <span className="rounded-full border border-indigo/20 bg-indigo/10 px-3 py-1 text-[10px] uppercase tracking-widest text-indigo-400">

@@ -119,9 +119,9 @@ export default function RitualView() {
   };
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center px-6 pt-12 pb-10">
-      <div className="relative z-10 mb-8 flex w-full max-w-3xl flex-col items-center text-center">
-        <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
+    <section className="relative flex min-h-screen flex-col items-center px-6 pt-4 pb-4">
+      <div className="relative z-10 mb-1 flex w-full max-w-3xl flex-col items-center text-center">
+        <div className="mb-2 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
           <span
             className={cn(
               "h-1.5 w-1.5 rounded-full",
@@ -133,7 +133,7 @@ export default function RitualView() {
           </span>
         </div>
 
-        <h1 className="mb-3 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
+        <h1 className="mb-1 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
           仪式
         </h1>
         <p className="max-w-md text-sm leading-relaxed text-text-inverse-muted">
@@ -141,7 +141,7 @@ export default function RitualView() {
         </p>
       </div>
 
-      <div className="relative z-10 mb-10 flex flex-wrap items-end justify-center gap-6 md:gap-10">
+      <div className="relative z-10 mb-4 flex flex-wrap items-end justify-center gap-6 md:gap-10">
         {selectedSpread.positions.map((position) => {
           const drawn = drawnCards.find((card) => card.positionId === position.id);
 
@@ -181,7 +181,7 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-50 mb-10 flex flex-wrap justify-center gap-4">
+      <div className="relative z-50 mb-2 flex flex-wrap justify-center gap-4">
         <button
           type="button"
           onClick={handleShuffle}
@@ -221,7 +221,7 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[450px]">
+      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
         {Array.from({ length: 22 }).map((_, index) => {
           const baseAngle = (index / 22) * 360;
           return (
@@ -244,9 +244,9 @@ export default function RitualView() {
               }}
               className="absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{
-                transformOrigin: "center 220px",
+                transformOrigin: "center 150px",
                 transform: `rotate(${baseAngle}deg)`,
-                top: "10px",
+                top: "0px",
                 zIndex: isShuffling ? 10 : 10 + index,
               }}
               onClick={handleDraw}
@@ -268,7 +268,7 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-10 mx-auto mt-16 w-full max-w-md">
+      <div className="relative z-10 mx-auto mt-2 w-full max-w-md">
         <div className="midnight-panel text-center">
           <p className="text-sm leading-relaxed text-text-inverse-muted">
             你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。

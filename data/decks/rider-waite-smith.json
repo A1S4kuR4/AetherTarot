@@ -700,5 +700,135 @@
       "多样的服装：不同利益诉求在同一空间的混杂碰撞。"
     ],
     "imageUrl": "/cards/minor_wands_5.png"
+  },
+  {
+    "id": "ace-of-cups",
+    "name": "圣杯王牌",
+    "englishName": "Ace of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "情感源头被唤醒，心门打开。它是爱、直觉与精神滋养的原始起点，象征着感受的重新流动与内在丰盛的开端。",
+    "uprightKeywords": [
+      "情感开端",
+      "爱意流动",
+      "直觉苏醒",
+      "关系萌芽"
+    ],
+    "reversedKeywords": [
+      "情感堵塞",
+      "精神空虚",
+      "退缩",
+      "自我封闭"
+    ],
+    "symbolism": [
+      "托起的杯子：情感与直觉的容器。",
+      "溢出的水：情感源源不断的生命力与扩散性。",
+      "莲花与手：神圣的指引与宁静的受纳姿态。"
+    ],
+    "imageUrl": "/cards/minor_cups_ace.png"
+  },
+  {
+    "id": "two-of-cups",
+    "name": "圣杯二",
+    "englishName": "Two of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "平等的情感互换与共鸣。两个灵魂的互认与回应，标志着吸引、伙伴关系与真诚连结的建立。",
+    "uprightKeywords": [
+      "互相吸引",
+      "平等合作",
+      "双向奔赴",
+      "共鸣"
+    ],
+    "reversedKeywords": [
+      "关系失衡",
+      "沟通错位",
+      "情感不对等",
+      "权力拉扯"
+    ],
+    "symbolism": [
+      "举杯相对的两人：关系的对等性与互相看见。",
+      "赫耳墨斯之杖：治愈与对立力量的完美整合。",
+      "狮子头：热情、欲望与行动力在爱中的升华。"
+    ],
+    "imageUrl": "/cards/minor_cups_2.png"
+  },
+  {
+    "id": "three-of-cups",
+    "name": "圣杯三",
+    "englishName": "Three of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "情感在群体中的分享与庆祝。它强调社交支持、姐妹情谊与共同的快乐，是情感能量向外扩散的阶段。",
+    "uprightKeywords": [
+      "庆祝",
+      "友谊",
+      "分享结果",
+      "被接纳"
+    ],
+    "reversedKeywords": [
+      "社交疲惫",
+      "第三方干扰",
+      "表面热闹",
+      "界限不清"
+    ],
+    "symbolism": [
+      "举杯的三人：情感的见证与丰盛的共享。",
+      "果实与丰收：不仅是情绪的回应，也是现实的果实。",
+      "圆舞姿态：群体中的和谐、流动与支持。"
+    ],
+    "imageUrl": "/cards/minor_cups_3.png"
+  },
+  {
+    "id": "four-of-cups",
+    "name": "圣杯四",
+    "englishName": "Four of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "内在的情感饱和与疏离感。当外界的邀请不再引起回响，人会进入沉思与倦怠期，审视已有的满足是否真的足够。",
+    "uprightKeywords": [
+      "无聊",
+      "心不在焉",
+      "情感撤回",
+      "沉思"
+    ],
+    "reversedKeywords": [
+      "从麻木中醒来",
+      "接受邀请",
+      "重拾动力",
+      "走出心墙"
+    ],
+    "symbolism": [
+      "盘坐的双腿：静态的、沉思的乃至防御的姿态。",
+      "云中伸出的杯子：被忽略的、来自更高维度的指引或机会。",
+      "眼前的三个杯子：已有的、熟悉但无法再带来满足的事物。"
+    ],
+    "imageUrl": "/cards/minor_cups_4.png"
+  },
+  {
+    "id": "five-of-cups",
+    "name": "圣杯五",
+    "englishName": "Five of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "注视着失落而产生的遗憾。它表达了悲伤占据全部视线的时刻，但也提醒着身后仍有尚未倾覆的希望与支持。",
+    "uprightKeywords": [
+      "遗憾",
+      "失落",
+      "哀悼过去",
+      "悲伤"
+    ],
+    "reversedKeywords": [
+      "开始释怀",
+      "放下过去",
+      "重新转身",
+      "走出阴影"
+    ],
+    "symbolism": [
+      "倾倒的三个杯子：已经发生的、无可挽回的损失。",
+      "站立的两个杯子：仍存的资源、未断绝的连结。",
+      "黑色的斗篷：完全沉浸在悲伤情绪中的自我隔离。"
+    ],
+    "imageUrl": "/cards/minor_cups_5.png"
   }
 ]

@@ -30,7 +30,7 @@ export default function IntroSection() {
           transition={{ delay: 1, duration: 1 }}
           className="pt-12"
         >
-          <span className="material-symbols-outlined animate-bounce text-text-placeholder">
+          <span className="material-symbols-outlined animate-float-slow text-text-placeholder">
             keyboard_double_arrow_down
           </span>
         </motion.div>
