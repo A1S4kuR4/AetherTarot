@@ -4,6 +4,8 @@
 
 本文件定义 MVP 阶段的 reading 状态机。它约束代码结构、API 阶段字段、前端历史写入时机与评测方式。
 
+如果你需要查看当前最小 LangGraph 的真实节点、provider、prompt 与 LLM 接入方式，请继续阅读 `docs/30-agent/langgraph-reading-workflow.md`。
+
 ---
 
 ## 2. 状态机

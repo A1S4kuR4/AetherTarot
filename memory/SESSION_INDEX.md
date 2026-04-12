@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-11`
+- `last_updated`: `2026-04-12`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -33,15 +33,13 @@
 
 ### 2.2 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-10.md`
-- 用途：记录 `2026-04-10` 的全套 28 张自定义资产注入、数据重构、1:1.7 比例规范化收口、M3 最小 LangGraph 接入，以及 Two-Stage Reading MVP 落地
+- 文件：`memory/work-log-2026-04-12.md`
+- 用途：记录 `2026-04-12` 的 Ritual / Reveal 生产级抛光、布局溢出关闭与编译故障恢复
 - 当前重点：
-  - 大阿尔卡纳 0-21 现已全备且本地化
-  - 权杖组 Ace-5 完成注入
-  - 全站卡牌渲染比例统一为 1:1.7
-  - `generateStructuredReading` 已委托最小 LangGraph，并扩展为 initial/final 两阶段 reading flow
-  - `POST /api/reading` 仍保持单入口，但 request/response 已加入 `agent_profile` 与 `reading_phase` 等阶段元数据
-  - Lite / Standard / Sober Agent Profile 已进入 MVP 结构，相关规范沉淀在 `docs/30-agent/reading-flow.md` 与 `docs/30-agent/agent-profiles.md`
+  - `/ritual` 已实现 1080p 零滚动，首屏可完整看到总结面板与关键按钮
+  - `/reveal` 标签裁剪、侧边栏配色与逆位辨识已修复
+  - `InterpretationView.tsx` 编译故障已恢复，Reading 主流程重新稳定
+  - UX 风险文档与 Session 索引已同步更新到最新状态
 
 
 ### 2.3 Near-Term Work Plan
@@ -55,16 +53,15 @@
   - UX 风险收口和 Runtime Alignment 并行但不抢主线
 ### 2.4 Previous Shared Work Logs
 
-- 文件：`memory/work-log-2026-04-09.md`
-- 用途：记录 `2026-04-09` 的设计系统迁移、UX 重构、安全架构升级与 CI 排障收口
-- 摘要：Paper / Midnight 系统确立，核心页面重构完成。
+- 文件：`memory/work-log-2026-04-11.md`
+- 用途：记录全套 28 张自定义资产注入、M3 最小 LangGraph 接入与 Trinity Spatial Architecture (ADR 0003) 落地。
+- 摘要：首页叙事分域完成，Reading 流程进入 initial/final 两阶段 contract 稳固期。
 
-- 文件：`memory/work-log-2026-04-08.md`
-- 用途：记录 repo-local skill 引入、skill root 迁移与文档收口情况
-- 当前进度摘要：
-  - 引入了 3 个 AetherTarot 专属 repo-local skills
-  - 将原有 `ingest-wiki` 迁移到 `.agents/skills/`
-  - 已补齐 repo-local skills 的当前约定文档
+- 文件：`memory/work-log-2026-04-10.md`
+- 用途：记录 `2026-04-10` 的资产注入、1:1.7 规范化与两阶段 MVP 落地。
+
+- 文件：`memory/work-log-2026-04-09.md`
+- 用途：设计系统迁移、UX 重构、安全架构升级。
 
 ### 2.5 Optional Local Working Notes
 
@@ -80,9 +77,9 @@
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
 1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 [work-log-2026-04-11.md](file:///d:/GoogleProject/AetherTarot/memory/work-log-2026-04-11.md)，确认最新 Trinity Spatial Architecture 落地与 /new 页面体验打磨情况。
+2. 再看 [work-log-2026-04-12.md](file:///d:/GoogleProject/AetherTarot/memory/work-log-2026-04-12.md)，确认最新仪式感布局优化与编译故障恢复情况。
 3. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
-4. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度
+4. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度 (已更新布局溢出状态)
 5. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
@@ -95,6 +92,7 @@
 
 如果你的目标是快速了解上一轮做了什么，建议直接查看：
 
+- `memory/work-log-2026-04-12.md`
 - `memory/work-log-2026-04-11.md`
 - `memory/work-log-2026-04-10.md`
 - `memory/work-log-2026-04-09.md`
