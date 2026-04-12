@@ -62,6 +62,7 @@ export default function RitualView() {
 
   const isComplete = drawnCards.length === selectedSpread.positions.length;
   const canDraw = !isShuffling && !isComplete && deck.length > 0;
+  const nextPosition = selectedSpread.positions[drawnCards.length] ?? null;
 
   const handleShuffle = () => {
     setIsShuffling(true);
@@ -136,8 +137,8 @@ export default function RitualView() {
         <h1 className="mb-1 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
           仪式
         </h1>
-        <p className="max-w-md text-sm leading-relaxed text-text-inverse-muted">
-          静下心来，专注于你的问题，感受卡牌中的能量。
+        <p className="max-w-xl text-sm leading-relaxed text-text-inverse-muted">
+          静下心来，专注于你的问题。随机会决定哪张牌出现，{selectedSpread.name} 会决定我们如何理解它。
         </p>
       </div>
 
@@ -273,6 +274,11 @@ export default function RitualView() {
           <p className="text-sm leading-relaxed text-text-inverse-muted">
             你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。
             {selectedSpread.name} 将揭示你的问题在不同维度中的走向。
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-text-inverse-muted/80">
+            {nextPosition
+              ? `下一张会落在「${nextPosition.name}」：${nextPosition.description}`
+              : "全部位置已归位。接下来先看整组牌面的气候与张力，再进入完整解读。"}
           </p>
         </div>
       </div>

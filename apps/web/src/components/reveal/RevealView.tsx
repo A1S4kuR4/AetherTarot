@@ -37,6 +37,16 @@ export default function RevealView() {
         </h1>
       </div>
 
+      <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-midnight-border bg-midnight-panel/60 px-6 py-5 text-center">
+        <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-indigo/80">
+          先看整组牌的气候
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-text-inverse-muted">
+          这些牌的出现仍然带有随机性，但你已经用 {selectedSpread.name} 选择了观察角度。
+          接下来请先感受整组牌在不同位置形成的张力，而不是急着把它们听成一个确定答案。
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
         {/* Card Spread Area */}
         <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-8 pt-16 pb-8 lg:col-span-8">
@@ -130,7 +140,7 @@ export default function RevealView() {
             onClick={() => router.push("/reading")}
             className="btn-primary mt-14"
           >
-            <span className="text-sm font-medium">开始深入解读</span>
+            <span className="text-sm font-medium">带着整组气候进入深读</span>
             <span className="material-symbols-outlined text-lg">
               arrow_right_alt
             </span>
@@ -139,6 +149,20 @@ export default function RevealView() {
 
         {/* Side Panel — Position Meanings */}
         <div className="space-y-6 lg:col-span-4">
+          <div className="midnight-panel">
+            <div className="mb-3 flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-lg text-terracotta">
+                flare
+              </span>
+              <h2 className="font-serif text-lg text-text-inverse">
+                阅读容器
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-text-inverse-muted">
+              你没有在操纵结果，而是在选择一副观看问题的镜框。随机给出牌面，牌阵负责把这些偶然组织成可阅读的结构。
+            </p>
+          </div>
+
           <div className="midnight-panel">
             <div className="mb-5 flex items-center gap-2.5">
               <span className="material-symbols-outlined text-lg text-indigo">
