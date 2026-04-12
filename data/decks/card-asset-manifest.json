@@ -455,6 +455,87 @@
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
       "sha256": "f22220edec674abf748dfc8d835348848a5dd1231398f83649707817e99c62e1"
+    },
+    {
+      "assetId": "ace-of-cups",
+      "imageUrl": "/cards/minor_cups_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-11",
+        "notes": "Generated Cups Ace asset."
+      },
+      "sha256": "992e78828fe030655a2b87d438d61154d3d0eeb7028d29a4f8e3e4c2fe9cb099"
+    },
+    {
+      "assetId": "two-of-cups",
+      "imageUrl": "/cards/minor_cups_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-11",
+        "notes": "Generated Cups 2 asset."
+      },
+      "sha256": "1f7cdb995a4db9466ada4e1ca77cacc83df1a20ac717c3c4fa88447e0474eabe"
+    },
+    {
+      "assetId": "three-of-cups",
+      "imageUrl": "/cards/minor_cups_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-11",
+        "notes": "Generated Cups 3 asset."
+      },
+      "sha256": "8149754c1d492df5efd2975502a859c0c8aa9ffaad727747dbb9e9eba93546b7"
+    },
+    {
+      "assetId": "four-of-cups",
+      "imageUrl": "/cards/minor_cups_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-11",
+        "notes": "Generated Cups 4 asset."
+      },
+      "sha256": "64d7f3be5fa1728153bfc13d29bb8596fb42056dd6682e4c1c7578970c758d80"
+    },
+    {
+      "assetId": "five-of-cups",
+      "imageUrl": "/cards/minor_cups_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-11",
+        "notes": "Generated Cups 5 asset."
+      },
+      "sha256": "c70efcc3fc62242e47f9ee09f924fd24f47f01593691b8da1f2e834105ef98ef"
     }
   ]
 }
+

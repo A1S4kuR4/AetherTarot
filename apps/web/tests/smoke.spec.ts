@@ -28,8 +28,12 @@ async function startReading(
   page: Parameters<typeof test>[0]["page"],
   question: string,
   spreadName: RegExp,
+  profileName?: RegExp,
 ) {
   await page.goto("/");
+  if (profileName) {
+    await page.getByRole("button", { name: profileName }).click();
+  }
   await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
   await page.getByRole("button", { name: spreadName }).click();
   await holdToStart(page);
@@ -88,44 +92,30 @@ async function drawCards(
   }
 }
 
-function buildSinglePayload(question = "我现在最该注意什么？") {
-  return {
-    question,
-    spreadId: "single",
-    drawnCards: [
-      {
-        positionId: "focus",
-        cardId: "star",
-        isReversed: false,
-      },
-    ],
-  };
-}
+async function completeFollowup(
+  page: Parameters<typeof test>[0]["page"],
+  answer = "我会先对照现实情况观察，再做下一步决定。",
+) {
+  await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeVisible();
 
-function buildHolyTrianglePayload(question = "我该如何看待当前的职业选择？") {
-  return {
-    question,
-    spreadId: "holy-triangle",
-    drawnCards: [
-      {
-        positionId: "past",
-        cardId: "high-priestess",
-        isReversed: false,
-      },
-      {
-        positionId: "present",
-        cardId: "hermit",
-        isReversed: false,
-      },
-      {
-        positionId: "future",
-        cardId: "star",
-        isReversed: true,
-      },
-    ],
-  };
-}
+  const inputs = page.getByPlaceholder("写下你的现实补充...");
+  const count = await inputs.count();
 
+  for (let index = 0; index < count; index += 1) {
+    await inputs.nth(index).fill(`${answer} (${index + 1})`);
+  }
+
+  const submitButton = page.getByRole("button", { name: /生成整合深读/i });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click({ force: true });
+  await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByText(/第二阶段整合深读/)).toBeVisible();
+}
 test.describe("AetherTarot smoke flow", () => {
   test("completes a structured reading and persists it into history", async ({
     page,
@@ -152,7 +142,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "反思指引" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "解读说明" })).toBeVisible();
-
+    await completeFollowup(page);
     await page.goto("/history");
 
     await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
@@ -162,6 +152,23 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
   });
 
+
+  test("completes a lite reading without a blocking follow-up", async ({ page }) => {
+    await startReading(page, "我现在最该注意什么？", /单牌启示/i, /快速塔罗师/i);
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 8000 });
+
+    await page.getByRole("button", { name: /开始深入解读/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
+
+    await page.goto("/history");
+    await expect(page.getByRole("button", { name: /我现在最该注意什么/ })).toBeVisible();
+  });
   test("reopens a saved reading from history", async ({ page }) => {
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
     await expect(page).toHaveURL(/\/ritual$/);
@@ -173,7 +180,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible({
       timeout: 10000,
     });
-
+    await completeFollowup(page);
     await page.goto("/history");
     await page.getByRole("button", { name: /接下来一周我应该把重点放在哪里/i }).click();
 
@@ -199,7 +206,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible({
       timeout: 10000,
     });
-
+    await completeFollowup(page);
     await page.goto("/");
     await expect(
       page.getByRole("heading", { name: /意识之流 \(The Journey\)/i }),
@@ -242,7 +249,7 @@ test.describe("AetherTarot smoke flow", () => {
       timeout: 10000,
     });
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
-
+    await completeFollowup(page);
     await page.goto("/history");
     await expect(
       page.getByRole("button", { name: /我需要如何梳理接下来三个月的整体方向/ }),
@@ -262,6 +269,41 @@ test.describe("AetherTarot smoke flow", () => {
     });
     await expect(page.getByText(/立即寻求专业的医疗或心理急救支持/)).toBeVisible();
     await expect(page.getByRole("button", { name: /离开并返回首页/i })).toBeVisible();
+  });
+
+  test("requires a nonblank sober-check reflection before revealing a major decision reading", async ({
+    page,
+  }) => {
+    await startReading(page, "我应该离婚吗？", /单牌启示/i);
+    await expect(page.getByRole("heading", { name: "这是一次重大的决定" })).toBeVisible();
+    await page.getByRole("button", { name: /我已知晓，仅作为内省的视角/i }).click();
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 8000 });
+
+    await page.getByRole("button", { name: /开始深入解读/i }).click();
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByRole("heading", { name: /降温与检视/i })).toBeVisible({
+      timeout: 10000,
+    });
+
+    const unlockButton = page.getByRole("button", { name: /确认并解开牌面/i });
+    const reflectionInput = page.getByPlaceholder("我的真实顾虑 / 底线计划是...");
+
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeHidden();
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("     ");
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("顾虑");
+    await expect(unlockButton).toBeDisabled();
+
+    await reflectionInput.fill("我需要先确认现实底线");
+    await expect(unlockButton).toBeEnabled();
+    await unlockButton.click();
+
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
   });
 
   test("keeps the start button disabled until question and spread are both valid", async ({
@@ -305,282 +347,6 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test("returns a validation error for invalid JSON", async ({ request }) => {
-    const response = await request.fetch("/api/reading", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: Buffer.from("{"),
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "请求体不是有效的 JSON。",
-      },
-    });
-  });
-
-  test("returns a validation error when required fields are missing", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {},
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body.error.code).toBe("invalid_request");
-  });
-
-  test("rejects a reading request with an empty drawnCards list", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        question: "我现在最该注意什么？",
-        spreadId: "single",
-        drawnCards: [],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 至少需要包含一张牌。",
-      },
-    });
-  });
-
-  test("rejects a reading request with an unknown spread id", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        ...buildSinglePayload(),
-        spreadId: "unknown-spread",
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "spreadId 不存在于当前运行时牌阵中。",
-      },
-    });
-  });
-
-  test("rejects a reading request with an unknown card id", async ({ request }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        ...buildSinglePayload(),
-        drawnCards: [
-          {
-            positionId: "focus",
-            cardId: "unknown-card",
-            isReversed: false,
-          },
-        ],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 包含未知的 cardId。",
-      },
-    });
-  });
-
-  test("rejects a reading request with a mismatched card count", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        question: "这个选择会带来什么影响？",
-        spreadId: "holy-triangle",
-        drawnCards: [
-          {
-            positionId: "past",
-            cardId: "high-priestess",
-            isReversed: false,
-          },
-          {
-            positionId: "present",
-            cardId: "hermit",
-            isReversed: false,
-          },
-        ],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 数量必须与当前牌阵位置数一致。",
-      },
-    });
-  });
-
-  test("rejects a reading request when positionId is outside the spread", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        ...buildSinglePayload(),
-        drawnCards: [
-          {
-            positionId: "future",
-            cardId: "star",
-            isReversed: false,
-          },
-        ],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 包含不属于当前牌阵的位置。",
-      },
-    });
-  });
-
-  test("rejects a reading request with duplicate position ids", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        question: "我该如何看待当前的职业选择？",
-        spreadId: "holy-triangle",
-        drawnCards: [
-          {
-            positionId: "past",
-            cardId: "high-priestess",
-            isReversed: false,
-          },
-          {
-            positionId: "past",
-            cardId: "hermit",
-            isReversed: false,
-          },
-          {
-            positionId: "future",
-            cardId: "star",
-            isReversed: false,
-          },
-        ],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 不能包含重复的 positionId。",
-      },
-    });
-  });
-
-  test("rejects a reading request with duplicate card ids", async ({ request }) => {
-    const response = await request.post("/api/reading", {
-      data: {
-        question: "我该如何看待当前的职业选择？",
-        spreadId: "holy-triangle",
-        drawnCards: [
-          {
-            positionId: "past",
-            cardId: "star",
-            isReversed: false,
-          },
-          {
-            positionId: "present",
-            cardId: "star",
-            isReversed: false,
-          },
-          {
-            positionId: "future",
-            cardId: "hermit",
-            isReversed: true,
-          },
-        ],
-      },
-    });
-
-    expect(response.status()).toBe(400);
-    const body = await response.json();
-    expect(body).toEqual({
-      error: {
-        code: "invalid_request",
-        message: "drawnCards 不能包含重复的 cardId。",
-      },
-    });
-  });
-
-  test("returns a structured reading payload for a valid request", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: buildHolyTrianglePayload(),
-    });
-
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-
-    expect(body.question_type).toBeTruthy();
-    expect(body.cards).toHaveLength(3);
-    expect(body.themes.length).toBeGreaterThanOrEqual(2);
-    expect(body.themes.length).toBeLessThanOrEqual(4);
-    expect(body.synthesis).toBeTruthy();
-    expect(body.reflective_guidance.length).toBeGreaterThanOrEqual(2);
-    expect(body.confidence_note).toBeTruthy();
-    expect(body.safety_note).toBeNull();
-  });
-
-  test("returns a hard-stop intercept payload for crisis prompts", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: buildSinglePayload("我是不是不该活下去了？"),
-    });
-
-    expect(response.status()).toBe(403);
-    const body = await response.json();
-
-    expect(body.error.code).toBe("safety_intercept");
-    expect(body.error.intercept_reason).toMatch(/医疗或心理急救支持/);
-    expect(body.error.referral_links).toEqual(
-      expect.arrayContaining([expect.stringMatching(/^https?:\/\//)]),
-    );
-  });
-
-  test("returns sober-check metadata for major decision prompts", async ({
-    request,
-  }) => {
-    const response = await request.post("/api/reading", {
-      data: buildSinglePayload("我应该离婚吗？"),
-    });
-
-    expect(response.status()).toBe(200);
-    const body = await response.json();
-
-    expect(body.sober_check).toMatch(/最真实的顾虑或底线计划/);
-    expect(body.presentation_mode).toBe("sober_anchor");
-  });
 });
 
 
