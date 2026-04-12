@@ -7,12 +7,16 @@
     "build": "node ./scripts/run-next.cjs build",
     "start": "node ./scripts/run-next.cjs start",
     "lint": "eslint",
+    "test:contract": "vitest run",
+    "test:llm": "vitest run --config vitest.llm.config.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@aethertarot/domain-tarot": "0.1.0",
     "@aethertarot/prompting": "0.1.0",
     "@aethertarot/shared-types": "0.1.0",
+    "@langchain/core": "^1.1.39",
+    "@langchain/langgraph": "^1.2.8",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "clsx": "^2.1.1",
@@ -34,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

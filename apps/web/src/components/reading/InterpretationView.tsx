@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import type { QuestionType } from "@aethertarot/shared-types";
+import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
@@ -25,16 +25,23 @@ export default function InterpretationView() {
     errorMessage,
     isLoading,
     safetyIntercept,
+    soberGate,
+    setSoberGate,
     interpretReading,
+    submitFollowupAnswers,
     history,
     updateHistoryNotes,
   } = useReading();
 
-  const [soberInput, setSoberInput] = useState("");
-  const [isSoberCheckPassed, setIsSoberCheckPassed] = useState(false);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<Record<string, Record<number, string>>>({});
+
+  const activeReadingId = reading?.reading_id ?? null;
+  const isSoberGateCurrent = soberGate.readingId === activeReadingId;
+  const soberInput = isSoberGateCurrent ? soberGate.input : "";
+  const isSoberCheckPassed = isSoberGateCurrent ? soberGate.isPassed : false;
 
   const currentHistoryEntry = reading
     ? history.find((entry) => entry.id === reading.reading_id) ?? null
@@ -44,6 +51,15 @@ export default function InterpretationView() {
   const notes = currentHistoryEntryId
     ? noteDrafts[currentHistoryEntryId] ?? savedNotes
     : "";
+  const isSoberInputValid = soberInput.trim().length >= 5;
+  const isInitialAwaitingFollowup = reading?.reading_phase === "initial" && reading.requires_followup;
+  const followupQuestions = reading?.follow_up_questions ?? [];
+  const activeFollowupDrafts = activeReadingId
+    ? followupDraftsByReadingId[activeReadingId] ?? {}
+    : {};
+  const areFollowupAnswersValid =
+    followupQuestions.length > 0 &&
+    followupQuestions.every((_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2);
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -63,6 +79,32 @@ export default function InterpretationView() {
     }, 1200);
   };
 
+  const handleFollowupChange = (index: number, value: string) => {
+    if (!activeReadingId) {
+      return;
+    }
+
+    setFollowupDraftsByReadingId((currentDrafts) => ({
+      ...currentDrafts,
+      [activeReadingId]: {
+        ...(currentDrafts[activeReadingId] ?? {}),
+        [index]: value,
+      },
+    }));
+  };
+
+  const handleSubmitFollowup = () => {
+    if (!reading || !areFollowupAnswersValid) {
+      return;
+    }
+
+    const answers: FollowupAnswer[] = followupQuestions.map((prompt, index) => ({
+      question: prompt,
+      answer: (activeFollowupDrafts[index] ?? "").trim(),
+    }));
+
+    void submitFollowupAnswers(answers);
+  };
   const handleNotesChange = (value: string) => {
     if (!currentHistoryEntryId) {
       return;
@@ -85,7 +127,7 @@ export default function InterpretationView() {
       return;
     }
 
-    if (!reading && !errorMessage && !isLoading) {
+    if (!reading && !errorMessage && !isLoading && !safetyIntercept) {
       void interpretReading();
     }
   }, [
@@ -95,9 +137,9 @@ export default function InterpretationView() {
     isLoading,
     reading,
     router,
+    safetyIntercept,
     selectedSpread,
   ]);
-
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
@@ -105,6 +147,7 @@ export default function InterpretationView() {
       }
     };
   }, []);
+
 
   if (!selectedSpread || drawnCards.length === 0) {
     return null;
@@ -115,7 +158,7 @@ export default function InterpretationView() {
       <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
         <header className="space-y-5">
           <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
-            解读结果
+            {reading?.reading_phase === "initial" ? "初步解读" : "解读结果"}
           </h1>
           <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
             这次解读不是替你宣布结果，而是帮助你更清楚地看见正在成形的主题、张力与可选择的动作。
@@ -201,11 +244,7 @@ export default function InterpretationView() {
           </div>
         ) : reading ? (
           reading.sober_check && !isSoberCheckPassed ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm"
-            >
+            <div className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm">
               <span className="material-symbols-outlined mb-6 text-4xl text-terracotta">
                 psychiatry
               </span>
@@ -217,19 +256,19 @@ export default function InterpretationView() {
               </p>
               <textarea
                 value={soberInput}
-                onChange={(e) => setSoberInput(e.target.value)}
+                onChange={(e) => setSoberGate({ readingId: activeReadingId, input: e.target.value, isPassed: false })}
                 placeholder="我的真实顾虑 / 底线计划是..."
                 className="h-32 w-full max-w-xl resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
               />
               <button
                 type="button"
-                disabled={soberInput.length < 5}
-                onClick={() => setIsSoberCheckPassed(true)}
+                disabled={!isSoberInputValid}
+                onClick={() => setSoberGate({ readingId: activeReadingId, input: soberInput, isPassed: true })}
                 className="btn-primary mt-8 w-full max-w-xs transition-all disabled:cursor-not-allowed disabled:opacity-50"
               >
                 确认并解开牌面
               </button>
-            </motion.div>
+            </div>
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -251,7 +290,7 @@ export default function InterpretationView() {
               >
                 <div className="absolute left-8 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm">
                   <span className="material-symbols-outlined text-[14px] text-terracotta/70">
-                    accolade
+                    auto_awesome
                   </span>
                   <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
                     当前气候场
@@ -404,9 +443,9 @@ export default function InterpretationView() {
                 </p>
                 <h2 className="mt-1 font-serif text-2xl text-ink">延伸追问</h2>
                 <ul className="mt-4 space-y-3">
-                  {reading.follow_up_questions.map((prompt) => (
+                  {reading.follow_up_questions.map((prompt, index) => (
                     <li
-                      key={prompt}
+                      key={`${reading.reading_id}-followup-${index}`}
                       className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body"
                     >
                       {prompt}
@@ -415,6 +454,41 @@ export default function InterpretationView() {
                 </ul>
               </section>
 
+
+              {isInitialAwaitingFollowup ? (
+                <section className="reading-card border-terracotta/30 bg-terracotta/5">
+                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                    校准
+                  </p>
+                  <h2 className="mt-1 font-serif text-2xl text-ink">回答后进入整合深读</h2>
+                  <p className="mt-3 text-sm leading-relaxed text-text-body">
+                    这些问题来自牌面里的矛盾点。你的回答不会推翻初读，只会帮助系统把解释空间收束得更贴近现实。
+                  </p>
+                  <div className="mt-5 space-y-4">
+                    {followupQuestions.map((prompt, index) => (
+                      <label key={`${reading.reading_id}-answer-${index}`} className="block space-y-2">
+                        <span className="block font-serif text-sm text-ink">
+                          {index + 1}. {prompt}
+                        </span>
+                        <textarea
+                          value={activeFollowupDrafts[index] ?? ""}
+                          onChange={(event) => handleFollowupChange(index, event.target.value)}
+                          placeholder="写下你的现实补充..."
+                          className="h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!areFollowupAnswersValid || isLoading}
+                    onClick={handleSubmitFollowup}
+                    className="btn-primary mt-6 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    生成整合深读
+                  </button>
+                </section>
+              ) : null}
               {reading.safety_note ? (
                 <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
                   <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">

@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# AetherTarot Prototype
 
-# Run and deploy your AI Studio app
+`prototype/` 是早期 AI Studio / Vite 原型的冻结目录，仅保留为历史参考。
 
-This contains everything you need to run your app locally.
+当前主开发入口是 `apps/web`。新功能、样式调整、reading API、history、safety 或运行时数据接入都不应继续写回 `prototype/`。
 
-View your app in AI Studio: https://ai.studio/apps/63eb42b6-80b1-4634-8133-91edf90cdb22
+## Legacy Run Notes
 
-## Run Locally
+如果确实需要回看旧原型行为，可按原 Vite 项目方式运行：
 
-**Prerequisites:**  Node.js
+```powershell
+npm install
+npm run dev
+```
 
+旧原型依赖 `GEMINI_API_KEY`，但这不代表当前 AetherTarot 运行时已经接入 Gemini 或其他外部 LLM provider。
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Boundary
+
+- 不属于根 `npm workspaces`
+- 不参与 Web CI
+- 不作为设计系统、API contract 或安全边界的事实来源
+- 只用于理解早期迁移背景
