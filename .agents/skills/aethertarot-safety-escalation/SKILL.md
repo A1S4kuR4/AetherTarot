@@ -22,12 +22,15 @@ Read these files before changing safety behavior:
 
 ## Safety Position
 
-Treat safety as an independent post-generation control layer. Preserve the current architectural rule:
+Treat safety as explicit service-layer control, not as prompt flavor. Preserve the current Dual-Tier rule:
 
-1. generate a structured reading draft
-2. review for risk
-3. add `safety_note` and tighten output when needed
-4. validate the final structured payload
+1. run intent friction before provider generation
+2. return `403 safety_intercept` for Tier 1 hard-stop cases
+3. generate a structured reading draft for pass-through and Tier 2 cases
+4. inject `sober_check` and `presentation_mode = "sober_anchor"` for Tier 2 decision-outsourcing cases
+5. run post-generation safety review for ordinary sensitive topics
+6. add `safety_note` and tighten output when needed
+7. validate the final structured payload
 
 Do not rely on prompt wording alone to hold the boundary.
 
@@ -38,32 +41,37 @@ Use a stricter response mode as risk increases:
 | Level | Typical cases | Expected behavior |
 | --- | --- | --- |
 | Standard reflection | ordinary relationship, career, self-growth questions | return normal structured reading |
-| Bounded-risk reading | health, legal, financial, coercive relationship signals | add explicit `safety_note`; narrow guidance and follow-up toward reality checks and boundaries |
-| Safety-first reading | self-harm, harm-to-others, severe danger, abuse with immediate risk | prioritize real-world support, reduce mystical speculation, keep guidance short and actionable |
-| Human or hard-stop path | future reviewer workflow or cases requiring external escalation | pause before irreversible output or persistence, or return the safest limited response if no reviewer exists |
+| Bounded-risk reading | ordinary health, legal, financial, or coercive relationship signals that do not trigger hard stop | add explicit `safety_note`; narrow guidance and follow-up toward reality checks and boundaries |
+| Sober Check | major decision outsourcing, such as divorce, resignation, litigation, or investment decisions | return `200` with `sober_check`; front-end must require a written reality reflection before revealing the reading |
+| Hard Stop | self-harm, immediate danger, urgent health risk, or manipulation/control attempts | return `403 safety_intercept` before provider generation; do not produce a tarot reading |
+| Human review path | future reviewer workflow or cases requiring external escalation | pause before irreversible output or persistence, or return the safest limited response if no reviewer exists |
 
 ## Output Restriction Rules
 
-When risk is present:
+When a bounded-risk reading proceeds:
 
 - populate `safety_note` explicitly
 - shrink `reflective_guidance` and `follow_up_questions` toward safety, boundaries, and professional support
 - keep `confidence_note` honest about uncertainty
 - remove or soften any line that reads as prediction, diagnosis, instruction, or permission
 
-For severe risk, treat the reading as secondary to immediate safety.
+For Tier 2 decision outsourcing, populate `sober_check` and keep the reading framed as reflection rather than instruction.
+
+For Tier 1 hard stops, do not generate or return a `StructuredReading`; return the structured error payload that the route maps to `403`.
 
 ## Topic-Specific Rules
 
 ### Self-harm or immediate danger
 
 - prioritize emergency or trusted-person support
+- hard-stop before provider generation
 - avoid deepening mystical interpretation before basic safety is addressed
 - do not output language that romanticizes despair or frames harm as fate
 
 ### Manipulation, stalking, revenge, coercion, abuse
 
 - refuse to help control, test, track, or retaliate against another person
+- hard-stop when the user is asking for monitoring, control, retaliation, or manipulation
 - redirect toward the user's own safety, boundaries, and support options
 - do not claim certainty about a third party's hidden intent
 
@@ -95,11 +103,12 @@ Use human review to strengthen safety control, not to bypass the documented cont
 When you touch safety escalation:
 
 1. name the risk category and escalation level
-2. specify how `safety_note` changes
-3. specify how guidance and follow-up are restricted
-4. decide whether ordinary tarot interpretation still appears, and how much
-5. update `docs/20-domain/reading-contract.md`, `docs/50-safety/safety-principles.md`, and `docs/60-evals/rubrics.md`
-6. add or revise an ADR if the boundary changes materially
+2. specify whether it returns `403`, `200 + sober_check`, or `200 + safety_note`
+3. specify how `safety_note` changes when the reading still proceeds
+4. specify how guidance and follow-up are restricted
+5. decide whether ordinary tarot interpretation still appears, and how much
+6. update `docs/20-domain/reading-contract.md`, `docs/50-safety/safety-principles.md`, and `docs/60-evals/rubrics.md`
+7. add or revise an ADR if the boundary changes materially
 
 ## Boundaries
 
@@ -115,8 +124,9 @@ Do not:
 
 Before finishing, verify:
 
-1. High-risk paths still end in a valid `StructuredReading`.
-2. `safety_note` appears whenever the boundary requires it.
-3. Guidance and follow-up become narrower as risk rises.
-4. The output never authorizes manipulation, diagnosis, or certainty claims.
-5. Docs and eval expectations match the implemented escalation behavior.
+1. Tier 1 hard-stop paths still return `403 safety_intercept` before generation.
+2. Tier 2 decision-outsourcing paths still return `200` with `sober_check`.
+3. `safety_note` appears whenever a bounded-risk reading proceeds.
+4. Guidance and follow-up become narrower as risk rises.
+5. The output never authorizes manipulation, diagnosis, or certainty claims.
+6. Docs and eval expectations match the implemented escalation behavior.

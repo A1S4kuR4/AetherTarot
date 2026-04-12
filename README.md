@@ -20,7 +20,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-09）
+## 📍 当前主线状态（2026-04-10）
 
 项目已经进入“两条并行主线协同推进”的阶段。
 
@@ -30,21 +30,32 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 10 张概念页已完成
 - 9 张牌阵页已完成
 
+运行时数据 / 资产现状：
+
+- `data/decks/rider-waite-smith.json` 当前包含 27 张运行时牌：大阿卡纳 0-21 与权杖 Ace-5
+- `apps/web/public/cards/` 当前包含 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
+- `data/decks/card-asset-manifest.json` 记录资产来源、full-bleed 审核状态与 SHA-256
+- 知识层 78/78 完成不等于运行时牌池已 78/78；剩余 50 张小阿卡纳仍待后续注入
+
 当前并行主线：
 
-1. 技术主线：`M1` Real Reading API 与 `M2` Structured Reading Schema 已完成；下一步是 `M3` Minimal LangGraph，`M4` Runtime Alignment 持续收口。
+1. 技术主线：`M1` Real Reading API、`M2` Structured Reading Schema 与 `M3` Minimal LangGraph 已完成；`M4` Runtime Alignment 持续收口。
 2. UX / 产品主线：`Paper / Midnight` 双面设计系统已确立，`Home / Ritual / Reveal / Interpretation / Journey` 已完成一轮重大重构，但 `docs/10-product/ux-risk-status.md` 中的剩余风险仍在持续处理。
 
-`2026-04-09` 同步完成的关键收口包括：
+`2026-04-09` / `2026-04-10` 同步完成的关键收口包括：
 
 - 引入 `ADR-0002` Dual-Tier Safety Escalation
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
+- 将现有 reading service pipeline 接入最小 LangGraph，并保持 `/api/reading` 协议不变
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
+- 完成首轮 28 张本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化
+- 将运行时牌组从早期示例牌扩展到 27 张，并接入本地资产路径
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
 
-- 如何把现有 service pipeline 稳定映射为最小 LangGraph
+- 如何在最小 LangGraph 已接入后继续保持 contract 稳定、为后续 provider / memory 扩展留出边界
 - 如何把已成立的仪式感与结果体验继续推进为更稳定的产品机制
+- 如何继续补齐剩余小阿卡纳运行时数据与资产，而不混淆知识层和运行时层
 
 ---
 
@@ -64,7 +75,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ### `packages/prompting`
 
-当前占位 provider 的结构化解读生成逻辑。
+当前 placeholder provider 与 llm prompt builder 的结构化解读生成逻辑。
 
 ### `packages/shared-types`
 
@@ -86,18 +97,22 @@ reading request / response、history 与塔罗基础实体的共享类型。
 
 - 单牌、圣三角、赛尔特十字牌阵
 - 结构化 reading API
+- 最小 LangGraph reading 编排
 - 结构化结果页与本地历史回放
 - Dual-Tier Safety Escalation（`403 Hard Stop` / `200 Sober Check`）
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
 - 生成后安全检查与 `safety_note`
+- 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
+- 27 张运行时牌与 28 张本地卡牌 PNG 资产，均按 1:1.7 竖版规范接入
 
 当前不做：
 
-- 外部 LLM provider 接入
+- 多 Provider Router / 多模型分层
 - 独立 `apps/api`
 - 独立 `agent-core` 服务
 - LangGraph 复杂图
 - 服务端 reading 持久化
+- 声称运行时牌池已经完整覆盖 78 张
 - 把当前 UX 主线视为已收口；仍在持续处理 `docs/10-product/ux-risk-status.md` 中的剩余风险
 
 ---
@@ -119,6 +134,10 @@ AetherTarot/
 │  ├─ shared-types/
 │  ├─ domain-tarot/
 │  └─ prompting/
+├─ scripts/
+├─ prototype/
+├─ external/
+├─ .github/
 └─ memory/
 ```
 

@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -10,7 +11,9 @@ import {
 } from "react";
 import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import type {
+  AgentProfile,
   DrawnCard,
+  FollowupAnswer,
   ReadingErrorPayload,
   ReadingHistoryEntry,
   ReadingRequestCardInput,
@@ -19,22 +22,39 @@ import type {
 } from "@aethertarot/shared-types";
 
 const HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
+const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
+const EMPTY_SOBER_GATE: SoberGateState = {
+  readingId: null,
+  input: "",
+  isPassed: false,
+};
+
+type SoberGateState = {
+  readingId: string | null;
+  input: string;
+  isPassed: boolean;
+};
 
 type ReadingContextValue = {
   question: string;
   selectedSpread: Spread | null;
+  agentProfile: AgentProfile;
   drawnCards: DrawnCard[];
   reading: StructuredReading | null;
   errorMessage: string | null;
   safetyIntercept: { reason: string; referral_links?: string[] } | null;
+  soberGate: SoberGateState;
+  setSoberGate: (gate: SoberGateState) => void;
   isLoading: boolean;
   isHydrated: boolean;
   history: ReadingHistoryEntry[];
   setQuestion: (question: string) => void;
   setSelectedSpread: (spread: Spread | null) => void;
+  setAgentProfile: (profile: AgentProfile) => void;
   startRitual: () => boolean;
   completeRitual: (cards: DrawnCard[]) => void;
   interpretReading: () => Promise<boolean>;
+  submitFollowupAnswers: (answers: FollowupAnswer[]) => Promise<boolean>;
   selectHistoryReading: (reading: ReadingHistoryEntry) => void;
   resetReading: () => void;
   updateHistoryNotes: (id: string, notes: string) => void;
@@ -72,17 +92,24 @@ function getErrorMessage(payload: unknown) {
   return null;
 }
 
+function getReadingAgentProfile(reading: StructuredReading | null) {
+  return reading?.agent_profile ?? DEFAULT_AGENT_PROFILE;
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
+  const [agentProfile, setAgentProfileState] = useState<AgentProfile>(DEFAULT_AGENT_PROFILE);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState<StructuredReading | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [safetyIntercept, setSafetyIntercept] = useState<{ reason: string; referral_links?: string[] } | null>(null);
+  const [soberGate, setSoberGate] = useState<SoberGateState>(EMPTY_SOBER_GATE);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
   const interpretInFlightRef = useRef(false);
+  const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -101,22 +128,53 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setQuestion = (value: string) => {
-    setQuestionState(value);
+  const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
+    if (!selectedSpread) {
+      return;
+    }
+
+    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+
+    setHistory((currentHistory) => {
+      const nextHistory = [
+        {
+          id: nextReading.reading_id,
+          createdAt: new Date().toISOString(),
+          spreadId: selectedSpread.id,
+          drawnCards: requestDrawnCards,
+          reading: nextReading,
+        },
+        ...currentHistory,
+      ];
+
+      serializeHistory(nextHistory);
+      return nextHistory;
+    });
+  }, [drawnCards, selectedSpread]);
+
+  const clearGeneratedState = () => {
+    interpretSignatureRef.current = null;
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
+  };
+
+  const setQuestion = (value: string) => {
+    setQuestionState(value);
+    clearGeneratedState();
   };
 
   const setSelectedSpread = (spread: Spread | null) => {
     setSelectedSpreadState(spread);
-    setDrawnCards([]);
-    setReading(null);
-    setErrorMessage(null);
-    setSafetyIntercept(null);
-    setIsLoading(false);
+    clearGeneratedState();
+  };
+
+  const setAgentProfile = (profile: AgentProfile) => {
+    setAgentProfileState(profile);
+    clearGeneratedState();
   };
 
   const startRitual = () => {
@@ -124,23 +182,21 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    setDrawnCards([]);
-    setReading(null);
-    setErrorMessage(null);
-    setSafetyIntercept(null);
-    setIsLoading(false);
+    clearGeneratedState();
     return true;
   };
 
   const completeRitual = (cards: DrawnCard[]) => {
+    interpretSignatureRef.current = null;
     setDrawnCards(cards);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
-  const interpretReading = async () => {
+  const interpretReading = useCallback(async () => {
     if (
       interpretInFlightRef.current ||
       !question.trim() ||
@@ -150,13 +206,26 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const requestSignature = JSON.stringify({
+      question: question.trim(),
+      spreadId: selectedSpread.id,
+      drawnCards: requestDrawnCards,
+      agent_profile: agentProfile,
+      phase: "initial",
+    });
+
+    if (interpretSignatureRef.current === requestSignature) {
+      return false;
+    }
+
     interpretInFlightRef.current = true;
     setIsLoading(true);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    interpretSignatureRef.current = requestSignature;
 
     try {
-      const requestDrawnCards = toRequestDrawnCards(drawnCards);
       const response = await fetch("/api/reading", {
         method: "POST",
         headers: {
@@ -166,6 +235,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           question,
           spreadId: selectedSpread.id,
           drawnCards: requestDrawnCards,
+          agent_profile: agentProfile,
+          phase: "initial",
         }),
       });
 
@@ -188,24 +259,14 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const nextReading = payload as StructuredReading;
 
       setReading(nextReading);
-      setHistory((currentHistory) => {
-        const nextHistory = [
-          {
-            id: nextReading.reading_id,
-            createdAt: new Date().toISOString(),
-            spreadId: selectedSpread.id,
-            drawnCards: requestDrawnCards,
-            reading: nextReading,
-          },
-          ...currentHistory,
-        ];
 
-        serializeHistory(nextHistory);
-        return nextHistory;
-      });
+      if (!nextReading.requires_followup) {
+        persistCompletedReading(nextReading);
+      }
 
       return true;
     } catch (error) {
+      interpretSignatureRef.current = null;
       setReading(null);
       setErrorMessage(
         error instanceof Error
@@ -217,9 +278,105 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  };
+  }, [agentProfile, drawnCards, persistCompletedReading, question, selectedSpread]);
+
+  const submitFollowupAnswers = useCallback(async (answers: FollowupAnswer[]) => {
+    if (
+      interpretInFlightRef.current ||
+      !question.trim() ||
+      !selectedSpread ||
+      drawnCards.length === 0 ||
+      !reading ||
+      reading.reading_phase !== "initial"
+    ) {
+      return false;
+    }
+
+    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const requestSignature = JSON.stringify({
+      question: question.trim(),
+      spreadId: selectedSpread.id,
+      drawnCards: requestDrawnCards,
+      agent_profile: getReadingAgentProfile(reading),
+      phase: "final",
+      initial_reading_id: reading.reading_id,
+      followup_answers: answers,
+    });
+
+    if (interpretSignatureRef.current === requestSignature) {
+      return false;
+    }
+
+    interpretInFlightRef.current = true;
+    setIsLoading(true);
+    setErrorMessage(null);
+    setSafetyIntercept(null);
+    interpretSignatureRef.current = requestSignature;
+
+    try {
+      const response = await fetch("/api/reading", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question,
+          spreadId: selectedSpread.id,
+          drawnCards: requestDrawnCards,
+          agent_profile: getReadingAgentProfile(reading),
+          phase: "final",
+          initial_reading: reading,
+          followup_answers: answers,
+        }),
+      });
+
+      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
+
+      if (!response.ok) {
+        if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
+          setSafetyIntercept({
+            reason: payload.error.intercept_reason ?? payload.error.message,
+            referral_links: payload.error.referral_links,
+          });
+          return false;
+        }
+
+        throw new Error(
+          getErrorMessage(payload) ?? "连接星辰时发生了偏移，请稍后再试。",
+        );
+      }
+
+      const nextReading = payload as StructuredReading;
+      const wasSoberUnlocked = soberGate.readingId === reading.reading_id && soberGate.isPassed;
+
+      setReading(nextReading);
+
+      if (nextReading.sober_check && wasSoberUnlocked) {
+        setSoberGate({
+          readingId: nextReading.reading_id,
+          input: soberGate.input,
+          isPassed: true,
+        });
+      }
+
+      persistCompletedReading(nextReading);
+      return true;
+    } catch (error) {
+      interpretSignatureRef.current = null;
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "连接星辰时发生了偏移，请稍后再试。",
+      );
+      return false;
+    } finally {
+      setIsLoading(false);
+      interpretInFlightRef.current = false;
+    }
+  }, [drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
+    interpretSignatureRef.current = null;
     const spread = findSpreadById(historyEntry.spreadId) ?? null;
     const reconstructedCards: DrawnCard[] = historyEntry.drawnCards
       .map((savedCard) => {
@@ -239,26 +396,31 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
     setQuestionState(historyEntry.reading.question);
     setSelectedSpreadState(spread);
+    setAgentProfileState(historyEntry.reading.agent_profile ?? DEFAULT_AGENT_PROFILE);
     setDrawnCards(reconstructedCards);
     setReading(historyEntry.reading);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
   const resetReading = () => {
+    interpretSignatureRef.current = null;
     setQuestionState("");
     setSelectedSpreadState(null);
+    setAgentProfileState(DEFAULT_AGENT_PROFILE);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
     setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
   };
 
   const updateHistoryNotes = (id: string, notes: string) => {
     setHistory((currentHistory) => {
-      const nextHistory = currentHistory.map((entry) => 
+      const nextHistory = currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
       );
       serializeHistory(nextHistory);
@@ -271,18 +433,23 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       value={{
         question,
         selectedSpread,
+        agentProfile,
         drawnCards,
         reading,
         errorMessage,
         safetyIntercept,
+        soberGate,
+        setSoberGate,
         isLoading,
         isHydrated,
         history,
         setQuestion,
         setSelectedSpread,
+        setAgentProfile,
         startRitual,
         completeRitual,
         interpretReading,
+        submitFollowupAnswers,
         selectHistoryReading,
         resetReading,
         updateHistoryNotes,
