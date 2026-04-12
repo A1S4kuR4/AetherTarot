@@ -3,8 +3,6 @@
    Based on DESIGN.md (Paper/Midnight Dual-Surface)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import "tailwindcss";
 
 /* ---- Tailwind v4 @theme: Design Tokens ---- */
@@ -72,6 +70,26 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  /* ---- Material Symbols Core Styling ---- */
+  .material-symbols-outlined {
+    font-family: Material Symbols Outlined;
+    font-weight: normal;
+    font-style: normal;
+    font-size: inherit;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+    font-display: block;
+  }
+
   ::selection {
     background: rgba(201, 100, 66, 0.18);
   }
@@ -79,6 +97,16 @@
   :focus-visible {
     outline: 2px solid var(--color-focus-halo);
     outline-offset: 2px;
+  }
+
+  /* ---- Custom Animations ---- */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-float-slow {
+    animation: float-slow 3s ease-in-out infinite;
   }
 }
 
