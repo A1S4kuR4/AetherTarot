@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-10`
+- `last_updated`: `2026-04-11`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -95,6 +95,7 @@
 
 如果你的目标是快速了解上一轮做了什么，建议直接查看：
 
+- `memory/work-log-2026-04-11.md`
 - `memory/work-log-2026-04-10.md`
 - `memory/work-log-2026-04-09.md`
 
