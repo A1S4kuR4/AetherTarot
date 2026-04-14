@@ -830,5 +830,135 @@
       "黑色的斗篷：完全沉浸在悲伤情绪中的自我隔离。"
     ],
     "imageUrl": "/cards/minor_cups_5.png"
+  },
+  {
+    "id": "six-of-cups",
+    "name": "圣杯六",
+    "englishName": "Six of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "回到熟悉与被照顾的情感场域。它带来怀旧、安顿与疗愈，也提醒人不要因为贪恋安全而停留在不再成长的旧模式里。",
+    "uprightKeywords": [
+      "怀旧",
+      "被照顾",
+      "熟悉的温柔",
+      "安全感"
+    ],
+    "reversedKeywords": [
+      "离开过去",
+      "停止依赖",
+      "走出安全区",
+      "转向未来"
+    ],
+    "symbolism": [
+      "递出花杯的孩子：照顾、馈赠与温柔的情感交换。",
+      "城墙与庭院：被保护的安全感，也象征可能限制成长的熟悉环境。",
+      "花朵盛开的杯子：记忆中的美好、童真与可被重新唤起的疗愈资源。"
+    ],
+    "imageUrl": "/cards/minor_cups_6.png"
+  },
+  {
+    "id": "seven-of-cups",
+    "name": "圣杯七",
+    "englishName": "Seven of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "多重欲望与想象同时浮现的阶段。真正的挑战不是机会太少，而是看清自己究竟需要什么，并区分幻想、诱惑与可落地的选择。",
+    "uprightKeywords": [
+      "幻想",
+      "欲望投射",
+      "可能性过多",
+      "辨认需求"
+    ],
+    "reversedKeywords": [
+      "开始取舍",
+      "回到现实",
+      "梦想落地",
+      "停止空想"
+    ],
+    "symbolism": [
+      "浮现异象的杯子：欲望、恐惧、诱惑与愿景同时占据视野。",
+      "面对杯子的人影：正在为内在需求命名的自我。",
+      "云雾般的背景：想象力丰沛，也暗示投射与幻象尚未澄清。"
+    ],
+    "imageUrl": "/cards/minor_cups_7.png"
+  },
+  {
+    "id": "eight-of-cups",
+    "name": "圣杯八",
+    "englishName": "Eight of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "主动离开仍然完整却已不再满足的处境。它代表成熟的抽身、追寻更深意义，以及不再等外界替自己做出改变。",
+    "uprightKeywords": [
+      "主动离开",
+      "追寻更深意义",
+      "走出舒适区",
+      "情感出走"
+    ],
+    "reversedKeywords": [
+      "迟迟不走",
+      "过早逃离",
+      "时机误判",
+      "回避承诺"
+    ],
+    "symbolism": [
+      "整齐未倒的杯子：不是崩坏才离开，而是已经意识到这里不够了。",
+      "独自远行的人：回应内在召唤的行动与分离。",
+      "山路与月光：通往更高视野的过程伴随孤独、试炼与直觉引导。"
+    ],
+    "imageUrl": "/cards/minor_cups_8.png"
+  },
+  {
+    "id": "nine-of-cups",
+    "name": "圣杯九",
+    "englishName": "Nine of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "个人层面的满足、喜悦与自我认同。它像一张愿望实现牌，既表达踏实的丰足，也提醒人分辨真实满足与补偿性享乐。",
+    "uprightKeywords": [
+      "满足",
+      "愿望实现",
+      "自我认同",
+      "享受成果"
+    ],
+    "reversedKeywords": [
+      "空心快乐",
+      "补偿性享乐",
+      "害怕分享",
+      "内在匮乏"
+    ],
+    "symbolism": [
+      "整齐陈列的九个杯子：已经拥有足够多可感知的丰盛与回报。",
+      "端坐的人物：对自身价值与所得成果的确认。",
+      "横臂而坐的姿态：满足中的边界感，也可能透露保留与自我中心。"
+    ],
+    "imageUrl": "/cards/minor_cups_9.png"
+  },
+  {
+    "id": "ten-of-cups",
+    "name": "圣杯十",
+    "englishName": "Ten of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "共享的幸福、归属与成熟承诺。它不只是个人快乐，而是在关系、家庭或团队里形成彼此都能被滋养的稳定情感循环。",
+    "uprightKeywords": [
+      "家庭幸福",
+      "情感归属",
+      "共同承诺",
+      "共享成果"
+    ],
+    "reversedKeywords": [
+      "关系失和",
+      "团队分裂",
+      "表面完整",
+      "缺少共鸣"
+    ],
+    "symbolism": [
+      "彩虹下的十个杯子：完整而被祝福的情感圆满。",
+      "伴侣与孩子：幸福发生在共同体之中，而非只停留在个人满足。",
+      "远处的家园：稳定归属、长期关系与可持续的温暖生活。"
+    ],
+    "imageUrl": "/cards/minor_cups_10.png"
   }
 ]
