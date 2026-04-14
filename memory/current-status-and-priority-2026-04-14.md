@@ -1,0 +1,177 @@
+# 当前状态 + 优先级清单（2026-04-14）
+
+- `last_updated`: `2026-04-14`
+- `owner`: `Codex`
+- `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
+
+## 1. 文档目的
+
+本文件作为一份面向团队内部的正式状态文档，用来桥接：
+
+- `memory/mainline-priority-plan-2026-04-08.md`
+- `docs/10-product/ux-risk-status.md`
+
+目标是用一页内容回答三件事：
+
+1. 项目现在已经完成到哪里
+2. 当前真实阻塞点是什么
+3. 下一轮工作该按什么顺序推进
+
+本文档基线以 `2026-04-14` 的仓库实物与本地验证结果为准，不再仅复述 `2026-04-10` 或 `2026-04-12` 的旧状态。
+
+## 2. 当前状态快照
+
+截至 `2026-04-14`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、回归与落地完整度待补”的阶段。
+
+当前可确认的事实如下：
+
+- reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
+- Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
+- 后端 contract 与回归测试当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`24/24`），`npm run test:e2e` 全绿（`16/16`）。
+- 本轮已完成 E2E 回归修复：Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider，避免本地 `.env.local` 的 `llm` 配置把回归拖入不稳定状态。
+
+知识层现状：
+
+- `knowledge/wiki/major-arcana/`：`22` 页
+- `knowledge/wiki/minor-arcana/`：`56` 页
+- `knowledge/wiki/concepts/`：`10` 页
+- `knowledge/wiki/spreads/`：`9` 页
+
+运行时现状：
+
+- `data/decks/rider-waite-smith.json` 当前包含 `37` 张运行时牌：大阿卡纳 `0-21`，权杖 `Ace-5`，圣杯 `Ace-10`
+- `apps/web/public/cards/` 当前包含 `38` 个文件：`37` 张正面牌面与 `1` 张背面
+- `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross` 三个运行时牌阵
+
+这意味着当前主瓶颈已经不是“知识是否足够”，而是：
+
+- 运行时落地是否继续扩展
+- 文档是否持续与仓库实物同步
+- 长期连续性能力是否开始定义边界
+
+## 3. 能力状态分层
+
+### 已完成
+
+- Reading backend 主链
+- Structured output 协议
+- Two-Stage Reading MVP
+- Dual-Tier Safety
+- `placeholder + llm baseline` provider 边界
+- Home / Ritual / Reveal / Reading / Journey 第一轮 UX 重构
+
+### 部分完成
+
+- Runtime Alignment
+- Encyclopedia 与知识层对齐
+- 历史复访价值
+- UX 风险关闭
+- 文档与仓库实物同步
+
+### 未完成
+
+- 服务端持久化
+- `session_capsule` 真接入
+- 长期记忆 / memory merge
+- 多 provider router
+- 更完整的运行时牌阵与 `78/78` 运行时牌池
+
+## 4. 当前真实阻塞点
+
+### 阻塞点一：文档开始落后于仓库实物
+
+当前文档系统已经出现“状态滞后于仓库实物”的迹象。
+
+典型信号：
+
+- 部分文档仍写运行时牌库 `27` 张、PNG `28` 张
+- 当前仓库实物已是运行时牌库 `37` 张、PNG 文件 `38` 个
+
+这不应被视为次要维护工作，而应视为主线风险，因为它会直接影响优先级判断与后续协作理解。
+
+### 阻塞点二：运行时落地完整度仍不足
+
+当前最大产品缺口不是 UI 页面缺失，而是：
+
+- 运行时牌池仍远未达到 `78/78`
+- 运行时牌阵仍只有 `3` 个
+- Encyclopedia 仍直接消费 deck JSON，尚未决定是否进入 `knowledge/wiki` runtime 对齐
+
+### 阻塞点三：长期连续性能力仍缺位
+
+历史、Journey 与两阶段 reading 已经形成产品雏形，但长期连续性能力仍未真正开始：
+
+- history 仍是 localStorage
+- `session_capsule` 固定为 `null`
+- 尚未定义服务端 persistence、memory merge 与长期画像边界
+
+## 5. 当前优先级清单
+
+### P0. 保持可信回归与真相同步
+
+状态：已完成第一轮修复，后续转为保持项。
+
+已完成：
+
+1. 修复 Playwright 失效用例，使 E2E 与当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 实际流程一致。
+2. 在 Playwright 测试环境固定 `AETHERTAROT_READING_PROVIDER=placeholder`，避免本地 `llm` 配置影响回归稳定性。
+3. 同步 README、memory、UX 状态文档中的旧数字与旧叙事。
+
+后续要求：
+
+- 新 UI / 新流程改动必须同步更新 smoke 断言
+- 文档中的运行时牌库与资产数字必须继续跟仓库实物对齐
+
+### P1. Runtime Alignment 收口
+
+目标：继续补运行时落地，而不是回到“继续大量扩知识页”的旧主线。
+
+当前补充进展：
+
+- 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `37/78` runtime vs `78/78` knowledge
+- 当前已明确：Encyclopedia 本阶段继续直接消费 runtime deck JSON，而不是立即改成直接消费 `knowledge/wiki`
+- `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 牌库扩张混做
+
+执行项：
+
+1. 继续补运行时牌库与本地资产；本轮已从 `32` 张推进到 `37` 张，并补齐圣杯 `6-10` 与对应本地资产。
+2. 明确新增牌阵上线顺序，只允许高价值且 provider 能稳定尊重 position semantics 的牌阵进入运行时。
+3. 决定 Encyclopedia 是否继续直接消费 deck JSON，还是开始接 `knowledge/wiki`。
+
+### P2. 长期连续性能力设计
+
+目标：在不打断当前 contract 稳定性的前提下，先定义后续 memory / persistence 边界。
+
+执行项：
+
+1. 定义 `session_capsule` 接入点。
+2. 定义历史 completed reading 与 future thread/session 的边界。
+3. 定义服务端 history persistence 与长期记忆的演进顺序。
+
+在此之前，不打开大规模 memory / thread / profile 持久化实现。
+
+## 6. 当前判断与执行原则
+
+- 当前最该做的不是重新打开 `M1 / M2 / M3` 讨论，而是维护 contract 稳定性，并把重心转向 runtime alignment 与长期连续性设计。
+- 当前不应回退去把 ingest 重新设为默认主线。
+- 当前不应把 memory persistence 提前到回归修复之前。
+
+## 7. 验收口径
+
+本文件中的状态判断默认以以下事实为依据：
+
+- 状态数字来自当前仓库实物：
+  - `data/decks/rider-waite-smith.json`
+  - `apps/web/public/cards/`
+  - `knowledge/wiki/*`
+- 健康度结论来自当前本地验证：
+  - `npm run build`：通过
+  - `npm run test:contract -w @aethertarot/web`：通过
+  - `npm run test:e2e`：通过（`16/16`）
+
+## 8. 默认假设
+
+- 文档语言默认为中文
+- 文档定位为内部执行入口，不写成对外宣传稿
+- 优先级固定为：先保持可信回归与文档同步，再补运行时落地，再开长期连续性能力
+- 本文件作为 `memory/` 中的正式桥接入口存在；后续若主线状态变化，应优先增量更新本文件，而不是再平行创建一份新的“当前状态”文档
