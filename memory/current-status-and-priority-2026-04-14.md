@@ -39,8 +39,8 @@
 
 运行时现状：
 
-- `data/decks/rider-waite-smith.json` 当前包含 `37` 张运行时牌：大阿卡纳 `0-21`，权杖 `Ace-5`，圣杯 `Ace-10`
-- `apps/web/public/cards/` 当前包含 `38` 个文件：`37` 张正面牌面与 `1` 张背面
+- `data/decks/rider-waite-smith.json` 当前包含 `42` 张运行时牌：大阿卡纳 `0-21`，权杖 `Ace-10`，圣杯 `Ace-10`
+- `apps/web/public/cards/` 当前包含 `43` 个文件：`42` 张正面牌面与 `1` 张背面
 - `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross` 三个运行时牌阵
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
@@ -85,7 +85,7 @@
 典型信号：
 
 - 部分文档仍写运行时牌库 `27` 张、PNG `28` 张
-- 当前仓库实物已是运行时牌库 `37` 张、PNG 文件 `38` 个
+- 当前仓库实物已是运行时牌库 `42` 张、PNG 文件 `43` 个
 
 这不应被视为次要维护工作，而应视为主线风险，因为它会直接影响优先级判断与后续协作理解。
 
@@ -128,13 +128,13 @@
 
 当前补充进展：
 
-- 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `37/78` runtime vs `78/78` knowledge
+- 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `42/78` runtime vs `78/78` knowledge
 - 当前已明确：Encyclopedia 本阶段继续直接消费 runtime deck JSON，而不是立即改成直接消费 `knowledge/wiki`
 - `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 牌库扩张混做
 
 执行项：
 
-1. 继续补运行时牌库与本地资产；本轮已从 `32` 张推进到 `37` 张，并补齐圣杯 `6-10` 与对应本地资产。
+1. 继续补运行时牌库与本地资产；本轮已从 `37` 张推进到 `42` 张，并补齐权杖 `6-10` 与对应本地资产。
 2. 明确新增牌阵上线顺序，只允许高价值且 provider 能稳定尊重 position semantics 的牌阵进入运行时。
 3. 决定 Encyclopedia 是否继续直接消费 deck JSON，还是开始接 `knowledge/wiki`。
 

@@ -702,6 +702,136 @@
     "imageUrl": "/cards/minor_wands_5.png"
   },
   {
+    "id": "six-of-wands",
+    "name": "权杖六",
+    "englishName": "Six of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "努力开始被看见并获得外界响应的时刻。它代表胜利、信心与公开认可，也提醒人分辨真实自信与对掌声的依赖。",
+    "uprightKeywords": [
+      "胜利",
+      "被认可",
+      "信心",
+      "带头感"
+    ],
+    "reversedKeywords": [
+      "信心下滑",
+      "认可不足",
+      "太早放弃",
+      "证明焦虑"
+    ],
+    "symbolism": [
+      "骑马的胜利者：阶段成果终于进入公开视野。",
+      "桂冠与高举的权杖：荣誉、肯定与对自身能力的确认。",
+      "后方跟随者：支持者、资源与舞台会随着成功一起出现。"
+    ],
+    "imageUrl": "/cards/minor_wands_6.png"
+  },
+  {
+    "id": "seven-of-wands",
+    "name": "权杖七",
+    "englishName": "Seven of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "在已经取得的位置上继续迎战与守卫。它强调边界、防守与韧性，说明挑战升级了，但你并非没有优势，只是必须更投入。",
+    "uprightKeywords": [
+      "坚持",
+      "防守",
+      "顶住压力",
+      "守住立场"
+    ],
+    "reversedKeywords": [
+      "压力过载",
+      "勇气不足",
+      "旧打法失灵",
+      "防守疲惫"
+    ],
+    "symbolism": [
+      "站在高处的人：你已经占到一个位置，也因此需要承担守成压力。",
+      "下方袭来的权杖：外界质疑、竞争与不断逼近的挑战。",
+      "单杖迎战的姿态：清晰表态与边界意识。"
+    ],
+    "imageUrl": "/cards/minor_wands_7.png"
+  },
+  {
+    "id": "eight-of-wands",
+    "name": "权杖八",
+    "englishName": "Eight of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "事情进入轨道后的高速推进。它代表消息到来、阻碍减少、节奏加快与明确向前的运动感，像箭一样直奔目标。",
+    "uprightKeywords": [
+      "迅速进展",
+      "消息到来",
+      "加速",
+      "顺畅推进"
+    ],
+    "reversedKeywords": [
+      "延误",
+      "消息迟滞",
+      "能量散失",
+      "方向失准"
+    ],
+    "symbolism": [
+      "飞越天空的木杖：高动能、低阻力的前冲状态。",
+      "无人物握持：事情已经在路上，推进不再依赖单点控制。",
+      "统一的飞行方向：目标清楚，行动能够集中落点。"
+    ],
+    "imageUrl": "/cards/minor_wands_8.png"
+  },
+  {
+    "id": "nine-of-wands",
+    "name": "权杖九",
+    "englishName": "Nine of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "带着旧伤继续守住阵地的韧性。它不是失败，而是经历多轮冲突后的警戒与复盘，提醒人衡量哪些坚持值得继续，哪些只是惯性防御。",
+    "uprightKeywords": [
+      "韧性",
+      "警觉",
+      "守住阵地",
+      "重新评估承诺"
+    ],
+    "reversedKeywords": [
+      "过度疲惫",
+      "旧伤触发",
+      "先预设失败",
+      "防御过强"
+    ],
+    "symbolism": [
+      "带伤的人物：一路扛过来的经验、代价与存活感。",
+      "背后的权杖列阵：既有成果与防线，也象征长期紧绷。",
+      "戒备姿态：力量仍在，但已不再轻松。"
+    ],
+    "imageUrl": "/cards/minor_wands_9.png"
+  },
+  {
+    "id": "ten-of-wands",
+    "name": "权杖十",
+    "englishName": "Ten of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "热情和责任累积到过载的阶段。它表示承诺膨胀、负担过重与什么都想自己扛，提醒人重新分配责任，而不是继续被重量拖着走。",
+    "uprightKeywords": [
+      "过载",
+      "责任过多",
+      "替别人扛",
+      "看不见路"
+    ],
+    "reversedKeywords": [
+      "开始放下",
+      "委派",
+      "切割责任",
+      "承认扛不住"
+    ],
+    "symbolism": [
+      "怀抱十根木杖的人：由热情累积而成的现实重担。",
+      "被遮住的视线：负重方式失衡后，连方向感都会受影响。",
+      "远处的房屋：目标还在，但需要换一种更有边界的前进方法。"
+    ],
+    "imageUrl": "/cards/minor_wands_10.png"
+  },
+  {
     "id": "ace-of-cups",
     "name": "圣杯王牌",
     "englishName": "Ace of Cups",

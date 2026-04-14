@@ -133,6 +133,11 @@ function wandsMotif(id, commonStroke, softFill) {
     "three-of-wands": 3,
     "four-of-wands": 4,
     "five-of-wands": 5,
+    "six-of-wands": 6,
+    "seven-of-wands": 7,
+    "eight-of-wands": 8,
+    "nine-of-wands": 9,
+    "ten-of-wands": 10,
   };
   const count = countById[id] ?? 1;
   const spacing = count === 1 ? 0 : 360 / (count - 1);
