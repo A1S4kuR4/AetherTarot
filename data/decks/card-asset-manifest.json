@@ -441,6 +441,166 @@
       "sha256": "c5557b9bd4350fa1d3efe6a42d05dfa876d4fc1da0167c26a7e8237d405faedf"
     },
     {
+      "assetId": "ace-of-cups",
+      "imageUrl": "/cards/minor_cups_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "4d92f133f1c65516acddd6adf547a5258a6986d9ebb944928270ac66cb89a78e"
+    },
+    {
+      "assetId": "two-of-cups",
+      "imageUrl": "/cards/minor_cups_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "fd963f18211604805b11a7f027f92e65c0fe819c9f02f3ac2ae4ab00099f0c11"
+    },
+    {
+      "assetId": "three-of-cups",
+      "imageUrl": "/cards/minor_cups_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "95e40110d7b42cbfe6fcea82c30f62720e3ff31b9e8d0d8a25841b481606e9ce"
+    },
+    {
+      "assetId": "four-of-cups",
+      "imageUrl": "/cards/minor_cups_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "ca2ce21fced289f3fede97db22a717f98548e26b73842ba01e68a3aa73f9abf6"
+    },
+    {
+      "assetId": "five-of-cups",
+      "imageUrl": "/cards/minor_cups_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "649067fa34434b2216b13b14a57b770917d03f722fcd9ff56a39e1185a6cc010"
+    },
+    {
+      "assetId": "six-of-cups",
+      "imageUrl": "/cards/minor_cups_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "203d8ceac70e504c7898aa0e34dc5292e38e1d185a99e0c8043840ab3e96e608"
+    },
+    {
+      "assetId": "seven-of-cups",
+      "imageUrl": "/cards/minor_cups_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "e3c1f09bd0d7cde28ccf51b832536561373a018cf3662f6329ee963ff0d26fd2"
+    },
+    {
+      "assetId": "eight-of-cups",
+      "imageUrl": "/cards/minor_cups_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "4594382b39adc0da78ba74e9c32b8b7b434a8b3e46f7ab8b47be15ace557ac5b"
+    },
+    {
+      "assetId": "nine-of-cups",
+      "imageUrl": "/cards/minor_cups_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "4f11017b94e0c058580d53644fd071276895aba5d2b0e309c461f9cabbfddc87"
+    },
+    {
+      "assetId": "ten-of-cups",
+      "imageUrl": "/cards/minor_cups_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "e3509b8dc8a5bf9b7e7726ccf24680bbfeba23c02b47ceb53991eebd969bf206"
+    },
+    {
       "assetId": "card-back",
       "imageUrl": "/cards/back.png",
       "width": 1000,
@@ -455,87 +615,6 @@
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
       "sha256": "f22220edec674abf748dfc8d835348848a5dd1231398f83649707817e99c62e1"
-    },
-    {
-      "assetId": "ace-of-cups",
-      "imageUrl": "/cards/minor_cups_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups Ace asset."
-      },
-      "sha256": "992e78828fe030655a2b87d438d61154d3d0eeb7028d29a4f8e3e4c2fe9cb099"
-    },
-    {
-      "assetId": "two-of-cups",
-      "imageUrl": "/cards/minor_cups_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 2 asset."
-      },
-      "sha256": "1f7cdb995a4db9466ada4e1ca77cacc83df1a20ac717c3c4fa88447e0474eabe"
-    },
-    {
-      "assetId": "three-of-cups",
-      "imageUrl": "/cards/minor_cups_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 3 asset."
-      },
-      "sha256": "8149754c1d492df5efd2975502a859c0c8aa9ffaad727747dbb9e9eba93546b7"
-    },
-    {
-      "assetId": "four-of-cups",
-      "imageUrl": "/cards/minor_cups_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 4 asset."
-      },
-      "sha256": "64d7f3be5fa1728153bfc13d29bb8596fb42056dd6682e4c1c7578970c758d80"
-    },
-    {
-      "assetId": "five-of-cups",
-      "imageUrl": "/cards/minor_cups_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 5 asset."
-      },
-      "sha256": "c70efcc3fc62242e47f9ee09f924fd24f47f01593691b8da1f2e834105ef98ef"
     }
   ]
 }
-

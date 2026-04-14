@@ -20,7 +20,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-10）
+## 📍 当前主线状态（2026-04-14）
 
 项目已经进入“两条并行主线协同推进”的阶段。
 
@@ -32,27 +32,29 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 运行时数据 / 资产现状：
 
-- `data/decks/rider-waite-smith.json` 当前包含 27 张运行时牌：大阿卡纳 0-21 与权杖 Ace-5
-- `apps/web/public/cards/` 当前包含 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
+- `data/decks/rider-waite-smith.json` 当前包含 37 张运行时牌：大阿卡纳 0-21、权杖 Ace-5 与圣杯 Ace-10
+- `apps/web/public/cards/` 当前包含 38 个文件：37 张 1000x1700 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 记录资产来源、full-bleed 审核状态与 SHA-256
-- 知识层 78/78 完成不等于运行时牌池已 78/78；剩余 50 张小阿卡纳仍待后续注入
+- 知识层 78/78 完成不等于运行时牌池已 78/78；当前仍有 41 张小阿卡纳待后续注入
 
 当前并行主线：
 
 1. 技术主线：`M1` Real Reading API、`M2` Structured Reading Schema 与 `M3` Minimal LangGraph 已完成；`M4` Runtime Alignment 持续收口。
 2. UX / 产品主线：`Paper / Midnight` 双面设计系统已确立，`Home / Ritual / Reveal / Interpretation / Journey` 已完成一轮重大重构，但 `docs/10-product/ux-risk-status.md` 中的剩余风险仍在持续处理。
 
-`2026-04-09` / `2026-04-10` 同步完成的关键收口包括：
+`2026-04-09` / `2026-04-10` / `2026-04-14` 同步确认的关键收口包括：
 
 - 引入 `ADR-0002` Dual-Tier Safety Escalation
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
 - 将现有 reading service pipeline 接入最小 LangGraph，并保持 `/api/reading` 协议不变
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
-- 完成首轮 28 张本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化
-- 将运行时牌组从早期示例牌扩展到 27 张，并接入本地资产路径
+- 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 37 张正面牌面
+- 将运行时牌组从早期示例牌扩展到当前 37 张，并接入本地资产路径
+- `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
 
+- 如何在回归链路已恢复后继续保持 E2E 与文档系统跟随实物状态演进
 - 如何在最小 LangGraph 已接入后继续保持 contract 稳定、为后续 provider / memory 扩展留出边界
 - 如何把已成立的仪式感与结果体验继续推进为更稳定的产品机制
 - 如何继续补齐剩余小阿卡纳运行时数据与资产，而不混淆知识层和运行时层
@@ -103,7 +105,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
 - 生成后安全检查与 `safety_note`
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
-- 27 张运行时牌与 28 张本地卡牌 PNG 资产，均按 1:1.7 竖版规范接入
+- 37 张运行时牌与 38 个本地卡牌文件，均按 1:1.7 竖版规范接入
 
 当前不做：
 
