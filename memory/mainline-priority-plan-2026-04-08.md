@@ -24,8 +24,8 @@
 - `reading` 页与 `history` 页已切到结构化输出消费，不再以 `interpretation: string` 为主协议
 - 本地历史已升级为 `ReadingHistoryEntry`，使用 versioned localStorage key
 - 前端百科仍直接消费 `data/decks/rider-waite-smith.json`
-- `data/decks/rider-waite-smith.json` 已扩展到 42 张运行时牌：大阿卡纳 0-21、权杖 Ace-10 与圣杯 Ace-10
-- `apps/web/public/cards/` 已接入 43 个文件：42 张 1000x1700 PNG 正面牌面与 1 张背面
+- `data/decks/rider-waite-smith.json` 已扩展到 64 张运行时牌：大阿卡纳 0-21、权杖 Page-King、圣杯 Page-King 与星币 Page-King
+- `apps/web/public/cards/` 已接入 65 个文件：64 张 1000x1700 PNG 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 已记录 full-bleed 状态、视觉审核与 SHA-256
 - 仓库已接入最小 LangGraph 编排，`generateStructuredReading()` 保持 service 入口并委托 graph 执行
 - Two-Stage Reading MVP 已落地：`POST /api/reading` 保持单入口，但 request / response 已加入 `agent_profile`、`phase`、`reading_phase` 与 follow-up 元数据
@@ -34,7 +34,7 @@
 
 补充说明：
 
-- 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到 `42` 张；这仍不等于产品层面的完整 `78/78` 运行时牌库建设已经完成。
+- 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到 `64` 张；这仍不等于产品层面的完整 `78/78` 运行时牌库建设已经完成。
 
 当前瓶颈已经不再是“先补更多知识页”或“接入最小 LangGraph”，而是“在已稳定的结构化 reading contract 与最小 graph 边界上推进后续运行时能力”。
 
@@ -48,7 +48,7 @@
 
 `2026-04-10` 的补充更新表明，`M4 Runtime Alignment` 已开始进入资产与数据层，同时 reading contract 已升级到 Two-Stage MVP：
 
-- 大阿卡纳 0-21、权杖 Ace-10 与圣杯 Ace-10 已完成本地运行时数据和牌面资产注入
+- 大阿卡纳 0-21、权杖 Page-King、圣杯 Page-King 与星币 Page-King 已完成本地运行时数据和牌面资产注入
 - 全站卡牌渲染比例已统一到 `1:1.7`
 - 资产生成与校验已具备根命令：`npm run generate:assets` 与 `npm run validate:assets`。
 - 两阶段 reading 规范已沉淀到 `docs/30-agent/reading-flow.md`、`docs/30-agent/agent-profiles.md`、`docs/30-agent/output-schema.md`、`docs/40-architecture/architecture.md` 与 `docs/60-evals/rubrics.md`
@@ -144,7 +144,7 @@
 
 - `encyclopedia` 是否接 `knowledge/wiki` 仍处于待评估状态
 - 新增高价值牌阵仍未进入 `data/spreads/` + UI 联动上线流程
-- 运行时牌库虽已扩展到 42 张并接入本地资产，但距离完整 `78/78` 运行时牌池仍有 36 张小阿卡纳缺口
+- 运行时牌库虽已扩展到 64 张并接入本地资产，但距离完整 `78/78` 运行时牌池仍有 14 张小阿卡纳缺口
 
 ### 保持降级：P2. 定向 ingest-wiki
 
@@ -228,13 +228,13 @@
 - 阅读结果页已对齐结构化 schema
 - 历史页已对齐结构化 reading contract
 - `celtic-cross` 的抽牌与回放路径已能真实跑通
-- 大阿卡纳 0-21、权杖 Ace-10 与圣杯 Ace-10 已进入运行时牌组
+- 大阿卡纳 0-21、权杖 Page-King、圣杯 Page-King 与星币 Page-King 已进入运行时牌组
 - 本地牌面资产与 manifest 校验已形成闭环
 
 待完成部分：
 
 - 新增高价值牌阵
-- 剩余 36 张小阿卡纳运行时数据与资产注入
+- 剩余 14 张小阿卡纳运行时数据与资产注入
 - 百科 runtime 接入策略
 - 针对真实运行时缺口的定向 ingest 回补
 

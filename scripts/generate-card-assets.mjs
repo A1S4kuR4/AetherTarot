@@ -122,6 +122,10 @@ function motif(card, accent, paper) {
     case "world":
       return `<ellipse cx="500" cy="900" rx="260" ry="365" ${commonStroke}/><path d="M500 650 C615 780 615 1020 500 1150 C385 1020 385 780 500 650 Z" ${commonStroke}/><circle cx="500" cy="900" r="86" ${softFill}/>`;
     default:
+      if (card.id.includes("pentacles")) {
+        return pentaclesMotif(card.id, commonStroke, softFill, paper);
+      }
+
       return wandsMotif(card.id, commonStroke, softFill);
   }
 }
@@ -149,6 +153,71 @@ function wandsMotif(id, commonStroke, softFill) {
   }).join("");
 
   return `${staffs}<path d="M275 1210 C385 1140 615 1140 725 1210" ${commonStroke}/>`;
+}
+
+function pentaclesMotif(id, commonStroke, softFill, paper) {
+  const courtMotif = pentaclesCourtMotif(id, commonStroke, softFill, paper);
+  if (courtMotif) {
+    return courtMotif;
+  }
+
+  const positionsById = {
+    "ace-of-pentacles": [[500, 900]],
+    "two-of-pentacles": [[380, 820], [620, 980]],
+    "three-of-pentacles": [[500, 730], [360, 970], [640, 970]],
+    "four-of-pentacles": [[380, 760], [620, 760], [380, 1040], [620, 1040]],
+    "five-of-pentacles": [[500, 670], [360, 840], [640, 840], [430, 1050], [570, 1050]],
+    "six-of-pentacles": [[360, 720], [640, 720], [360, 900], [640, 900], [430, 1080], [570, 1080]],
+    "seven-of-pentacles": [[500, 650], [360, 790], [640, 790], [300, 960], [500, 960], [700, 960], [500, 1130]],
+    "eight-of-pentacles": [[360, 700], [640, 700], [300, 860], [500, 860], [700, 860], [360, 1020], [640, 1020], [500, 1180]],
+    "nine-of-pentacles": [[500, 640], [360, 760], [640, 760], [260, 910], [500, 910], [740, 910], [360, 1060], [640, 1060], [500, 1210]],
+    "ten-of-pentacles": [[500, 610], [360, 730], [640, 730], [250, 860], [500, 860], [750, 860], [360, 1010], [640, 1010], [430, 1180], [570, 1180]],
+  };
+
+  const positions = positionsById[id] ?? [[500, 900]];
+  const tokens = positions
+    .map(([cx, cy]) => pentacleToken(cx, cy, commonStroke, softFill, paper))
+    .join("");
+
+  return `${tokens}<path d="M275 1230 C380 1160 620 1160 725 1230" ${commonStroke}/>`;
+}
+
+function pentaclesCourtMotif(id, commonStroke, softFill, paper) {
+  const coin = pentacleToken(500, 860, commonStroke, softFill, paper);
+
+  switch (id) {
+    case "page-of-pentacles":
+      return `${coin}<path d="M500 1160 L500 980 M430 1160 L570 1160 M450 980 L550 980" ${commonStroke}/><path d="M360 1220 C420 1145 580 1145 640 1220" ${commonStroke}/>`;
+    case "knight-of-pentacles":
+      return `${coin}<path d="M340 1125 C430 1035 570 1035 660 1125" ${commonStroke}/><path d="M380 1125 L340 1215 M620 1125 L660 1215 M430 980 L360 900 M570 980 L640 900" ${commonStroke}/><path d="M280 1250 C390 1175 610 1175 720 1250" ${commonStroke}/>`;
+    case "queen-of-pentacles":
+      return `${coin}<path d="M395 1100 C430 1025 470 1000 500 1000 C530 1000 570 1025 605 1100" ${commonStroke}/><path d="M360 1180 L430 1060 M640 1180 L570 1060 M395 1180 L605 1180" ${commonStroke}/><path d="M300 1240 C390 1165 610 1165 700 1240" ${commonStroke}/>`;
+    case "king-of-pentacles":
+      return `${coin}<path d="M390 720 L440 650 L500 700 L560 650 L610 720" ${commonStroke}/><path d="M360 1120 L640 1120 L605 1235 L395 1235 Z" ${commonStroke}/><path d="M430 1120 L430 1010 M570 1120 L570 1010" ${commonStroke}/><circle cx="360" cy="980" r="30" ${softFill}/><circle cx="640" cy="980" r="30" ${softFill}/>`;
+    default:
+      return null;
+  }
+}
+
+function pentacleToken(cx, cy, commonStroke, softFill, paper) {
+  const outerRadius = 62;
+  const innerRadius = 24;
+  const points = [];
+
+  for (let index = 0; index < 10; index += 1) {
+    const angle = (-90 + index * 36) * (Math.PI / 180);
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    points.push([
+      Number((cx + Math.cos(angle) * radius).toFixed(1)),
+      Number((cy + Math.sin(angle) * radius).toFixed(1)),
+    ]);
+  }
+
+  const starPath = points
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"}${x} ${y}`)
+    .join(" ");
+
+  return `<circle cx="${cx}" cy="${cy}" r="76" ${softFill}/><circle cx="${cx}" cy="${cy}" r="72" ${commonStroke}/><path d="${starPath} Z" fill="none" stroke="${paper}" stroke-width="10" stroke-linejoin="round" opacity="0.92"/>`;
 }
 
 function cardSvg(card, index) {

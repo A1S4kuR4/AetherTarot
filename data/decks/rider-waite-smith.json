@@ -832,6 +832,110 @@
     "imageUrl": "/cards/minor_wands_10.png"
   },
   {
+    "id": "page-of-wands",
+    "name": "权杖侍从",
+    "englishName": "Page of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "刚被点亮的新鲜火花。它代表消息、起步、冒险欲与重新变得轻盈有冲劲的状态，是“我想开始了”的信号开始变得明确。",
+    "uprightKeywords": [
+      "新消息",
+      "起步",
+      "好奇",
+      "热切尝试"
+    ],
+    "reversedKeywords": [
+      "动得太少",
+      "热度不稳",
+      "优柔寡断",
+      "只剩新鲜感"
+    ],
+    "symbolism": [
+      "凝视权杖的年轻人：第一次认真感到兴奋与想出发。",
+      "轻盈的姿态：火还在幼态，带着诚实、直接与未被驯化的好奇。",
+      "单独持杖：一切仍在起点，关键是把火花变成行动。"
+    ],
+    "imageUrl": "/cards/minor_wands_page.png"
+  },
+  {
+    "id": "knight-of-wands",
+    "name": "权杖骑士",
+    "englishName": "Knight of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "热情已经骑上去并开始前冲。它强调行动、旅行、改变与冒险精神，也提醒人别让速度长期跑在成熟度前面。",
+    "uprightKeywords": [
+      "行动",
+      "旅行",
+      "改变",
+      "勇往直前"
+    ],
+    "reversedKeywords": [
+      "冲太快",
+      "承诺不足",
+      "反复返工",
+      "热情失控"
+    ],
+    "symbolism": [
+      "前冲的骑士：火不再只是点燃，而是需要道路和任务来承接。",
+      "快速动作感：强烈意志与立刻去做的冲劲。",
+      "持杖前行：把热情带进外部世界的探索姿态。"
+    ],
+    "imageUrl": "/cards/minor_wands_knight.png"
+  },
+  {
+    "id": "queen-of-wands",
+    "name": "权杖王后",
+    "englishName": "Queen of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "成熟而温暖的火性存在。她代表自信、魅力、独立与能带动他人的生命热感，也提醒人把力量活成温暖而不是武器。",
+    "uprightKeywords": [
+      "自信",
+      "魅力",
+      "独立",
+      "鼓舞他人"
+    ],
+    "reversedKeywords": [
+      "强撑自信",
+      "嫉妒",
+      "控制",
+      "精力下坠"
+    ],
+    "symbolism": [
+      "稳坐而坚定的姿态：火已经有中心，也有持续性。",
+      "向日葵与狮性意象：活力、光感与内在力量。",
+      "黑猫般的直觉感：热烈之外仍保有敏锐感知。"
+    ],
+    "imageUrl": "/cards/minor_wands_queen.png"
+  },
+  {
+    "id": "king-of-wands",
+    "name": "权杖国王",
+    "englishName": "King of Wands",
+    "arcana": "Minor Arcana",
+    "element": "Fire",
+    "description": "坐下来却没有熄灭的火。它代表领导、意志、自律与经验打磨后的成熟推进力，知道什么时候等待、什么时候集中火力。",
+    "uprightKeywords": [
+      "领导",
+      "意志力",
+      "自律",
+      "愿景推进"
+    ],
+    "reversedKeywords": [
+      "独断",
+      "自律下滑",
+      "承诺困难",
+      "强撑浮夸"
+    ],
+    "symbolism": [
+      "稳坐王座的人物：火已从冲劲提纯为可驾驭的力量。",
+      "权杖在手：意志被保留为可执行的方向感。",
+      "狮性与王座：号召力、权威与经得起结果检验的经验。"
+    ],
+    "imageUrl": "/cards/minor_wands_king.png"
+  },
+  {
     "id": "ace-of-cups",
     "name": "圣杯王牌",
     "englishName": "Ace of Cups",
@@ -1090,5 +1194,473 @@
       "远处的家园：稳定归属、长期关系与可持续的温暖生活。"
     ],
     "imageUrl": "/cards/minor_cups_10.png"
+  },
+  {
+    "id": "page-of-cups",
+    "name": "圣杯侍从",
+    "englishName": "Page of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "第一次认真聆听感受与内在讯号的状态。它代表新关系、新消息、柔软表达与重新像孩子一样去感受世界。",
+    "uprightKeywords": [
+      "新关系",
+      "新消息",
+      "敏感",
+      "柔软表达"
+    ],
+    "reversedKeywords": [
+      "消息不稳",
+      "幻想压过现实",
+      "落不了地",
+      "承诺含糊"
+    ],
+    "symbolism": [
+      "凝视杯子的年轻人：开始认真承接情感、梦想与灵感。",
+      "安静柔和的姿态：先让感受浮上来，而不是急着征服世界。",
+      "单杯在手：细微但真实的内在讯息。"
+    ],
+    "imageUrl": "/cards/minor_cups_page.png"
+  },
+  {
+    "id": "knight-of-cups",
+    "name": "圣杯骑士",
+    "englishName": "Knight of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "在梦想与行动之间缓慢调频的追寻者。它强调浪漫表达、邀请、追求与跟随内心，也提醒别把优柔寡断包装成深情。",
+    "uprightKeywords": [
+      "追求",
+      "邀请",
+      "浪漫表达",
+      "跟随内心"
+    ],
+    "reversedKeywords": [
+      "幻想失衡",
+      "承诺难兑现",
+      "拖延",
+      "投入不足"
+    ],
+    "symbolism": [
+      "缓慢前行的骑士：想往前走，同时不想丢失感受。",
+      "手中的杯子：情感、愿景与想象力被带入现实。",
+      "温柔的速度：重点不是征服，而是让内在与行动靠近。"
+    ],
+    "imageUrl": "/cards/minor_cups_knight.png"
+  },
+  {
+    "id": "queen-of-cups",
+    "name": "圣杯王后",
+    "englishName": "Queen of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "深情而有边界的感受力。她代表直觉、同理、照顾能力与沉静的情感成熟，也提醒人保持柔软时别把所有情绪都变成自己的责任。",
+    "uprightKeywords": [
+      "直觉",
+      "同理",
+      "照顾能力",
+      "情感智慧"
+    ],
+    "reversedKeywords": [
+      "情绪淹没",
+      "旧伤未解",
+      "共情过度",
+      "冷淡防御"
+    ],
+    "symbolism": [
+      "临水而坐的王后：深水在身边，但没有彻底吞没她。",
+      "特殊的杯子：被认真承接的感受与直觉。",
+      "安静的姿态：影响力来自理解与接纳，而非强压。"
+    ],
+    "imageUrl": "/cards/minor_cups_queen.png"
+  },
+  {
+    "id": "king-of-cups",
+    "name": "圣杯国王",
+    "englishName": "King of Cups",
+    "arcana": "Minor Arcana",
+    "element": "Water",
+    "description": "在情绪与波动之中仍能稳住船舵的成熟水性。它代表包容、节制、情感掌控与把感受转成可持续判断的能力。",
+    "uprightKeywords": [
+      "成熟情感",
+      "包容",
+      "节制",
+      "稳健承接"
+    ],
+    "reversedKeywords": [
+      "情绪压抑",
+      "操控",
+      "报复心",
+      "感受被困住"
+    ],
+    "symbolism": [
+      "海浪中的王座：情绪仍在流动，但人没有被掀翻。",
+      "持杯的国王：感受被有分寸地承载与使用。",
+      "稳定姿态：真正的成熟不是没有情绪，而是能管理情绪。"
+    ],
+    "imageUrl": "/cards/minor_cups_king.png"
+  },
+  {
+    "id": "ace-of-pentacles",
+    "name": "星币王牌",
+    "englishName": "Ace of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "现实条件已经落到手中的起点。它代表资源到位、稳定环境、务实开端与可以被真正兑现的计划。",
+    "uprightKeywords": [
+      "务实开端",
+      "资源到位",
+      "财务机会",
+      "稳定环境"
+    ],
+    "reversedKeywords": [
+      "机会滑落",
+      "预算不足",
+      "现实卡住",
+      "过度求稳"
+    ],
+    "symbolism": [
+      "云中伸出的手：现实世界递来的礼物与机会。",
+      "托住的星币：可以被投入、照料与兑现的资源。",
+      "花园与门径：安全感与通往更大成果的现实路径。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_ace.png"
+  },
+  {
+    "id": "two-of-pentacles",
+    "name": "星币二",
+    "englishName": "Two of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "动态中的资源调配。它强调时间、金钱、体力与多重任务之间的周转和平衡，常常不是从容，而是尽力让一切别掉下来。",
+    "uprightKeywords": [
+      "周转",
+      "调度",
+      "权衡",
+      "弹性"
+    ],
+    "reversedKeywords": [
+      "负荷过重",
+      "节奏失控",
+      "资源分散",
+      "不得不放弃"
+    ],
+    "symbolism": [
+      "两枚星币：现实世界里必须同时照看的两个重点。",
+      "环绕的无限符号：持续周转而非一次性决定。",
+      "起伏海浪：外部节律不断改变，平衡只能动态维持。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_2.png"
+  },
+  {
+    "id": "three-of-pentacles",
+    "name": "星币三",
+    "englishName": "Three of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "把技巧、标准与协作一起变成成果的打底期。它代表学习、合作、训练与认真把事情做好的专业化阶段。",
+    "uprightKeywords": [
+      "学习",
+      "合作",
+      "工艺",
+      "扎实执行"
+    ],
+    "reversedKeywords": [
+      "投入不足",
+      "合作失灵",
+      "敷衍",
+      "重复犯错"
+    ],
+    "symbolism": [
+      "工匠与建筑：劳动不只是忙碌，而是在建造有意义的结构。",
+      "旁观的他人：反馈、标准与协作共同塑造成果。",
+      "教堂空间：作品需要被长远使用，而非只求即时完成。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_3.png"
+  },
+  {
+    "id": "four-of-pentacles",
+    "name": "星币四",
+    "englishName": "Four of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "通过收缩来换取安全的阶段。它强调储蓄、界限、保守与守成，也提醒人别把安全感活成拒绝流动的执着。",
+    "uprightKeywords": [
+      "储蓄",
+      "保守",
+      "巩固",
+      "界限"
+    ],
+    "reversedKeywords": [
+      "失去平衡",
+      "守不住资源",
+      "结构松动",
+      "无力设边界"
+    ],
+    "symbolism": [
+      "紧抱星币的人：对位置、资源与安全感的抓紧。",
+      "头顶胸前脚下的星币：稳定和僵硬纠缠在一起。",
+      "收缩姿态：保护自己，也可能让流动停住。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_4.png"
+  },
+  {
+    "id": "five-of-pentacles",
+    "name": "星币五",
+    "englishName": "Five of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "匮乏、失联与寒意占据视线的时刻。它既指现实压力，也提醒人别因为绝望而看不见身边仍存在的支援与出口。",
+    "uprightKeywords": [
+      "贫乏",
+      "被排除",
+      "现实压力",
+      "失去依托"
+    ],
+    "reversedKeywords": [
+      "最糟正在过去",
+      "重新看见帮助",
+      "视野打开",
+      "慢慢走出匮乏"
+    ],
+    "symbolism": [
+      "寒冷中前行的人：资源不足与身心疲惫。",
+      "身后的彩窗：帮助可能存在，只是尚未被接住。",
+      "并肩却仍孤独：困境不只在物质，也在精神失联。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_5.png"
+  },
+  {
+    "id": "six-of-pentacles",
+    "name": "星币六",
+    "englishName": "Six of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "现实资源开始流动，但不一定完全平等。它代表援助、交换、分配与互惠，也提醒人看见帮助背后的角色结构。",
+    "uprightKeywords": [
+      "交换",
+      "支援",
+      "资源分配",
+      "互惠安排"
+    ],
+    "reversedKeywords": [
+      "帮助附带控制",
+      "失衡",
+      "角色固着",
+      "需要求援"
+    ],
+    "symbolism": [
+      "手持天平的人：资源流动伴随秩序与决定权。",
+      "分发星币的动作：现实帮助终于出现。",
+      "跪着的人：援助与不平等经常同时存在。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_6.png"
+  },
+  {
+    "id": "seven-of-pentacles",
+    "name": "星币七",
+    "englishName": "Seven of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "停下来检视投入与回报的阶段。它代表复盘、长期眼光、耐心与阶段性评估，逼人认真判断这段耕耘值不值得继续。",
+    "uprightKeywords": [
+      "检视成果",
+      "长期规划",
+      "耐心",
+      "重新估算投入"
+    ],
+    "reversedKeywords": [
+      "停滞",
+      "目标不清",
+      "忙而无策",
+      "缺乏耐心"
+    ],
+    "symbolism": [
+      "凝视植株的农人：从忙碌转入认真评估。",
+      "已成熟与未成熟的果实：收成不是非黑即白，而是阶段性的。",
+      "靠着工具停下：下一步需要更聪明，而不是更盲目。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_7.png"
+  },
+  {
+    "id": "eight-of-pentacles",
+    "name": "星币八",
+    "englishName": "Eight of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "通过重复与纪律获得真正熟练。它代表工艺、专注、精进与长期承诺，把“想做好”慢慢练成“真的做得好”。",
+    "uprightKeywords": [
+      "工艺",
+      "专注",
+      "精进",
+      "长期承诺"
+    ],
+    "reversedKeywords": [
+      "缺乏承诺",
+      "急着看回报",
+      "基本功不足",
+      "热情不足"
+    ],
+    "symbolism": [
+      "专注雕琢的人：技能成长来自持续投入。",
+      "排列的成品：重复练习会累积成看得见的成果。",
+      "身后的小镇：外部世界还在，但当下最重要的是练好手艺。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_8.png"
+  },
+  {
+    "id": "nine-of-pentacles",
+    "name": "星币九",
+    "englishName": "Nine of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "长期经营后的独立丰足。它强调自给自足、纪律、成熟成果与审美生活，展现一种“不必依附谁也能安顿好自己”的现实能力。",
+    "uprightKeywords": [
+      "自给自足",
+      "成熟成果",
+      "纪律",
+      "优雅独立"
+    ],
+    "reversedKeywords": [
+      "自律不足",
+      "收获不及投入",
+      "方向投错",
+      "表面体面"
+    ],
+    "symbolism": [
+      "花园中的人物：丰盛不是偶然，而是长期经营。",
+      "受训的猎鹰：自由与成果背后都有纪律代价。",
+      "从容姿态：不需要再向谁证明自己的安定。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_9.png"
+  },
+  {
+    "id": "ten-of-pentacles",
+    "name": "星币十",
+    "englishName": "Ten of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "成熟而可传承的现实结构。它代表家业、长期资产、事业扎根与稳定系统，强调一个足以继续承载更多人的物质秩序。",
+    "uprightKeywords": [
+      "家产",
+      "传承",
+      "长期资产",
+      "稳定系统"
+    ],
+    "reversedKeywords": [
+      "基础不稳",
+      "财务冒险",
+      "表面富足",
+      "厌倦安全"
+    ],
+    "symbolism": [
+      "家人与长者：成果已经进入代际延续。",
+      "分布的星币：资源不只是拥有，而是结构化地被保存。",
+      "稳固居所：现实世界中真正能承载生活的系统。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_10.png"
+  },
+  {
+    "id": "page-of-pentacles",
+    "name": "星币侍从",
+    "englishName": "Page of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "把现实机会认真捧在手里的起点。它代表学习、新消息、新技能与务实承诺，强调先看清、先打基础，再慢慢把事情养大。",
+    "uprightKeywords": [
+      "学习",
+      "新机会",
+      "认真起步",
+      "务实承诺"
+    ],
+    "reversedKeywords": [
+      "分心",
+      "散漫",
+      "承诺不足",
+      "计划落不了地"
+    ],
+    "symbolism": [
+      "凝视手中星币的年轻人：注意力正落到具体现实之上。",
+      "稳稳站地的姿态：这不是空想，而是愿意慢慢学会。",
+      "学生气的神情：真正的成长常从认真开始。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_page.png"
+  },
+  {
+    "id": "knight-of-pentacles",
+    "name": "星币骑士",
+    "englishName": "Knight of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "慢，但不会轻易中断的现实推进。它代表责任感、长期投入、耐心执行与稳健计划，是把目标一寸寸做出来的土象行动力。",
+    "uprightKeywords": [
+      "稳健推进",
+      "责任感",
+      "长期投入",
+      "耐心执行"
+    ],
+    "reversedKeywords": [
+      "停滞",
+      "拖延",
+      "计划松散",
+      "厌倦责任"
+    ],
+    "symbolism": [
+      "几乎静止的骑士：行动被转化成规划与耐力。",
+      "手中的星币：前进前先确认价值与方向。",
+      "沉着姿态：真正可靠的成长往往不喧闹。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_knight.png"
+  },
+  {
+    "id": "queen-of-pentacles",
+    "name": "星币王后",
+    "englishName": "Queen of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "把资源变成可居住、可滋养现实的人。它代表照料、丰盛、生活经营与身体感，强调通过稳定与细致让一切各安其位。",
+    "uprightKeywords": [
+      "照料",
+      "丰盛",
+      "生活经营",
+      "务实信心"
+    ],
+    "reversedKeywords": [
+      "匮乏焦虑",
+      "失去自信",
+      "照顾失衡",
+      "与身体脱节"
+    ],
+    "symbolism": [
+      "轻捧星币的姿态：丰盛来自稳定承接，而不是炫耀。",
+      "安静丰沃的气场：被照顾好的现实会自己开花。",
+      "母性与土性融合：安全感可以被慢慢经营出来。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_queen.png"
+  },
+  {
+    "id": "king-of-pentacles",
+    "name": "星币国王",
+    "englishName": "King of Pentacles",
+    "arcana": "Minor Arcana",
+    "element": "Earth",
+    "description": "知道怎样让事情长期稳定运作的成熟掌管者。它代表经营、可靠承诺、物质成功与稳健判断，把经验和责任变成可持续结果。",
+    "uprightKeywords": [
+      "成熟经营",
+      "可靠承诺",
+      "物质成功",
+      "稳健判断"
+    ],
+    "reversedKeywords": [
+      "贪婪",
+      "短视",
+      "价值观变窄",
+      "只看结果"
+    ],
+    "symbolism": [
+      "端坐的掌管者：成果已经进入可持续管理阶段。",
+      "手中星币与稳固座位：现实能力来自长期累积。",
+      "丰盛环境：成功不只是拥有，更是能稳住系统。"
+    ],
+    "imageUrl": "/cards/minor_pentacles_king.png"
   }
 ]

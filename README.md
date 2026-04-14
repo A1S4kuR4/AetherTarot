@@ -32,10 +32,10 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 运行时数据 / 资产现状：
 
-- `data/decks/rider-waite-smith.json` 当前包含 42 张运行时牌：大阿卡纳 0-21、权杖 Ace-10 与圣杯 Ace-10
-- `apps/web/public/cards/` 当前包含 43 个文件：42 张 1000x1700 正面牌面与 1 张背面
+- `data/decks/rider-waite-smith.json` 当前包含 64 张运行时牌：大阿卡纳 0-21、权杖 Page-King、圣杯 Page-King、星币 Page-King
+- `apps/web/public/cards/` 当前包含 65 个文件：64 张 1000x1700 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 记录资产来源、full-bleed 审核状态与 SHA-256
-- 知识层 78/78 完成不等于运行时牌池已 78/78；当前仍有 36 张小阿卡纳待后续注入
+- 知识层 78/78 完成不等于运行时牌池已 78/78；当前仍有 14 张小阿卡纳待后续注入
 
 当前并行主线：
 
@@ -48,8 +48,8 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
 - 将现有 reading service pipeline 接入最小 LangGraph，并保持 `/api/reading` 协议不变
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
-- 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 42 张正面牌面
-- 将运行时牌组从早期示例牌扩展到当前 42 张，并接入本地资产路径
+- 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 64 张正面牌面
+- 将运行时牌组从早期示例牌扩展到当前 64 张，并接入本地资产路径
 - `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
@@ -105,7 +105,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
 - 生成后安全检查与 `safety_note`
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
-- 42 张运行时牌与 43 个本地卡牌文件，均按 1:1.7 竖版规范接入
+- 64 张运行时牌与 65 个本地卡牌文件，均按 1:1.7 竖版规范接入
 
 当前不做：
 
