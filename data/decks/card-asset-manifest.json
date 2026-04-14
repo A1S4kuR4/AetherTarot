@@ -441,6 +441,86 @@
       "sha256": "c5557b9bd4350fa1d3efe6a42d05dfa876d4fc1da0167c26a7e8237d405faedf"
     },
     {
+      "assetId": "six-of-wands",
+      "imageUrl": "/cards/minor_wands_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "d6a6260d64c1fea0c54fdc192dde203c54dca8b4e6c38011df7cc5999d9e6c51"
+    },
+    {
+      "assetId": "seven-of-wands",
+      "imageUrl": "/cards/minor_wands_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "0acea99b7bea00d3d1a323754bacbe50a8336b7efc078eb67b283555e63696a4"
+    },
+    {
+      "assetId": "eight-of-wands",
+      "imageUrl": "/cards/minor_wands_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "eb50402ccf47a12cae555ceea507632cc9b6c58d09b9beade60b37c439be70b8"
+    },
+    {
+      "assetId": "nine-of-wands",
+      "imageUrl": "/cards/minor_wands_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a56ed31d6051ccd613c294eaaa2f13b7b14b21d6f363f105ac867e2cd3a5e988"
+    },
+    {
+      "assetId": "ten-of-wands",
+      "imageUrl": "/cards/minor_wands_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a831edc2f6db3f798d3e9855cd8c5ad1a31f10e3a62995cebffdafd4a2d87bb2"
+    },
+    {
       "assetId": "ace-of-cups",
       "imageUrl": "/cards/minor_cups_ace.png",
       "width": 1000,
@@ -454,7 +534,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "4d92f133f1c65516acddd6adf547a5258a6986d9ebb944928270ac66cb89a78e"
+      "sha256": "073fd0b4aff3808957096aa609b44869eda48bd10799366d6effddaa01eb9e2f"
     },
     {
       "assetId": "two-of-cups",
@@ -470,7 +550,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "fd963f18211604805b11a7f027f92e65c0fe819c9f02f3ac2ae4ab00099f0c11"
+      "sha256": "c8bd197d81f62578dcc8c5f36dd28fd4f366436a459b5c06dc52dd944c4394be"
     },
     {
       "assetId": "three-of-cups",
@@ -486,7 +566,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "95e40110d7b42cbfe6fcea82c30f62720e3ff31b9e8d0d8a25841b481606e9ce"
+      "sha256": "dde449d33016b99b77c14cdfdc0721195c97cd7f26dc21955582babe8b859498"
     },
     {
       "assetId": "four-of-cups",
@@ -502,7 +582,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "ca2ce21fced289f3fede97db22a717f98548e26b73842ba01e68a3aa73f9abf6"
+      "sha256": "63c32910c7bc7a455ddb6944be48a3c2ca7f3e2fc4b4650949d1a4197e07a1d2"
     },
     {
       "assetId": "five-of-cups",
@@ -518,7 +598,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "649067fa34434b2216b13b14a57b770917d03f722fcd9ff56a39e1185a6cc010"
+      "sha256": "e70abea361bb373bd473527cf5edb7fea7f320ae17b91df79761ffa2d1159175"
     },
     {
       "assetId": "six-of-cups",
@@ -534,7 +614,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "203d8ceac70e504c7898aa0e34dc5292e38e1d185a99e0c8043840ab3e96e608"
+      "sha256": "ca86d02b631df94bbcd0a40403c540703bb1ecafe0d5da268bf4758251a147fa"
     },
     {
       "assetId": "seven-of-cups",
@@ -550,7 +630,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "e3c1f09bd0d7cde28ccf51b832536561373a018cf3662f6329ee963ff0d26fd2"
+      "sha256": "aee926b2bd3e4f210b40e2bab3b26f25093129e263d03de7da8e00bda6538775"
     },
     {
       "assetId": "eight-of-cups",
@@ -566,7 +646,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "4594382b39adc0da78ba74e9c32b8b7b434a8b3e46f7ab8b47be15ace557ac5b"
+      "sha256": "2c467170446aba8188b1117431d9e3d504e42c76e66abc71134be3e4247621d1"
     },
     {
       "assetId": "nine-of-cups",
@@ -582,7 +662,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "4f11017b94e0c058580d53644fd071276895aba5d2b0e309c461f9cabbfddc87"
+      "sha256": "6741d5a27f0ab2245dec4bf8bde61fdead7bc56e725a5afc70f1705b1f8070ed"
     },
     {
       "assetId": "ten-of-cups",
@@ -598,7 +678,7 @@
         "reviewedAt": "2026-04-10",
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
-      "sha256": "e3509b8dc8a5bf9b7e7726ccf24680bbfeba23c02b47ceb53991eebd969bf206"
+      "sha256": "3e0d4d4e1943f9f4b95d78916a76e589956207a7a29912f9c78f8837193ed8d9"
     },
     {
       "assetId": "card-back",
