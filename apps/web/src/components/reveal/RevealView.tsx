@@ -25,6 +25,15 @@ export default function RevealView() {
     return null;
   }
 
+  const spreadCardGridClass =
+    selectedSpread.positions.length === 1
+      ? "max-w-sm grid-cols-1"
+      : selectedSpread.positions.length === 3
+        ? "md:grid-cols-3"
+        : selectedSpread.positions.length === 4
+          ? "md:grid-cols-2 xl:grid-cols-4"
+          : "md:grid-cols-2 xl:grid-cols-3";
+
   return (
     <section className="mx-auto w-full max-w-7xl px-6 pt-12 pb-10">
       {/* Header */}
@@ -51,7 +60,7 @@ export default function RevealView() {
         {/* Card Spread Area */}
         <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-8 pt-16 pb-8 lg:col-span-8">
           {/* Spread Cards */}
-          <div className="relative z-10 grid w-full max-w-3xl grid-cols-1 gap-10 md:grid-cols-3">
+          <div className={cn("relative z-10 grid w-full max-w-4xl grid-cols-1 gap-10", spreadCardGridClass)}>
             {selectedSpread.positions.map((position, index) => {
               const drawn = drawnCards.find(
                 (card) => card.positionId === position.id,
@@ -73,7 +82,7 @@ export default function RevealView() {
                   }}
                   className={cn(
                     "group flex flex-col items-center",
-                    index === 1 && "md:-mt-12",
+                    selectedSpread.id === "holy-triangle" && index === 1 && "md:-mt-12",
                   )}
                 >
                   {/* Position label */}
@@ -181,7 +190,9 @@ export default function RevealView() {
                   <div
                     className={cn(
                       "absolute top-0.5 -left-[4px] h-2 w-2 rounded-full",
-                      index === 1 ? "bg-indigo/50" : "bg-text-inverse-muted/30",
+                      selectedSpread.id === "holy-triangle" && index === 1
+                        ? "bg-indigo/50"
+                        : "bg-text-inverse-muted/30",
                     )}
                   />
                   <h4

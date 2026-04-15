@@ -237,7 +237,7 @@ export default function RitualInitializer() {
         <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
           选择牌阵 · Choose Your Spread
         </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {spreads.map((spread) => (
             <button
               key={spread.id}
@@ -280,6 +280,14 @@ export default function RitualInitializer() {
                   selectedSpread?.id === spread.id && "border-terracotta/30 text-terracotta/80"
                 )}>
                   最受青睐
+                </span>
+              )}
+              {spread.id === "four-aspects" && (
+                <span className={cn(
+                  "chip-dark mt-2 text-[9px]",
+                  selectedSpread?.id === spread.id && "border-indigo/30 text-indigo/80"
+                )}>
+                  多层拆解
                 </span>
               )}
             </button>
