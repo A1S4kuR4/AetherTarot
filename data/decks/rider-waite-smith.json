@@ -1662,5 +1662,369 @@
       "丰盛环境：成功不只是拥有，更是能稳住系统。"
     ],
     "imageUrl": "/cards/minor_pentacles_king.png"
+  },
+  {
+    "id": "ace-of-swords",
+    "name": "宝剑王牌",
+    "englishName": "Ace of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "切开混乱的第一道清明。它代表真相、洞见、计划成形与认知突破，让人终于看见该怎么做、为什么这样做。",
+    "uprightKeywords": [
+      "清晰",
+      "洞见",
+      "真相",
+      "认知突破"
+    ],
+    "reversedKeywords": [
+      "思路混乱",
+      "判断失焦",
+      "计划失真",
+      "执念过强"
+    ],
+    "symbolism": [
+      "直指天空的剑：心智开始真正聚焦。",
+      "穿过王冠的剑锋：真相会切开迷雾，也要求承担后果。",
+      "双刃形态：事情的两面都开始显形。"
+    ],
+    "imageUrl": "/cards/minor_swords_ace.png"
+  },
+  {
+    "id": "two-of-swords",
+    "name": "宝剑二",
+    "englishName": "Two of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "防御与悬置并存的僵局。它代表迟疑、回避、暂时抽离与在两个选项之间停住，提醒人分辨自己是在沉淀还是在逃避。",
+    "uprightKeywords": [
+      "迟疑",
+      "僵局",
+      "防御",
+      "暂时抽离"
+    ],
+    "reversedKeywords": [
+      "情绪反扑",
+      "回避失效",
+      "准备面对",
+      "焦虑加剧"
+    ],
+    "symbolism": [
+      "蒙眼持剑：不只是没看见，也是不想看见。",
+      "交叉的剑：防御维持了平衡，也制造了停滞。",
+      "身后的水面：被压住的感受并未真正消失。"
+    ],
+    "imageUrl": "/cards/minor_swords_2.png"
+  },
+  {
+    "id": "three-of-swords",
+    "name": "宝剑三",
+    "englishName": "Three of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "无法再粉饰的刺痛时刻。它代表心碎、失望、哀伤与幻灭，也逼人承认自己真的受伤了。",
+    "uprightKeywords": [
+      "心碎",
+      "失望",
+      "哀伤",
+      "幻灭"
+    ],
+    "reversedKeywords": [
+      "压抑悲伤",
+      "旧伤未愈",
+      "麻木",
+      "需要容纳痛苦"
+    ],
+    "symbolism": [
+      "被刺穿的心：痛苦已经清楚到无法否认。",
+      "整齐穿透的三把剑：伤口也在要求被理解与命名。",
+      "风雨背景：情绪上的冲击真实存在。"
+    ],
+    "imageUrl": "/cards/minor_swords_3.png"
+  },
+  {
+    "id": "four-of-swords",
+    "name": "宝剑四",
+    "englishName": "Four of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "有目的的暂停与恢复。它代表休息、撤退、沉思与疗养，让身体、情绪和思路都有机会重新排序。",
+    "uprightKeywords": [
+      "休息",
+      "撤退",
+      "沉思",
+      "疗养"
+    ],
+    "reversedKeywords": [
+      "准备回归",
+      "恢复不足",
+      "被迫起身",
+      "重新行动"
+    ],
+    "symbolism": [
+      "闭目躺卧的人：暂停本身也是一种行动。",
+      "安静空间：恢复需要隔绝外界噪音。",
+      "悬挂的剑：思路仍在，但暂时不再主导一切。"
+    ],
+    "imageUrl": "/cards/minor_swords_4.png"
+  },
+  {
+    "id": "five-of-swords",
+    "name": "宝剑五",
+    "englishName": "Five of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "赢了局面却输了更多的冲突。它代表争吵、输赢执念、拉扯与不光彩的胜利，提醒人区分解决问题和压过别人。",
+    "uprightKeywords": [
+      "争吵",
+      "输赢执念",
+      "心智对抗",
+      "关系破裂"
+    ],
+    "reversedKeywords": [
+      "开始反省",
+      "尝试沟通",
+      "表面休战",
+      "羞耻感浮现"
+    ],
+    "symbolism": [
+      "拿着战利品的人：胜利感里藏着空洞。",
+      "离开的身影：冲突带来的代价是真实的。",
+      "散落的剑：关系结构已经被拉扯出裂痕。"
+    ],
+    "imageUrl": "/cards/minor_swords_5.png"
+  },
+  {
+    "id": "six-of-swords",
+    "name": "宝剑六",
+    "englishName": "Six of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "带着旧故事慢慢驶离风暴。它代表过渡、转移、缓慢恢复与从混乱走向较平稳的阶段，不是立刻变好，而是方向已定。",
+    "uprightKeywords": [
+      "过渡",
+      "转移",
+      "缓慢恢复",
+      "离开困境"
+    ],
+    "reversedKeywords": [
+      "旧伤翻起",
+      "旅程颠簸",
+      "不得不直面",
+      "转向更剧烈"
+    ],
+    "symbolism": [
+      "缓慢前行的小船：恢复通常是安静而持续的。",
+      "船中的剑：过去不会瞬间消失，只是被换了位置。",
+      "水面的变化：从急流到平水是一种现实过渡。"
+    ],
+    "imageUrl": "/cards/minor_swords_6.png"
+  },
+  {
+    "id": "seven-of-swords",
+    "name": "宝剑七",
+    "englishName": "Seven of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "绕路、试探与策略同时出现的牌。它代表秘密行动、另辟蹊径、不坦诚与用聪明取代正面交锋的倾向。",
+    "uprightKeywords": [
+      "策略",
+      "秘密行动",
+      "绕路",
+      "不坦诚"
+    ],
+    "reversedKeywords": [
+      "旧套路失效",
+      "必须面对",
+      "自欺被识破",
+      "换方法"
+    ],
+    "symbolism": [
+      "回头张望的人：行动伴随着防备和不安。",
+      "偷走的剑：聪明可能是弹性，也可能是逃责。",
+      "未正面交锋的场景：问题被避开了，但未必被解决。"
+    ],
+    "imageUrl": "/cards/minor_swords_7.png"
+  },
+  {
+    "id": "eight-of-swords",
+    "name": "宝剑八",
+    "englishName": "Eight of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "限制是真的，但没有想象中绝对。它代表受限、无力、被信念束缚与越想越动不了的状态。",
+    "uprightKeywords": [
+      "受限",
+      "无力",
+      "束缚",
+      "失去自主感"
+    ],
+    "reversedKeywords": [
+      "看见选项",
+      "限制松动",
+      "重新行动",
+      "最坏时刻过去"
+    ],
+    "symbolism": [
+      "蒙眼与捆绑：限制感被内化得很深。",
+      "围住人的剑：外部结构与内在恐惧一起形成牢笼。",
+      "仍留有空隙的路径：并非完全没有选择。"
+    ],
+    "imageUrl": "/cards/minor_swords_8.png"
+  },
+  {
+    "id": "nine-of-swords",
+    "name": "宝剑九",
+    "englishName": "Nine of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "被头脑反复放大的夜间折磨。它代表焦虑、失眠、恶梦、羞惭与内耗，说明某个问题已经不能再被忽视。",
+    "uprightKeywords": [
+      "焦虑",
+      "失眠",
+      "恶梦",
+      "内耗"
+    ],
+    "reversedKeywords": [
+      "开始缓和",
+      "看懂恐惧",
+      "仍在否认",
+      "需要真正面对"
+    ],
+    "symbolism": [
+      "从床上惊醒的人：压力已经进入身体与夜晚。",
+      "悬在头顶的剑：心智的锋利开始转向自己。",
+      "昏暗房间：被压住的恐惧终于无法回避。"
+    ],
+    "imageUrl": "/cards/minor_swords_9.png"
+  },
+  {
+    "id": "ten-of-swords",
+    "name": "宝剑十",
+    "englishName": "Ten of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "被推到尽头的旧结构。它代表结束、崩塌、低谷与某个阶段再也无法维持下去，也因此逼迫真正的改变开始。",
+    "uprightKeywords": [
+      "结束",
+      "崩塌",
+      "低谷",
+      "旧结构终点"
+    ],
+    "reversedKeywords": [
+      "开始回升",
+      "暂时喘息",
+      "需要重组",
+      "别误判已结束"
+    ],
+    "symbolism": [
+      "插满十把剑的身体：旧循环已经被推到极限。",
+      "背景微光：终结里也藏着下一轮开始。",
+      "静下来的水面：最剧烈的阶段正在耗尽。"
+    ],
+    "imageUrl": "/cards/minor_swords_10.png"
+  },
+  {
+    "id": "page-of-swords",
+    "name": "宝剑侍从",
+    "englishName": "Page of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "轻盈却敏锐的心智起点。它代表新消息、学习、提问、观察与构想冒头，也提醒人别把聪明和表达当成不行动的遮罩。",
+    "uprightKeywords": [
+      "新消息",
+      "观察",
+      "学习",
+      "心智活跃"
+    ],
+    "reversedKeywords": [
+      "说得多做得少",
+      "焦虑",
+      "偏执",
+      "根基不足"
+    ],
+    "symbolism": [
+      "警觉的年轻人：注意力正追逐讯息与变化。",
+      "灵活姿态：想法来得快，但还未真正定型。",
+      "轻盈之剑：语言和思维先于现实落地。"
+    ],
+    "imageUrl": "/cards/minor_swords_page.png"
+  },
+  {
+    "id": "knight-of-swords",
+    "name": "宝剑骑士",
+    "englishName": "Knight of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "不等世界准备好的思维疾风。它代表迅速行动、果断推进、言辞锋利与快刀斩乱麻，也提醒速度要建立在方向没错的前提下。",
+    "uprightKeywords": [
+      "迅速行动",
+      "果断推进",
+      "思想敏捷",
+      "主动出击"
+    ],
+    "reversedKeywords": [
+      "鲁莽",
+      "侵略",
+      "过度承诺",
+      "听不进意见"
+    ],
+    "symbolism": [
+      "冲进风暴的骑士：思维与行动几乎没有缓冲。",
+      "高举的剑：目标被立刻推向现实。",
+      "高速姿态：推进力强，也容易越过细节和他人节奏。"
+    ],
+    "imageUrl": "/cards/minor_swords_knight.png"
+  },
+  {
+    "id": "queen-of-swords",
+    "name": "宝剑王后",
+    "englishName": "Queen of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "经过伤痛提炼后的清醒判断。它代表理性、边界感、诚实、观察力与不讨好的独立，能给出精准而可靠的判断型支持。",
+    "uprightKeywords": [
+      "清晰判断",
+      "边界感",
+      "诚实",
+      "独立"
+    ],
+    "reversedKeywords": [
+      "苦涩",
+      "尖锐",
+      "完美主义",
+      "清楚失去温度"
+    ],
+    "symbolism": [
+      "直指天空的剑：判断建立在真相与原则之上。",
+      "高坐姿态：清醒来自经验，而不是冷漠。",
+      "冷冽气质：心智已学会不再轻易失真。"
+    ],
+    "imageUrl": "/cards/minor_swords_queen.png"
+  },
+  {
+    "id": "king-of-swords",
+    "name": "宝剑国王",
+    "englishName": "King of Swords",
+    "arcana": "Minor Arcana",
+    "element": "Air",
+    "description": "把清晰思维沉淀成秩序、判断与可执行原则的成熟权威。它代表理性、公平、组织能力与能把想法落实成结构的判断力。",
+    "uprightKeywords": [
+      "清晰思维",
+      "理性权威",
+      "公平",
+      "组织能力"
+    ],
+    "reversedKeywords": [
+      "冷酷算计",
+      "自私动机",
+      "思绪凌乱",
+      "用智识压人"
+    ],
+    "symbolism": [
+      "端坐高位的权威：理性已经能稳住局面。",
+      "手中的利剑：判断必须清楚，也必须负责。",
+      "秩序化的姿态：想法开始变成结构与规则。"
+    ],
+    "imageUrl": "/cards/minor_swords_king.png"
   }
 ]

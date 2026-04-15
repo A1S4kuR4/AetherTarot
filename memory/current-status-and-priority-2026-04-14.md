@@ -1,6 +1,6 @@
-# 当前状态 + 优先级清单（2026-04-14）
+# 当前状态 + 优先级清单（2026-04-15）
 
-- `last_updated`: `2026-04-14`
+- `last_updated`: `2026-04-15`
 - `owner`: `Codex`
 - `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
 
@@ -17,11 +17,11 @@
 2. 当前真实阻塞点是什么
 3. 下一轮工作该按什么顺序推进
 
-本文档基线以 `2026-04-14` 的仓库实物与本地验证结果为准，不再仅复述 `2026-04-10` 或 `2026-04-12` 的旧状态。
+本文档基线以 `2026-04-15` 的仓库实物与本地验证结果为准，不再仅复述 `2026-04-10` 或 `2026-04-12` 的旧状态。
 
 ## 2. 当前状态快照
 
-截至 `2026-04-14`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、回归与落地完整度待补”的阶段。
+截至 `2026-04-15`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、下一步转向牌阵与长期连续性”的阶段。
 
 当前可确认的事实如下：
 
@@ -39,8 +39,8 @@
 
 运行时现状：
 
-- `data/decks/rider-waite-smith.json` 当前包含 `64` 张运行时牌：大阿卡纳 `0-21`，权杖 `Page-King`，圣杯 `Page-King`，星币 `Page-King`
-- `apps/web/public/cards/` 当前包含 `65` 个文件：`64` 张正面牌面与 `1` 张背面
+- `data/decks/rider-waite-smith.json` 当前包含完整 `78` 张运行时牌：Rider-Waite-Smith 全牌池已接入
+- `apps/web/public/cards/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面
 - `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross` 三个运行时牌阵
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
@@ -74,7 +74,7 @@
 - `session_capsule` 真接入
 - 长期记忆 / memory merge
 - 多 provider router
-- 更完整的运行时牌阵与 `78/78` 运行时牌池
+- 更完整的运行时牌阵与 position semantics 收口
 
 ## 4. 当前真实阻塞点
 
@@ -85,15 +85,14 @@
 典型信号：
 
 - 部分文档仍写运行时牌库 `27` 张、PNG `28` 张
-- 当前仓库实物已是运行时牌库 `64` 张、PNG 文件 `65` 个
+- 当前仓库实物已是运行时牌库 `78` 张、PNG 文件 `79` 个
 
 这不应被视为次要维护工作，而应视为主线风险，因为它会直接影响优先级判断与后续协作理解。
 
-### 阻塞点二：运行时落地完整度仍不足
+### 阻塞点二：运行时牌阵与知识消费边界仍未收口
 
 当前最大产品缺口不是 UI 页面缺失，而是：
 
-- 运行时牌池仍远未达到 `78/78`
 - 运行时牌阵仍只有 `3` 个
 - Encyclopedia 仍直接消费 deck JSON，尚未决定是否进入 `knowledge/wiki` runtime 对齐
 
@@ -124,17 +123,17 @@
 
 ### P1. Runtime Alignment 收口
 
-目标：继续补运行时落地，而不是回到“继续大量扩知识页”的旧主线。
+目标：在完整牌池之上继续收口运行时能力，而不是回到“继续大量扩知识页”的旧主线。
 
 当前补充进展：
 
-- 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `64/78` runtime vs `78/78` knowledge
+- 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `78/78` runtime vs `78/78` knowledge
 - 当前已明确：Encyclopedia 本阶段继续直接消费 runtime deck JSON，而不是立即改成直接消费 `knowledge/wiki`
 - `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 牌库扩张混做
 
 执行项：
 
-1. 继续补运行时牌库与本地资产；当前已从 `42` 张推进到 `64` 张，并补齐权杖与圣杯 `Page-King`、星币 `Page-King` 及对应本地资产。
+1. 运行时牌库与本地资产已完整收口到 `78/78`；P1 的下一步不再是补牌，而是补高价值牌阵与对应 position semantics。
 2. 明确新增牌阵上线顺序，只允许高价值且 provider 能稳定尊重 position semantics 的牌阵进入运行时。
 3. 决定 Encyclopedia 是否继续直接消费 deck JSON，还是开始接 `knowledge/wiki`。
 
@@ -173,5 +172,5 @@
 
 - 文档语言默认为中文
 - 文档定位为内部执行入口，不写成对外宣传稿
-- 优先级固定为：先保持可信回归与文档同步，再补运行时落地，再开长期连续性能力
+- 优先级固定为：先保持可信回归与文档同步，再收口牌阵与运行时体验，再开长期连续性能力
 - 本文件作为 `memory/` 中的正式桥接入口存在；后续若主线状态变化，应优先增量更新本文件，而不是再平行创建一份新的“当前状态”文档
