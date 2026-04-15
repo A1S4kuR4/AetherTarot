@@ -4,7 +4,7 @@
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
 - `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / UX track active`
-- `verification`: `2026-04-15` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed、`npm run test:e2e` passed；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池与本地资产现已闭环
+- `verification`: `2026-04-15` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed（`25/25`）、`npm run test:e2e` passed（`17/17`）；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池与本地资产现已闭环，`four-aspects` 已作为首个新增高价值运行时牌阵落地
 
 ## 1. 当前状态快照
 
@@ -18,12 +18,13 @@
 
 运行时现状：
 
-- `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross`
+- `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`celtic-cross`
 - `apps/web` 的 `/api/reading` 已返回结构化 `StructuredReading` 成功 payload
 - `apps/web/src/server/reading/` 已建立服务层、provider 边界、schema 校验与安全后处理
 - `reading` 页与 `history` 页已切到结构化输出消费，不再以 `interpretation: string` 为主协议
 - 本地历史已升级为 `ReadingHistoryEntry`，使用 versioned localStorage key
 - 前端百科仍直接消费 `data/decks/rider-waite-smith.json`
+- `four-aspects` 已完成 authority、前台选择、揭示布局、reading 消费与 smoke 回归接入
 - `data/decks/rider-waite-smith.json` 已扩展到完整 78 张运行时牌：Rider-Waite-Smith 全牌池已接入
 - `apps/web/public/cards/` 已接入 79 个文件：78 张 1000x1700 PNG 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 已记录 full-bleed 状态、视觉审核与 SHA-256
@@ -143,7 +144,7 @@
 未完成：
 
 - `encyclopedia` 是否接 `knowledge/wiki` 仍处于待评估状态
-- 新增高价值牌阵仍未进入 `data/spreads/` + UI 联动上线流程
+- 首个新增高价值牌阵 `four-aspects` 已进入 `data/spreads/` + UI 联动上线流程；后续高价值牌阵仍待继续推进
 - 运行时牌库现已扩展到完整 `78/78` 并接入本地资产；当前未完成部分转为新增高价值牌阵、百科 runtime 接入策略与长期连续性设计
 
 ### 保持降级：P2. 定向 ingest-wiki
@@ -233,9 +234,9 @@
 
 待完成部分：
 
-- 新增高价值牌阵
-- 新增高价值牌阵
+- 后续新增高价值牌阵
 - 百科 runtime 接入策略
+- 与 `coverage.ts` 对应的 consistency / coverage 测试
 - 针对真实运行时缺口的定向 ingest 回补
 
 ## 5. 验证结果
@@ -243,10 +244,10 @@
 本轮主线执行后的关键验证如下：
 
 - `npm run build` 已通过
-- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `24/24` 全绿
-- `npm run test:e2e` 已通过，当前 smoke suite 为 `16/16` 全绿
+- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `25/25` 全绿
+- `npm run test:e2e` 已通过，当前 smoke suite 为 `17/17` 全绿
 - API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配、final 缺少 initial snapshot、Lite no-followup、final 主题延续、普通健康 safety_note
-- Reading smoke flow 已覆盖：单牌、圣三角、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
+- Reading smoke flow 已覆盖：单牌、圣三角、四个面向、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
 
 这意味着：
 

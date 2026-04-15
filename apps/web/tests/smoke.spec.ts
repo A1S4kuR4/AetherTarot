@@ -317,6 +317,35 @@ test.describe("AetherTarot smoke flow", () => {
     ).toBeVisible();
   });
 
+  test("supports a full four-aspects reading flow", async ({ page }) => {
+    await startReading(page, "我该如何理解眼前这次转向？", /四个面向/i);
+
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 4);
+    await revealSpread(page);
+
+    const positionMeanings = page.locator("h4").filter({
+      hasText: /^位置 \d+:/,
+    });
+
+    await expect(positionMeanings).toHaveCount(4);
+    await expect(
+      page.getByRole("heading", { name: "位置 4: 精神层面" }),
+    ).toBeVisible();
+
+    await enterReading(page);
+    await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("身体层面", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("精神层面", { exact: true }).first()).toBeVisible();
+    await completeFollowup(page);
+    await gotoAppRoute(page, "/history");
+    await expect(
+      page.getByRole("button", { name: /我该如何理解眼前这次转向/ }),
+    ).toBeVisible();
+  });
+
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
     await startReading(page, "我是不是不该活下去了？", /单牌启示/i);
     await expect(page).toHaveURL(/\/ritual$/);

@@ -21,13 +21,13 @@
 
 ## 2. 当前状态快照
 
-截至 `2026-04-15`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、下一步转向牌阵与长期连续性”的阶段。
+截至 `2026-04-15`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、首个新增牌阵已上线、下一步转向牌阵与长期连续性”的阶段。
 
 当前可确认的事实如下：
 
 - reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
 - Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
-- 后端 contract 与回归测试当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`24/24`），`npm run test:e2e` 全绿（`16/16`）。
+- 后端 contract 与回归测试当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`25/25`），`npm run test:e2e` 全绿（`17/17`）。
 - 本轮已完成 E2E 回归修复：Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider，避免本地 `.env.local` 的 `llm` 配置把回归拖入不稳定状态。
 
 知识层现状：
@@ -41,7 +41,7 @@
 
 - `data/decks/rider-waite-smith.json` 当前包含完整 `78` 张运行时牌：Rider-Waite-Smith 全牌池已接入
 - `apps/web/public/cards/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面
-- `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross` 三个运行时牌阵
+- `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`celtic-cross` 四个运行时牌阵，其中 `four-aspects` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
 
@@ -74,7 +74,7 @@
 - `session_capsule` 真接入
 - 长期记忆 / memory merge
 - 多 provider router
-- 更完整的运行时牌阵与 position semantics 收口
+- 更多高价值运行时牌阵与 position semantics 收口
 
 ## 4. 当前真实阻塞点
 
@@ -93,7 +93,7 @@
 
 当前最大产品缺口不是 UI 页面缺失，而是：
 
-- 运行时牌阵仍只有 `3` 个
+- 首个新增高价值牌阵 `four-aspects` 已上线，但运行时牌阵扩展仍只推进到 `4` 个
 - Encyclopedia 仍直接消费 deck JSON，尚未决定是否进入 `knowledge/wiki` runtime 对齐
 
 ### 阻塞点三：长期连续性能力仍缺位
@@ -129,7 +129,8 @@
 
 - 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `78/78` runtime vs `78/78` knowledge
 - 当前已明确：Encyclopedia 本阶段继续直接消费 runtime deck JSON，而不是立即改成直接消费 `knowledge/wiki`
-- `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 牌库扩张混做
+- `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 扩展混做
+- 首个新增高价值运行时牌阵 `four-aspects` 已上线，并补齐了 authority、前台布局、contract 与 Playwright smoke 回归
 
 执行项：
 
@@ -166,7 +167,7 @@
 - 健康度结论来自当前本地验证：
   - `npm run build`：通过
   - `npm run test:contract -w @aethertarot/web`：通过
-  - `npm run test:e2e`：通过（`16/16`）
+  - `npm run test:e2e`：通过（`17/17`）
 
 ## 8. 默认假设
 
