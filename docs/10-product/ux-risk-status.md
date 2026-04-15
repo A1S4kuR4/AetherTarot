@@ -1,6 +1,6 @@
 # UX 风险状态（UX Risk Status）
 
-- `last_updated`: `2026-04-14` (Updated: regression-signal restored + runtime state alignment note)
+- `last_updated`: `2026-04-15` (Updated: runtime deck completed + regression signal preserved)
 - `owner`: `Codex`
 - `scope`: `rolling UX risk status`
 
@@ -10,9 +10,9 @@
 
 > 当前版本的 Web 主流程还剩下哪些尚未关闭的 UX / 产品风险？
 
-当前最新评审结论（`2026-04-14`）是：**架构层已闭环，生产细节已打磨，回归信号已恢复；当前主线风险重新收束到运行时落地完整度、长期连续性与文档持续同步。**
+当前最新评审结论（`2026-04-15`）是：**架构层已闭环，生产细节已打磨，回归信号已恢复；运行时牌池现已完整，当前主线风险重新收束到牌阵机制、长期连续性与文档持续同步。**
 
-本文件作为持续更新的状态文档使用。当前记录显示：**三足鼎立空间架构 (ADR 0003)** 彻底解决了首页叙事与功能冲突的问题；同时在 `2026-04-12` 完成了 `/ritual` 路径的极致布局压缩（1080p 零滚动）、`/reveal` 路径的标签裁剪修复，并补上了 `/new -> /ritual -> /reveal` 的第一版焦点校准与“被组织的随机”解释。`2026-04-14` 的补充判断是：Playwright smoke 已重新对齐当前真实路径，回归信号恢复可用；因此 UX 主线的优先级重新回到理解机制、阅读张力与长期关系入口本身。
+本文件作为持续更新的状态文档使用。当前记录显示：**三足鼎立空间架构 (ADR 0003)** 彻底解决了首页叙事与功能冲突的问题；同时在 `2026-04-12` 完成了 `/ritual` 路径的极致布局压缩（1080p 零滚动）、`/reveal` 路径的标签裁剪修复，并补上了 `/new -> /ritual -> /reveal` 的第一版焦点校准与“被组织的随机”解释。`2026-04-14` 的补充判断是：Playwright smoke 已重新对齐当前真实路径，回归信号恢复可用；`2026-04-15` 的补充判断是：运行时牌池已补齐到 `78/78`，因此 UX 主线的优先级进一步转向理解机制、阅读张力、牌阵语义与长期关系入口本身。
 
 ---
 
@@ -38,10 +38,10 @@
 
 ## 3. 总体判断
 
-### 额外状态同步（2026-04-14）
+### 额外状态同步（2026-04-15）
 
-- 当前运行时牌库已不再是早前文档中记录的 `27` 张，而是 `64` 张：大阿卡纳 `0-21`、权杖 `Page-King`、圣杯 `Page-King` 与星币 `Page-King`
-- `apps/web/public/cards/` 当前共有 `65` 个文件：`64` 张正面牌面与 `1` 张背面
+- 当前运行时牌库已不再是早前文档中记录的 `27` 张，而是完整 `78` 张 Rider-Waite-Smith 运行时牌池
+- `apps/web/public/cards/` 当前共有 `79` 个文件：`78` 张正面牌面与 `1` 张背面
 - `npm run build` 与 `npm run test:contract -w @aethertarot/web` 当前通过
 - `npm run test:e2e` 当前通过；Playwright 已重新对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider
 

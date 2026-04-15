@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-14`
+- `last_updated`: `2026-04-15`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -30,7 +30,7 @@
   - 项目已进入“主链已成、回归已恢复、运行时落地持续扩展”阶段
   - 当前最大风险重新收束到运行时完整度、长期连续性与文档持续同步
   - 优先级固定为：先保持可信回归与文档同步，再补运行时落地，再开长期连续性能力
-  - 最新运行时扩展已把牌库推进到 `64` 张、卡图推进到 `65` 个文件，并在 Encyclopedia 前台显式展示 `64/78` vs `78/78` 覆度
+  - 最新运行时扩展已把牌库推进到 `78` 张、卡图推进到 `79` 个文件，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
 
 ### 2.2 Mainline Priority Plan
 
@@ -43,13 +43,12 @@
 
 ### 2.3 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-14.md`
-- 用途：记录 `2026-04-14` 的回归修复、百科覆度对齐与运行时权杖 / 圣杯 / 星币扩展
+- 文件：`memory/work-log-2026-04-15.md`
+- 用途：记录 `2026-04-15` 的宝剑补齐、完整 `78/78` 运行时牌池闭环与后续主线切换
 - 当前重点：
-  - Playwright 已重新对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 主流程
-  - Encyclopedia 前台已显式展示 `64/78 runtime` vs `78/78 knowledge`
-  - 运行时牌库已扩展到 `64` 张，卡图已扩展到 `65` 个文件
-  - 文档口径已统一同步到最新 runtime 实物状态
+  - 本地运行时牌池已完整收口到 `78/78`
+  - Encyclopedia 前台现应显式展示 `78/78 runtime` vs `78/78 knowledge`
+  - 当前主线已从“继续补牌”切换到“牌阵上线顺序 + 长期连续性设计”
 
 
 ### 2.4 Near-Term Work Plan
@@ -91,7 +90,7 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-14.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-14.md`，确认最新回归修复、百科覆度对齐与 runtime 扩展情况
+3. 再看 `memory/work-log-2026-04-15.md`，确认完整 `78/78` 运行时牌池闭环与最新主线切换
 4. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
 5. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 
