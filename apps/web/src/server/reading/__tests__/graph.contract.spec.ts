@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runReadingGraph } from "@/server/reading/graph";
 import {
   buildFollowupAnswers,
+  buildFourAspectsPayload,
   buildHolyTrianglePayload,
   buildSinglePayload,
   TestReadingProvider,
@@ -115,6 +116,24 @@ describe("reading graph contract hardening", () => {
     expect(standardReading.follow_up_questions).toHaveLength(2);
     expect(soberReading.requires_followup).toBe(true);
     expect(soberReading.follow_up_questions).toHaveLength(2);
+  });
+
+  it("reorders four-aspects drawn cards into authoritative spread position order", async () => {
+    const reading = await runReadingGraph(buildFourAspectsPayload());
+
+    expect(reading.spread.id).toBe("four-aspects");
+    expect(reading.cards.map((card) => card.position_id)).toEqual([
+      "body",
+      "emotion",
+      "mind",
+      "spirit",
+    ]);
+    expect(reading.cards.map((card) => card.position)).toEqual([
+      "身体层面",
+      "情感层面",
+      "心智层面",
+      "精神层面",
+    ]);
   });
 
   it("rejects provider drafts whose card order does not match the authority drawnCards", async () => {

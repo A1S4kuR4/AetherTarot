@@ -50,7 +50,8 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
 - 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
 - 将运行时牌组从早期示例牌扩展到当前 78 张，并接入本地资产路径
-- `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider
+- `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；contract tests 为 `25/25`，Playwright smoke 为 `17/17`，并已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径且在测试环境固定使用 `placeholder` provider
+- 首个新增高价值运行时牌阵 `four-aspects` 已上线，当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`celtic-cross`
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
 
@@ -97,7 +98,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 
 已具备：
 
-- 单牌、圣三角、赛尔特十字牌阵
+- 单牌、圣三角、四个面向、赛尔特十字牌阵
 - 结构化 reading API
 - 最小 LangGraph reading 编排
 - 结构化结果页与本地历史回放

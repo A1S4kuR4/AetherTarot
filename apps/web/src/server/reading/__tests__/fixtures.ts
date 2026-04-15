@@ -55,6 +55,37 @@ export function buildHolyTrianglePayload(
   };
 }
 
+export function buildFourAspectsPayload(
+  question = "我该如何理解眼前这次转向？",
+): ReadingRequestPayload {
+  return {
+    question,
+    spreadId: "four-aspects",
+    drawnCards: [
+      {
+        positionId: "spirit",
+        cardId: "star",
+        isReversed: false,
+      },
+      {
+        positionId: "body",
+        cardId: "chariot",
+        isReversed: false,
+      },
+      {
+        positionId: "mind",
+        cardId: "justice",
+        isReversed: true,
+      },
+      {
+        positionId: "emotion",
+        cardId: "lovers",
+        isReversed: false,
+      },
+    ],
+  };
+}
+
 export function buildFollowupAnswers(initial: StructuredReading) {
   return initial.follow_up_questions.map((question) => ({
     question,
