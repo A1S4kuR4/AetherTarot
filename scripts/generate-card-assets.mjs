@@ -122,6 +122,10 @@ function motif(card, accent, paper) {
     case "world":
       return `<ellipse cx="500" cy="900" rx="260" ry="365" ${commonStroke}/><path d="M500 650 C615 780 615 1020 500 1150 C385 1020 385 780 500 650 Z" ${commonStroke}/><circle cx="500" cy="900" r="86" ${softFill}/>`;
     default:
+      if (card.id.includes("swords")) {
+        return swordsMotif(card.id, commonStroke, softFill, paper);
+      }
+
       if (card.id.includes("pentacles")) {
         return pentaclesMotif(card.id, commonStroke, softFill, paper);
       }
@@ -153,6 +157,138 @@ function wandsMotif(id, commonStroke, softFill) {
   }).join("");
 
   return `${staffs}<path d="M275 1210 C385 1140 615 1140 725 1210" ${commonStroke}/>`;
+}
+
+function swordsMotif(id, commonStroke, softFill, paper) {
+  const courtMotif = swordsCourtMotif(id, commonStroke, softFill, paper);
+  if (courtMotif) {
+    return courtMotif;
+  }
+
+  const layouts = {
+    "ace-of-swords": [{ x: 500, y: 920, angle: 0 }],
+    "two-of-swords": [
+      { x: 430, y: 930, angle: -28 },
+      { x: 570, y: 930, angle: 28 },
+    ],
+    "three-of-swords": [
+      { x: 500, y: 830, angle: 0 },
+      { x: 420, y: 960, angle: -42 },
+      { x: 580, y: 960, angle: 42 },
+    ],
+    "four-of-swords": [
+      { x: 380, y: 820, angle: 0 },
+      { x: 500, y: 820, angle: 0 },
+      { x: 620, y: 820, angle: 0 },
+      { x: 500, y: 1070, angle: 90 },
+    ],
+    "five-of-swords": [
+      { x: 340, y: 760, angle: -20 },
+      { x: 500, y: 720, angle: 0 },
+      { x: 660, y: 760, angle: 20 },
+      { x: 420, y: 1040, angle: -38 },
+      { x: 580, y: 1040, angle: 38 },
+    ],
+    "six-of-swords": [
+      { x: 340, y: 760, angle: -10 },
+      { x: 440, y: 740, angle: -6 },
+      { x: 540, y: 740, angle: 6 },
+      { x: 640, y: 760, angle: 10 },
+      { x: 430, y: 1035, angle: -12 },
+      { x: 570, y: 1035, angle: 12 },
+    ],
+    "seven-of-swords": [
+      { x: 320, y: 730, angle: -18 },
+      { x: 410, y: 690, angle: -10 },
+      { x: 500, y: 670, angle: 0 },
+      { x: 590, y: 690, angle: 10 },
+      { x: 680, y: 730, angle: 18 },
+      { x: 430, y: 1040, angle: -28 },
+      { x: 570, y: 1040, angle: 28 },
+    ],
+    "eight-of-swords": [
+      { x: 300, y: 760, angle: 0 },
+      { x: 380, y: 720, angle: -6 },
+      { x: 460, y: 700, angle: -3 },
+      { x: 540, y: 700, angle: 3 },
+      { x: 620, y: 720, angle: 6 },
+      { x: 700, y: 760, angle: 0 },
+      { x: 400, y: 1090, angle: -18 },
+      { x: 600, y: 1090, angle: 18 },
+    ],
+    "nine-of-swords": [
+      { x: 340, y: 700, angle: -12 },
+      { x: 420, y: 675, angle: -9 },
+      { x: 500, y: 660, angle: 0 },
+      { x: 580, y: 675, angle: 9 },
+      { x: 660, y: 700, angle: 12 },
+      { x: 370, y: 960, angle: -20 },
+      { x: 500, y: 935, angle: 0 },
+      { x: 630, y: 960, angle: 20 },
+      { x: 500, y: 1180, angle: 90 },
+    ],
+    "ten-of-swords": [
+      { x: 320, y: 690, angle: -18 },
+      { x: 400, y: 660, angle: -12 },
+      { x: 480, y: 645, angle: -6 },
+      { x: 560, y: 645, angle: 6 },
+      { x: 640, y: 660, angle: 12 },
+      { x: 720, y: 690, angle: 18 },
+      { x: 380, y: 980, angle: -26 },
+      { x: 500, y: 950, angle: 0 },
+      { x: 620, y: 980, angle: 26 },
+      { x: 500, y: 1210, angle: 90 },
+    ],
+  };
+
+  const swords = (layouts[id] ?? [{ x: 500, y: 920, angle: 0 }])
+    .map(({ x, y, angle }) => swordToken(x, y, angle, commonStroke, softFill, paper))
+    .join("");
+
+  const extras = [];
+
+  if (id === "three-of-swords") {
+    extras.push(`<path d="M500 860 C610 740 760 860 690 1010 C640 1130 540 1185 500 1225 C460 1185 360 1130 310 1010 C240 860 390 740 500 860 Z" fill="${paper}" opacity="0.14"/>`);
+  }
+
+  if (id === "six-of-swords") {
+    extras.push(`<path d="M290 1200 C380 1115 620 1115 710 1200 L630 1200 C585 1165 415 1165 370 1200 Z" fill="${paper}" opacity="0.16"/>`);
+  }
+
+  if (id === "eight-of-swords") {
+    extras.push(`<circle cx="500" cy="945" r="112" fill="${paper}" opacity="0.08"/>`);
+  }
+
+  if (id === "nine-of-swords") {
+    extras.push(`<path d="M360 1210 C410 1145 590 1145 640 1210" ${commonStroke}/>`);
+  }
+
+  return `${extras.join("")}${swords}<path d="M275 1230 C380 1160 620 1160 725 1230" ${commonStroke}/>`;
+}
+
+function swordsCourtMotif(id, commonStroke, softFill, paper) {
+  const crown = `<path d="M390 710 L440 650 L500 705 L560 650 L610 710" ${commonStroke}/>`;
+
+  switch (id) {
+    case "page-of-swords":
+      return `${swordToken(500, 900, -10, commonStroke, softFill, paper)}<path d="M430 1200 L500 1010 L570 1200" ${commonStroke}/><path d="M360 1240 C420 1160 580 1160 640 1240" ${commonStroke}/>`;
+    case "knight-of-swords":
+      return `${swordToken(520, 850, 24, commonStroke, softFill, paper)}<path d="M320 1120 C420 1015 585 1015 690 1120" ${commonStroke}/><path d="M365 1120 L330 1215 M640 1120 L675 1215 M420 1110 L380 980" ${commonStroke}/><circle cx="360" cy="1120" r="24" ${softFill}/>`;
+    case "queen-of-swords":
+      return `${swordToken(570, 845, 0, commonStroke, softFill, paper)}<path d="M360 1125 L500 980 L640 1125 L605 1235 L395 1235 Z" ${commonStroke}/><path d="M430 1235 L430 1090 M570 1235 L570 1090" ${commonStroke}/><circle cx="360" cy="970" r="34" ${softFill}/>`;
+    case "king-of-swords":
+      return `${crown}${swordToken(500, 860, 0, commonStroke, softFill, paper)}<path d="M350 1120 L650 1120 L610 1245 L390 1245 Z" ${commonStroke}/><path d="M420 1120 L420 1000 M580 1120 L580 1000" ${commonStroke}/><path d="M320 980 L680 980" ${commonStroke}/>`;
+    default:
+      return null;
+  }
+}
+
+function swordToken(cx, cy, angle, commonStroke, softFill, paper) {
+  return `<g transform="translate(${cx} ${cy}) rotate(${angle})">
+    <path d="M0 -180 L18 -105 L18 78 L52 140 L0 116 L-52 140 L-18 78 L-18 -105 Z" ${commonStroke}/>
+    <circle cx="0" cy="-182" r="26" ${softFill}/>
+    <path d="M-64 18 L64 18 M-26 74 L26 74" stroke="${paper}" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.9"/>
+  </g>`;
 }
 
 function pentaclesMotif(id, commonStroke, softFill, paper) {

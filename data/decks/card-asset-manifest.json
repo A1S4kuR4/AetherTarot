@@ -1033,6 +1033,230 @@
       "sha256": "4c1f06d5e3781830c2acacbf0581fbab1d8172e7817d702f69143cf0b63dbdf1"
     },
     {
+      "assetId": "ace-of-swords",
+      "imageUrl": "/cards/minor_swords_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3e83315648820ce888f8e3a60a1f61ed8429f51b8584f6ab9e295279906feab5"
+    },
+    {
+      "assetId": "two-of-swords",
+      "imageUrl": "/cards/minor_swords_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "602f377b7c034da5a42466210a921661f09f9e4e5cac2c533cf2c6177683b0ae"
+    },
+    {
+      "assetId": "three-of-swords",
+      "imageUrl": "/cards/minor_swords_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "0ef74d95f31fa06eb51cae61d99306be9f5fb9c72e4c07529198b28b10126ae3"
+    },
+    {
+      "assetId": "four-of-swords",
+      "imageUrl": "/cards/minor_swords_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "467c7ef2badd2b4c4210824d9c9ca0537ff3b37b494363455536c0a984e278a7"
+    },
+    {
+      "assetId": "five-of-swords",
+      "imageUrl": "/cards/minor_swords_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "67e8b256a934e71c99b75a1b9ca80fd3daaff3217fe190d0cc136ca34bcd3f29"
+    },
+    {
+      "assetId": "six-of-swords",
+      "imageUrl": "/cards/minor_swords_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "57a022ca7dc5e8a89ab65f0aee44b85b18e3fcc1769e7c5cfe31a245639f95c1"
+    },
+    {
+      "assetId": "seven-of-swords",
+      "imageUrl": "/cards/minor_swords_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2e5298ed4640e31940de56779d1004b094e0bceaea892ceb4ba81b2a058c510f"
+    },
+    {
+      "assetId": "eight-of-swords",
+      "imageUrl": "/cards/minor_swords_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c52423a22522ed924452fd2c8706bd02b57a584bc6e01a51c20b93acdf3623ed"
+    },
+    {
+      "assetId": "nine-of-swords",
+      "imageUrl": "/cards/minor_swords_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "bdb259c68c5afc02d0172d3dd90b4fcf06b0c2447c127e9895efff5de6b1ad04"
+    },
+    {
+      "assetId": "ten-of-swords",
+      "imageUrl": "/cards/minor_swords_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "24c18e2b06fe837a7ca643b5e383eea1d38373a4a93c6edbe6f142b732e6b803"
+    },
+    {
+      "assetId": "page-of-swords",
+      "imageUrl": "/cards/minor_swords_page.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "9cd1b920de028527ded42fee7443f1aab0e2b4de4a46cd79b984c04ee586ad5d"
+    },
+    {
+      "assetId": "knight-of-swords",
+      "imageUrl": "/cards/minor_swords_knight.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "000748f5c9eddd18bad04c052e276b26577970c72e14cd51e46061cfc7180a4f"
+    },
+    {
+      "assetId": "queen-of-swords",
+      "imageUrl": "/cards/minor_swords_queen.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2de9f84616472621f89fc02172e928f19c11fb8abcb9a0309a75d26a91dcec64"
+    },
+    {
+      "assetId": "king-of-swords",
+      "imageUrl": "/cards/minor_swords_king.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "febfe15f7fb973bede462f7ce227a239a551223acfa6d5bcf6204bfe3bbda2f3"
+    },
+    {
       "assetId": "card-back",
       "imageUrl": "/cards/back.png",
       "width": 1000,
