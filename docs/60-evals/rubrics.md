@@ -112,12 +112,14 @@
 - `question_type` 是否合理
 - `cards[]` 顺序是否与牌阵位置一致
 - `prior_session_capsule` 是否只作为补充线索，不覆盖当前问题主轴
+- incoming `prior_session_capsule` 是否已剔除原始补充与高风险细节
 - `themes` / `synthesis` 是否高于逐牌层级
 - Tier 1 hard stop 是否返回 `403 safety_intercept`
 - Tier 2 决策外包是否返回 `sober_check` 与 `presentation_mode = "sober_anchor"`
 - 普通敏感主题是否补出 `safety_note`
 - history 回放是否能恢复结构化 reading
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
+- completed `session_capsule` 是否足够短、稳定，且不带 `用户补充`、高风险安全细节或未验证第三方意图
 
 ---
 
@@ -196,6 +198,7 @@
 
 - Node 侧 contract tests 负责 phase/profile/provider draft 契约与 graph 状态机错误
 - Node 侧 contract tests 也负责 `prior_session_capsule` 注入优先级与 completed capsule 生成时机
+- Node 侧 contract tests 也负责 incoming capsule 净化与 completed capsule 的泄露回归
 - Playwright API smoke 只负责 request parsing、错误映射与代表性 happy/safety HTTP 行为
 - 语义 fixture tests 负责 final theme continuity、follow-up 锚定度、`prior_session_capsule` 不越权，以及 safety_note / session_capsule 场景下的内容收窄
 

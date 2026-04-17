@@ -54,6 +54,8 @@
 
 - 本地 history replay 继续保存完整 `ReadingHistoryEntry`
 - `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
+- `prior_session_capsule` 在进入 provider 前会先做安全净化：移除 `用户补充` 类原始细节，以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容
+- 若净化后只剩噪音或空壳，`prior_session_capsule` 会在服务层降为 `null`
 
 ### 层 4：长期记忆层
 
@@ -87,6 +89,8 @@
 - `standard / sober` 只有 `final` 才生成 capsule；`initial / awaiting_followup` 固定为 `null`
 - 下一轮必须由前端显式 opt-in，把 `prior_session_capsule` 带回 `POST /api/reading`
 - `prior_session_capsule` 的优先级低于当前问题、当前牌阵与本轮抽牌
+- completed `session_capsule` 当前固定收敛为“问题 / 牌阵 / 核心主题 / 1-2 条延续主轴 / 边界提醒”模板
+- `session_capsule` 不再直带 `用户补充` 或高风险细节，长度也会在服务层硬限制
 
 ---
 

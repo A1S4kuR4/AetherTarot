@@ -132,6 +132,12 @@
 
 请求侧 continuity hook。它用于把上一轮 completed reading 产出的紧凑摘要带入当前 reading，但优先级低于当前问题、当前牌阵与当前抽牌。它不是 history replay，也不是长期记忆容器。
 
+当前实现补充：
+
+- provider 实际收到的是服务层净化后的 `prior_session_capsule`
+- `用户补充` 类原始细节不会被直接转发
+- 自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容若出现在 incoming capsule 中，会被移除；若移除后失去有效信息，则按 `null` 处理
+
 ### `question_type`
 
 用于帮助后端和前端理解问题类别，也可作为评测分桶字段。
@@ -176,6 +182,12 @@
 - `standard / sober` 的 completed final reading
 
 `standard / sober` 的 `initial` 阶段固定为 `null`，避免把未完成中间态误当成可复用记忆。
+
+当前模板补充：
+
+- capsule 只保留当前问题、牌阵、核心主题与 1-2 条延续主轴
+- capsule 不直带 `followup_answers` 原文，不承载原始 transcript
+- capsule 必须避免泄露高风险安全细节、急性情绪细节与未验证的第三方意图
 
 ### `sober_check`
 
