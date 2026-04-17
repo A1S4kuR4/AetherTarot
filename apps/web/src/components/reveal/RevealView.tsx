@@ -30,8 +30,10 @@ export default function RevealView() {
       ? "max-w-sm grid-cols-1"
       : selectedSpread.positions.length === 3
         ? "md:grid-cols-3"
-        : selectedSpread.positions.length === 4
+      : selectedSpread.positions.length === 4
           ? "md:grid-cols-2 xl:grid-cols-4"
+          : selectedSpread.positions.length === 7
+            ? "md:grid-cols-2 xl:grid-cols-4"
           : "md:grid-cols-2 xl:grid-cols-3";
 
   return (
