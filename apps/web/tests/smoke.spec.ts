@@ -363,6 +363,38 @@ test.describe("AetherTarot smoke flow", () => {
     ).toBeVisible();
   });
 
+  test("supports a full seven-card reading flow", async ({ page }) => {
+    await startReading(page, "这段变化接下来会怎样展开？", /七张牌/i);
+
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 7);
+    await revealSpread(page);
+
+    const positionMeanings = page.locator("h4").filter({
+      hasText: /^位置 \d+:/,
+    });
+
+    await expect(positionMeanings).toHaveCount(7);
+    await expect(
+      page.getByRole("heading", { name: "位置 4: 答案 / 当事人" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "位置 7: 结果" }),
+    ).toBeVisible();
+
+    await enterReading(page);
+    await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("答案 / 当事人", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("周遭能量", { exact: true }).first()).toBeVisible();
+    await completeFollowup(page);
+    await gotoAppRoute(page, "/history");
+    await expect(
+      historyEntry(page, "这段变化接下来会怎样展开？"),
+    ).toBeVisible();
+  });
+
   test("lets the user continue a saved line without auto-filling the next question", async ({
     page,
   }) => {
@@ -397,7 +429,9 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "界限阻断" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText(/立即寻求专业的医疗或心理急救支持/)).toBeVisible();
+    await expect(page.getByText(/120/)).toBeVisible();
+    await expect(page.getByText(/110/)).toBeVisible();
+    await expect(page.getByText(/12356/)).toBeVisible();
     await expect(page.getByRole("button", { name: /离开并返回首页/i })).toBeVisible();
   });
 

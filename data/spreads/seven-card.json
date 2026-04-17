@@ -1,0 +1,44 @@
+{
+  "id": "seven-card",
+  "name": "七张牌",
+  "englishName": "Seven Card",
+  "description": "以时间线、答案主轴、周遭能量与希望恐惧共同组织问题，适合复杂但仍需稳住主线的真实议题。",
+  "icon": "dashboard",
+  "positions": [
+    {
+      "id": "past",
+      "name": "过去",
+      "description": "当前议题的背景与前因，说明这条线最初从哪里开始。"
+    },
+    {
+      "id": "present",
+      "name": "现在",
+      "description": "当下正在发生的状态、交点与主要张力。"
+    },
+    {
+      "id": "near-result",
+      "name": "最近结果",
+      "description": "从当前状态自然延伸出的近程发展，显示短期最可能先显影的走向。"
+    },
+    {
+      "id": "answer",
+      "name": "答案 / 当事人",
+      "description": "若是问题分析，这里更接近问题的答案；若是整体分析，也可代表问卜者本人。"
+    },
+    {
+      "id": "environment",
+      "name": "周遭能量",
+      "description": "围绕问题或问卜者的外部气候、他人影响与现实环境。"
+    },
+    {
+      "id": "hopes-fears",
+      "name": "希望与恐惧",
+      "description": "内在期待、担心与投射最容易纠缠出现的位置。"
+    },
+    {
+      "id": "outcome",
+      "name": "结果",
+      "description": "当前模式继续发展时，较长一段时间后的整体结果或落点。"
+    }
+  ]
+}

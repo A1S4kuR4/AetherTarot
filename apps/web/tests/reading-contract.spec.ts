@@ -85,6 +85,52 @@ function buildHolyTrianglePayload(
   };
 }
 
+function buildSevenCardPayload(
+  question = "这段变化接下来会怎样展开？",
+): ReadingPayload {
+  return {
+    question,
+    spreadId: "seven-card",
+    drawnCards: [
+      {
+        positionId: "hopes-fears",
+        cardId: "moon",
+        isReversed: true,
+      },
+      {
+        positionId: "past",
+        cardId: "wheel-of-fortune",
+        isReversed: false,
+      },
+      {
+        positionId: "outcome",
+        cardId: "star",
+        isReversed: false,
+      },
+      {
+        positionId: "answer",
+        cardId: "justice",
+        isReversed: false,
+      },
+      {
+        positionId: "present",
+        cardId: "hermit",
+        isReversed: false,
+      },
+      {
+        positionId: "environment",
+        cardId: "three-of-pentacles",
+        isReversed: false,
+      },
+      {
+        positionId: "near-result",
+        cardId: "chariot",
+        isReversed: false,
+      },
+    ],
+  };
+}
+
 function buildFollowupAnswers(initial: ReadingBody) {
   return initial.follow_up_questions.map((question) => ({
     question,
@@ -210,7 +256,12 @@ test.describe("reading API contract smoke", () => {
     expect(response.status()).toBe(403);
     const body = (await response.json()) as ErrorBody;
     expect(body.error.code).toBe("safety_intercept");
-    expect(body.error.intercept_reason).toMatch(/医疗或心理急救支持/);
+    expect(body.error.intercept_reason).toMatch(/120/);
+    expect(body.error.intercept_reason).toMatch(/110/);
+    expect(body.error.intercept_reason).toMatch(/12356/);
+    expect(body.error.referral_links).toContain(
+      "https://en.nhc.gov.cn/2025-02/14/c_86392.htm",
+    );
   });
 
   test("returns sober-check metadata for major decision prompts", async ({
@@ -252,5 +303,47 @@ test.describe("reading API contract smoke", () => {
     expect(response.status()).toBe(403);
     const body = (await response.json()) as ErrorBody;
     expect(body.error.code).toBe("safety_intercept");
+  });
+
+  test("sanitizes high-risk prior_session_capsule content instead of feeding it back into a normal reading", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: {
+        ...buildSinglePayload("我现在最该注意什么？"),
+        agent_profile: "lite",
+        prior_session_capsule:
+          "本轮问题：我是不是不该活下去了？\n用户补充：我还想继续监控对方。\n边界提醒：不延续高风险安全细节。",
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = (await response.json()) as ReadingBody;
+
+    expect(body.question_type).toBe("other");
+    expect(body.synthesis).not.toMatch(/不该活下去|监控对方/);
+    expect(body.session_capsule).not.toMatch(/用户补充|监控|不该活下去/);
+  });
+
+  test("returns seven-card results in authoritative position order over HTTP", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: buildSevenCardPayload(),
+    });
+
+    expect(response.status()).toBe(200);
+    const body = (await response.json()) as ReadingBody;
+
+    expect(body.spread.id).toBe("seven-card");
+    expect(body.cards.map((card) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "near-result",
+      "answer",
+      "environment",
+      "hopes-fears",
+      "outcome",
+    ]);
   });
 });

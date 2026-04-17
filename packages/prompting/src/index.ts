@@ -172,6 +172,51 @@ function deriveThemes(questionType: QuestionType, drawnCards: DrawnCard[]) {
   ]).slice(0, 4);
 }
 
+function getSpreadPositionName(spread: Spread, positionId: string, fallback: string) {
+  return spread.positions.find((position) => position.id === positionId)?.name ?? fallback;
+}
+
+function buildSpreadSpecificInitialAxis(spread: Spread) {
+  if (spread.id === "seven-card") {
+    const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
+    const outcome = getSpreadPositionName(spread, "outcome", "结果");
+    const past = getSpreadPositionName(spread, "past", "过去");
+    const present = getSpreadPositionName(spread, "present", "现在");
+    const nearResult = getSpreadPositionName(spread, "near-result", "最近结果");
+    const environment = getSpreadPositionName(spread, "environment", "周遭能量");
+    const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+
+    return `${spread.name} 这次应先抓住「${answer} -> ${outcome}」这条答案与结果主轴，再回看「${past} -> ${present} -> ${nearResult}」怎样把它一步步推出来，并分清「${environment}」的外部气候与「${hopesFears}」的主观投射是不是混在一起。`;
+  }
+
+  return null;
+}
+
+function buildSpreadSpecificFinalAxis(spread: Spread) {
+  if (spread.id === "seven-card") {
+    const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
+    const outcome = getSpreadPositionName(spread, "outcome", "结果");
+    const environment = getSpreadPositionName(spread, "environment", "周遭能量");
+    const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+
+    return `七张牌的第二阶段仍要先对照「${answer} -> ${outcome}」是否更清楚，再用「${environment}」和「${hopesFears}」分辨外界现实与内在担心，避免把补充信息读成新的命令。`;
+  }
+
+  return null;
+}
+
+function buildSpreadSpecificGuidance(spread: Spread, phase: "initial" | "final") {
+  if (spread.id === "seven-card" && phase === "initial") {
+    return "先分清七张牌里真正像答案的位置，和那些只是解释这个答案为什么成立的辅助位置。";
+  }
+
+  if (spread.id === "seven-card" && phase === "final") {
+    return "回看「答案 / 当事人」与「结果」是否仍在同一条线上，再决定你下一步要验证的是答案本身还是结果代价。";
+  }
+
+  return null;
+}
+
 function buildInitialSynthesis(
   question: string,
   agentProfile: AgentProfile,
@@ -188,11 +233,12 @@ function buildInitialSynthesis(
       ? "整组牌的能量相对顺流，说明你已经拥有一部分可被调用的资源。"
       : reversedCount >= Math.ceil(drawnCards.length / 2)
         ? "逆位出现得更集中，说明真正需要处理的也许不是外部事件本身，而是内在节奏与表达方式。"
-        : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
+      : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+  const spreadAxis = buildSpreadSpecificInitialAxis(spread);
 
-  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
 }
 
 function buildFinalSynthesis({
@@ -212,8 +258,9 @@ function buildFinalSynthesis({
   const primaryTheme = initialReading.themes[0] ?? "当前主轴";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+  const spreadAxis = buildSpreadSpecificFinalAxis(initialReading.spread);
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${spreadAxis ?? ""} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
 }
 
 function buildCards(
@@ -241,12 +288,39 @@ function buildCards(
 function selectFollowUpQuestions(
   questionType: QuestionType,
   agentProfile: AgentProfile,
+  spread: Spread,
 ) {
   if (agentProfile === "lite") {
     return [];
   }
 
+  if (spread.id === "seven-card") {
+    if (agentProfile === "sober") {
+      return [
+        "从「答案 / 当事人」到「结果」这条线看，你现在最不能跳过的现实条件到底是哪一个？",
+        "如果把「周遭能量」和「希望与恐惧」分开看，你最需要先核实的外部信息是什么？",
+      ];
+    }
+
+    return [
+      "从「答案 / 当事人」到「结果」这条线看，你更在意眼前的答案本身，还是它往后会带来的结果与代价？",
+      "把「周遭能量」和「希望与恐惧」分开看，哪一层更像现实气候，哪一层更像你自己的投射？",
+    ];
+  }
+
   return QUESTION_TYPE_FOLLOW_UP[questionType].slice(0, 2);
+}
+
+function buildSpreadPromptBias(spread: Spread, phase: "initial" | "final") {
+  if (spread.id !== "seven-card") {
+    return null;
+  }
+
+  if (phase === "initial") {
+    return "Seven-card spread bias: start from the answer/result axis (position 4 -> position 7), then use the past/present/near-result timeline (positions 1 -> 2 -> 3) and the environment vs hopes-fears tension (positions 5 and 6) to explain why that axis is forming.";
+  }
+
+  return "Seven-card spread bias: preserve the answer/result axis first, then use positions 5 and 6 to separate external conditions from the querent's projection; do not reduce the spread to isolated per-card commentary.";
 }
 
 function formatSpread(spread: Spread) {
@@ -387,6 +461,9 @@ export function buildPlaceholderInitialReadingDraft({
     ...(priorSessionCapsule
       ? ["若上一轮的线索仍在回响，把它当作背景参照，不要让它盖过这一次真正的新问题。"] 
       : []),
+    ...(buildSpreadSpecificGuidance(spread, "initial")
+      ? [buildSpreadSpecificGuidance(spread, "initial") as string]
+      : []),
     ...QUESTION_TYPE_GUIDANCE[questionType],
   ]);
   const reflectiveGuidance = agentProfile === "lite"
@@ -405,7 +482,7 @@ export function buildPlaceholderInitialReadingDraft({
       priorSessionCapsule,
     ),
     reflective_guidance: reflectiveGuidance,
-    follow_up_questions: selectFollowUpQuestions(questionType, agentProfile),
+    follow_up_questions: selectFollowUpQuestions(questionType, agentProfile, spread),
     confidence_note:
       "这是第一阶段初读，更适合作为牌面主轴与解释方向；用户补充只能帮助收束，不应把它改写成绝对结论。",
   };
@@ -429,6 +506,9 @@ export function buildPlaceholderFinalReadingDraft({
   const finalGuidance = uniqueStrings([
     `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
     "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
+    ...(buildSpreadSpecificGuidance(initialReading.spread, "final")
+      ? [buildSpreadSpecificGuidance(initialReading.spread, "final") as string]
+      : []),
     agentProfile === "sober"
       ? "在做重大决定前，先确认现实资源、风险承受边界和可咨询的专业对象。"
       : "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。",
@@ -497,6 +577,7 @@ export function buildInitialReadingPrompt({
       : agentProfile === "sober"
         ? "Keep a reflective tone, but strengthen reality-check language and boundary awareness."
         : "Deliver the full two-stage initial read and ask anchored follow-up questions.";
+  const spreadBias = buildSpreadPromptBias(spread, "initial");
 
   return {
     system: [
@@ -510,6 +591,7 @@ export function buildInitialReadingPrompt({
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       profileHint,
+      spreadBias,
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),
@@ -556,6 +638,7 @@ export function buildFinalReadingPrompt({
     agentProfile === "sober"
       ? "Keep the tone reflective and reality-anchored; strengthen boundary and risk awareness without becoming deterministic."
       : "Integrate the user's answers while preserving the initial thematic axis.";
+  const spreadBias = buildSpreadPromptBias(spread, "final");
 
   return {
     system: [
@@ -569,6 +652,7 @@ export function buildFinalReadingPrompt({
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       profileHint,
+      spreadBias,
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),

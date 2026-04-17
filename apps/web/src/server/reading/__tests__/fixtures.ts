@@ -86,6 +86,52 @@ export function buildFourAspectsPayload(
   };
 }
 
+export function buildSevenCardPayload(
+  question = "这段变化接下来会怎样展开？",
+): ReadingRequestPayload {
+  return {
+    question,
+    spreadId: "seven-card",
+    drawnCards: [
+      {
+        positionId: "hopes-fears",
+        cardId: "moon",
+        isReversed: true,
+      },
+      {
+        positionId: "past",
+        cardId: "wheel-of-fortune",
+        isReversed: false,
+      },
+      {
+        positionId: "outcome",
+        cardId: "star",
+        isReversed: false,
+      },
+      {
+        positionId: "answer",
+        cardId: "justice",
+        isReversed: false,
+      },
+      {
+        positionId: "present",
+        cardId: "hermit",
+        isReversed: false,
+      },
+      {
+        positionId: "environment",
+        cardId: "three-of-pentacles",
+        isReversed: false,
+      },
+      {
+        positionId: "near-result",
+        cardId: "chariot",
+        isReversed: false,
+      },
+    ],
+  };
+}
+
 export function buildFollowupAnswers(initial: StructuredReading) {
   return initial.follow_up_questions.map((question) => ({
     question,
@@ -112,12 +158,13 @@ export class TestReadingProvider implements ReadingProvider {
   }
 }
 
-const FOLLOW_UP_ANCHOR_PATTERN = /牌|位置|张力|正位|逆位|现实|线索|卡住/i;
+const FOLLOW_UP_ANCHOR_PATTERN =
+  /牌|位置|张力|正位|逆位|现实|线索|卡住|答案|结果|周遭能量|希望与恐惧/i;
 const GENERIC_FOLLOW_UP_PATTERN =
   /你最近是不是很焦虑|你是不是遇到了某个人|你是不是工作不顺/i;
 const SAFETY_NARROWING_PATTERN = /现实|风险|专业|信息|确认|症状|边界/i;
 const CAPSULE_UNSAFE_PATTERN =
-  /自杀|自残|结束生命|kill myself|跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/gi;
+  /自杀|自残|结束生命|kill myself|急救|急诊|无法呼吸|呼吸困难|大量出血|昏迷|跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫|用户补充/i;
 
 export function preservesPrimaryTheme(
   initialReading: StructuredReading,
@@ -142,4 +189,17 @@ export function hasSafetyNarrowedFollowup(reading: StructuredReading) {
 
 export function hasSafeSessionCapsule(reading: StructuredReading) {
   return Boolean(reading.session_capsule && !CAPSULE_UNSAFE_PATTERN.test(reading.session_capsule));
+}
+
+export function hasCompactSessionCapsule(reading: StructuredReading, maxLength = 280) {
+  return Boolean(reading.session_capsule && reading.session_capsule.length <= maxLength);
+}
+
+export function omitsUserSupplementLine(reading: StructuredReading) {
+  return Boolean(reading.session_capsule && !/用户补充[:：]/.test(reading.session_capsule));
+}
+
+export function mentionsSevenCardAxis(reading: StructuredReading) {
+  return /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(reading.synthesis)
+    || reading.follow_up_questions.some((item) => /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(item));
 }
