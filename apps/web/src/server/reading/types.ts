@@ -23,6 +23,7 @@ export interface HydratedReadingContext {
   agentProfile: AgentProfile;
   spread: Spread;
   drawnCards: DrawnCard[];
+  priorSessionCapsule: string | null;
 }
 
 export interface FinalReadingContext extends HydratedReadingContext {

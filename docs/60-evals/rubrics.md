@@ -111,11 +111,13 @@
 - graph/service 轻量 contract tests 是否仍能在非 e2e 层打爆 phase/profile/provider 违规输出
 - `question_type` 是否合理
 - `cards[]` 顺序是否与牌阵位置一致
+- `prior_session_capsule` 是否只作为补充线索，不覆盖当前问题主轴
 - `themes` / `synthesis` 是否高于逐牌层级
 - Tier 1 hard stop 是否返回 `403 safety_intercept`
 - Tier 2 决策外包是否返回 `sober_check` 与 `presentation_mode = "sober_anchor"`
 - 普通敏感主题是否补出 `safety_note`
 - history 回放是否能恢复结构化 reading
+- completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
 
 ---
 
@@ -164,6 +166,7 @@
 - `standard` / `sober` initial reading 返回 `requires_followup = true`
 - `lite` 允许 `follow_up_questions = []` 且 `requires_followup = false`
 - final reading 必须包含 `initial_reading_id` 与 `followup_answers`
+- 只有 completed reading 产出非空 `session_capsule`
 - Standard/Sober initial 不写入 history；final 或 Lite completed reading 才写入 history
 
 失败信号：
@@ -171,6 +174,7 @@
 - final 阶段缺失 initial reading 快照仍成功
 - final reading 的牌阵、抽牌或 profile 与 initial 不一致仍成功
 - 第二阶段完全推翻第一阶段主题
+- `standard / sober` initial 错误地产出 `session_capsule`
 
 ### 8.2 追问锚定度
 
@@ -191,8 +195,9 @@
 通过标准：
 
 - Node 侧 contract tests 负责 phase/profile/provider draft 契约与 graph 状态机错误
+- Node 侧 contract tests 也负责 `prior_session_capsule` 注入优先级与 completed capsule 生成时机
 - Playwright API smoke 只负责 request parsing、错误映射与代表性 happy/safety HTTP 行为
-- 语义 fixture tests 负责 final theme continuity、follow-up 锚定度与 safety_note 场景下的 guidance / follow-up 收窄
+- 语义 fixture tests 负责 final theme continuity、follow-up 锚定度、`prior_session_capsule` 不越权，以及 safety_note / session_capsule 场景下的内容收窄
 
 失败信号：
 

@@ -35,6 +35,14 @@ type SoberGateState = {
   isPassed: boolean;
 };
 
+export type ContinuitySource = {
+  readingId: string;
+  capsule: string;
+  question: string;
+  spreadName: string;
+  themes: string[];
+};
+
 type ReadingContextValue = {
   question: string;
   selectedSpread: Spread | null;
@@ -44,6 +52,7 @@ type ReadingContextValue = {
   errorMessage: string | null;
   safetyIntercept: { reason: string; referral_links?: string[] } | null;
   soberGate: SoberGateState;
+  continuitySource: ContinuitySource | null;
   setSoberGate: (gate: SoberGateState) => void;
   isLoading: boolean;
   isHydrated: boolean;
@@ -56,6 +65,8 @@ type ReadingContextValue = {
   interpretReading: () => Promise<boolean>;
   submitFollowupAnswers: (answers: FollowupAnswer[]) => Promise<boolean>;
   selectHistoryReading: (reading: ReadingHistoryEntry) => void;
+  continueFromHistoryReading: (reading: ReadingHistoryEntry) => boolean;
+  clearContinuitySource: () => void;
   resetReading: () => void;
   updateHistoryNotes: (id: string, notes: string) => void;
 };
@@ -96,6 +107,20 @@ function getReadingAgentProfile(reading: StructuredReading | null) {
   return reading?.agent_profile ?? DEFAULT_AGENT_PROFILE;
 }
 
+function buildContinuitySource(reading: StructuredReading): ContinuitySource | null {
+  if (!reading.session_capsule) {
+    return null;
+  }
+
+  return {
+    readingId: reading.reading_id,
+    capsule: reading.session_capsule,
+    question: reading.question,
+    spreadName: reading.spread.name,
+    themes: reading.themes,
+  };
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
@@ -105,6 +130,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [safetyIntercept, setSafetyIntercept] = useState<{ reason: string; referral_links?: string[] } | null>(null);
   const [soberGate, setSoberGate] = useState<SoberGateState>(EMPTY_SOBER_GATE);
+  const [continuitySource, setContinuitySource] = useState<ContinuitySource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
@@ -206,13 +232,14 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+      const requestDrawnCards = toRequestDrawnCards(drawnCards);
     const requestSignature = JSON.stringify({
       question: question.trim(),
       spreadId: selectedSpread.id,
       drawnCards: requestDrawnCards,
       agent_profile: agentProfile,
       phase: "initial",
+      prior_session_capsule: continuitySource?.capsule ?? null,
     });
 
     if (interpretSignatureRef.current === requestSignature) {
@@ -237,6 +264,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           drawnCards: requestDrawnCards,
           agent_profile: agentProfile,
           phase: "initial",
+          prior_session_capsule: continuitySource?.capsule ?? null,
         }),
       });
 
@@ -278,7 +306,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  }, [agentProfile, drawnCards, persistCompletedReading, question, selectedSpread]);
+  }, [agentProfile, continuitySource, drawnCards, persistCompletedReading, question, selectedSpread]);
 
   const submitFollowupAnswers = useCallback(async (answers: FollowupAnswer[]) => {
     if (
@@ -301,6 +329,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       phase: "final",
       initial_reading_id: reading.reading_id,
       followup_answers: answers,
+      prior_session_capsule: continuitySource?.capsule ?? null,
     });
 
     if (interpretSignatureRef.current === requestSignature) {
@@ -325,6 +354,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           drawnCards: requestDrawnCards,
           agent_profile: getReadingAgentProfile(reading),
           phase: "final",
+          prior_session_capsule: continuitySource?.capsule ?? null,
           initial_reading: reading,
           followup_answers: answers,
         }),
@@ -373,7 +403,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  }, [drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
+  }, [continuitySource, drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     interpretSignatureRef.current = null;
@@ -403,6 +433,32 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setSafetyIntercept(null);
     setSoberGate(EMPTY_SOBER_GATE);
     setIsLoading(false);
+  };
+
+  const continueFromHistoryReading = (historyEntry: ReadingHistoryEntry) => {
+    const nextContinuitySource = buildContinuitySource(historyEntry.reading);
+
+    if (!nextContinuitySource) {
+      return false;
+    }
+
+    interpretSignatureRef.current = null;
+    setQuestionState("");
+    setSelectedSpreadState(null);
+    setAgentProfileState(DEFAULT_AGENT_PROFILE);
+    setDrawnCards([]);
+    setReading(null);
+    setErrorMessage(null);
+    setSafetyIntercept(null);
+    setSoberGate(EMPTY_SOBER_GATE);
+    setIsLoading(false);
+    setContinuitySource(nextContinuitySource);
+
+    return true;
+  };
+
+  const clearContinuitySource = () => {
+    setContinuitySource(null);
   };
 
   const resetReading = () => {
@@ -439,6 +495,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         errorMessage,
         safetyIntercept,
         soberGate,
+        continuitySource,
         setSoberGate,
         isLoading,
         isHydrated,
@@ -451,6 +508,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         interpretReading,
         submitFollowupAnswers,
         selectHistoryReading,
+        continueFromHistoryReading,
+        clearContinuitySource,
         resetReading,
         updateHistoryNotes,
       }}

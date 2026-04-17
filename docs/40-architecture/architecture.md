@@ -49,8 +49,10 @@
 - Agent Profile / phase 归一化
 - 权威牌阵 / 牌面上下文还原
 - initial/final 阶段验证
+- `prior_session_capsule` continuity context 注入
 - provider 调用
 - 安全分级检查 (Dual-Tier Safety Checks)
+- completed reading 的 `session_capsule` 生成
 - 最终 schema 校验
 
 当前落地：`apps/web/src/server/reading/`
@@ -59,7 +61,7 @@
 
 固定流水线：
 
-1. 问题分类，并读取 `agent_profile` / `phase`
+1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
 3. final 阶段一致性验证（仅 `phase = final`）
 4. 意图摩擦分析（可能直接抛出 403 Hard Stop）
@@ -67,7 +69,8 @@
 6. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile）
 7. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
 8. safety review
-9. structured response validate
+9. completed reading 的 `session_capsule` 生成
+10. structured response validate
 
 ### Provider 层
 
@@ -117,16 +120,17 @@
 ## 4. 当前 reading 数据流
 
 1. 用户输入问题、选择 Agent Profile、选择牌阵并完成抽牌
-2. 前端提交 `question + spreadId + drawnCards + agent_profile + phase`
+2. 前端提交 `question + spreadId + drawnCards + agent_profile + phase + prior_session_capsule?`
 3. Route 进行基础 schema 校验
 4. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验
    当前 graph 会在 provider draft 之后先执行一层 contract validation，防止 provider 越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量。
 5. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
 6. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
-7. Provider 生成 initial 或 final 结构化 draft；final draft 必须接收 initial reading snapshot 和 `followup_answers`
+7. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它只作为低优先级 continuity context 注入 provider
 8. Safety review 补充常规 `safety_note`，并收窄 guidance / follow-up
-9. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
-10. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history
+9. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`
+10. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
+11. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
 
 ---
 
@@ -138,6 +142,7 @@
 - 前端不再依赖 markdown 作为主协议
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history
 - MVP 不引入服务端会话存储；final 请求由前端带回 initial reading 快照
+- 本地线程连续性已实现，但仍不引入 user id、thread id 或服务端 history persistence
 - 新增 provider、扩展 LangGraph 节点或引入更复杂 graph 能力时，应复用现有 service 边界，而不是从 route 重新起一套流程
 
 ---
@@ -146,5 +151,5 @@
 
 - [ ] 部署拓扑
 - [x] provider 配置说明（见 `docs/70-ops/dev-setup.md` 的 llm baseline env 变量）
-- [ ] session capsule 与长期记忆接入方式
+- [~] session capsule 与长期记忆接入方式（本地线程级 continuity 已落地；服务端持久化与长期记忆仍待补）
 - [ ] 观测指标与告警设计

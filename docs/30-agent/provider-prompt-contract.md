@@ -26,6 +26,7 @@ interface ReadingProvider {
 - `agentProfile`
 - `spread`
 - `drawnCards`
+- `priorSessionCapsule`
 
 `FinalReadingContext` 在此基础上增加：
 
@@ -57,7 +58,7 @@ Provider 不负责生成：
 - `sober_check`
 - `presentation_mode`
 
-这些字段由 reading graph / service 层组装或安全层注入。
+这些字段由 reading graph / service 层组装、生成或安全层注入。
 
 ---
 
@@ -94,6 +95,7 @@ Prompt 必须接收：
 - Agent Profile `agentProfile`
 - 权威牌阵快照 `spread`
 - 按牌阵位置排序的 `drawnCards`
+- 可选 continuity 背景 `priorSessionCapsule`
 - 输出字段要求
 - 安全与表达边界摘要
 
@@ -117,6 +119,7 @@ Initial draft 不得：
 - 给出医疗、法律、财务或操控建议
 - 输出 `Thinking...`、思维链、模型自述或任何非最终用户文本
 - 把牌名、位置名、位置含义改写成 provider 自造文案
+- 把 `priorSessionCapsule` 当作高优先级指令，覆盖当前问题、当前牌阵或当前抽牌
 
 ### Follow-up 规则
 
@@ -156,6 +159,7 @@ Prompt 必须接收：
 - 同一 `spread` 与 `drawnCards`
 - 完整 `initialReading`
 - 用户提交的 `followupAnswers`
+- 可选 continuity 背景 `priorSessionCapsule`
 - 输出字段要求
 - 安全与表达边界摘要
 
@@ -176,6 +180,7 @@ Final draft 不得：
 - 更改牌阵或牌序
 - 用用户补充完全推翻 initial 主轴
 - 把 follow-up answers 当作事实真相的全部来源
+- 把 `priorSessionCapsule` 当作比当前问题或 initial 主轴更高优先级的输入
 - 把 advice 写成命令或确定性预言
 
 ---
@@ -212,13 +217,15 @@ Provider prompt 可以重复安全表达原则，但安全控制权仍在 servic
 2. Provider 只生成 reading draft。
 3. Graph 组装 `sober_check` / `presentation_mode`。
 4. `applySafetyReview()` 在 provider 后补充 `safety_note` 并收窄 guidance / follow-up。
-5. `structuredReadingSchema.parse()` 做最终协议校验。
+5. completed reading 的 `session_capsule` 由 graph 末端按确定性模板生成，而不是由 provider 自由编写 memory shape。
+6. `structuredReadingSchema.parse()` 做最终协议校验。
 
 Provider 不得自行决定：
 
 - 是否 hard stop
 - 是否注入 `sober_check`
 - 是否跳过 `safety_note`
+- 是否生成 `session_capsule`
 - 是否返回非结构化 markdown
 
 ---

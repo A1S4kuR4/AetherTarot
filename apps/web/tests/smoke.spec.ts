@@ -8,6 +8,19 @@ async function gotoAppRoute(
   await page.waitForTimeout(250);
 }
 
+function historyEntry(page: Parameters<typeof test>[0]["page"], question: string) {
+  return page.locator("article").filter({ hasText: question }).first();
+}
+
+function journeyTimelineEntry(
+  page: Parameters<typeof test>[0]["page"],
+  question: string,
+) {
+  return page.locator("div").filter({ hasText: question }).filter({
+    has: page.getByRole("button", { name: /回看解读/i }),
+  }).first();
+}
+
 async function holdToStart(
   page: Parameters<typeof test>[0]["page"],
   durationMs = 1600,
@@ -210,11 +223,11 @@ test.describe("AetherTarot smoke flow", () => {
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
 
-    await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
+    await expect(historyEntry(page, "我该如何看待当前的职业选择？")).toBeVisible();
 
     await page.reload({ waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("button", { name: /我该如何看待当前的职业选择/ })).toBeVisible();
+    await expect(historyEntry(page, "我该如何看待当前的职业选择？")).toBeVisible();
   });
 
   test("completes a lite reading without a blocking follow-up", async ({ page }) => {
@@ -230,7 +243,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
 
     await gotoAppRoute(page, "/history");
-    await expect(page.getByRole("button", { name: /我现在最该注意什么/ })).toBeVisible();
+    await expect(historyEntry(page, "我现在最该注意什么？")).toBeVisible();
   });
 
   test("reopens a saved reading from history", async ({ page }) => {
@@ -245,7 +258,9 @@ test.describe("AetherTarot smoke flow", () => {
     });
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
-    await page.getByText(/接下来一周我应该把重点放在哪里/i).first().click();
+    await historyEntry(page, "接下来一周我应该把重点放在哪里？")
+      .getByRole("button", { name: /回看这次解读/i })
+      .click();
 
     await expect(page).toHaveURL(/\/reading$/);
     await expect(
@@ -275,7 +290,9 @@ test.describe("AetherTarot smoke flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /开启新的抽牌/i })).toBeVisible();
 
-    await page.getByText(/接下来一周我应该把重点放在哪里/i).first().click();
+    await journeyTimelineEntry(page, "接下来一周我应该把重点放在哪里？")
+      .getByRole("button", { name: /回看解读/i })
+      .click();
     await expect(page).toHaveURL(/\/reading$/);
     await expect(
       page.getByText('"接下来一周我应该把重点放在哪里？"', {
@@ -313,7 +330,7 @@ test.describe("AetherTarot smoke flow", () => {
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
     await expect(
-      page.getByRole("button", { name: /我需要如何梳理接下来三个月的整体方向/ }),
+      historyEntry(page, "我需要如何梳理接下来三个月的整体方向？"),
     ).toBeVisible();
   });
 
@@ -342,8 +359,32 @@ test.describe("AetherTarot smoke flow", () => {
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
     await expect(
-      page.getByRole("button", { name: /我该如何理解眼前这次转向/ }),
+      historyEntry(page, "我该如何理解眼前这次转向？"),
     ).toBeVisible();
+  });
+
+  test("lets the user continue a saved line without auto-filling the next question", async ({
+    page,
+  }) => {
+    await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
+    await expect(page).toHaveURL(/\/ritual$/);
+    await drawCards(page, 1);
+    await revealSpread(page);
+
+    await enterReading(page);
+    await completeFollowup(page);
+    await gotoAppRoute(page, "/history");
+
+    const entry = historyEntry(page, "接下来一周我应该把重点放在哪里？");
+    await entry.getByRole("button", { name: /延续这条线/i }).click();
+
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(page.getByText(/延续中的线索/)).toBeVisible();
+    await expect(page.getByText(/接下来一周我应该把重点放在哪里？/)).toBeVisible();
+    await expect(page.getByPlaceholder("今天，你想向内心询问什么？")).toHaveValue("");
+
+    await page.getByRole("button", { name: /清除这条延续线/i }).click();
+    await expect(page.getByText(/延续中的线索/)).toBeHidden();
   });
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {

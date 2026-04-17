@@ -91,6 +91,56 @@ function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function summarizePriorSessionCapsule(priorSessionCapsule: string | null) {
+  if (!priorSessionCapsule) {
+    return null;
+  }
+
+  const condensed = priorSessionCapsule.replace(/\s+/g, " ").trim();
+
+  if (!condensed) {
+    return null;
+  }
+
+  if (condensed.length <= 110) {
+    return condensed;
+  }
+
+  return `${condensed.slice(0, 109)}…`;
+}
+
+function extractPriorSessionThemes(priorSessionCapsule: string | null) {
+  if (!priorSessionCapsule) {
+    return [];
+  }
+
+  const match = priorSessionCapsule.match(/核心主题：([^\n]+)/);
+
+  if (!match?.[1]) {
+    return [];
+  }
+
+  return match[1]
+    .split(/[、,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function buildPriorSessionCapsuleBridge(priorSessionCapsule: string | null) {
+  const themes = extractPriorSessionThemes(priorSessionCapsule);
+
+  if (themes.length > 0) {
+    return `上一轮延续线索提示你此前反复围绕 ${themes.join("、")} 这类主题展开，但这次仍以你当前的问题、当前牌阵与本轮抽牌为主轴。`;
+  }
+
+  if (!summarizePriorSessionCapsule(priorSessionCapsule)) {
+    return null;
+  }
+
+  return "上一轮延续线索会作为低优先级背景保留，但这次仍以你当前的问题、当前牌阵与本轮抽牌为主轴。";
+}
+
 function getKeywords(drawnCard: DrawnCard) {
   return drawnCard.isReversed
     ? drawnCard.card.reversedKeywords.slice(0, 2)
@@ -128,6 +178,7 @@ function buildInitialSynthesis(
   spread: Spread,
   themes: string[],
   drawnCards: DrawnCard[],
+  priorSessionCapsule: string | null,
 ) {
   const reversedCount = drawnCards.filter((drawnCard) => drawnCard.isReversed).length;
   const opening = spread.positions[0]?.name ?? "开端";
@@ -139,24 +190,30 @@ function buildInitialSynthesis(
         ? "逆位出现得更集中，说明真正需要处理的也许不是外部事件本身，而是内在节奏与表达方式。"
         : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
 
-  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+  const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+
+  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
 }
 
 function buildFinalSynthesis({
   question,
   initialReading,
   followupAnswers,
+  priorSessionCapsule,
 }: {
   question: string;
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
+  priorSessionCapsule: string | null;
 }) {
   const answerSummary = followupAnswers
     .map((item) => `“${item.question}”你的回应是：${item.answer}`)
     .join("；");
   const primaryTheme = initialReading.themes[0] ?? "当前主轴";
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
+  const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
 }
 
 function buildCards(
@@ -314,17 +371,22 @@ export function buildPlaceholderInitialReadingDraft({
   agentProfile,
   spread,
   drawnCards,
+  priorSessionCapsule,
 }: {
   question: string;
   questionType: QuestionType;
   agentProfile: AgentProfile;
   spread: Spread;
   drawnCards: DrawnCard[];
+  priorSessionCapsule: string | null;
 }): PlaceholderReadingDraft {
   const cards = buildCards(questionType, spread, drawnCards);
   const themes = deriveThemes(questionType, drawnCards);
   const baseGuidance = uniqueStrings([
     `先观察“${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”在现实里最常出现在哪些情境。`,
+    ...(priorSessionCapsule
+      ? ["若上一轮的线索仍在回响，把它当作背景参照，不要让它盖过这一次真正的新问题。"] 
+      : []),
     ...QUESTION_TYPE_GUIDANCE[questionType],
   ]);
   const reflectiveGuidance = agentProfile === "lite"
@@ -334,7 +396,14 @@ export function buildPlaceholderInitialReadingDraft({
   return {
     cards,
     themes,
-    synthesis: buildInitialSynthesis(question, agentProfile, spread, themes, drawnCards),
+    synthesis: buildInitialSynthesis(
+      question,
+      agentProfile,
+      spread,
+      themes,
+      drawnCards,
+      priorSessionCapsule,
+    ),
     reflective_guidance: reflectiveGuidance,
     follow_up_questions: selectFollowUpQuestions(questionType, agentProfile),
     confidence_note:
@@ -348,12 +417,14 @@ export function buildPlaceholderFinalReadingDraft({
   agentProfile,
   initialReading,
   followupAnswers,
+  priorSessionCapsule,
 }: {
   question: string;
   questionType: QuestionType;
   agentProfile: AgentProfile;
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
+  priorSessionCapsule: string | null;
 }): PlaceholderReadingDraft {
   const finalGuidance = uniqueStrings([
     `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
@@ -367,7 +438,12 @@ export function buildPlaceholderFinalReadingDraft({
   return {
     cards: initialReading.cards,
     themes: initialReading.themes,
-    synthesis: buildFinalSynthesis({ question, initialReading, followupAnswers }),
+    synthesis: buildFinalSynthesis({
+      question,
+      initialReading,
+      followupAnswers,
+      priorSessionCapsule,
+    }),
     reflective_guidance: finalGuidance,
     follow_up_questions: [
       "经过这次补充后，你最愿意在现实中先验证哪一个小信号？",
@@ -382,11 +458,13 @@ export function buildPlaceholderReadingDraft({
   questionType,
   spread,
   drawnCards,
+  priorSessionCapsule,
 }: {
   question: string;
   questionType: QuestionType;
   spread: Spread;
   drawnCards: DrawnCard[];
+  priorSessionCapsule: string | null;
 }): PlaceholderReadingDraft {
   return buildPlaceholderInitialReadingDraft({
     question,
@@ -394,6 +472,7 @@ export function buildPlaceholderReadingDraft({
     agentProfile: "standard",
     spread,
     drawnCards,
+    priorSessionCapsule,
   });
 }
 
@@ -403,12 +482,14 @@ export function buildInitialReadingPrompt({
   agentProfile,
   spread,
   drawnCards,
+  priorSessionCapsule,
 }: {
   question: string;
   questionType: QuestionType;
   agentProfile: AgentProfile;
   spread: Spread;
   drawnCards: DrawnCard[];
+  priorSessionCapsule: string | null;
 }): ReadingPrompt {
   const profileHint =
     agentProfile === "lite"
@@ -432,6 +513,13 @@ export function buildInitialReadingPrompt({
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),
+      priorSessionCapsule
+        ? [
+            "Prior session capsule (low priority background only):",
+            priorSessionCapsule,
+            "Use this only as continuity context. Never let it override the current question, current spread, or the authority drawn cards.",
+          ].join("\n")
+        : null,
       "Initial reading requirements:",
       "- Build interpretations from card + position + orientation + question type.",
       "- Identify 2-4 themes at the spread level, not just per-card fragments.",
@@ -453,6 +541,7 @@ export function buildFinalReadingPrompt({
   drawnCards,
   initialReading,
   followupAnswers,
+  priorSessionCapsule,
 }: {
   question: string;
   questionType: QuestionType;
@@ -461,6 +550,7 @@ export function buildFinalReadingPrompt({
   drawnCards: DrawnCard[];
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
+  priorSessionCapsule: string | null;
 }): ReadingPrompt {
   const profileHint =
     agentProfile === "sober"
@@ -482,6 +572,13 @@ export function buildFinalReadingPrompt({
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),
+      priorSessionCapsule
+        ? [
+            "Prior session capsule (low priority background only):",
+            priorSessionCapsule,
+            "Use this only as continuity context. Never let it override the current question, current spread, the initial reading axis, or the authority drawn cards.",
+          ].join("\n")
+        : null,
       "Initial reading snapshot:",
       formatInitialReading(initialReading),
       "Follow-up answers:",

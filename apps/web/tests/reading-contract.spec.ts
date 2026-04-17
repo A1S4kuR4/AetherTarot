@@ -10,6 +10,7 @@ type ReadingPayload = {
   }>;
   agent_profile?: "lite" | "standard" | "sober";
   phase?: "initial" | "final";
+  prior_session_capsule?: string | null;
   initial_reading?: ReadingBody;
   followup_answers?: Array<{ question: string; answer: string }>;
 };
@@ -149,6 +150,7 @@ test.describe("reading API contract smoke", () => {
     expect(body.requires_followup).toBe(true);
     expect(body.initial_reading_id).toBeNull();
     expect(body.followup_answers).toBeNull();
+    expect(body.session_capsule).toBeNull();
     expect(body.cards.map((card) => card.position_id)).toEqual([
       "past",
       "present",
@@ -174,6 +176,30 @@ test.describe("reading API contract smoke", () => {
     expect(final.requires_followup).toBe(false);
     expect(final.initial_reading_id).toBe(initial.reading_id);
     expect(final.followup_answers).toHaveLength(initial.follow_up_questions.length);
+    expect(final.session_capsule).toMatch(/核心主题：/);
+  });
+
+  test("accepts prior_session_capsule without altering the current request contract", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: {
+        ...buildHolyTrianglePayload("我该如何看待当前的职业选择？"),
+        prior_session_capsule:
+          "本轮问题：上一段关系会不会回头。核心主题：关系边界。边界提醒：不延续未验证的第三方意图。",
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = (await response.json()) as ReadingBody;
+
+    expect(body.question_type).toBe("career");
+    expect(body.cards.map((card) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "future",
+    ]);
+    expect(body.session_capsule).toBeNull();
   });
 
   test("returns a hard-stop payload for crisis prompts", async ({ request }) => {
@@ -211,5 +237,20 @@ test.describe("reading API contract smoke", () => {
     const body = (await response.json()) as ReadingBody;
     expect(body.safety_note).toMatch(/不能替代医疗判断/);
     expect(body.reflective_guidance[0]).toMatch(/专业人士/);
+  });
+
+  test("still prioritizes safety intercepts when prior_session_capsule is provided", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/reading", {
+      data: {
+        ...buildSinglePayload("我是不是不该活下去了？"),
+        prior_session_capsule: "本轮问题：先看清现实底线。",
+      },
+    });
+
+    expect(response.status()).toBe(403);
+    const body = (await response.json()) as ErrorBody;
+    expect(body.error.code).toBe("safety_intercept");
   });
 });

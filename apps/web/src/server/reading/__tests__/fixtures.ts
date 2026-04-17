@@ -116,6 +116,8 @@ const FOLLOW_UP_ANCHOR_PATTERN = /牌|位置|张力|正位|逆位|现实|线索|
 const GENERIC_FOLLOW_UP_PATTERN =
   /你最近是不是很焦虑|你是不是遇到了某个人|你是不是工作不顺/i;
 const SAFETY_NARROWING_PATTERN = /现实|风险|专业|信息|确认|症状|边界/i;
+const CAPSULE_UNSAFE_PATTERN =
+  /自杀|自残|结束生命|kill myself|跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/gi;
 
 export function preservesPrimaryTheme(
   initialReading: StructuredReading,
@@ -136,4 +138,8 @@ export function hasSafetyNarrowedGuidance(reading: StructuredReading) {
 
 export function hasSafetyNarrowedFollowup(reading: StructuredReading) {
   return reading.follow_up_questions.every((item) => SAFETY_NARROWING_PATTERN.test(item));
+}
+
+export function hasSafeSessionCapsule(reading: StructuredReading) {
+  return Boolean(reading.session_capsule && !CAPSULE_UNSAFE_PATTERN.test(reading.session_capsule));
 }
