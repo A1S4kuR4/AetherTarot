@@ -27,6 +27,7 @@ import { structuredReadingSchema } from "@/server/reading/schemas";
 import {
   analyzeIntentFriction,
   applySafetyReview,
+  sanitizeIncomingSessionCapsule,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
 import type { ReadingDraft, ReadingProvider } from "@/server/reading/types";
@@ -49,6 +50,7 @@ const ReadingGraphState = new StateSchema({
 });
 
 type ReadingGraphNode = GraphNode<typeof ReadingGraphState>;
+const MAX_SESSION_CAPSULE_LENGTH = 280;
 
 function requireStateValue<T>(
   value: T | undefined,
@@ -338,6 +340,7 @@ function normalizeCapsuleLine(value: string, maxLength = 140) {
   const normalized = value.replace(/\s+/g, " ").trim();
   const sanitized = normalized
     .replace(/自杀|自残|不想活|结束生命|kill myself/gi, "[高风险细节略]")
+    .replace(/急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|emergency|can't breathe/gi, "[紧急健康细节略]")
     .replace(/跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/gi, "[越界行为略]")
     .replace(/(他|她|对方)(到底|会不会|是不是|真实).{0,8}(爱|想|打算|回|喜欢|讨厌)/gi, "[第三方意图推测略]");
 
@@ -346,6 +349,14 @@ function normalizeCapsuleLine(value: string, maxLength = 140) {
   }
 
   return `${sanitized.slice(0, maxLength - 1)}…`;
+}
+
+function truncateCapsule(value: string, maxLength = MAX_SESSION_CAPSULE_LENGTH) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1)}…`;
 }
 
 function shouldAttachSessionCapsule(reading: StructuredReading) {
@@ -360,39 +371,25 @@ function buildSessionCapsule({
   spread,
   themes,
   reflectiveGuidance,
-  followupAnswers,
 }: {
   question: string;
   spread: Spread;
   themes: string[];
   reflectiveGuidance: string[];
-  followupAnswers: FollowupAnswer[] | null;
 }) {
   const carryForwardLines = reflectiveGuidance
     .slice(0, 2)
-    .map((item, index) => `${index + 1}. ${normalizeCapsuleLine(item, 72)}`);
+    .map((item, index) => `${index + 1}. ${normalizeCapsuleLine(item, 56)}`);
   const lines = [
-    `本轮问题：${normalizeCapsuleLine(question, 96)}`,
+    `本轮问题：${normalizeCapsuleLine(question, 64)}`,
     `牌阵：${spread.name}`,
-    `核心主题：${themes.map((theme) => normalizeCapsuleLine(theme, 20)).join("、")}`,
+    `核心主题：${themes.map((theme) => normalizeCapsuleLine(theme, 14)).join("、")}`,
     "延续主轴：",
     ...carryForwardLines,
+    "边界提醒：不延续急性情绪、未验证的第三方意图和高风险安全细节。",
   ];
 
-  if (followupAnswers && followupAnswers.length > 0) {
-    lines.push(
-      `用户补充：${normalizeCapsuleLine(
-        followupAnswers.map((item) => item.answer).join("；"),
-        140,
-      )}`,
-    );
-  }
-
-  lines.push(
-    "边界提醒：不延续急性情绪、未验证的第三方意图和高风险安全细节。",
-  );
-
-  return lines.join("\n");
+  return truncateCapsule(lines.join("\n"));
 }
 
 const classifyQuestionNode: ReadingGraphNode = (state) => {
@@ -405,7 +402,9 @@ const classifyQuestionNode: ReadingGraphNode = (state) => {
     phase: state.payload.phase ?? "initial",
     initialReading: state.payload.initial_reading,
     followupAnswers: state.payload.followup_answers,
-    priorSessionCapsule: state.payload.prior_session_capsule ?? null,
+    priorSessionCapsule: sanitizeIncomingSessionCapsule(
+      state.payload.prior_session_capsule ?? null,
+    ),
   };
 };
 
@@ -573,7 +572,6 @@ const attachSessionCapsuleNode: ReadingGraphNode = (state) => {
         spread: reading.spread,
         themes: reading.themes,
         reflectiveGuidance: reading.reflective_guidance,
-        followupAnswers: reading.followup_answers,
       }),
     }) as StructuredReading,
   };
