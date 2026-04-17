@@ -5,6 +5,7 @@ import {
   buildHolyTrianglePayload,
   buildSinglePayload,
   hasAnchoredFollowupQuestion,
+  hasSafeSessionCapsule,
   hasSafetyNarrowedFollowup,
   hasSafetyNarrowedGuidance,
   preservesPrimaryTheme,
@@ -39,5 +40,27 @@ describe("reading semantic fixtures", () => {
     expect(reading.safety_note).toMatch(/不能替代医疗判断/);
     expect(hasSafetyNarrowedGuidance(reading)).toBe(true);
     expect(hasSafetyNarrowedFollowup(reading)).toBe(true);
+  });
+
+  it("treats prior capsules as supplemental context instead of overriding the current question", async () => {
+    const reading = await runReadingGraph({
+      ...buildHolyTrianglePayload("我该如何看待当前的职业选择？"),
+      prior_session_capsule:
+        "本轮问题：上一段关系会不会回头。核心主题：关系节奏、边界。边界提醒：不延续未验证的第三方意图。",
+    });
+
+    expect(reading.synthesis).toMatch(/当前的职业选择/);
+    expect(reading.synthesis).not.toMatch(/上一段关系会不会回头/);
+  });
+
+  it("keeps completed session capsules compact and free of unsafe detail spillover", async () => {
+    const reading = await runReadingGraph({
+      ...buildSinglePayload(),
+      agent_profile: "lite",
+    });
+
+    expect(reading.session_capsule).toBeTruthy();
+    expect(reading.session_capsule).toMatch(/边界提醒：/);
+    expect(hasSafeSessionCapsule(reading)).toBe(true);
   });
 });

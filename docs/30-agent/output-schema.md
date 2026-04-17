@@ -11,7 +11,7 @@
 - `POST /api/reading` 成功时直接返回结构化 reading 对象，不再返回单一 `interpretation: string`
 - 首轮默认 `locale = zh-CN`
 - MVP 默认 `agent_profile = standard`、`phase = initial`
-- `session_capsule` 在本阶段固定为 `null`
+- `session_capsule` 仅在 completed reading 产出；未完成中间态固定为 `null`
 - `cards[]` 的顺序必须与牌阵位置顺序一致
 - 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
@@ -33,6 +33,7 @@
   ],
   "agent_profile": "lite | standard | sober",
   "phase": "initial | final",
+  "prior_session_capsule": "string | null",
   "initial_reading": "StructuredReading | undefined",
   "followup_answers": [
     {
@@ -43,7 +44,7 @@
 }
 ```
 
-`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。
+`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。`prior_session_capsule` 为显式 opt-in 的上一轮摘要，只作为低优先级 continuity context。
 
 ---
 
@@ -97,7 +98,7 @@
   "follow_up_questions": ["string"],
   "safety_note": "string | null",
   "confidence_note": "string | null",
-  "session_capsule": null,
+  "session_capsule": "string | null",
   "sober_check": "string | null",
   "presentation_mode": "standard | void_narrative | sober_anchor"
 }
@@ -126,6 +127,10 @@
 ### `followup_answers`
 
 `final` reading 记录用户针对第一阶段追问提交的现实补充。`initial` 阶段固定为 `null`。
+
+### `prior_session_capsule`
+
+请求侧 continuity hook。它用于把上一轮 completed reading 产出的紧凑摘要带入当前 reading，但优先级低于当前问题、当前牌阵与当前抽牌。它不是 history replay，也不是长期记忆容器。
 
 ### `question_type`
 
@@ -163,6 +168,15 @@
 
 用于表达不确定性与解释范围，不应伪装成绝对结论。
 
+### `session_capsule`
+
+本轮 completed reading 的紧凑摘要。当前保持 `string | null`，只在以下状态产出非空值：
+
+- `lite` 的 completed initial reading
+- `standard / sober` 的 completed final reading
+
+`standard / sober` 的 `initial` 阶段固定为 `null`，避免把未完成中间态误当成可复用记忆。
+
 ### `sober_check`
 
 用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
@@ -179,6 +193,7 @@
 - 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
 - 当前 LangGraph 节点必须收敛到本协议，不创造第二套 reading shape
 - final 阶段由前端带回 initial reading 快照；MVP 不引入服务端会话存储
+- `prior_session_capsule` 只表示本地线程级 continuity，不引入 user id、thread id 或服务端 persistence 语义
 
 ---
 

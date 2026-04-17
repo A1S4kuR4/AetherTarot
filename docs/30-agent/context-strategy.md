@@ -50,6 +50,11 @@
 
 特点：优先使用摘要，不直接拼接全部聊天历史。
 
+当前实现补充：
+
+- 本地 history replay 继续保存完整 `ReadingHistoryEntry`
+- `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
+
 ### 层 4：长期记忆层
 
 包含：
@@ -74,6 +79,14 @@
 - 不应延续的情绪性噪音
 
 > Session capsule 的目标是“延续理解”，不是“复制聊天记录”。
+
+当前本地线程实现：
+
+- 只在 completed reading 生成 `session_capsule`
+- `lite` 的 `initial-as-final` 可直接生成 capsule
+- `standard / sober` 只有 `final` 才生成 capsule；`initial / awaiting_followup` 固定为 `null`
+- 下一轮必须由前端显式 opt-in，把 `prior_session_capsule` 带回 `POST /api/reading`
+- `prior_session_capsule` 的优先级低于当前问题、当前牌阵与本轮抽牌
 
 ---
 
@@ -115,7 +128,8 @@
 
 ## 7. 待补充实现细节
 
-- [ ] session capsule 数据结构
+- [x] session capsule 数据结构（当前保持 `string | null`）
+- [x] session capsule 写入/读取时机（本地线程级）
 - [ ] 长期画像 schema
 - [ ] memory merge 冲突规则
 - [ ] 多轮追问时的上下文裁剪规则

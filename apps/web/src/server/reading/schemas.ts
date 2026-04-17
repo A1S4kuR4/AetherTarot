@@ -82,6 +82,7 @@ export const readingRequestPayloadSchema = z
       .min(1, "drawnCards 至少需要包含一张牌。"),
     agent_profile: agentProfileSchema.default("standard"),
     phase: readingPhaseSchema.default("initial"),
+    prior_session_capsule: z.string().trim().min(1).nullable().optional(),
     initial_reading: z.lazy(() => structuredReadingSchema).optional(),
     followup_answers: z.array(followupAnswerSchema).optional(),
   })
