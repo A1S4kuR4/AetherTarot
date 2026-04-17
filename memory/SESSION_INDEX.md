@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-15`
+- `last_updated`: `2026-04-17`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -27,10 +27,10 @@
 - 文件：`memory/current-status-and-priority-2026-04-15.md`
 - 用途：作为当前主线优先级文档与 UX 风险文档之间的桥接入口，统一回答“现在做到哪了、卡在哪里、下一步先做什么”
 - 当前重点：
-  - 项目已进入“主链已成、回归已恢复、运行时牌池已完整、首个新增运行时牌阵已上线”阶段
+  - 项目已进入“主链已成、回归已恢复、运行时牌池已完整、continuity 边界开始收紧、第二个新增运行时牌阵已上线”阶段
   - 当前最大风险重新收束到牌阵语义、长期连续性与文档持续同步
   - 优先级固定为：先保持可信回归与文档同步，再收口牌阵与运行时体验，再开长期连续性能力
-  - 最新运行时扩展已把牌库推进到 `78` 张、卡图推进到 `79` 个文件、运行时牌阵推进到 `4` 个，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
+  - 最新运行时扩展已把牌库推进到 `78` 张、卡图推进到 `79` 个文件、运行时牌阵推进到 `5` 个，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
 
 ### 2.2 Mainline Priority Plan
 
@@ -43,13 +43,13 @@
 
 ### 2.3 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-15.md`
-- 用途：记录 `2026-04-15` 的完整 `78/78` 运行时牌池闭环、首个新增高价值牌阵 `four-aspects` 上线与后续主线切换
+- 文件：`memory/work-log-2026-04-17.md`
+- 用途：记录 `2026-04-17` 的 safety realism、continuity regression 收紧与第二个高价值运行时牌阵 `seven-card` 上线
 - 当前重点：
-  - 本地运行时牌池已完整收口到 `78/78`
-  - Encyclopedia 前台现应显式展示 `78/78 runtime` vs `78/78 knowledge`
-  - `four-aspects` 已作为首个新增高价值运行时牌阵完成全链路接入
-  - 当前主线已从“继续补牌”切换到“继续收口牌阵上线顺序 + 长期连续性设计”
+  - hard-stop 已切换到真实中国大陆危机 / 心理支持入口
+  - `prior_session_capsule` 已在进入 provider 前做安全净化
+  - `seven-card` 已作为第二个新增高价值运行时牌阵完成全链路接入
+  - contract / build / e2e 已再次通过
 
 
 ### 2.4 Near-Term Work Plan
@@ -91,7 +91,7 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-15.md`，确认完整 `78/78` 运行时牌池闭环、`four-aspects` 上线与最新主线切换
+3. 再看 `memory/work-log-2026-04-17.md`，确认安全真实化、continuity 边界收紧、`seven-card` 上线与最新回归状态
 4. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
 5. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 

@@ -42,7 +42,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 1. 技术主线：`M1` Real Reading API、`M2` Structured Reading Schema 与 `M3` Minimal LangGraph 已完成；`M4` Runtime Alignment 持续收口。
 2. UX / 产品主线：`Paper / Midnight` 双面设计系统已确立，`Home / Ritual / Reveal / Interpretation / Journey` 已完成一轮重大重构，但 `docs/10-product/ux-risk-status.md` 中的剩余风险仍在持续处理。
 
-`2026-04-09` / `2026-04-10` / `2026-04-14` / `2026-04-15` 同步确认的关键收口包括：
+`2026-04-09` / `2026-04-10` / `2026-04-14` / `2026-04-15` / `2026-04-17` 同步确认的关键收口包括：
 
 - 引入 `ADR-0002` Dual-Tier Safety Escalation
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
@@ -51,7 +51,8 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
 - 将运行时牌组从早期示例牌扩展到当前 78 张，并接入本地资产路径
 - `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；contract tests 为 `25/25`，Playwright smoke 为 `17/17`，并已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径且在测试环境固定使用 `placeholder` provider
-- 首个新增高价值运行时牌阵 `four-aspects` 已上线，当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`celtic-cross`
+- 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
+- 当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
 
@@ -98,13 +99,13 @@ reading request / response、history 与塔罗基础实体的共享类型。
 
 已具备：
 
-- 单牌、圣三角、四个面向、赛尔特十字牌阵
+- 单牌、圣三角、四个面向、七张牌、赛尔特十字牌阵
 - 结构化 reading API
 - 最小 LangGraph reading 编排
 - 结构化结果页与本地历史回放
 - Dual-Tier Safety Escalation（`403 Hard Stop` / `200 Sober Check`）
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
-- 生成后安全检查与 `safety_note`
+- 生成前危机转介、incoming capsule 安全净化、生成后安全检查与 `safety_note`
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
 - 78 张运行时牌与 79 个本地卡牌文件，均按 1:1.7 竖版规范接入
 

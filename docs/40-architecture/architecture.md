@@ -49,7 +49,7 @@
 - Agent Profile / phase 归一化
 - 权威牌阵 / 牌面上下文还原
 - initial/final 阶段验证
-- `prior_session_capsule` continuity context 注入
+- `prior_session_capsule` continuity context 注入与安全净化
 - provider 调用
 - 安全分级检查 (Dual-Tier Safety Checks)
 - completed reading 的 `session_capsule` 生成
@@ -126,9 +126,9 @@
    当前 graph 会在 provider draft 之后先执行一层 contract validation，防止 provider 越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量。
 5. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
 6. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
-7. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它只作为低优先级 continuity context 注入 provider
+7. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它会先在服务层移除 `用户补充` 类原始细节以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容，再作为低优先级 continuity context 注入 provider
 8. Safety review 补充常规 `safety_note`，并收窄 guidance / follow-up
-9. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`
+9. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`，且 completed capsule 会被模板化压缩为“问题 / 牌阵 / 核心主题 / 延续主轴 / 边界提醒”
 10. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
 11. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
 
@@ -139,6 +139,7 @@
 - `apps/web` 仍是唯一活跃应用，当前不拆 `apps/api`
 - Route 不能重新承载业务真相
 - 安全规则必须在生成前和生成后分别检查，不能只靠 prompt 自觉
+- hard-stop 危机转介当前按中国大陆固定资源顺序提示：`120` -> `110` -> `12356`
 - 前端不再依赖 markdown 作为主协议
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history
 - MVP 不引入服务端会话存储；final 请求由前端带回 initial reading 快照

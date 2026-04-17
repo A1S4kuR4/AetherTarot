@@ -1,6 +1,6 @@
 # 当前状态 + 优先级清单（2026-04-15）
 
-- `last_updated`: `2026-04-15`
+- `last_updated`: `2026-04-17`
 - `owner`: `Codex`
 - `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
 
@@ -21,7 +21,7 @@
 
 ## 2. 当前状态快照
 
-截至 `2026-04-15`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、首个新增牌阵已上线、下一步转向牌阵与长期连续性”的阶段。
+截至 `2026-04-17`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、连续性边界开始收紧、第二个新增高价值牌阵已上线”的阶段。
 
 当前可确认的事实如下：
 
@@ -41,7 +41,8 @@
 
 - `data/decks/rider-waite-smith.json` 当前包含完整 `78` 张运行时牌：Rider-Waite-Smith 全牌池已接入
 - `apps/web/public/cards/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面
-- `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`celtic-cross` 四个运行时牌阵，其中 `four-aspects` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
+- `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross` 五个运行时牌阵，其中 `four-aspects` 与 `seven-card` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
+- hard-stop 示例资源已替换为中国大陆固定的真实危机 / 心理支持入口，并补入 continuity capsule 的高风险细节净化
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
 
@@ -93,7 +94,7 @@
 
 当前最大产品缺口不是 UI 页面缺失，而是：
 
-- 首个新增高价值牌阵 `four-aspects` 已上线，但运行时牌阵扩展仍只推进到 `4` 个
+- `four-aspects` 与 `seven-card` 已上线，但运行时牌阵扩展仍只推进到 `5` 个
 - Encyclopedia 仍直接消费 deck JSON，尚未决定是否进入 `knowledge/wiki` runtime 对齐
 
 ### 阻塞点三：长期连续性能力仍缺位
@@ -101,7 +102,7 @@
 历史、Journey 与两阶段 reading 已经形成产品雏形，但长期连续性能力仍未真正开始：
 
 - history 仍是 localStorage
-- `session_capsule` 固定为 `null`
+- `session_capsule` 已限定为 completed reading 才生成，且会先做模板收敛与高风险细节净化
 - 尚未定义服务端 persistence、memory merge 与长期画像边界
 
 ## 5. 当前优先级清单
@@ -130,7 +131,7 @@
 - 已在 Encyclopedia 前台显式补出 runtime / knowledge 覆度状态，并明确显示当前为 `78/78` runtime vs `78/78` knowledge
 - 当前已明确：Encyclopedia 本阶段继续直接消费 runtime deck JSON，而不是立即改成直接消费 `knowledge/wiki`
 - `knowledge/wiki` direct consumption 继续保留为下一阶段的独立对齐工作，不与本轮 runtime 扩展混做
-- 首个新增高价值运行时牌阵 `four-aspects` 已上线，并补齐了 authority、前台布局、contract 与 Playwright smoke 回归
+- `four-aspects` 与 `seven-card` 已上线，并补齐了 authority、前台布局、contract 与 Playwright smoke 回归
 
 执行项：
 
