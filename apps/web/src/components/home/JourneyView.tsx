@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export default function JourneyView() {
   const router = useRouter();
-  const { history, selectHistoryReading } = useReading();
+  const { history, selectHistoryReading, continueFromHistoryReading } = useReading();
   const [viewMode, setViewMode] = useState<"timeline" | "themes">("timeline");
 
   const themeClusters = useMemo(() => {
@@ -30,6 +30,14 @@ export default function JourneyView() {
   const handleSelectHistory = (entry: ReadingHistoryEntry) => {
     selectHistoryReading(entry);
     router.push("/reading");
+  };
+
+  const handleContinueLine = (entry: ReadingHistoryEntry) => {
+    if (!continueFromHistoryReading(entry)) {
+      return;
+    }
+
+    router.push("/new");
   };
 
   const handleNewReading = () => {
@@ -99,7 +107,13 @@ export default function JourneyView() {
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
               >
                 {history.map((entry, index) => (
-                  <HistoryCard key={entry.id} entry={entry} index={index} onClick={() => handleSelectHistory(entry)} />
+                  <HistoryCard
+                    key={entry.id}
+                    entry={entry}
+                    index={index}
+                    onReplay={() => handleSelectHistory(entry)}
+                    onContinue={() => handleContinueLine(entry)}
+                  />
                 ))}
               </motion.div>
             ) : (
@@ -111,7 +125,13 @@ export default function JourneyView() {
                 className="grid gap-8 md:grid-cols-2"
               >
                 {themeClusters.map((cluster, index) => (
-                  <ThemeClusterCard key={cluster.name} cluster={cluster} index={index} onSelectEntry={handleSelectHistory} />
+                  <ThemeClusterCard
+                    key={cluster.name}
+                    cluster={cluster}
+                    index={index}
+                    onSelectEntry={handleSelectHistory}
+                    onContinueEntry={handleContinueLine}
+                  />
                 ))}
               </motion.div>
             )}
@@ -132,14 +152,23 @@ export default function JourneyView() {
   );
 }
 
-function HistoryCard({ entry, index, onClick }: { entry: ReadingHistoryEntry; index: number; onClick: () => void }) {
+function HistoryCard({
+  entry,
+  index,
+  onReplay,
+  onContinue,
+}: {
+  entry: ReadingHistoryEntry;
+  index: number;
+  onReplay: () => void;
+  onContinue: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
-      onClick={onClick}
-      className="group flex cursor-pointer flex-col justify-between rounded-3xl border border-paper-border bg-paper-raised p-6 transition-all hover:border-terracotta/40 hover:shadow-md"
+      className="group flex flex-col justify-between rounded-3xl border border-paper-border bg-paper-raised p-6 transition-all hover:border-terracotta/40 hover:shadow-md"
     >
       <div>
         <div className="mb-4 flex items-start justify-between">
@@ -171,6 +200,24 @@ function HistoryCard({ entry, index, onClick }: { entry: ReadingHistoryEntry; in
             <span className="truncate text-[11px]">沉淀了感悟</span>
           </div>
         )}
+        <div className="flex flex-wrap gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onReplay}
+            className="rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-ink transition hover:bg-paper-raised"
+          >
+            回看解读
+          </button>
+          {entry.reading.session_capsule ? (
+            <button
+              type="button"
+              onClick={onContinue}
+              className="rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-medium text-terracotta transition hover:bg-terracotta/10"
+            >
+              延续这条线
+            </button>
+          ) : null}
+        </div>
       </div>
     </motion.div>
   );
@@ -179,11 +226,13 @@ function HistoryCard({ entry, index, onClick }: { entry: ReadingHistoryEntry; in
 function ThemeClusterCard({ 
   cluster, 
   index, 
-  onSelectEntry 
+  onSelectEntry,
+  onContinueEntry,
 }: { 
   cluster: { name: string; entries: ReadingHistoryEntry[] }; 
   index: number;
   onSelectEntry: (entry: ReadingHistoryEntry) => void;
+  onContinueEntry: (entry: ReadingHistoryEntry) => void;
 }) {
   return (
     <motion.div
@@ -205,21 +254,40 @@ function ThemeClusterCard({
 
       <div className="space-y-4">
         {cluster.entries.slice(0, 4).map((entry) => (
-          <button
+          <div
             key={entry.id}
-            onClick={() => onSelectEntry(entry)}
-            className="group flex w-full items-start gap-4 text-left transition-all hover:translate-x-1"
+            className="border-b border-paper-border/30 pb-3"
           >
-            <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-paper-border group-hover:bg-terracotta/40" />
-            <div className="flex-1 border-b border-paper-border/30 pb-3">
-              <p className="line-clamp-1 text-sm text-ink group-hover:text-terracotta transition-colors">
-                {entry.reading.question}
-              </p>
-              <p className="mt-1 text-[10px] text-text-placeholder">
-                {new Date(entry.createdAt).toLocaleDateString()}
-              </p>
+            <div className="flex items-start gap-4">
+              <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-paper-border" />
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-1 text-sm text-ink">
+                  {entry.reading.question}
+                </p>
+                <p className="mt-1 text-[10px] text-text-placeholder">
+                  {new Date(entry.createdAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
-          </button>
+            <div className="mt-3 flex flex-wrap gap-2 pl-5">
+              <button
+                type="button"
+                onClick={() => onSelectEntry(entry)}
+                className="rounded-full border border-paper-border bg-paper px-3 py-1.5 text-[11px] font-medium text-ink transition hover:bg-paper-raised"
+              >
+                回看
+              </button>
+              {entry.reading.session_capsule ? (
+                <button
+                  type="button"
+                  onClick={() => onContinueEntry(entry)}
+                  className="rounded-full border border-terracotta/20 bg-terracotta/5 px-3 py-1.5 text-[11px] font-medium text-terracotta transition hover:bg-terracotta/10"
+                >
+                  延续这条线
+                </button>
+              ) : null}
+            </div>
+          </div>
         ))}
         {cluster.entries.length > 4 && (
           <p className="pt-2 text-center text-[10px] italic text-text-placeholder">

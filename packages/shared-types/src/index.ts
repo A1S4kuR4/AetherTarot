@@ -62,6 +62,7 @@ export interface ReadingRequestPayload {
   drawnCards: ReadingRequestCardInput[];
   agent_profile?: AgentProfile;
   phase?: ReadingPhase;
+  prior_session_capsule?: string | null;
   initial_reading?: StructuredReading;
   followup_answers?: FollowupAnswer[];
 }

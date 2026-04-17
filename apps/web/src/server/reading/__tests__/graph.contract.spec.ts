@@ -103,6 +103,7 @@ describe("reading graph contract hardening", () => {
     expect(reading.agent_profile).toBe("lite");
     expect(reading.requires_followup).toBe(false);
     expect(reading.follow_up_questions).toEqual([]);
+    expect(reading.session_capsule).toMatch(/本轮问题：/);
   });
 
   it("requires follow-up for standard and sober initial readings", async () => {
@@ -114,8 +115,58 @@ describe("reading graph contract hardening", () => {
 
     expect(standardReading.requires_followup).toBe(true);
     expect(standardReading.follow_up_questions).toHaveLength(2);
+    expect(standardReading.session_capsule).toBeNull();
     expect(soberReading.requires_followup).toBe(true);
     expect(soberReading.follow_up_questions).toHaveLength(2);
+    expect(soberReading.session_capsule).toBeNull();
+  });
+
+  it("returns a non-empty session capsule for completed final readings", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: buildFollowupAnswers(initial),
+    });
+
+    expect(final.session_capsule).toMatch(/核心主题：/);
+    expect(final.session_capsule).toMatch(/边界提醒：/);
+  });
+
+  it("passes prior_session_capsule into the provider context without changing authority cards", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft, context) => {
+        expect(context.priorSessionCapsule).toBe("上一轮线索：先看清现实边界。");
+        return draft;
+      },
+    });
+
+    const reading = await runReadingGraph(
+      {
+        ...buildHolyTrianglePayload(),
+        prior_session_capsule: "上一轮线索：先看清现实边界。",
+      },
+      { provider },
+    );
+
+    expect(reading.cards.map((card) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "future",
+    ]);
+    expect(reading.session_capsule).toBeNull();
+  });
+
+  it("keeps prior_session_capsule from bypassing hard-stop safety intercepts", async () => {
+    await expect(
+      runReadingGraph({
+        ...buildSinglePayload("我是不是不该活下去了？"),
+        prior_session_capsule: "上一轮线索：保持边界感。",
+      }),
+    ).rejects.toMatchObject({
+      code: "safety_intercept",
+    });
   });
 
   it("reorders four-aspects drawn cards into authoritative spread position order", async () => {
