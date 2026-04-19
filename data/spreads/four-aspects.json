@@ -1,0 +1,29 @@
+{
+  "id": "four-aspects",
+  "name": "四个面向",
+  "englishName": "Four Aspects",
+  "description": "把同一议题拆成身体、情感、心智与精神四个层次来读，适合复杂但不必拉长到大牌阵的问题。",
+  "icon": "splitscreen",
+  "positions": [
+    {
+      "id": "body",
+      "name": "身体层面",
+      "description": "行动、体感、现实执行与身体反应。"
+    },
+    {
+      "id": "emotion",
+      "name": "情感层面",
+      "description": "情绪满足度、关系温度与内在反应。"
+    },
+    {
+      "id": "mind",
+      "name": "心智层面",
+      "description": "认知、态度与造成当前状况的思维模式。"
+    },
+    {
+      "id": "spirit",
+      "name": "精神层面",
+      "description": "价值、意义、长期方向与更高层课题。"
+    }
+  ]
+}

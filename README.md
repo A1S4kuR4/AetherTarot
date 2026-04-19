@@ -20,7 +20,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-10）
+## 📍 当前主线状态（2026-04-19）
 
 项目已经进入“两条并行主线协同推进”的阶段。
 
@@ -32,30 +32,34 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 运行时数据 / 资产现状：
 
-- `data/decks/rider-waite-smith.json` 当前包含 27 张运行时牌：大阿卡纳 0-21 与权杖 Ace-5
-- `apps/web/public/cards/` 当前包含 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
+- `data/decks/rider-waite-smith.json` 当前包含 78 张运行时牌：完整 Rider-Waite-Smith 运行时牌池已接入
+- `apps/web/public/cards/` 当前包含 79 个文件：78 张 1000x1700 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 记录资产来源、full-bleed 审核状态与 SHA-256
-- 知识层 78/78 完成不等于运行时牌池已 78/78；剩余 50 张小阿卡纳仍待后续注入
+- 知识层 78/78 与运行时牌池 78/78 现已对齐；当前 Runtime Alignment 的剩余问题不再是牌义卡缺口，而是牌阵上线顺序、百科消费策略与长期连续性设计
 
 当前并行主线：
 
 1. 技术主线：`M1` Real Reading API、`M2` Structured Reading Schema 与 `M3` Minimal LangGraph 已完成；`M4` Runtime Alignment 持续收口。
 2. UX / 产品主线：`Paper / Midnight` 双面设计系统已确立，`Home / Ritual / Reveal / Interpretation / Journey` 已完成一轮重大重构，但 `docs/10-product/ux-risk-status.md` 中的剩余风险仍在持续处理。
 
-`2026-04-09` / `2026-04-10` 同步完成的关键收口包括：
+`2026-04-09` / `2026-04-10` / `2026-04-14` / `2026-04-15` / `2026-04-17` 同步确认的关键收口包括：
 
 - 引入 `ADR-0002` Dual-Tier Safety Escalation
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
 - 将现有 reading service pipeline 接入最小 LangGraph，并保持 `/api/reading` 协议不变
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
-- 完成首轮 28 张本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化
-- 将运行时牌组从早期示例牌扩展到 27 张，并接入本地资产路径
+- 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
+- 将运行时牌组从早期示例牌扩展到当前 78 张，并接入本地资产路径
+- `npm run build` 与 `npm run test:contract -w @aethertarot/web` 当前已复核通过；contract tests 为 `38/38`。`npm run test:e2e` 当前复核未通过：API contract smoke 前 11 项通过，后续 smoke flow 从揭示阶段超时开始失败，需要修复后再恢复 `23/23` 健康基线
+- 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
+- 当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
 
 换句话说，当前瓶颈已经不再是“缺更多知识”，而是：
 
+- 如何在回归链路已恢复后继续保持 E2E 与文档系统跟随实物状态演进
 - 如何在最小 LangGraph 已接入后继续保持 contract 稳定、为后续 provider / memory 扩展留出边界
 - 如何把已成立的仪式感与结果体验继续推进为更稳定的产品机制
-- 如何继续补齐剩余小阿卡纳运行时数据与资产，而不混淆知识层和运行时层
+- 如何在牌池已完整后继续收口高价值牌阵、百科消费路径与长期连续性能力，而不混淆知识层和运行时层
 
 ---
 
@@ -95,15 +99,15 @@ reading request / response、history 与塔罗基础实体的共享类型。
 
 已具备：
 
-- 单牌、圣三角、赛尔特十字牌阵
+- 单牌、圣三角、四个面向、七张牌、赛尔特十字牌阵
 - 结构化 reading API
 - 最小 LangGraph reading 编排
 - 结构化结果页与本地历史回放
 - Dual-Tier Safety Escalation（`403 Hard Stop` / `200 Sober Check`）
 - `sober_check` 与 `presentation_mode` 已进入正式输出协议
-- 生成后安全检查与 `safety_note`
+- 生成前危机转介、incoming capsule 安全净化、生成后安全检查与 `safety_note`
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
-- 27 张运行时牌与 28 张本地卡牌 PNG 资产，均按 1:1.7 竖版规范接入
+- 78 张运行时牌与 79 个本地卡牌文件，均按 1:1.7 竖版规范接入
 
 当前不做：
 
@@ -112,7 +116,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - 独立 `agent-core` 服务
 - LangGraph 复杂图
 - 服务端 reading 持久化
-- 声称运行时牌池已经完整覆盖 78 张
+- 在当前阶段重新打开“大规模继续扩知识页”作为默认主线
 - 把当前 UX 主线视为已收口；仍在持续处理 `docs/10-product/ux-risk-status.md` 中的剩余风险
 
 ---
@@ -168,6 +172,22 @@ AetherTarot/
 如果你要继续主线推进，再看：
 
 - `memory/mainline-priority-plan-2026-04-08.md`
+- `memory/current-status-and-priority-2026-04-15.md`
+- `memory/SESSION_INDEX.md`
+
+## 🧾 真相源约定
+
+为防止文档漂移，当前按下面的粒度理解仓库文档：
+
+- `README.md`：高层总览，用于快速知道项目是什么、当前大概在哪个阶段。
+- `docs/`：稳定规则与边界真相层。涉及 reading contract、输出协议、安全、架构、评测时，以这里为准。
+- `memory/`：最新执行状态、阶段性计划与共享 work log。涉及“现在做到哪了 / 下一步做什么”时，以这里为准。
+
+推荐状态入口：
+
+- `memory/current-status-and-priority-2026-04-15.md`
+- `memory/mainline-priority-plan-2026-04-08.md`
+- `memory/work-log-2026-04-17.md`
 - `memory/SESSION_INDEX.md`
 
 ---

@@ -44,12 +44,14 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
    - 后置安全复核
    - 最终 schema 校验
 6. 最后才返回给前端展示。
+7. 前端再根据 payload 决定是否先进入 `sober_check` 摩擦、是否展示 follow-up 输入区、以及是否把 completed reading 写入 history 或挂为 continuity source。
 
 这意味着：
 
 - 模型不是唯一决策者
 - prompt 不是唯一真相来源
 - 安全和输出结构都不依赖模型“自觉遵守”
+- 前台展示节奏也不是 provider 决定的，而是由结构化字段和前端状态机共同决定
 
 ---
 
@@ -66,7 +68,8 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 - 仍由 `generateStructuredReading()` 作为 service 统一入口
 - 当前不引入 checkpoint、streaming、interrupt、router graph 或 human-in-the-loop
 - 当前不在 graph 内持久化 session，也不在服务端保存 reading memory
-- `session_capsule` 仍是保留扩展点，当前固定为 `null`
+- 当前已接入本地线程级 continuity：请求可显式携带 `prior_session_capsule`，completed reading 可产出 `session_capsule`
+- graph 负责返回统一 `StructuredReading`；前台如何阻断、分层展示与写入本地 history 仍属于 Web frontend 职责
 
 ---
 
@@ -84,6 +87,7 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 | `phase` | `initial / final` | `classify_question` |
 | `initialReading` | final 阶段带回的初读快照 | `classify_question` |
 | `followupAnswers` | final 阶段用户回答 | `classify_question` |
+| `priorSessionCapsule` | 上一轮 continuity 摘要（低优先级） | `classify_question` |
 | `spread` | 权威牌阵快照 | `hydrate_context` |
 | `drawnCards` | 已按位置顺序还原的权威抽牌结果 | `hydrate_context` |
 | `frictionResult` | `pass / sober_check / hard_stop` | `analyze_intent_friction` |
@@ -101,7 +105,7 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 
 ```mermaid
 flowchart TD
-    A["START"] --> B["classify_question<br/>问题分类 + phase/profile 归一化"]
+    A["START"] --> B["classify_question<br/>问题分类 + phase/profile/prior capsule 归一化"]
     B --> C["hydrate_context<br/>还原权威牌阵与抽牌上下文"]
     C --> D["validate_final_phase<br/>仅 final 阶段执行一致性校验"]
     D --> E["analyze_intent_friction<br/>安全前置判断"]
@@ -110,7 +114,8 @@ flowchart TD
     F --> G["validate_draft_contract<br/>校验卡牌 identity / 顺序 / 追问数量"]
     G --> H["build_structured_reading<br/>组装 StructuredReading"]
     H --> I["apply_safety_review<br/>补 safety_note 并收窄 guidance"]
-    I --> J["END<br/>返回统一 reading schema"]
+    I --> J["attach_session_capsule<br/>仅 completed reading 生成 capsule"]
+    J --> K["END<br/>返回统一 reading schema"]
 ```
 
 ---
@@ -127,7 +132,7 @@ sequenceDiagram
     participant S as Safety Layer
 
     U->>FE: 输入问题、选择牌阵、完成抽牌
-    FE->>API: 提交 question + spreadId + drawnCards + agent_profile + phase
+    FE->>API: 提交 question + spreadId + drawnCards + agent_profile + phase + prior_session_capsule?
     API->>G: runReadingGraph(payload)
     G->>G: classify_question
     G->>G: hydrate_context
@@ -144,6 +149,7 @@ sequenceDiagram
         G->>G: build_structured_reading
         G->>S: applySafetyReview(reading)
         S-->>G: reviewed reading
+        G->>G: attach_session_capsule (completed only)
         G-->>API: StructuredReading
         API-->>FE: 200 OK
     end
@@ -166,6 +172,7 @@ sequenceDiagram
 - 识别 `questionType`
 - 归一化 `agent_profile`
 - 归一化 `phase`
+- 归一化 `prior_session_capsule`
 - 挂载 `initial_reading` 和 `followup_answers`
 
 当前问题分类是轻量规则分类，不是 LLM 分类：
@@ -251,6 +258,7 @@ sequenceDiagram
 - 继续生成 reading
 - 但会在最终 payload 中注入 `sober_check`
 - 同时把 `presentation_mode` 设为 `sober_anchor`
+- graph 只负责把这些字段写入 payload；真正的“先写现实顾虑再看内容”交互由前端执行
 
 ### 8.5 `generate_draft`
 
@@ -265,7 +273,9 @@ sequenceDiagram
 
 - graph 负责 orchestration
 - provider 负责生成 draft
+- `priorSessionCapsule` 只作为低优先级 continuity 背景注入 provider
 - provider 不直接返回最终 API payload
+- provider 也不决定前台是否先展示 `sober_check`、是否写入 history、或是否把某条 reading 当作 continuity source
 
 ### 8.6 `validate_draft_contract`
 
@@ -327,6 +337,11 @@ sequenceDiagram
 
 因此，graph 在这里已经把“draft”提升成“产品协议对象”。
 
+补充约束：
+
+- `session_capsule` 在这里仍先写为 `null`
+- continuity 相关的真正 capsule 生成延后到 graph 末端，只对 completed reading 生效
+
 ### 8.8 `apply_safety_review`
 
 这是 **生成后安全层**。
@@ -352,6 +367,33 @@ sequenceDiagram
 - `structuredReadingSchema.parse()`
 
 确保安全改写后仍然满足统一输出协议。
+
+### 8.9 `attach_session_capsule`
+
+这是当前本地线程 continuity 的末端节点。
+
+职责：
+
+- 只对 completed reading 生成 `session_capsule`
+- `lite` 的 completed initial reading 可以直接生成 capsule
+- `standard / sober` 只有 `final` 才生成 capsule
+- `standard / sober initial` 保持 `session_capsule = null`
+
+当前 capsule 生成策略：
+
+- 使用确定性模板，不做第二次 provider / LLM 调用
+- 固定包含：
+  - 归一化后的当前问题
+  - 当前牌阵
+  - 2-4 个核心主题
+  - 1-2 条应延续的反思主轴
+  - 一句固定边界提醒
+
+边界：
+
+- 不把原始 transcript 整段写入 capsule
+- 不把 `followup_answers` 原文或摘要直接写入 capsule
+- 不在 capsule 中延续急性情绪、高风险安全细节或未验证的第三方意图
 
 ---
 
@@ -456,7 +498,8 @@ AETHERTAROT_LLM_TIMEOUT_MS=120000
 3. 阶段特定说明（initial / final）
 4. 权威牌阵快照
 5. 权威抽牌上下文
-6. 初读快照与追问回答（仅 final）
+6. 可选的 `priorSessionCapsule` continuity 背景
+7. 初读快照与追问回答（仅 final）
 
 ### 10.1 共享安全边界摘要
 
@@ -474,6 +517,11 @@ Safety and expression boundaries:
 ```
 
 这段 prompt 的作用不是替代 safety layer，而是先把模型输出拉回正确边界。
+
+补充边界：
+
+- prompt 约束只能帮助 provider 生成更像样的 draft，不能替代 graph contract validation、前后置 safety 或前台的流程摩擦。
+- 前台“主题 / 逐牌 / 综合 / 指引 / 延伸”的消费顺序不属于 prompt contract；provider 不应通过输出包装去篡改它。
 
 ### 10.2 共享输出 contract
 
@@ -551,6 +599,9 @@ Card 1:
 - keywords: ...
 - description: ...
 
+Prior session capsule (low priority background only):
+{priorSessionCapsule}
+
 Initial reading requirements:
 - Build interpretations from card + position + orientation + question type.
 - Identify 2-4 themes at the spread level, not just per-card fragments.
@@ -610,6 +661,9 @@ Agent profile: {agentProfile}
 Authority drawn cards:
 Card 1:
 - ...
+
+Prior session capsule (low priority background only):
+{priorSessionCapsule}
 
 Initial reading snapshot:
 reading_id: ...
@@ -695,6 +749,12 @@ Prompt 约束 -> Provider normalize -> Graph contract validate -> Safety review 
 Prompt 约束 -> 直接相信模型
 ```
 
+也不是：
+
+```text
+Prompt 约束 -> provider 自行决定前台体验
+```
+
 ---
 
 ## 14. 为什么这个 graph 适合开发者，也适合用户
@@ -707,7 +767,7 @@ Prompt 约束 -> 直接相信模型
 - graph state 和产品 schema 对齐，不容易出现“框架状态”和“业务状态”分裂
 - provider 可替换，但 contract 不变
 - safety 可以独立演进
-- future memory / session_capsule 可以作为显式扩展点接入
+- 当前已把本地线程 continuity 作为第一层显式扩展点接入，未来仍可在其上继续扩展服务端 persistence / memory
 
 ### 对用户
 
@@ -717,6 +777,7 @@ Prompt 约束 -> 直接相信模型
 - 高风险场景会被真正拦截
 - 第二阶段不会偷偷换一套说法
 - 输出结构稳定，前端展示和历史回放都更可靠
+- history replay、continuity source 与 `sober_check` 摩擦都是前台基于统一 payload 做出的稳定动作，而不是模型临场发挥
 
 ---
 
@@ -729,7 +790,7 @@ Prompt 约束 -> 直接相信模型
 - 没有 streaming token 级输出
 - 没有 checkpoint / resume
 - 没有服务端 session memory
-- `session_capsule` 仍未正式接入 graph
+- continuity 仍是本地线程级；还没有服务端 history persistence、thread/session id 或长期画像存储
 - 当前图是线性主链，没有复杂条件分支图
 
 这不是缺陷掩盖，而是当前架构刻意保持“先把 contract 和边界做稳”。

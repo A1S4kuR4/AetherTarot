@@ -20,6 +20,7 @@ class PlaceholderReadingProvider implements ReadingProvider {
       agentProfile: context.agentProfile,
       spread: context.spread,
       drawnCards: context.drawnCards,
+      priorSessionCapsule: context.priorSessionCapsule,
     });
   }
 
@@ -30,6 +31,7 @@ class PlaceholderReadingProvider implements ReadingProvider {
       agentProfile: context.agentProfile,
       initialReading: context.initialReading,
       followupAnswers: context.followupAnswers,
+      priorSessionCapsule: context.priorSessionCapsule,
     });
   }
 }

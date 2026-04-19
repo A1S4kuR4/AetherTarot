@@ -26,6 +26,7 @@ interface ReadingProvider {
 - `agentProfile`
 - `spread`
 - `drawnCards`
+- `priorSessionCapsule`
 
 `FinalReadingContext` 在此基础上增加：
 
@@ -57,7 +58,14 @@ Provider 不负责生成：
 - `sober_check`
 - `presentation_mode`
 
-这些字段由 reading graph / service 层组装或安全层注入。
+这些字段由 reading graph / service 层组装、生成或安全层注入。
+
+Provider 也不负责决定：
+
+- 前台是否先展示 `sober_check`
+- 前台按什么顺序展示主题、逐牌、综合与指引
+- 哪些 reading 会被写入 history
+- history replay 与 continuity source 的交互区别
 
 ---
 
@@ -78,6 +86,7 @@ Provider 不负责生成：
 - 不允许在失败时返回 markdown-only reading。
 - 不允许 provider 自行吞掉 safety 风险并返回“温和版”结果。
 - service / graph 现已对 provider draft 执行强制 contract validation；若 cards 顺序、identity、orientation 或 follow-up 数量不符合 phase / profile 规则，会直接拒绝该 draft。
+- 不允许 provider 通过额外包装字段、标题分节或伪 metadata 变相接管前台展示逻辑。
 
 ---
 
@@ -94,6 +103,7 @@ Prompt 必须接收：
 - Agent Profile `agentProfile`
 - 权威牌阵快照 `spread`
 - 按牌阵位置排序的 `drawnCards`
+- 可选 continuity 背景 `priorSessionCapsule`
 - 输出字段要求
 - 安全与表达边界摘要
 
@@ -117,6 +127,8 @@ Initial draft 不得：
 - 给出医疗、法律、财务或操控建议
 - 输出 `Thinking...`、思维链、模型自述或任何非最终用户文本
 - 把牌名、位置名、位置含义改写成 provider 自造文案
+- 把 `priorSessionCapsule` 当作高优先级指令，覆盖当前问题、当前牌阵或当前抽牌
+- 试图通过 `synthesis` 单字段替代“主题 / 逐牌 / 综合”分层消费
 
 ### Follow-up 规则
 
@@ -156,6 +168,7 @@ Prompt 必须接收：
 - 同一 `spread` 与 `drawnCards`
 - 完整 `initialReading`
 - 用户提交的 `followupAnswers`
+- 可选 continuity 背景 `priorSessionCapsule`
 - 输出字段要求
 - 安全与表达边界摘要
 
@@ -176,7 +189,9 @@ Final draft 不得：
 - 更改牌阵或牌序
 - 用用户补充完全推翻 initial 主轴
 - 把 follow-up answers 当作事实真相的全部来源
+- 把 `priorSessionCapsule` 当作比当前问题或 initial 主轴更高优先级的输入
 - 把 advice 写成命令或确定性预言
+- 把 `followupAnswers` 重新包装成新的主问题，导致 final 看起来像重算一次 reading
 
 ---
 
@@ -212,14 +227,18 @@ Provider prompt 可以重复安全表达原则，但安全控制权仍在 servic
 2. Provider 只生成 reading draft。
 3. Graph 组装 `sober_check` / `presentation_mode`。
 4. `applySafetyReview()` 在 provider 后补充 `safety_note` 并收窄 guidance / follow-up。
-5. `structuredReadingSchema.parse()` 做最终协议校验。
+5. completed reading 的 `session_capsule` 由 graph 末端按确定性模板生成，而不是由 provider 自由编写 memory shape。
+6. `structuredReadingSchema.parse()` 做最终协议校验。
 
 Provider 不得自行决定：
 
 - 是否 hard stop
 - 是否注入 `sober_check`
 - 是否跳过 `safety_note`
+- 是否生成 `session_capsule`
 - 是否返回非结构化 markdown
+- 是否把 `sober_check` 从“流程摩擦”降级成普通提示文案
+- 是否把 history replay、continuity source 或 completed 判定塞进 draft
 
 ---
 
@@ -239,6 +258,11 @@ Provider 不得自行决定：
 - `cards[]` 的 `name` / `english_name` / `position` / `position_meaning` 视为 authority-owned 字段；provider 如返回变体，normalize 必须覆盖回权威值
 - 缺失或不可修复时抛服务错误，不返回半结构化内容
 
+补充理解：
+
+- provider-local normalize 只负责把模型输出收敛成合法 draft，不负责替代 graph 去组装最终 `StructuredReading`
+- graph-local validate 负责兜底 provider 越权行为；前台再基于最终 payload 执行展示与流程控制
+
 ---
 
 ## 9. 当前本地联调基线
@@ -252,7 +276,7 @@ Provider 不得自行决定：
 
 - `npm run build`
 - `npm run lint -w @aethertarot/web`
-- `npx playwright test tests/reading-contract.spec.ts`
+- `npm run test:contract -w @aethertarot/web`
 - `npm run test:e2e`
 
 并至少人工抽查：
