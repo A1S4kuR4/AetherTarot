@@ -44,12 +44,14 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
    - 后置安全复核
    - 最终 schema 校验
 6. 最后才返回给前端展示。
+7. 前端再根据 payload 决定是否先进入 `sober_check` 摩擦、是否展示 follow-up 输入区、以及是否把 completed reading 写入 history 或挂为 continuity source。
 
 这意味着：
 
 - 模型不是唯一决策者
 - prompt 不是唯一真相来源
 - 安全和输出结构都不依赖模型“自觉遵守”
+- 前台展示节奏也不是 provider 决定的，而是由结构化字段和前端状态机共同决定
 
 ---
 
@@ -67,6 +69,7 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 - 当前不引入 checkpoint、streaming、interrupt、router graph 或 human-in-the-loop
 - 当前不在 graph 内持久化 session，也不在服务端保存 reading memory
 - 当前已接入本地线程级 continuity：请求可显式携带 `prior_session_capsule`，completed reading 可产出 `session_capsule`
+- graph 负责返回统一 `StructuredReading`；前台如何阻断、分层展示与写入本地 history 仍属于 Web frontend 职责
 
 ---
 
@@ -255,6 +258,7 @@ sequenceDiagram
 - 继续生成 reading
 - 但会在最终 payload 中注入 `sober_check`
 - 同时把 `presentation_mode` 设为 `sober_anchor`
+- graph 只负责把这些字段写入 payload；真正的“先写现实顾虑再看内容”交互由前端执行
 
 ### 8.5 `generate_draft`
 
@@ -271,6 +275,7 @@ sequenceDiagram
 - provider 负责生成 draft
 - `priorSessionCapsule` 只作为低优先级 continuity 背景注入 provider
 - provider 不直接返回最终 API payload
+- provider 也不决定前台是否先展示 `sober_check`、是否写入 history、或是否把某条 reading 当作 continuity source
 
 ### 8.6 `validate_draft_contract`
 
@@ -382,12 +387,12 @@ sequenceDiagram
   - 当前牌阵
   - 2-4 个核心主题
   - 1-2 条应延续的反思主轴
-  - final 阶段的用户补充摘要（若有）
   - 一句固定边界提醒
 
 边界：
 
 - 不把原始 transcript 整段写入 capsule
+- 不把 `followup_answers` 原文或摘要直接写入 capsule
 - 不在 capsule 中延续急性情绪、高风险安全细节或未验证的第三方意图
 
 ---
@@ -512,6 +517,11 @@ Safety and expression boundaries:
 ```
 
 这段 prompt 的作用不是替代 safety layer，而是先把模型输出拉回正确边界。
+
+补充边界：
+
+- prompt 约束只能帮助 provider 生成更像样的 draft，不能替代 graph contract validation、前后置 safety 或前台的流程摩擦。
+- 前台“主题 / 逐牌 / 综合 / 指引 / 延伸”的消费顺序不属于 prompt contract；provider 不应通过输出包装去篡改它。
 
 ### 10.2 共享输出 contract
 
@@ -739,6 +749,12 @@ Prompt 约束 -> Provider normalize -> Graph contract validate -> Safety review 
 Prompt 约束 -> 直接相信模型
 ```
 
+也不是：
+
+```text
+Prompt 约束 -> provider 自行决定前台体验
+```
+
 ---
 
 ## 14. 为什么这个 graph 适合开发者，也适合用户
@@ -761,6 +777,7 @@ Prompt 约束 -> 直接相信模型
 - 高风险场景会被真正拦截
 - 第二阶段不会偷偷换一套说法
 - 输出结构稳定，前端展示和历史回放都更可靠
+- history replay、continuity source 与 `sober_check` 摩擦都是前台基于统一 payload 做出的稳定动作，而不是模型临场发挥
 
 ---
 
