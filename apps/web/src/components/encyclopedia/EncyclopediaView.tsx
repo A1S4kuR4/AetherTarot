@@ -67,7 +67,7 @@ export default function EncyclopediaView({
             塔罗百科
           </h1>
           <p className="font-sans text-sm text-text-muted">
-            当前页面展示的是已接入运行时的牌库；知识层 `78/78` 已完成，但尚未全部进入 runtime。
+            当前页面展示的是已接入运行时的牌库；runtime / knowledge 的当前覆度请以下方状态为准。
           </p>
         </header>
 

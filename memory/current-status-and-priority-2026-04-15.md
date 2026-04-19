@@ -1,6 +1,6 @@
-# 当前状态 + 优先级清单（2026-04-15）
+# 当前状态 + 优先级清单（2026-04-19 同步）
 
-- `last_updated`: `2026-04-17`
+- `last_updated`: `2026-04-19`
 - `owner`: `Codex`
 - `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
 
@@ -17,7 +17,7 @@
 2. 当前真实阻塞点是什么
 3. 下一轮工作该按什么顺序推进
 
-本文档基线以 `2026-04-15` 的仓库实物与本地验证结果为准，不再仅复述 `2026-04-10` 或 `2026-04-12` 的旧状态。
+本文档基线以 `2026-04-19` 的仓库实物与本地验证结果为准，不再仅复述 `2026-04-10` 或 `2026-04-12` 的旧状态。
 
 ## 2. 当前状态快照
 
@@ -27,8 +27,8 @@
 
 - reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
 - Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
-- 后端 contract 与回归测试当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`25/25`），`npm run test:e2e` 全绿（`17/17`）。
-- 本轮已完成 E2E 回归修复：Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider，避免本地 `.env.local` 的 `llm` 配置把回归拖入不稳定状态。
+- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 当前复核未通过：API contract smoke 前 11 项通过，后续 smoke flow 从揭示阶段超时开始失败，并伴随后续用例 `ERR_CONNECTION_REFUSED`，需要单独修复后再恢复 `23/23` 健康基线。
+- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；但当前本地 e2e 复核未全绿，需优先排查 smoke flow 揭示阶段超时与后续连接中断。
 
 知识层现状：
 
@@ -72,7 +72,7 @@
 ### 未完成
 
 - 服务端持久化
-- `session_capsule` 真接入
+- 服务端级 continuity / `session_capsule` merge 策略
 - 长期记忆 / memory merge
 - 多 provider router
 - 更多高价值运行时牌阵与 position semantics 收口
@@ -167,8 +167,8 @@
   - `knowledge/wiki/*`
 - 健康度结论来自当前本地验证：
   - `npm run build`：通过
-  - `npm run test:contract -w @aethertarot/web`：通过
-  - `npm run test:e2e`：通过（`17/17`）
+  - `npm run test:contract -w @aethertarot/web`：通过（`38/38`）
+  - `npm run test:e2e`：当前未通过（`11/23` 通过；smoke flow 从揭示阶段超时开始失败）
 
 ## 8. 默认假设
 
