@@ -32,6 +32,7 @@
 
 - **Tier 1 (Hard Stop / 危机干预)**：当用户意图涉及生死危机、自残/他伤、重度操控暗示、紧急医疗指引时，reading graph 将抛出 `ReadingServiceError`，错误码为 `safety_intercept` 且 HTTP status 为 `403`，无条件中断塔罗模型生成，并向前端返回危机转接面板。
 - **Tier 2 (Sober Check / 现实摩擦)**：当用户意图涉及将重大现实决策外包（如离婚、辞职、大额投资等），系统保持 `200 OK` 继续生成，但会在提示词层降级其确定感，并在 `StructuredReading` 的 payload 中强制封入 `sober_check` 字段；前端必须通过交互式强制反思（要求手写输入）拦截最终解释内容。
+- **Pre-ritual boundary confirmation / 提交前现实边界确认**：`/new` 在进入抽牌前会对明显重大现实决策类提问加入轻量确认动作，要求用户先承认现实信息、专业意见与个人底线优先于塔罗结果。该前台摩擦只用于提前降低决策外包倾向，不能替代 reading graph 的 Tier 1 / Tier 2 服务端判断。
 - 原有的后置 `safety_note` 仍然作为备用和常规安全提示手段存在。
 - 当前中国大陆固定 hard-stop 资源顺序为：`120`（急性医疗风险） -> `110`（现实危险 / 人身威胁） -> `12356`（立即心理支持）。
 - continuity 也受 safety layer 约束：incoming `prior_session_capsule` 在进入 provider 前会先剔除高风险细节与原始补充文本，避免把危机信息重新带回普通解读链路。

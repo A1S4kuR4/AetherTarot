@@ -9,6 +9,8 @@ import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
+const MAJOR_DECISION_TERM_REGEX =
+  /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂|起诉|诉讼|官司|借贷|贷款|法律|财务|理财/i;
 
 const spreads = getAllSpreads();
 
@@ -67,8 +69,10 @@ export default function RitualInitializer() {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [showDecisionBoundaryModal, setShowDecisionBoundaryModal] = useState(false);
+  const [decisionBoundaryAcknowledged, setDecisionBoundaryAcknowledged] = useState(false);
   const trimmedQuestion = question.trim();
+  const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
   const spreadGuide =
     selectedSpread
@@ -98,9 +102,9 @@ export default function RitualInitializer() {
 
     if (completed) {
       setProgress(100);
-      const match = question.match(SENSITIVE_TERM_REGEX);
-      if (match) {
-        setShowSafetyModal(true);
+      if (isMajorDecisionQuestion) {
+        setShowDecisionBoundaryModal(true);
+        setDecisionBoundaryAcknowledged(false);
         setIsPressing(false);
         setProgress(0);
       } else {
@@ -112,8 +116,17 @@ export default function RitualInitializer() {
     }
   };
 
-  const handleSafetyConfirm = () => {
-    setShowSafetyModal(false);
+  const closeDecisionBoundaryModal = () => {
+    setShowDecisionBoundaryModal(false);
+    setDecisionBoundaryAcknowledged(false);
+  };
+
+  const handleDecisionBoundaryConfirm = () => {
+    if (!decisionBoundaryAcknowledged) {
+      return;
+    }
+
+    setShowDecisionBoundaryModal(false);
     handleStart();
   };
 
@@ -387,13 +400,13 @@ export default function RitualInitializer() {
         </p>
       </motion.div>
 
-      {showSafetyModal && (
+      {showDecisionBoundaryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
-            onClick={() => setShowSafetyModal(false)}
+            onClick={closeDecisionBoundaryModal}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -404,25 +417,37 @@ export default function RitualInitializer() {
               <span className="material-symbols-outlined text-3xl">warning</span>
             </div>
             <h3 className="mb-3 text-center font-serif text-2xl text-ink">
-              这是一次重大的决定
+              重大现实决定前的校准
             </h3>
-            <p className="mb-6 text-center text-sm leading-relaxed text-text-body">
-              系统察觉到你的意图涉及到重大的现实变动或决策。
+            <p className="text-center text-sm leading-relaxed text-text-body">
+              系统察觉到你的意图涉及重大的现实变动或决策。
               <br />
               <br />
               请牢记：塔罗无法为你承担生命的重量，它只是一面映照能量场现状的镜子。真正的选择权与结果始终握在你的手中。
             </p>
+            <label className="my-6 flex items-start gap-3 rounded-2xl border border-paper-border bg-paper-raised px-4 py-3 text-left">
+              <input
+                type="checkbox"
+                checked={decisionBoundaryAcknowledged}
+                onChange={(event) => setDecisionBoundaryAcknowledged(event.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 accent-terracotta"
+              />
+              <span className="text-sm leading-relaxed text-text-body">
+                我确认这次阅读只用于整理线索；现实信息、专业意见和我的底线计划仍优先于塔罗结果。
+              </span>
+            </label>
             <div className="flex flex-col gap-3">
               <button
                 type="button"
-                onClick={handleSafetyConfirm}
-                className="w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900"
+                onClick={handleDecisionBoundaryConfirm}
+                disabled={!decisionBoundaryAcknowledged}
+                className="w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                我已知晓，仅作为内省的视角
+                确认现实边界并继续
               </button>
               <button
                 type="button"
-                onClick={() => setShowSafetyModal(false)}
+                onClick={closeDecisionBoundaryModal}
                 className="w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
               >
                 返回修改问题
