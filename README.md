@@ -20,7 +20,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-15）
+## 📍 当前主线状态（2026-04-19）
 
 项目已经进入“两条并行主线协同推进”的阶段。
 
@@ -50,7 +50,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
 - 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
 - 将运行时牌组从早期示例牌扩展到当前 78 张，并接入本地资产路径
-- `npm run build`、`npm run test:contract -w @aethertarot/web` 与 `npm run test:e2e` 当前均通过；contract tests 为 `25/25`，Playwright smoke 为 `17/17`，并已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径且在测试环境固定使用 `placeholder` provider
+- `npm run build` 与 `npm run test:contract -w @aethertarot/web` 当前已复核通过；contract tests 为 `38/38`。`npm run test:e2e` 当前复核未通过：API contract smoke 前 11 项通过，后续 smoke flow 从揭示阶段超时开始失败，需要修复后再恢复 `23/23` 健康基线
 - 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
 - 当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
 
@@ -172,6 +172,22 @@ AetherTarot/
 如果你要继续主线推进，再看：
 
 - `memory/mainline-priority-plan-2026-04-08.md`
+- `memory/current-status-and-priority-2026-04-15.md`
+- `memory/SESSION_INDEX.md`
+
+## 🧾 真相源约定
+
+为防止文档漂移，当前按下面的粒度理解仓库文档：
+
+- `README.md`：高层总览，用于快速知道项目是什么、当前大概在哪个阶段。
+- `docs/`：稳定规则与边界真相层。涉及 reading contract、输出协议、安全、架构、评测时，以这里为准。
+- `memory/`：最新执行状态、阶段性计划与共享 work log。涉及“现在做到哪了 / 下一步做什么”时，以这里为准。
+
+推荐状态入口：
+
+- `memory/current-status-and-priority-2026-04-15.md`
+- `memory/mainline-priority-plan-2026-04-08.md`
+- `memory/work-log-2026-04-17.md`
 - `memory/SESSION_INDEX.md`
 
 ---
