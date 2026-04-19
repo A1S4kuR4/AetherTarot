@@ -4,7 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
-import type { AgentProfile } from "@aethertarot/shared-types";
+import type {
+  AgentProfile,
+  QuestionType,
+  ReadingHistoryEntry,
+} from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +36,67 @@ const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: strin
   },
 ];
 
+const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  relationship: "关系议题",
+  career: "职业议题",
+  self_growth: "自我成长",
+  decision: "行动选择",
+  other: "综合议题",
+};
+
+function inferQuestionType(question: string): QuestionType | null {
+  if (!question.trim()) {
+    return null;
+  }
+
+  if (/关系|感情|伴侣|喜欢|爱|分手|复合|他|她|对方/.test(question)) {
+    return "relationship";
+  }
+
+  if (/工作|职业|事业|职场|项目|升职|跳槽|辞职|创业/.test(question)) {
+    return "career";
+  }
+
+  if (/成长|模式|内心|自我|状态|课题|情绪/.test(question)) {
+    return "self_growth";
+  }
+
+  if (/离婚|辞职|退学|堕胎|卖房|买房|投资|炒股|决裂|决定|选择|必须|要不要/.test(question)) {
+    return "decision";
+  }
+
+  return "other";
+}
+
+function findRecentRepeatedTheme(
+  history: ReadingHistoryEntry[],
+  question: string,
+) {
+  const questionType = inferQuestionType(question);
+
+  if (!questionType) {
+    return null;
+  }
+
+  if (questionType === "other") {
+    return null;
+  }
+
+  const recentMatch = history
+    .slice(0, 6)
+    .find((entry) => entry.reading.question_type === questionType);
+
+  if (!recentMatch) {
+    return null;
+  }
+
+  return {
+    label: QUESTION_TYPE_LABELS[questionType],
+    question: recentMatch.reading.question,
+    themes: recentMatch.reading.themes.slice(0, 3),
+  };
+}
+
 function getFocusCalibrationCopy(question: string) {
   const trimmedQuestion = question.trim();
 
@@ -57,6 +122,7 @@ export default function RitualInitializer() {
     selectedSpread,
     agentProfile,
     continuitySource,
+    history,
     setQuestion,
     setSelectedSpread,
     setAgentProfile,
@@ -74,6 +140,7 @@ export default function RitualInitializer() {
   const trimmedQuestion = question.trim();
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
+  const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
   const spreadGuide =
     selectedSpread
       ? `${selectedSpread.name} 会用 ${selectedSpread.positions.length} 个位置来组织这次随机。`
@@ -207,6 +274,41 @@ export default function RitualInitializer() {
           />
         </div>
       </motion.div>
+
+      {repeatedThemeNotice ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="rounded-2xl border border-indigo/25 bg-indigo/10 p-4 text-left shadow-sm"
+        >
+          <div className="flex items-center gap-2 text-indigo">
+            <span className="material-symbols-outlined text-[18px]">history_edu</span>
+            <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
+              重复主题提醒
+            </p>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-text-inverse">
+            你最近已经问过相近的{repeatedThemeNotice.label}。开始新一轮前，可以先回看上一条线索，确认这次真正新增的问题是什么。
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-text-inverse-muted">
+            上一次：{repeatedThemeNotice.question}
+          </p>
+          {repeatedThemeNotice.themes.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {repeatedThemeNotice.themes.map((theme) => (
+                <span
+                  key={`${repeatedThemeNotice.question}-${theme}`}
+                  className="rounded-full border border-indigo/20 bg-paper/10 px-3 py-1 text-[10px] font-medium text-text-inverse-muted"
+                >
+                  {theme}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </motion.div>
+      ) : null}
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}

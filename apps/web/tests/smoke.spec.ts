@@ -21,6 +21,51 @@ function journeyTimelineEntry(
   }).first();
 }
 
+async function seedRecentCareerHistory(page: Parameters<typeof test>[0]["page"]) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "aether_tarot_history_v2",
+      JSON.stringify([
+        {
+          id: "history-career-reading",
+          createdAt: "2026-04-19T00:00:00.000Z",
+          spreadId: "single",
+          drawnCards: [],
+          reading: {
+            reading_id: "history-career-reading",
+            locale: "zh-CN",
+            question: "我的职业方向接下来该看清什么？",
+            question_type: "career",
+            agent_profile: "lite",
+            reading_phase: "final",
+            requires_followup: false,
+            initial_reading_id: null,
+            followup_answers: null,
+            spread: {
+              id: "single",
+              name: "单牌启示",
+              englishName: "Single Card",
+              description: "针对当下的能量或简单的问题。",
+              positions: [],
+              icon: "filter_1",
+            },
+            cards: [],
+            themes: ["职业方向", "现实节奏"],
+            synthesis: "先看清职业方向里的现实节奏。",
+            reflective_guidance: [],
+            follow_up_questions: [],
+            safety_note: null,
+            confidence_note: null,
+            session_capsule: null,
+            sober_check: null,
+            presentation_mode: "standard",
+          },
+        },
+      ]),
+    );
+  });
+}
+
 async function holdToStart(
   page: Parameters<typeof test>[0]["page"],
   durationMs = 1600,
@@ -490,6 +535,7 @@ test.describe("AetherTarot smoke flow", () => {
   test("keeps the start button disabled until question and spread are both valid", async ({
     page,
   }) => {
+    await seedRecentCareerHistory(page);
     await gotoAppRoute(page, "/new");
 
     const startButton = page.getByRole("button", { name: /^长按开始仪式$/ });
@@ -497,18 +543,26 @@ test.describe("AetherTarot smoke flow", () => {
 
     await expect(startButton).toBeDisabled();
 
-    await input.fill("   ");
-    await page.getByRole("button", { name: /圣三角/i }).click();
+    await input.fill("我的职业方向还有什么需要看清？");
+    await expect(input).toHaveValue("我的职业方向还有什么需要看清？");
+    await expect(page.getByText("重复主题提醒")).toBeVisible();
+    await expect(
+      page.getByText("上一次：我的职业方向接下来该看清什么？"),
+    ).toBeVisible();
     await expect(startButton).toBeDisabled();
 
-    await input.fill("我应该先处理什么？");
+    await page.getByRole("button", { name: /圣三角/i }).click();
     await expect(startButton).toBeEnabled();
+
+    await input.fill("   ");
+    await expect(startButton).toBeDisabled();
 
     await input.clear();
     await expect(startButton).toBeDisabled();
 
     await input.fill("只输入问题");
-    await page.reload();
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(250);
 
     await expect(startButton).toBeDisabled();
     await startButton.click({ force: true });
