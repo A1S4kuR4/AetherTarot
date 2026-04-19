@@ -451,8 +451,14 @@ test.describe("AetherTarot smoke flow", () => {
     page,
   }) => {
     await startReading(page, "我应该离婚吗？", /单牌启示/i);
-    await expect(page.getByRole("heading", { name: "这是一次重大的决定" })).toBeVisible();
-    await page.getByRole("button", { name: /我已知晓，仅作为内省的视角/i }).click();
+    await expect(page.getByRole("heading", { name: "重大现实决定前的校准" })).toBeVisible();
+    const decisionContinueButton = page.getByRole("button", {
+      name: /确认现实边界并继续/i,
+    });
+    await expect(decisionContinueButton).toBeDisabled();
+    await page.getByLabel(/我确认这次阅读只用于整理线索/i).check();
+    await expect(decisionContinueButton).toBeEnabled();
+    await decisionContinueButton.click();
     await expect(page).toHaveURL(/\/ritual$/);
     await drawCards(page, 1);
     await revealSpread(page);
