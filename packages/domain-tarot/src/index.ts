@@ -1,11 +1,19 @@
 import deckData from "../../../data/decks/rider-waite-smith.json";
 import celticCrossData from "../../../data/spreads/celtic-cross.json";
+import fourAspectsData from "../../../data/spreads/four-aspects.json";
 import holyTriangleData from "../../../data/spreads/holy-triangle.json";
+import sevenCardData from "../../../data/spreads/seven-card.json";
 import singleSpreadData from "../../../data/spreads/single.json";
 import type { Spread, TarotCard } from "@aethertarot/shared-types";
 
 const tarotCards = deckData as TarotCard[];
-const spreads = [singleSpreadData, holyTriangleData, celticCrossData] as Spread[];
+const spreads = [
+  singleSpreadData,
+  holyTriangleData,
+  fourAspectsData,
+  sevenCardData,
+  celticCrossData,
+] as Spread[];
 
 export function getAllCards() {
   return tarotCards;

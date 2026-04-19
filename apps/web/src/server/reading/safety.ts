@@ -12,9 +12,80 @@ const LEGAL_PATTERN = /法律|官司|起诉|诉讼|律师|合同|legal/i;
 const FINANCIAL_PATTERN = /财务|投资|股票|理财|借贷|贷款|赔偿|finance|money/i;
 const MANIPULATION_PATTERN =
   /跟踪|监控|报复|试探|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/i;
+const THIRD_PARTY_INTENT_PATTERN =
+  /(他|她|对方)(到底|会不会|是不是|真实).{0,8}(爱|想|打算|回|喜欢|讨厌)|secretly feels|come back/i;
+const USER_DETAIL_LINE_PATTERN = /^(用户补充|现实补充|followup|follow-up answers?)[:：]/i;
 
 const MAJOR_DECISION_PATTERN =
   /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂/i;
+const MAINLAND_CRISIS_REFERRAL_LINKS = [
+  "https://english.beijing.gov.cn/travellinginbeijing/quickguideontravelservices/traveltips/202108/t20210811_2466839.html",
+  "https://en.nhc.gov.cn/2025-02/14/c_86392.htm",
+  "https://wjw.beijing.gov.cn/English/HealthServices/HealthIndications/201912/t20191216_1236363.html",
+];
+
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1)}…`;
+}
+
+function isCapsuleRedFlag(value: string) {
+  return (
+    SELF_HARM_PATTERN.test(value)
+    || URGENT_HEALTH_PATTERN.test(value)
+    || MANIPULATION_PATTERN.test(value)
+    || THIRD_PARTY_INTENT_PATTERN.test(value)
+  );
+}
+
+function sanitizeCapsuleLine(line: string) {
+  const normalized = line.replace(/\s+/g, " ").trim();
+
+  if (!normalized || USER_DETAIL_LINE_PATTERN.test(normalized)) {
+    return null;
+  }
+
+  if (isCapsuleRedFlag(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
+export function sanitizeIncomingSessionCapsule(
+  priorSessionCapsule: string | null,
+  maxLength = 280,
+) {
+  if (!priorSessionCapsule) {
+    return null;
+  }
+
+  const sanitizedLines = [...new Set(
+    priorSessionCapsule
+      .split(/\r?\n/)
+      .map((line) => sanitizeCapsuleLine(line))
+      .filter((line): line is string => Boolean(line)),
+  )].filter((line, _, lines) => {
+    if (line !== "延续主轴：") {
+      return true;
+    }
+
+    return lines.some((candidate) => /^\d+\.\s/.test(candidate));
+  });
+
+  const meaningfulLines = sanitizedLines.filter(
+    (line) => !/^边界提醒[:：]/.test(line),
+  );
+
+  if (meaningfulLines.length === 0) {
+    return null;
+  }
+
+  return truncateText(sanitizedLines.join("\n"), maxLength);
+}
 
 export type IntentFrictionResult =
   | { type: "hard_stop"; reason: string; referral_links?: string[] }
@@ -25,8 +96,9 @@ export function analyzeIntentFriction(question: string): IntentFrictionResult {
   if (SELF_HARM_PATTERN.test(question) || URGENT_HEALTH_PATTERN.test(question)) {
     return {
       type: "hard_stop",
-      reason: "系统检测到可能涉及身体安全或紧急健康的风险。塔罗无法提供医疗或安全判断，请立即寻求专业的医疗或心理急救支持。",
-      referral_links: ["https://crisis-center-example.org"],
+      reason:
+        "系统检测到这次提问可能已经触及现实中的身体安全、紧急健康或心理危机风险。塔罗不能承担这类判断。请先按这个顺序寻求现实支持：如有急性医疗风险先拨打 120；如有人身威胁、暴力或现实危险先拨打 110；如你处在强烈绝望、崩溃或需要立即心理支持的状态，请尽快拨打 12356 心理援助热线。",
+      referral_links: MAINLAND_CRISIS_REFERRAL_LINKS,
     };
   }
 
@@ -76,8 +148,8 @@ export function applySafetyReview({
       reading,
       "如果你现在正处在想要伤害自己、无法确保自身安全，或强烈绝望的状态，这次塔罗解读不能替代现实支持。请优先联系你信任的人、当地紧急服务或危机干预热线，先把安全放在第一位。",
       [
-        "先把注意力放回现实支持，联系一个此刻可以陪伴你的人或专业帮助渠道。",
-        "如果你感到自己可能会立刻伤害自己，请不要独自承受，优先寻求紧急协助。",
+        "先把注意力放回现实支持：急性医疗风险优先拨打 120，现实危险或暴力风险优先拨打 110。",
+        "如果你感到自己可能会立刻伤害自己，请不要独自承受，优先拨打 12356 心理援助热线或联系身边可信任的人。",
         "等安全感稍微恢复后，再回头整理这次问题真正牵动你的核心是什么。",
       ],
       [
