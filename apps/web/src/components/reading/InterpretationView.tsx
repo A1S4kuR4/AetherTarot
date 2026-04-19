@@ -326,6 +326,13 @@ export default function InterpretationView() {
                     const drawnCard = drawnCards.find(
                       (item) => item.positionId === card.position_id,
                     );
+                    const evidenceKeywords = drawnCard
+                      ? (
+                        drawnCard.isReversed
+                          ? drawnCard.card.reversedKeywords
+                          : drawnCard.card.uprightKeywords
+                      ).slice(0, 3)
+                      : [];
 
                     return (
                       <motion.article
@@ -348,18 +355,40 @@ export default function InterpretationView() {
                               <h3 className="font-serif text-xl text-ink">{card.name}</h3>
                               <p className="text-sm text-text-muted">{card.english_name}</p>
                             </div>
-                            <div className="rounded-r-lg border-l-2 border-paper-border bg-paper-raised/50 py-2.5 pl-4 pr-3">
-                              <p className="mb-1.5 font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                                / 原型奥义
-                              </p>
-                              <p className="font-sans text-sm leading-relaxed text-text-body">
-                                {card.position_meaning}
-                              </p>
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div className="border-l-2 border-paper-border pl-4">
+                                <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
+                                  牌面线索
+                                </h4>
+                                <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
+                                  {card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
+                                </p>
+                                {evidenceKeywords.length > 0 ? (
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {evidenceKeywords.map((keyword) => (
+                                      <span
+                                        key={`${card.position_id}-${keyword}`}
+                                        className="rounded-full border border-paper-border bg-paper px-2 py-1 font-sans text-[11px] text-text-muted"
+                                      >
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="border-l-2 border-terracotta/20 pl-4">
+                                <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
+                                  位置语义
+                                </h4>
+                                <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
+                                  {card.position_meaning}
+                                </p>
+                              </div>
                             </div>
-                            <div className="rounded-xl border border-terracotta/10 bg-terracotta/5 p-4 shadow-sm">
-                              <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta opacity-80">
-                                / 当前推断
-                              </p>
+                            <div className="border-l-2 border-terracotta/40 bg-terracotta/5 py-3 pl-4 pr-3">
+                              <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta opacity-80">
+                                综合推断
+                              </h4>
                               <p className="font-serif text-base italic leading-[1.8] text-ink">
                                 {card.interpretation}
                               </p>
@@ -395,6 +424,9 @@ export default function InterpretationView() {
                   综合
                 </p>
                 <h2 className="mt-1 font-serif text-2xl text-ink">综合解读</h2>
+                <p className="mt-3 font-sans text-xs leading-relaxed text-text-muted">
+                  综合推断层会把牌面线索与位置语义收束成整体判断，但它仍然不是替你宣布唯一答案。
+                </p>
                 <p className="mt-4 text-base leading-[1.85] text-text-body">
                   {reading.synthesis}
                 </p>
