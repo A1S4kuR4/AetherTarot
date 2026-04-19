@@ -122,6 +122,14 @@ function motif(card, accent, paper) {
     case "world":
       return `<ellipse cx="500" cy="900" rx="260" ry="365" ${commonStroke}/><path d="M500 650 C615 780 615 1020 500 1150 C385 1020 385 780 500 650 Z" ${commonStroke}/><circle cx="500" cy="900" r="86" ${softFill}/>`;
     default:
+      if (card.id.includes("swords")) {
+        return swordsMotif(card.id, commonStroke, softFill, paper);
+      }
+
+      if (card.id.includes("pentacles")) {
+        return pentaclesMotif(card.id, commonStroke, softFill, paper);
+      }
+
       return wandsMotif(card.id, commonStroke, softFill);
   }
 }
@@ -133,6 +141,11 @@ function wandsMotif(id, commonStroke, softFill) {
     "three-of-wands": 3,
     "four-of-wands": 4,
     "five-of-wands": 5,
+    "six-of-wands": 6,
+    "seven-of-wands": 7,
+    "eight-of-wands": 8,
+    "nine-of-wands": 9,
+    "ten-of-wands": 10,
   };
   const count = countById[id] ?? 1;
   const spacing = count === 1 ? 0 : 360 / (count - 1);
@@ -144,6 +157,203 @@ function wandsMotif(id, commonStroke, softFill) {
   }).join("");
 
   return `${staffs}<path d="M275 1210 C385 1140 615 1140 725 1210" ${commonStroke}/>`;
+}
+
+function swordsMotif(id, commonStroke, softFill, paper) {
+  const courtMotif = swordsCourtMotif(id, commonStroke, softFill, paper);
+  if (courtMotif) {
+    return courtMotif;
+  }
+
+  const layouts = {
+    "ace-of-swords": [{ x: 500, y: 920, angle: 0 }],
+    "two-of-swords": [
+      { x: 430, y: 930, angle: -28 },
+      { x: 570, y: 930, angle: 28 },
+    ],
+    "three-of-swords": [
+      { x: 500, y: 830, angle: 0 },
+      { x: 420, y: 960, angle: -42 },
+      { x: 580, y: 960, angle: 42 },
+    ],
+    "four-of-swords": [
+      { x: 380, y: 820, angle: 0 },
+      { x: 500, y: 820, angle: 0 },
+      { x: 620, y: 820, angle: 0 },
+      { x: 500, y: 1070, angle: 90 },
+    ],
+    "five-of-swords": [
+      { x: 340, y: 760, angle: -20 },
+      { x: 500, y: 720, angle: 0 },
+      { x: 660, y: 760, angle: 20 },
+      { x: 420, y: 1040, angle: -38 },
+      { x: 580, y: 1040, angle: 38 },
+    ],
+    "six-of-swords": [
+      { x: 340, y: 760, angle: -10 },
+      { x: 440, y: 740, angle: -6 },
+      { x: 540, y: 740, angle: 6 },
+      { x: 640, y: 760, angle: 10 },
+      { x: 430, y: 1035, angle: -12 },
+      { x: 570, y: 1035, angle: 12 },
+    ],
+    "seven-of-swords": [
+      { x: 320, y: 730, angle: -18 },
+      { x: 410, y: 690, angle: -10 },
+      { x: 500, y: 670, angle: 0 },
+      { x: 590, y: 690, angle: 10 },
+      { x: 680, y: 730, angle: 18 },
+      { x: 430, y: 1040, angle: -28 },
+      { x: 570, y: 1040, angle: 28 },
+    ],
+    "eight-of-swords": [
+      { x: 300, y: 760, angle: 0 },
+      { x: 380, y: 720, angle: -6 },
+      { x: 460, y: 700, angle: -3 },
+      { x: 540, y: 700, angle: 3 },
+      { x: 620, y: 720, angle: 6 },
+      { x: 700, y: 760, angle: 0 },
+      { x: 400, y: 1090, angle: -18 },
+      { x: 600, y: 1090, angle: 18 },
+    ],
+    "nine-of-swords": [
+      { x: 340, y: 700, angle: -12 },
+      { x: 420, y: 675, angle: -9 },
+      { x: 500, y: 660, angle: 0 },
+      { x: 580, y: 675, angle: 9 },
+      { x: 660, y: 700, angle: 12 },
+      { x: 370, y: 960, angle: -20 },
+      { x: 500, y: 935, angle: 0 },
+      { x: 630, y: 960, angle: 20 },
+      { x: 500, y: 1180, angle: 90 },
+    ],
+    "ten-of-swords": [
+      { x: 320, y: 690, angle: -18 },
+      { x: 400, y: 660, angle: -12 },
+      { x: 480, y: 645, angle: -6 },
+      { x: 560, y: 645, angle: 6 },
+      { x: 640, y: 660, angle: 12 },
+      { x: 720, y: 690, angle: 18 },
+      { x: 380, y: 980, angle: -26 },
+      { x: 500, y: 950, angle: 0 },
+      { x: 620, y: 980, angle: 26 },
+      { x: 500, y: 1210, angle: 90 },
+    ],
+  };
+
+  const swords = (layouts[id] ?? [{ x: 500, y: 920, angle: 0 }])
+    .map(({ x, y, angle }) => swordToken(x, y, angle, commonStroke, softFill, paper))
+    .join("");
+
+  const extras = [];
+
+  if (id === "three-of-swords") {
+    extras.push(`<path d="M500 860 C610 740 760 860 690 1010 C640 1130 540 1185 500 1225 C460 1185 360 1130 310 1010 C240 860 390 740 500 860 Z" fill="${paper}" opacity="0.14"/>`);
+  }
+
+  if (id === "six-of-swords") {
+    extras.push(`<path d="M290 1200 C380 1115 620 1115 710 1200 L630 1200 C585 1165 415 1165 370 1200 Z" fill="${paper}" opacity="0.16"/>`);
+  }
+
+  if (id === "eight-of-swords") {
+    extras.push(`<circle cx="500" cy="945" r="112" fill="${paper}" opacity="0.08"/>`);
+  }
+
+  if (id === "nine-of-swords") {
+    extras.push(`<path d="M360 1210 C410 1145 590 1145 640 1210" ${commonStroke}/>`);
+  }
+
+  return `${extras.join("")}${swords}<path d="M275 1230 C380 1160 620 1160 725 1230" ${commonStroke}/>`;
+}
+
+function swordsCourtMotif(id, commonStroke, softFill, paper) {
+  const crown = `<path d="M390 710 L440 650 L500 705 L560 650 L610 710" ${commonStroke}/>`;
+
+  switch (id) {
+    case "page-of-swords":
+      return `${swordToken(500, 900, -10, commonStroke, softFill, paper)}<path d="M430 1200 L500 1010 L570 1200" ${commonStroke}/><path d="M360 1240 C420 1160 580 1160 640 1240" ${commonStroke}/>`;
+    case "knight-of-swords":
+      return `${swordToken(520, 850, 24, commonStroke, softFill, paper)}<path d="M320 1120 C420 1015 585 1015 690 1120" ${commonStroke}/><path d="M365 1120 L330 1215 M640 1120 L675 1215 M420 1110 L380 980" ${commonStroke}/><circle cx="360" cy="1120" r="24" ${softFill}/>`;
+    case "queen-of-swords":
+      return `${swordToken(570, 845, 0, commonStroke, softFill, paper)}<path d="M360 1125 L500 980 L640 1125 L605 1235 L395 1235 Z" ${commonStroke}/><path d="M430 1235 L430 1090 M570 1235 L570 1090" ${commonStroke}/><circle cx="360" cy="970" r="34" ${softFill}/>`;
+    case "king-of-swords":
+      return `${crown}${swordToken(500, 860, 0, commonStroke, softFill, paper)}<path d="M350 1120 L650 1120 L610 1245 L390 1245 Z" ${commonStroke}/><path d="M420 1120 L420 1000 M580 1120 L580 1000" ${commonStroke}/><path d="M320 980 L680 980" ${commonStroke}/>`;
+    default:
+      return null;
+  }
+}
+
+function swordToken(cx, cy, angle, commonStroke, softFill, paper) {
+  return `<g transform="translate(${cx} ${cy}) rotate(${angle})">
+    <path d="M0 -180 L18 -105 L18 78 L52 140 L0 116 L-52 140 L-18 78 L-18 -105 Z" ${commonStroke}/>
+    <circle cx="0" cy="-182" r="26" ${softFill}/>
+    <path d="M-64 18 L64 18 M-26 74 L26 74" stroke="${paper}" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.9"/>
+  </g>`;
+}
+
+function pentaclesMotif(id, commonStroke, softFill, paper) {
+  const courtMotif = pentaclesCourtMotif(id, commonStroke, softFill, paper);
+  if (courtMotif) {
+    return courtMotif;
+  }
+
+  const positionsById = {
+    "ace-of-pentacles": [[500, 900]],
+    "two-of-pentacles": [[380, 820], [620, 980]],
+    "three-of-pentacles": [[500, 730], [360, 970], [640, 970]],
+    "four-of-pentacles": [[380, 760], [620, 760], [380, 1040], [620, 1040]],
+    "five-of-pentacles": [[500, 670], [360, 840], [640, 840], [430, 1050], [570, 1050]],
+    "six-of-pentacles": [[360, 720], [640, 720], [360, 900], [640, 900], [430, 1080], [570, 1080]],
+    "seven-of-pentacles": [[500, 650], [360, 790], [640, 790], [300, 960], [500, 960], [700, 960], [500, 1130]],
+    "eight-of-pentacles": [[360, 700], [640, 700], [300, 860], [500, 860], [700, 860], [360, 1020], [640, 1020], [500, 1180]],
+    "nine-of-pentacles": [[500, 640], [360, 760], [640, 760], [260, 910], [500, 910], [740, 910], [360, 1060], [640, 1060], [500, 1210]],
+    "ten-of-pentacles": [[500, 610], [360, 730], [640, 730], [250, 860], [500, 860], [750, 860], [360, 1010], [640, 1010], [430, 1180], [570, 1180]],
+  };
+
+  const positions = positionsById[id] ?? [[500, 900]];
+  const tokens = positions
+    .map(([cx, cy]) => pentacleToken(cx, cy, commonStroke, softFill, paper))
+    .join("");
+
+  return `${tokens}<path d="M275 1230 C380 1160 620 1160 725 1230" ${commonStroke}/>`;
+}
+
+function pentaclesCourtMotif(id, commonStroke, softFill, paper) {
+  const coin = pentacleToken(500, 860, commonStroke, softFill, paper);
+
+  switch (id) {
+    case "page-of-pentacles":
+      return `${coin}<path d="M500 1160 L500 980 M430 1160 L570 1160 M450 980 L550 980" ${commonStroke}/><path d="M360 1220 C420 1145 580 1145 640 1220" ${commonStroke}/>`;
+    case "knight-of-pentacles":
+      return `${coin}<path d="M340 1125 C430 1035 570 1035 660 1125" ${commonStroke}/><path d="M380 1125 L340 1215 M620 1125 L660 1215 M430 980 L360 900 M570 980 L640 900" ${commonStroke}/><path d="M280 1250 C390 1175 610 1175 720 1250" ${commonStroke}/>`;
+    case "queen-of-pentacles":
+      return `${coin}<path d="M395 1100 C430 1025 470 1000 500 1000 C530 1000 570 1025 605 1100" ${commonStroke}/><path d="M360 1180 L430 1060 M640 1180 L570 1060 M395 1180 L605 1180" ${commonStroke}/><path d="M300 1240 C390 1165 610 1165 700 1240" ${commonStroke}/>`;
+    case "king-of-pentacles":
+      return `${coin}<path d="M390 720 L440 650 L500 700 L560 650 L610 720" ${commonStroke}/><path d="M360 1120 L640 1120 L605 1235 L395 1235 Z" ${commonStroke}/><path d="M430 1120 L430 1010 M570 1120 L570 1010" ${commonStroke}/><circle cx="360" cy="980" r="30" ${softFill}/><circle cx="640" cy="980" r="30" ${softFill}/>`;
+    default:
+      return null;
+  }
+}
+
+function pentacleToken(cx, cy, commonStroke, softFill, paper) {
+  const outerRadius = 62;
+  const innerRadius = 24;
+  const points = [];
+
+  for (let index = 0; index < 10; index += 1) {
+    const angle = (-90 + index * 36) * (Math.PI / 180);
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    points.push([
+      Number((cx + Math.cos(angle) * radius).toFixed(1)),
+      Number((cy + Math.sin(angle) * radius).toFixed(1)),
+    ]);
+  }
+
+  const starPath = points
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"}${x} ${y}`)
+    .join(" ");
+
+  return `<circle cx="${cx}" cy="${cy}" r="76" ${softFill}/><circle cx="${cx}" cy="${cy}" r="72" ${commonStroke}/><path d="${starPath} Z" fill="none" stroke="${paper}" stroke-width="10" stroke-linejoin="round" opacity="0.92"/>`;
 }
 
 function cardSvg(card, index) {

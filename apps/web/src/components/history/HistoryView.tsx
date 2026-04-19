@@ -59,7 +59,7 @@ function analyzeRecentThemes(history: any[]) {
 
 export default function HistoryView() {
   const router = useRouter();
-  const { history, selectHistoryReading } = useReading();
+  const { history, selectHistoryReading, continueFromHistoryReading } = useReading();
 
   const recentTheme = useMemo(() => analyzeRecentThemes(history), [history]);
 
@@ -105,13 +105,8 @@ export default function HistoryView() {
             );
 
             return (
-              <button
+              <article
                 key={historyEntry.id}
-                type="button"
-                onClick={() => {
-                  selectHistoryReading(historyEntry);
-                  router.push("/reading");
-                }}
                 className="group relative w-full cursor-pointer rounded-2xl border border-paper-border bg-paper-raised p-5 text-left transition-all duration-200 hover:border-terracotta/20 hover:shadow-sm"
               >
                 <div className="flex items-start gap-5">
@@ -156,9 +151,37 @@ export default function HistoryView() {
                     <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-text-body">
                       {historyEntry.reading.synthesis}
                     </p>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          selectHistoryReading(historyEntry);
+                          router.push("/reading");
+                        }}
+                        className="rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-ink transition hover:bg-paper"
+                      >
+                        回看这次解读
+                      </button>
+                      {historyEntry.reading.session_capsule ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!continueFromHistoryReading(historyEntry)) {
+                              return;
+                            }
+
+                            router.push("/new");
+                          }}
+                          className="rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-medium text-terracotta transition hover:bg-terracotta/10"
+                        >
+                          延续这条线
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </button>
+              </article>
             );
           })
         )}

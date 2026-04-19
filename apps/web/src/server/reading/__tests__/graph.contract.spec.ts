@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { runReadingGraph } from "@/server/reading/graph";
 import {
   buildFollowupAnswers,
+  buildFourAspectsPayload,
   buildHolyTrianglePayload,
+  buildSevenCardPayload,
   buildSinglePayload,
   TestReadingProvider,
 } from "@/server/reading/__tests__/fixtures";
@@ -102,6 +104,7 @@ describe("reading graph contract hardening", () => {
     expect(reading.agent_profile).toBe("lite");
     expect(reading.requires_followup).toBe(false);
     expect(reading.follow_up_questions).toEqual([]);
+    expect(reading.session_capsule).toMatch(/本轮问题：/);
   });
 
   it("requires follow-up for standard and sober initial readings", async () => {
@@ -113,8 +116,133 @@ describe("reading graph contract hardening", () => {
 
     expect(standardReading.requires_followup).toBe(true);
     expect(standardReading.follow_up_questions).toHaveLength(2);
+    expect(standardReading.session_capsule).toBeNull();
     expect(soberReading.requires_followup).toBe(true);
     expect(soberReading.follow_up_questions).toHaveLength(2);
+    expect(soberReading.session_capsule).toBeNull();
+  });
+
+  it("returns a non-empty session capsule for completed final readings", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: buildFollowupAnswers(initial),
+    });
+
+    expect(final.session_capsule).toMatch(/核心主题：/);
+    expect(final.session_capsule).toMatch(/边界提醒：/);
+  });
+
+  it("passes prior_session_capsule into the provider context without changing authority cards", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft, context) => {
+        expect(context.priorSessionCapsule).toBe("上一轮线索：先看清现实边界。");
+        return draft;
+      },
+    });
+
+    const reading = await runReadingGraph(
+      {
+        ...buildHolyTrianglePayload(),
+        prior_session_capsule: "上一轮线索：先看清现实边界。",
+      },
+      { provider },
+    );
+
+    expect(reading.cards.map((card) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "future",
+    ]);
+    expect(reading.session_capsule).toBeNull();
+  });
+
+  it("sanitizes incoming prior_session_capsule before it reaches the provider", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft, context) => {
+        expect(context.priorSessionCapsule).toContain("本轮问题：之前总在同一类关系里打转。");
+        expect(context.priorSessionCapsule).not.toContain("用户补充：");
+        expect(context.priorSessionCapsule).not.toContain("我想自杀");
+        expect(context.priorSessionCapsule).not.toContain("控制她");
+        return draft;
+      },
+    });
+
+    await runReadingGraph(
+      {
+        ...buildHolyTrianglePayload(),
+        prior_session_capsule: [
+          "本轮问题：之前总在同一类关系里打转。",
+          "用户补充：我想自杀，也想控制她回头。",
+          "核心主题：边界、重复模式",
+          "边界提醒：不延续急性情绪和高风险安全细节。",
+        ].join("\n"),
+      },
+      { provider },
+    );
+  });
+
+  it("keeps prior_session_capsule from bypassing hard-stop safety intercepts", async () => {
+    await expect(
+      runReadingGraph({
+        ...buildSinglePayload("我是不是不该活下去了？"),
+        prior_session_capsule: "上一轮线索：保持边界感。",
+      }),
+    ).rejects.toMatchObject({
+      code: "safety_intercept",
+    });
+  });
+
+  it("returns null priorSessionCapsule to the provider when sanitization strips everything meaningful", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft, context) => {
+        expect(context.priorSessionCapsule).toBeNull();
+        return draft;
+      },
+    });
+
+    await runReadingGraph(
+      {
+        ...buildHolyTrianglePayload(),
+        prior_session_capsule: "用户补充：我想自杀，也要继续监控对方。",
+      },
+      { provider },
+    );
+  });
+
+  it("reorders four-aspects drawn cards into authoritative spread position order", async () => {
+    const reading = await runReadingGraph(buildFourAspectsPayload());
+
+    expect(reading.spread.id).toBe("four-aspects");
+    expect(reading.cards.map((card) => card.position_id)).toEqual([
+      "body",
+      "emotion",
+      "mind",
+      "spirit",
+    ]);
+    expect(reading.cards.map((card) => card.position)).toEqual([
+      "身体层面",
+      "情感层面",
+      "心智层面",
+      "精神层面",
+    ]);
+  });
+
+  it("reorders seven-card drawn cards into authoritative spread position order", async () => {
+    const reading = await runReadingGraph(buildSevenCardPayload());
+
+    expect(reading.spread.id).toBe("seven-card");
+    expect(reading.cards.map((card) => card.position_id)).toEqual([
+      "past",
+      "present",
+      "near-result",
+      "answer",
+      "environment",
+      "hopes-fears",
+      "outcome",
+    ]);
   });
 
   it("rejects provider drafts whose card order does not match the authority drawnCards", async () => {
@@ -221,5 +349,54 @@ describe("reading graph contract hardening", () => {
       code: "generation_failed",
       message: "final provider draft 最多只能返回 1 条延伸 follow_up_question。",
     });
+  });
+
+  it("keeps capsule timing consistent across lite, standard, and sober completed paths", async () => {
+    const lite = await runReadingGraph({
+      ...buildSinglePayload(),
+      agent_profile: "lite",
+    });
+    const standardInitial = await runReadingGraph(buildHolyTrianglePayload());
+    const standardFinal = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: standardInitial,
+      followup_answers: buildFollowupAnswers(standardInitial),
+    });
+    const soberInitial = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      agent_profile: "sober",
+    });
+    const soberFinal = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      agent_profile: "sober",
+      phase: "final",
+      initial_reading: soberInitial,
+      followup_answers: buildFollowupAnswers(soberInitial),
+    });
+
+    expect(lite.session_capsule).toBeTruthy();
+    expect(standardInitial.session_capsule).toBeNull();
+    expect(standardFinal.session_capsule).toBeTruthy();
+    expect(soberInitial.session_capsule).toBeNull();
+    expect(soberFinal.session_capsule).toBeTruthy();
+  });
+
+  it("does not carry raw follow-up details into completed session capsules", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: initial.follow_up_questions.map((question) => ({
+        question,
+        answer: "我担心自己会彻底崩溃，也一直想监控对方现在在做什么。",
+      })),
+    });
+
+    expect(final.session_capsule).toBeTruthy();
+    expect(final.session_capsule).not.toContain("监控");
+    expect(final.session_capsule).not.toContain("崩溃");
+    expect(final.session_capsule).not.toContain("用户补充");
   });
 });

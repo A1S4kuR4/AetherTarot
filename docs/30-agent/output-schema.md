@@ -11,10 +11,11 @@
 - `POST /api/reading` 成功时直接返回结构化 reading 对象，不再返回单一 `interpretation: string`
 - 首轮默认 `locale = zh-CN`
 - MVP 默认 `agent_profile = standard`、`phase = initial`
-- `session_capsule` 在本阶段固定为 `null`
+- `session_capsule` 仅在 completed reading 产出；未完成中间态固定为 `null`
 - `cards[]` 的顺序必须与牌阵位置顺序一致
 - 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
+- 前端当前按“问题 / 主题 / 逐牌 / 综合 / 指引 / 延伸 / 安全说明”的顺序消费结果，不应把结构化结果重新折叠为单段长文
 
 ---
 
@@ -33,6 +34,7 @@
   ],
   "agent_profile": "lite | standard | sober",
   "phase": "initial | final",
+  "prior_session_capsule": "string | null",
   "initial_reading": "StructuredReading | undefined",
   "followup_answers": [
     {
@@ -43,7 +45,7 @@
 }
 ```
 
-`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。
+`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。`prior_session_capsule` 为显式 opt-in 的上一轮摘要，只作为低优先级 continuity context。
 
 ---
 
@@ -97,9 +99,9 @@
   "follow_up_questions": ["string"],
   "safety_note": "string | null",
   "confidence_note": "string | null",
-  "session_capsule": null,
-  "sober_check": "string | null",
-  "presentation_mode": "standard | void_narrative | sober_anchor"
+  "session_capsule": "string | null",
+  "sober_check?": "string | null",
+  "presentation_mode?": "standard | void_narrative | sober_anchor"
 }
 ```
 
@@ -127,25 +129,61 @@
 
 `final` reading 记录用户针对第一阶段追问提交的现实补充。`initial` 阶段固定为 `null`。
 
+### `prior_session_capsule`
+
+请求侧 continuity hook。它用于把上一轮 completed reading 产出的紧凑摘要带入当前 reading，但优先级低于当前问题、当前牌阵与当前抽牌。它不是 history replay，也不是长期记忆容器。
+
+当前实现补充：
+
+- provider 实际收到的是服务层净化后的 `prior_session_capsule`
+- `用户补充` 类原始细节不会被直接转发
+- 自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容若出现在 incoming capsule 中，会被移除；若移除后失去有效信息，则按 `null` 处理
+
 ### `question_type`
 
 用于帮助后端和前端理解问题类别，也可作为评测分桶字段。
+
+当前前台补充：
+
+- 前端会把它显示为轻量标签，例如“关系议题 / 职业议题 / 行动选择”。
+- 它是阅读镜头，不是对用户状态的诊断结论。
+- 它不应被前台渲染成压过牌阵与主题的主标题。
 
 ### `spread`
 
 返回运行时实际使用的权威牌阵快照，避免前端和历史记录依赖客户端自带的临时牌阵对象。
 
+当前前台补充：
+
+- 前台应保留 `spread.name` 作为阅读容器标识，并在逐牌展示中持续尊重 `positions[]` 语义。
+- 不应只把 `spread` 当作 metadata 藏起来，否则容易削弱“牌阵在组织解释”的可感知性。
+
 ### `cards[].interpretation`
 
 单张牌在当前问题与当前位置下的解释，不应只是基础牌义拼贴。
+
+当前前台补充：
+
+- 前台应把单牌解释与 `position` / `position_meaning` 一起展示，避免用户把它误读为脱离牌阵的通用牌义。
+- `cards[]` 是离牌面最近的一层证据，不应用更长的综合段把它完全盖掉。
 
 ### `themes`
 
 从整体牌阵中提炼出的主题标签，建议 2-4 个。`final` 阶段应保留 initial 阶段的核心主题。
 
+当前前台补充：
+
+- 前台当前会先展示主题，再展开逐牌；这是为了让用户先看“整组牌的共同气候”，而不是直接进入逐牌堆砌。
+- `themes` 应保持短、具体、可被用户复核，不应写成装饰性栏目标题。
+
 ### `synthesis`
 
 整体综合段落。必须高于逐牌层级，不能只是逐牌解释的拼接。
+
+当前前台补充：
+
+- `synthesis` 是结构化结果里的“综合推断层”，不应在语气上伪装成唯一答案。
+- 前端不应只展示 `synthesis` 就结束阅读流程；否则会重新制造“顺着用户问题写一段结论”的迎合错觉。
 
 ### `reflective_guidance`
 
@@ -155,21 +193,60 @@
 
 在 `initial` 阶段用于进入第二阶段的牌面锚定追问；在 `final` 阶段仅作为延伸反思问题，不再阻塞流程。Lite 允许为空数组。
 
+当前前台补充：
+
+- 当 `reading_phase = initial` 且 `requires_followup = true` 时，前端应把这些问题渲染为进入第二阶段的校准输入，而不是普通附录。
+- 当 `reading_phase = final` 时，前端可以把它们作为延伸反思问题展示，但不应再阻塞 completed 状态。
+
 ### `safety_note`
 
 当问题涉及常规安全边界时返回，通常作为后置补充说明。
+
+当前前台补充：
+
+- `safety_note` 应以显式边界区块展示，不应藏在普通正文里。
+- 它的作用是校正理解边界，而不是成为另一个可被忽略的小脚注。
 
 ### `confidence_note`
 
 用于表达不确定性与解释范围，不应伪装成绝对结论。
 
+### `session_capsule`
+
+本轮 completed reading 的紧凑摘要。当前保持 `string | null`，只在以下状态产出非空值：
+
+- `lite` 的 completed initial reading
+- `standard / sober` 的 completed final reading
+
+`standard / sober` 的 `initial` 阶段固定为 `null`，避免把未完成中间态误当成可复用记忆。
+
+当前模板补充：
+
+- capsule 只保留当前问题、牌阵、核心主题与 1-2 条延续主轴
+- capsule 不直带 `followup_answers` 原文，不承载原始 transcript
+- capsule 必须避免泄露高风险安全细节、急性情绪细节与未验证的第三方意图
+
 ### `sober_check`
 
 用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
 
+协议语义：字段为可选字段；当不存在 Tier 2 现实摩擦时可以缺省或为 `null`。当前 graph 会主动写入 `null` 或具体文本，但消费方必须兼容历史记录、测试 fixture 或外部客户端省略该字段。
+
+当前前台补充：
+
+- 当前前台确实把 `sober_check` 作为解读前置摩擦：在用户写下最基本的现实顾虑 / 底线计划之前，不显示 reading 内容主体。
+- `sober_check` 不是普通提示文案，而是流程控制字段。
+
 ### `presentation_mode`
 
 呈现模式信标（`standard` | `void_narrative` | `sober_anchor`）。它是正式协议的一部分，将被记录与回放。
+
+协议语义：字段为可选字段；缺省时前端应按 `standard` 处理。当前 graph 会主动派生并写入该字段，但共享类型与 schema 仍保留 optional 兼容层。
+
+当前前台补充：
+
+- `presentation_mode` 影响前台阅读节奏与视觉强度，但不改变底层 reading shape。
+- `sober_anchor` 当前会配合 `sober_check` 降低阅读的“沉浸式确定感”。
 
 ---
 
@@ -179,6 +256,10 @@
 - 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
 - 当前 LangGraph 节点必须收敛到本协议，不创造第二套 reading shape
 - final 阶段由前端带回 initial reading 快照；MVP 不引入服务端会话存储
+- `prior_session_capsule` 只表示本地线程级 continuity，不引入 user id、thread id 或服务端 persistence 语义
+- 前台展示 `question` 时应以“本次提问”呈现，不应把它高密度复述到 `themes`、`synthesis` 与 `guidance` 中，避免放大迎合错觉
+- 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断
+- `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
 
 ---
 
@@ -188,3 +269,4 @@
 - [ ] 多语言兼容字段
 - [ ] 流式输出拆分协议
 - [ ] 面向评测的规范化版本
+- [ ] 前台“牌面线索 / 综合推断”显式分层约定

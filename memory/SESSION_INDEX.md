@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-12`
+- `last_updated`: `2026-04-17`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -22,7 +22,17 @@
 
 ## 2. 当前核心文档
 
-### 2.1 Mainline Priority Plan
+### 2.1 Current Status + Priority List
+
+- 文件：`memory/current-status-and-priority-2026-04-15.md`
+- 用途：作为当前主线优先级文档与 UX 风险文档之间的桥接入口，统一回答“现在做到哪了、卡在哪里、下一步先做什么”
+- 当前重点：
+  - 项目已进入“主链已成、回归已恢复、运行时牌池已完整、continuity 边界开始收紧、第二个新增运行时牌阵已上线”阶段
+  - 当前最大风险重新收束到牌阵语义、长期连续性与文档持续同步
+  - 优先级固定为：先保持可信回归与文档同步，再收口牌阵与运行时体验，再开长期连续性能力
+  - 最新运行时扩展已把牌库推进到 `78` 张、卡图推进到 `79` 个文件、运行时牌阵推进到 `5` 个，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
+
+### 2.2 Mainline Priority Plan
 
 - 文件：`memory/mainline-priority-plan-2026-04-08.md`
 - 用途：定义知识层阶段结束后的产品主线优先级与并行推进关系
@@ -31,18 +41,18 @@
   - `2026-04-09` 启动的 UX / 产品主线与技术主线并行推进
   - 不再把 ingest backlog 作为默认主线入口
 
-### 2.2 Latest Work Log
+### 2.3 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-12.md`
-- 用途：记录 `2026-04-12` 的 Ritual / Reveal 生产级抛光、布局溢出关闭与编译故障恢复
+- 文件：`memory/work-log-2026-04-17.md`
+- 用途：记录 `2026-04-17` 的 safety realism、continuity regression 收紧与第二个高价值运行时牌阵 `seven-card` 上线
 - 当前重点：
-  - `/ritual` 已实现 1080p 零滚动，首屏可完整看到总结面板与关键按钮
-  - `/reveal` 标签裁剪、侧边栏配色与逆位辨识已修复
-  - `InterpretationView.tsx` 编译故障已恢复，Reading 主流程重新稳定
-  - UX 风险文档与 Session 索引已同步更新到最新状态
+  - hard-stop 已切换到真实中国大陆危机 / 心理支持入口
+  - `prior_session_capsule` 已在进入 provider 前做安全净化
+  - `seven-card` 已作为第二个新增高价值运行时牌阵完成全链路接入
+  - contract / build / e2e 已再次通过
 
 
-### 2.3 Near-Term Work Plan
+### 2.4 Near-Term Work Plan
 
 - 文件：`memory/near-term-work-plan-2026-04-10.md`
 - 用途：安排 Two-Stage Reading MVP 之后的最近工作顺序
@@ -51,7 +61,10 @@
   - 再补 contract hardening 与语义 eval
   - 然后准备真实 provider / prompt baseline
   - UX 风险收口和 Runtime Alignment 并行但不抢主线
-### 2.4 Previous Shared Work Logs
+### 2.5 Previous Shared Work Logs
+
+- 文件：`memory/work-log-2026-04-12.md`
+- 用途：记录 `2026-04-12` 的 Ritual / Reveal 生产级抛光、布局溢出关闭与编译故障恢复。
 
 - 文件：`memory/work-log-2026-04-11.md`
 - 用途：记录全套 28 张自定义资产注入、M3 最小 LangGraph 接入与 Trinity Spatial Architecture (ADR 0003) 落地。
@@ -63,7 +76,7 @@
 - 文件：`memory/work-log-2026-04-09.md`
 - 用途：设计系统迁移、UX 重构、安全架构升级。
 
-### 2.5 Optional Local Working Notes
+### 2.6 Optional Local Working Notes
 
 - 文件（如本地存在）：
   - `memory/knowledge-ingest-backlog.md`
@@ -76,11 +89,11 @@
 
 如果你的目标是理解当前项目主线，建议按以下路径进入：
 
-1. 查看 `memory/mainline-priority-plan-2026-04-08.md`
-2. 再看 [work-log-2026-04-12.md](file:///d:/GoogleProject/AetherTarot/memory/work-log-2026-04-12.md)，确认最新仪式感布局优化与编译故障恢复情况。
-3. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
-4. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度 (已更新布局溢出状态)
-5. 再按 `M1 -> M2 -> M3 -> M4` 理解技术主线演进顺序；当前 `M3` 已完成，`M4` 仍在推进
+1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
+2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
+3. 再看 `memory/work-log-2026-04-17.md`，确认安全真实化、continuity 边界收紧、`seven-card` 上线与最新回归状态
+4. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
+5. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 

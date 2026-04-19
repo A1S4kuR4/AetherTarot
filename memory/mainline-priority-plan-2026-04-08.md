@@ -1,14 +1,14 @@
 # Mainline Priority Plan
 
-- `last_updated`: `2026-04-10`
+- `last_updated`: `2026-04-17`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 partial / UX track active`
-- `verification`: `npm run build` passed, `npm run lint -w @aethertarot/web` passed with existing img warnings, `npm run test:e2e` passed with `25 passed`, `2026-04-10` Two-Stage Reading MVP / assets / M3 records are in latest work log
+- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / UX track active`
+- `verification`: `2026-04-17` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed（`38/38`）、`npm run test:e2e` passed（`23/23`）；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池与本地资产现已闭环，`four-aspects` 与 `seven-card` 已作为新增高价值运行时牌阵落地，hard-stop 资源与 continuity capsule 边界也已进入真实回归
 
 ## 1. 当前状态快照
 
-截至 `2026-04-10` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“运行时闭环已打通第一段，并形成并行 UX / Runtime Alignment 主线”的阶段。
+截至 `2026-04-15` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“回归已恢复、运行时牌池完整闭环，并形成并行 UX / Runtime Alignment 主线”的阶段。
 
 知识层现状：
 
@@ -18,14 +18,16 @@
 
 运行时现状：
 
-- `data/spreads/` 当前仍只上线 `single`、`holy-triangle`、`celtic-cross`
+- `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
 - `apps/web` 的 `/api/reading` 已返回结构化 `StructuredReading` 成功 payload
 - `apps/web/src/server/reading/` 已建立服务层、provider 边界、schema 校验与安全后处理
 - `reading` 页与 `history` 页已切到结构化输出消费，不再以 `interpretation: string` 为主协议
 - 本地历史已升级为 `ReadingHistoryEntry`，使用 versioned localStorage key
 - 前端百科仍直接消费 `data/decks/rider-waite-smith.json`
-- `data/decks/rider-waite-smith.json` 已扩展到 27 张运行时牌：大阿卡纳 0-21 与权杖 Ace-5
-- `apps/web/public/cards/` 已接入 28 张 1000x1700 PNG：27 张正面牌面与 1 张背面
+- `four-aspects` 与 `seven-card` 已完成 authority、前台选择、揭示布局、reading 消费与 smoke 回归接入
+- hard-stop 资源已切到中国大陆固定真实入口；`prior_session_capsule` 进入 provider 前会先做安全净化
+- `data/decks/rider-waite-smith.json` 已扩展到完整 78 张运行时牌：Rider-Waite-Smith 全牌池已接入
+- `apps/web/public/cards/` 已接入 79 个文件：78 张 1000x1700 PNG 正面牌面与 1 张背面
 - `data/decks/card-asset-manifest.json` 已记录 full-bleed 状态、视觉审核与 SHA-256
 - 仓库已接入最小 LangGraph 编排，`generateStructuredReading()` 保持 service 入口并委托 graph 执行
 - Two-Stage Reading MVP 已落地：`POST /api/reading` 保持单入口，但 request / response 已加入 `agent_profile`、`phase`、`reading_phase` 与 follow-up 元数据
@@ -34,7 +36,7 @@
 
 补充说明：
 
-- 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到 `27` 张；这仍不等于产品层面的完整 `78/78` 运行时牌库建设已经完成。
+- 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到完整 `78/78`；当前 Runtime Alignment 的剩余问题已不再是牌池缺口，而是牌阵与百科消费边界。
 
 当前瓶颈已经不再是“先补更多知识页”或“接入最小 LangGraph”，而是“在已稳定的结构化 reading contract 与最小 graph 边界上推进后续运行时能力”。
 
@@ -48,7 +50,7 @@
 
 `2026-04-10` 的补充更新表明，`M4 Runtime Alignment` 已开始进入资产与数据层，同时 reading contract 已升级到 Two-Stage MVP：
 
-- 大阿卡纳 0-21 与权杖 Ace-5 已完成本地运行时数据和牌面资产注入
+- 完整 `78/78` Rider-Waite-Smith 运行时牌池已完成本地运行时数据和牌面资产注入
 - 全站卡牌渲染比例已统一到 `1:1.7`
 - 资产生成与校验已具备根命令：`npm run generate:assets` 与 `npm run validate:assets`。
 - 两阶段 reading 规范已沉淀到 `docs/30-agent/reading-flow.md`、`docs/30-agent/agent-profiles.md`、`docs/30-agent/output-schema.md`、`docs/40-architecture/architecture.md` 与 `docs/60-evals/rubrics.md`
@@ -143,8 +145,8 @@
 未完成：
 
 - `encyclopedia` 是否接 `knowledge/wiki` 仍处于待评估状态
-- 新增高价值牌阵仍未进入 `data/spreads/` + UI 联动上线流程
-- 运行时牌库虽已扩展到 27 张并接入本地资产，但距离完整 `78/78` 运行时牌池仍有 50 张小阿卡纳缺口
+- 首个新增高价值牌阵 `four-aspects` 已进入 `data/spreads/` + UI 联动上线流程；后续高价值牌阵仍待继续推进
+- 运行时牌库现已扩展到完整 `78/78` 并接入本地资产；当前未完成部分转为新增高价值牌阵、百科 runtime 接入策略与长期连续性设计
 
 ### 保持降级：P2. 定向 ingest-wiki
 
@@ -166,7 +168,7 @@
 - provider 当前为可替换占位实现，尚未接外部 LLM
 - 安全边界已在生成后单独检查，不能只靠 prompt 约束
 - 成功响应协议已稳定为带阶段元数据的 `StructuredReading`，短期内不应频繁改 shape
-- `session_capsule` 本轮固定为 `null`
+- `session_capsule` 已进入 completed reading 链路，但仍保持 `string | null`；当前只允许模板化、短摘要式输出，不承载原始补充文本
 - 默认 `locale` 仍为 `zh-CN`
 - 历史记录当前只做 localStorage 持久化，不做服务端持久化
 - `encyclopedia` 仍未接入知识层 runtime 消费
@@ -221,21 +223,21 @@
 
 ### M4. Runtime Alignment
 
-状态：部分启动
+状态：部分完成（运行时牌池完成，牌阵与百科消费策略待补）
 
 已启动部分：
 
 - 阅读结果页已对齐结构化 schema
 - 历史页已对齐结构化 reading contract
 - `celtic-cross` 的抽牌与回放路径已能真实跑通
-- 大阿卡纳 0-21 与权杖 Ace-5 已进入运行时牌组
+- 完整 `78/78` Rider-Waite-Smith 牌池已进入运行时牌组
 - 本地牌面资产与 manifest 校验已形成闭环
 
 待完成部分：
 
-- 新增高价值牌阵
-- 剩余 50 张小阿卡纳运行时数据与资产注入
+- 后续新增高价值牌阵
 - 百科 runtime 接入策略
+- 与 `coverage.ts` 对应的 consistency / coverage 测试
 - 针对真实运行时缺口的定向 ingest 回补
 
 ## 5. 验证结果
@@ -243,9 +245,10 @@
 本轮主线执行后的关键验证如下：
 
 - `npm run build` 已通过
-- `npm run test:e2e` 已通过，当前 smoke suite 为 `25/25` 全绿
+- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `38/38` 全绿
+- `npm run test:e2e` 已通过，当前 smoke suite 为 `23/23` 全绿
 - API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配、final 缺少 initial snapshot、Lite no-followup、final 主题延续、普通健康 safety_note
-- Reading smoke flow 已覆盖：单牌、圣三角、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
+- Reading smoke flow 已覆盖：单牌、圣三角、四个面向、七张牌、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
 
 这意味着：
 

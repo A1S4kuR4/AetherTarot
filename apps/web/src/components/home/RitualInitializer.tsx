@@ -54,9 +54,11 @@ export default function RitualInitializer() {
     question,
     selectedSpread,
     agentProfile,
+    continuitySource,
     setQuestion,
     setSelectedSpread,
     setAgentProfile,
+    clearContinuitySource,
     startRitual,
   } = useReading();
 
@@ -132,6 +134,50 @@ export default function RitualInitializer() {
 
   return (
     <div className="w-full max-w-2xl space-y-4 text-center pb-4">
+      {continuitySource ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="rounded-2xl border border-terracotta/25 bg-terracotta/8 p-4 text-left shadow-sm"
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-terracotta">
+                <span className="material-symbols-outlined text-[18px]">history</span>
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
+                  延续中的线索
+                </p>
+              </div>
+              <p className="text-sm leading-relaxed text-text-inverse">
+                你正在延续「{continuitySource.spreadName}」中的一条线索。它只会作为背景参照，不会替你决定这次的问题或牌阵。
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {continuitySource.themes.slice(0, 3).map((theme) => (
+                  <span
+                    key={`${continuitySource.readingId}-${theme}`}
+                    className="rounded-full border border-terracotta/20 bg-paper/10 px-3 py-1 text-[10px] font-medium text-text-inverse-muted"
+                  >
+                    {theme}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs leading-relaxed text-text-inverse-muted">
+                来自：{continuitySource.question}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearContinuitySource}
+              className="rounded-full border border-midnight-border bg-midnight-panel px-4 py-2 text-xs font-medium text-text-inverse-muted transition hover:border-terracotta/25 hover:text-text-inverse"
+            >
+              清除这条延续线
+            </button>
+          </div>
+        </motion.div>
+      ) : null}
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -237,7 +283,7 @@ export default function RitualInitializer() {
         <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
           选择牌阵 · Choose Your Spread
         </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {spreads.map((spread) => (
             <button
               key={spread.id}
@@ -280,6 +326,22 @@ export default function RitualInitializer() {
                   selectedSpread?.id === spread.id && "border-terracotta/30 text-terracotta/80"
                 )}>
                   最受青睐
+                </span>
+              )}
+              {spread.id === "four-aspects" && (
+                <span className={cn(
+                  "chip-dark mt-2 text-[9px]",
+                  selectedSpread?.id === spread.id && "border-indigo/30 text-indigo/80"
+                )}>
+                  多层拆解
+                </span>
+              )}
+              {spread.id === "seven-card" && (
+                <span className={cn(
+                  "chip-dark mt-2 text-[9px]",
+                  selectedSpread?.id === spread.id && "border-terracotta/30 text-terracotta/80"
+                )}>
+                  通用主力
                 </span>
               )}
             </button>

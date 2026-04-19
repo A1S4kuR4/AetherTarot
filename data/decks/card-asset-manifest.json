@@ -441,6 +441,822 @@
       "sha256": "c5557b9bd4350fa1d3efe6a42d05dfa876d4fc1da0167c26a7e8237d405faedf"
     },
     {
+      "assetId": "six-of-wands",
+      "imageUrl": "/cards/minor_wands_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "d6a6260d64c1fea0c54fdc192dde203c54dca8b4e6c38011df7cc5999d9e6c51"
+    },
+    {
+      "assetId": "seven-of-wands",
+      "imageUrl": "/cards/minor_wands_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "0acea99b7bea00d3d1a323754bacbe50a8336b7efc078eb67b283555e63696a4"
+    },
+    {
+      "assetId": "eight-of-wands",
+      "imageUrl": "/cards/minor_wands_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "eb50402ccf47a12cae555ceea507632cc9b6c58d09b9beade60b37c439be70b8"
+    },
+    {
+      "assetId": "nine-of-wands",
+      "imageUrl": "/cards/minor_wands_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a56ed31d6051ccd613c294eaaa2f13b7b14b21d6f363f105ac867e2cd3a5e988"
+    },
+    {
+      "assetId": "ten-of-wands",
+      "imageUrl": "/cards/minor_wands_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "a831edc2f6db3f798d3e9855cd8c5ad1a31f10e3a62995cebffdafd4a2d87bb2"
+    },
+    {
+      "assetId": "page-of-wands",
+      "imageUrl": "/cards/minor_wands_page.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "68fc934e7e7542d19857e4bb02ea971625957159ddf8a0832128c4019fabc848"
+    },
+    {
+      "assetId": "knight-of-wands",
+      "imageUrl": "/cards/minor_wands_knight.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "0bee84547a1f0202a587edd890cd920cef55093b54230ee904e85bb7c069b15e"
+    },
+    {
+      "assetId": "queen-of-wands",
+      "imageUrl": "/cards/minor_wands_queen.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "836d700e91b9d9b350f96d9ea2bca2239424432eeaf967f6f9e6441285d048ac"
+    },
+    {
+      "assetId": "king-of-wands",
+      "imageUrl": "/cards/minor_wands_king.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "fba7e46da00758106326a94b1723acd733356d5482608c721940c7c00b26c8e7"
+    },
+    {
+      "assetId": "ace-of-cups",
+      "imageUrl": "/cards/minor_cups_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "886638bb43390489d5a79d79240d547a2c1d41441943a72e29acb4fa03015e1a"
+    },
+    {
+      "assetId": "two-of-cups",
+      "imageUrl": "/cards/minor_cups_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "fec8521fc11dfa6c981e814d4ff468aae710f72cd81f82b6d5dd5e170d021439"
+    },
+    {
+      "assetId": "three-of-cups",
+      "imageUrl": "/cards/minor_cups_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "e0f75437cfa69e598b41ba99c58c63609adcdd718fe3f147c0cc143d507f40e6"
+    },
+    {
+      "assetId": "four-of-cups",
+      "imageUrl": "/cards/minor_cups_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "46db8fb381a5a392d491b9c66046b931505c1bc231249b6f5ededd2febc5c70b"
+    },
+    {
+      "assetId": "five-of-cups",
+      "imageUrl": "/cards/minor_cups_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2fdfe2e16efd25198eebebdb27032d1126a1308376d8d174d16e25d714a6a5bc"
+    },
+    {
+      "assetId": "six-of-cups",
+      "imageUrl": "/cards/minor_cups_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "6b38fad82d3b491b373b06743cd9d67d6d02be0bbbe5a7dfd28d69c66805174a"
+    },
+    {
+      "assetId": "seven-of-cups",
+      "imageUrl": "/cards/minor_cups_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "43951cfa0c7dfccca8875b3f020c2231e5ad8ccb38920abce2be734325386075"
+    },
+    {
+      "assetId": "eight-of-cups",
+      "imageUrl": "/cards/minor_cups_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "08e9090ac1814636ba2e4a60b52586b4e869678f3103b1a03daa26fb309a9415"
+    },
+    {
+      "assetId": "nine-of-cups",
+      "imageUrl": "/cards/minor_cups_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "fc7f54255929f2c662e07b913a6d1564c53315c9b9c6642666fd1f83a3523cb3"
+    },
+    {
+      "assetId": "ten-of-cups",
+      "imageUrl": "/cards/minor_cups_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2a2c0d92973941f9e805f598099b2020620839d5ccc5c6faf8e987df8cc4ef59"
+    },
+    {
+      "assetId": "page-of-cups",
+      "imageUrl": "/cards/minor_cups_page.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "055caff1cf0b20ef0146151ced99079ebbbc7aa8148063eb1eb9327f91542b05"
+    },
+    {
+      "assetId": "knight-of-cups",
+      "imageUrl": "/cards/minor_cups_knight.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "12689060902c4c23a2ebd5d9835ee489c6794a4f3fe6a864fddc8858cbd5bd09"
+    },
+    {
+      "assetId": "queen-of-cups",
+      "imageUrl": "/cards/minor_cups_queen.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c2bd3b442dcea9b9fa1025315414e45d927ab9aebc145c7649c271df7c01c8c1"
+    },
+    {
+      "assetId": "king-of-cups",
+      "imageUrl": "/cards/minor_cups_king.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "f5a75d6cd78acf0404d81325cc4f1620a1912ff1ff8eb919d7bf5b4365677de3"
+    },
+    {
+      "assetId": "ace-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "57e9c6fb75f7ecaff99b0e6778691c0cf70222eb54a1b3d0dc247c5245528a26"
+    },
+    {
+      "assetId": "two-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "8ae29028cce857fed1c9faba292869d0a7abc0cae3006bfdab614e1f0208e1fc"
+    },
+    {
+      "assetId": "three-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "b861c1111572b923ac12b9c0ce6043a7239432d2d2c8bba2b97029175c88a63f"
+    },
+    {
+      "assetId": "four-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "033265fd97c273457439b42bfceb8e3b9eb59fda20d83a3db0152c65b6241259"
+    },
+    {
+      "assetId": "five-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "84135d17f06a667db76766375177bb39cbcf4a9d908dbc1a5c397080fb04b312"
+    },
+    {
+      "assetId": "six-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "f630e9effce2cf3349f1d9d9475482a7401e0c0a0f432d2b46bbf529db16a2e9"
+    },
+    {
+      "assetId": "seven-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "5871464ffd5cb28431695c77bcff34a1177a6ad9c466c274f1002505ab12ea3c"
+    },
+    {
+      "assetId": "eight-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "81d11c6f736de3ac37ceb3af4b772a60e581c56736cab56a26fd4839b6ed9ea8"
+    },
+    {
+      "assetId": "nine-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "598abc968aa360682a64e82e291b54a8d622c52f6f31b35d2988b3f3b71e6405"
+    },
+    {
+      "assetId": "ten-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "34140e46f6b2dff16db44177425cbad9b312516ecd16d2e5bbd950942177f2ab"
+    },
+    {
+      "assetId": "page-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_page.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "addd39538264f8ed804a918e0e4a53c2097681dc945d5c1869e3877474e02192"
+    },
+    {
+      "assetId": "knight-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_knight.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "d1636b707fae599618d262d921536489f1942f545d68bee9249f64640548d2ea"
+    },
+    {
+      "assetId": "queen-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_queen.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "af9527c01d119fbd11466c8054b0e3831023d3f22b406315c5e3f5a696eb6122"
+    },
+    {
+      "assetId": "king-of-pentacles",
+      "imageUrl": "/cards/minor_pentacles_king.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "4c1f06d5e3781830c2acacbf0581fbab1d8172e7817d702f69143cf0b63dbdf1"
+    },
+    {
+      "assetId": "ace-of-swords",
+      "imageUrl": "/cards/minor_swords_ace.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "3e83315648820ce888f8e3a60a1f61ed8429f51b8584f6ab9e295279906feab5"
+    },
+    {
+      "assetId": "two-of-swords",
+      "imageUrl": "/cards/minor_swords_2.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "602f377b7c034da5a42466210a921661f09f9e4e5cac2c533cf2c6177683b0ae"
+    },
+    {
+      "assetId": "three-of-swords",
+      "imageUrl": "/cards/minor_swords_3.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "0ef74d95f31fa06eb51cae61d99306be9f5fb9c72e4c07529198b28b10126ae3"
+    },
+    {
+      "assetId": "four-of-swords",
+      "imageUrl": "/cards/minor_swords_4.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "467c7ef2badd2b4c4210824d9c9ca0537ff3b37b494363455536c0a984e278a7"
+    },
+    {
+      "assetId": "five-of-swords",
+      "imageUrl": "/cards/minor_swords_5.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "67e8b256a934e71c99b75a1b9ca80fd3daaff3217fe190d0cc136ca34bcd3f29"
+    },
+    {
+      "assetId": "six-of-swords",
+      "imageUrl": "/cards/minor_swords_6.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "57a022ca7dc5e8a89ab65f0aee44b85b18e3fcc1769e7c5cfe31a245639f95c1"
+    },
+    {
+      "assetId": "seven-of-swords",
+      "imageUrl": "/cards/minor_swords_7.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2e5298ed4640e31940de56779d1004b094e0bceaea892ceb4ba81b2a058c510f"
+    },
+    {
+      "assetId": "eight-of-swords",
+      "imageUrl": "/cards/minor_swords_8.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "c52423a22522ed924452fd2c8706bd02b57a584bc6e01a51c20b93acdf3623ed"
+    },
+    {
+      "assetId": "nine-of-swords",
+      "imageUrl": "/cards/minor_swords_9.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "bdb259c68c5afc02d0172d3dd90b4fcf06b0c2447c127e9895efff5de6b1ad04"
+    },
+    {
+      "assetId": "ten-of-swords",
+      "imageUrl": "/cards/minor_swords_10.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "24c18e2b06fe837a7ca643b5e383eea1d38373a4a93c6edbe6f142b732e6b803"
+    },
+    {
+      "assetId": "page-of-swords",
+      "imageUrl": "/cards/minor_swords_page.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "9cd1b920de028527ded42fee7443f1aab0e2b4de4a46cd79b984c04ee586ad5d"
+    },
+    {
+      "assetId": "knight-of-swords",
+      "imageUrl": "/cards/minor_swords_knight.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "000748f5c9eddd18bad04c052e276b26577970c72e14cd51e46061cfc7180a4f"
+    },
+    {
+      "assetId": "queen-of-swords",
+      "imageUrl": "/cards/minor_swords_queen.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "2de9f84616472621f89fc02172e928f19c11fb8abcb9a0309a75d26a91dcec64"
+    },
+    {
+      "assetId": "king-of-swords",
+      "imageUrl": "/cards/minor_swords_king.png",
+      "width": 1000,
+      "height": 1700,
+      "sourceKind": "procedural-portrait-svg",
+      "derivedFromSquare": false,
+      "fullBleed": true,
+      "visualReview": {
+        "status": "approved",
+        "reviewer": "Codex",
+        "reviewedAt": "2026-04-10",
+        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+      },
+      "sha256": "febfe15f7fb973bede462f7ce227a239a551223acfa6d5bcf6204bfe3bbda2f3"
+    },
+    {
       "assetId": "card-back",
       "imageUrl": "/cards/back.png",
       "width": 1000,
@@ -455,87 +1271,6 @@
         "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
       },
       "sha256": "f22220edec674abf748dfc8d835348848a5dd1231398f83649707817e99c62e1"
-    },
-    {
-      "assetId": "ace-of-cups",
-      "imageUrl": "/cards/minor_cups_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups Ace asset."
-      },
-      "sha256": "992e78828fe030655a2b87d438d61154d3d0eeb7028d29a4f8e3e4c2fe9cb099"
-    },
-    {
-      "assetId": "two-of-cups",
-      "imageUrl": "/cards/minor_cups_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 2 asset."
-      },
-      "sha256": "1f7cdb995a4db9466ada4e1ca77cacc83df1a20ac717c3c4fa88447e0474eabe"
-    },
-    {
-      "assetId": "three-of-cups",
-      "imageUrl": "/cards/minor_cups_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 3 asset."
-      },
-      "sha256": "8149754c1d492df5efd2975502a859c0c8aa9ffaad727747dbb9e9eba93546b7"
-    },
-    {
-      "assetId": "four-of-cups",
-      "imageUrl": "/cards/minor_cups_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 4 asset."
-      },
-      "sha256": "64d7f3be5fa1728153bfc13d29bb8596fb42056dd6682e4c1c7578970c758d80"
-    },
-    {
-      "assetId": "five-of-cups",
-      "imageUrl": "/cards/minor_cups_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
-      "derivedFromSquare": false,
-      "fullBleed": true,
-      "visualReview": {
-        "status": "approved",
-        "reviewer": "Codex",
-        "reviewedAt": "2026-04-11",
-        "notes": "Generated Cups 5 asset."
-      },
-      "sha256": "c70efcc3fc62242e47f9ee09f924fd24f47f01593691b8da1f2e834105ef98ef"
     }
   ]
 }
-
