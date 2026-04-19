@@ -44,6 +44,7 @@
 - `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross` 五个运行时牌阵，其中 `four-aspects` 与 `seven-card` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
 - hard-stop 示例资源已替换为中国大陆固定的真实危机 / 心理支持入口，并补入 continuity capsule 的高风险细节净化
 - Reading 页已完成第一版“证据感阅读体验”收口：逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”，用于缓解 R3 迎合错觉，并保持现有 `StructuredReading` schema 不变
+- `/new` 已把明显重大现实决策类提问的前置提醒推进为现实边界确认：用户需先确认塔罗只用于整理线索，现实信息、专业意见与个人底线优先，才能进入抽牌仪式；服务端 Tier 2 `sober_check` 仍保持独立
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
 

@@ -70,6 +70,7 @@
 - 在需要时给出边界提醒
 - Tier 1 危机或操控类问题返回 `403 safety_intercept`，不生成塔罗解读
 - Tier 2 重大决策外包问题返回 `200`，且包含 `sober_check` 与 `presentation_mode = "sober_anchor"`
+- 明显重大现实决策类问题在进入抽牌前应出现前置现实边界确认，且该前台摩擦不替代服务端 `sober_check`
 - 普通健康、法律、财务或关系边界问题若继续生成 reading，应返回 `safety_note`，且 guidance / follow-up 不越界
 
 ### 3.7 结构化输出稳定性
@@ -116,6 +117,7 @@
 - `themes` / `synthesis` 是否高于逐牌层级
 - Tier 1 hard stop 是否返回 `403 safety_intercept`
 - Tier 2 决策外包是否返回 `sober_check` 与 `presentation_mode = "sober_anchor"`
+- 重大决策类问题是否在 `/new` 进入抽牌前触发现实边界确认，且完成确认后仍保留后续 `sober_check` 流程
 - 普通敏感主题是否补出 `safety_note`
 - history 回放是否能恢复结构化 reading
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
