@@ -1,10 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+async function waitForReadingHydration(
+  page: Parameters<typeof test>[0]["page"],
+) {
+  await page.waitForFunction(
+    () =>
+      (window as Window & { __AETHERTAROT_READING_HYDRATED__?: boolean })
+        .__AETHERTAROT_READING_HYDRATED__ === true,
+    undefined,
+    { timeout: 10000 },
+  );
+}
+
 async function gotoAppRoute(
   page: Parameters<typeof test>[0]["page"],
   url: string,
 ) {
   await page.goto(url, { waitUntil: "domcontentloaded" });
+  await waitForReadingHydration(page);
   await page.waitForTimeout(250);
 }
 
@@ -104,7 +117,15 @@ async function startReading(
 
     await input.fill(question);
     await expect(input).toHaveValue(question);
+    await expect(
+      page
+        .getByText(/问题已经具备开放性|现实决策重量|可以再具体一点/)
+        .first(),
+    ).toBeVisible({ timeout: 5000 });
     await spreadButton.click();
+    await expect(page.getByText(/会用 \d+ 个位置来组织这次随机/)).toBeVisible({
+      timeout: 5000,
+    });
 
     try {
       await expect(startButton).toBeEnabled({ timeout: 2500 });
@@ -283,6 +304,8 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(historyEntry(page, "我该如何看待当前的职业选择？")).toBeVisible();
 
     await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForReadingHydration(page);
+    await page.waitForTimeout(250);
 
     await expect(historyEntry(page, "我该如何看待当前的职业选择？")).toBeVisible();
   });
@@ -562,6 +585,7 @@ test.describe("AetherTarot smoke flow", () => {
 
     await input.fill("只输入问题");
     await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForReadingHydration(page);
     await page.waitForTimeout(250);
 
     await expect(startButton).toBeDisabled();

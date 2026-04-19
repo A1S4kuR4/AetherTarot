@@ -73,6 +73,10 @@ type ReadingContextValue = {
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
 
+type HydrationAwareWindow = Window & {
+  __AETHERTAROT_READING_HYDRATED__?: boolean;
+};
+
 function serializeHistory(history: ReadingHistoryEntry[]) {
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
 }
@@ -153,6 +157,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsHydrated(true);
     }
   }, []);
+
+  useEffect(() => {
+    (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = isHydrated;
+  }, [isHydrated]);
 
   const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
     if (!selectedSpread) {
