@@ -27,8 +27,8 @@
 
 - reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
 - Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
-- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 当前复核未通过：API contract smoke 前 11 项通过，后续 smoke flow 从揭示阶段超时开始失败，并伴随后续用例 `ERR_CONNECTION_REFUSED`，需要单独修复后再恢复 `23/23` 健康基线。
-- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；但当前本地 e2e 复核未全绿，需优先排查 smoke flow 揭示阶段超时与后续连接中断。
+- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 已从 `22/23` 的单点 follow-up 表单 flaky 恢复为全绿（`23/23`）；此前问题集中在 `four-aspects` smoke flow 的追问 textarea 偶发未落值与提交按钮 actionability 抖动。
+- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；当前 follow-up helper 已改为在校准区块内定位输入、逐项断言受控值同步，并通过键盘提交规避按钮过渡状态导致的点击不稳定。
 
 知识层现状：
 
@@ -43,6 +43,7 @@
 - `apps/web/public/cards/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面
 - `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross` 五个运行时牌阵，其中 `four-aspects` 与 `seven-card` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
 - hard-stop 示例资源已替换为中国大陆固定的真实危机 / 心理支持入口，并补入 continuity capsule 的高风险细节净化
+- Reading 页已完成第一版“证据感阅读体验”收口：逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”，用于缓解 R3 迎合错觉，并保持现有 `StructuredReading` schema 不变
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
 
@@ -168,7 +169,7 @@
 - 健康度结论来自当前本地验证：
   - `npm run build`：通过
   - `npm run test:contract -w @aethertarot/web`：通过（`38/38`）
-  - `npm run test:e2e`：当前未通过（`11/23` 通过；smoke flow 从揭示阶段超时开始失败）
+  - `npm run test:e2e`：通过（`23/23`；已修复 `four-aspects` follow-up 表单 flaky）
 
 ## 8. 默认假设
 

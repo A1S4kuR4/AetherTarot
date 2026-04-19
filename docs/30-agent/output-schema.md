@@ -258,7 +258,7 @@
 - final 阶段由前端带回 initial reading 快照；MVP 不引入服务端会话存储
 - `prior_session_capsule` 只表示本地线程级 continuity，不引入 user id、thread id 或服务端 persistence 语义
 - 前台展示 `question` 时应以“本次提问”呈现，不应把它高密度复述到 `themes`、`synthesis` 与 `guidance` 中，避免放大迎合错觉
-- 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断
+- 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断。当前 reading 页已将逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”：牌面线索来自权威抽牌、正逆位与关键词；位置语义来自 `spread.positions[]` / `cards[].position_meaning`；综合推断来自 `cards[].interpretation` 与 `synthesis`
 - `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
 
 ---
@@ -269,4 +269,4 @@
 - [ ] 多语言兼容字段
 - [ ] 流式输出拆分协议
 - [ ] 面向评测的规范化版本
-- [ ] 前台“牌面线索 / 综合推断”显式分层约定
+- [x] 前台“牌面线索 / 位置语义 / 综合推断”显式分层约定
