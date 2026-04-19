@@ -178,18 +178,27 @@ async function completeFollowup(
   await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
     timeout: 10000,
   });
-  await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeVisible();
+  const followupSection = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "回答后进入整合深读" }),
+  }).first();
+  await expect(followupSection).toBeVisible();
 
-  const inputs = page.getByPlaceholder("写下你的现实补充...");
+  const inputs = followupSection.getByRole("textbox");
   const count = await inputs.count();
+  expect(count).toBeGreaterThan(0);
 
   for (let index = 0; index < count; index += 1) {
-    await inputs.nth(index).fill(`${answer} (${index + 1})`);
+    const value = `${answer} (${index + 1})`;
+    const input = inputs.nth(index);
+    await input.fill(value);
+    await expect(input).toHaveValue(value);
   }
 
-  const submitButton = page.getByRole("button", { name: /生成整合深读/i });
-  await expect(submitButton).toBeEnabled();
-  await submitButton.click({ force: true });
+  const submitButton = followupSection.getByRole("button", { name: /生成整合深读/i });
+  await expect(submitButton).toBeEnabled({ timeout: 10000 });
+  await submitButton.focus();
+  await expect(submitButton).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
     timeout: 10000,
   });
@@ -217,6 +226,9 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "核心主题聚焦" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByRole("heading", { name: "牌面线索" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "位置语义" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "反思指引" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "解读说明" })).toBeVisible();
