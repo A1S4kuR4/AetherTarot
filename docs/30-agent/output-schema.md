@@ -99,8 +99,8 @@
   "safety_note": "string | null",
   "confidence_note": "string | null",
   "session_capsule": "string | null",
-  "sober_check": "string | null",
-  "presentation_mode": "standard | void_narrative | sober_anchor"
+  "sober_check?": "string | null",
+  "presentation_mode?": "standard | void_narrative | sober_anchor"
 }
 ```
 
@@ -193,9 +193,13 @@
 
 用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
 
+协议语义：字段为可选字段；当不存在 Tier 2 现实摩擦时可以缺省或为 `null`。当前 graph 会主动写入 `null` 或具体文本，但消费方必须兼容历史记录、测试 fixture 或外部客户端省略该字段。
+
 ### `presentation_mode`
 
 呈现模式信标（`standard` | `void_narrative` | `sober_anchor`）。它是正式协议的一部分，将被记录与回放。
+
+协议语义：字段为可选字段；缺省时前端应按 `standard` 处理。当前 graph 会主动派生并写入该字段，但共享类型与 schema 仍保留 optional 兼容层。
 
 ---
 

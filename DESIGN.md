@@ -347,10 +347,10 @@ This is the product’s visual centerpiece.
 - Desktop: horizontal nav with restrained spacing
 - Mobile: sheet/drawer with clear hierarchy
 - Use sans labels at 13–14px
-- Home / Reading / History / Encyclopedia should be easy to scan
+- Home / Journey / Encyclopedia should be easy to scan; `/new` may be reached from the primary Home CTA
 
 #### Step Navigation
-For `question -> ritual -> reveal -> reading`
+For `/new -> /ritual -> /reveal -> /reading`
 - Borrow precision from productivity software, but soften the emotional tone
 - Use compact step pills or progress dots
 - Active step can use Moon Indigo
@@ -425,11 +425,17 @@ The product should breathe.
 
 ### Page Rhythm by Route
 
-#### Home / Ask
-- calm hero
+#### Home
+- calm narrative hub
+- brand, education, and intention calibration first
+- primary CTA leads into `/new`
+- show the next ritual path without placing the full question composer here
+
+#### New / Ritual Initializer
 - central question input
 - spread selection
-- supportive microcopy
+- tarot reader / agent profile selection
+- supportive safety and focus microcopy
 - low clutter
 
 #### Ritual
@@ -627,8 +633,11 @@ Always ask:
 
 ### Route-Level Prompt Shortcuts
 
-#### Home / Ask
-“Use warm parchment surfaces, serif hero typography, soft bordered cards, and a centered reflective question composer.”
+#### Home
+“Use warm parchment surfaces, serif hero typography, soft bordered cards, and a clear primary path into the ritual initializer.”
+
+#### New / Ritual Initializer
+“Use a focused dark ritual surface with a centered reflective question composer, spread selection, reader profile controls, and calm safety microcopy.”
 
 #### Ritual
 “Switch to midnight mode with minimal chrome, subtle indigo focus states, large centered tarot cards, and restrained cinematic motion.”

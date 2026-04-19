@@ -85,6 +85,7 @@
 - `/reading`：Interpretation，负责 initial / final 两阶段解读与安全摩擦
 - `/journey`：Consciousness Archive，当前主历史与复访入口
 - `/history`：保留的历史列表页，不作为当前主叙事入口
+- `/encyclopedia`：Tarot Encyclopedia，负责牌义浏览、百科覆盖与知识检索入口
 
 ### `prototype/`
 
