@@ -27,8 +27,8 @@
 
 - reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
 - Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
-- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 在本轮 P1 改动后的最新本地复核为 `12/23`：11 条 reading API HTTP smoke 与 `/new` 表单有效性 smoke 通过，失败集中在既有 Web smoke 的客户端 hydration / `startReading()` 长按启动 / 受保护页面重定向等待。
-- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；但当前 Web smoke helper 的启动与路由等待仍不够稳定，需要重新作为 P0 打开。
+- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 已在本轮 P1 / P0 收口后恢复全绿（`23/23`）：此前失败集中在 Web smoke 的客户端 hydration / `startReading()` 长按启动 / 受保护页面重定向等待，现已通过显式等待 ReadingProvider hydration 与逐项状态断言修复。
+- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；Web smoke helper 当前会等待 ReadingProvider 完成本地状态 hydration，再执行输入、牌阵选择、长按启动与 protected route 断言。
 
 知识层现状：
 
@@ -112,17 +112,18 @@
 
 ### P0. 保持可信回归与真相同步
 
-状态：重新打开。最新本地 `npm run test:e2e` 为 `12/23`，不是此前记录的 `23/23`。
+状态：已恢复。最新本地 `npm run test:e2e` 为 `23/23`，此前的 `12/23` Web smoke 波动已收口。
 
 已完成：
 
 1. 修复 Playwright 失效用例，使 E2E 与当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 实际流程一致。
 2. 在 Playwright 测试环境固定 `AETHERTAROT_READING_PROVIDER=placeholder`，避免本地 `llm` 配置影响回归稳定性。
 3. 同步 README、memory、UX 状态文档中的旧数字与旧叙事。
+4. 为 Web smoke 增加 ReadingProvider hydration 等待与 `/new` 表单逐项状态断言，修复 `startReading()`、follow-up 表单与受保护路由 redirect 的等待不稳定。
 
 后续要求：
 
-- 先修复当前 Web smoke 的 hydration、长按启动与受保护路由重定向等待，使全套 E2E 回到绿色
+- 继续保持全套 E2E 绿色，若再次失败必须记录新的失败用例、失败断言与通过数量
 - 新 UI / 新流程改动必须同步更新 smoke 断言
 - 文档中的运行时牌库与资产数字必须继续跟仓库实物对齐
 

@@ -44,10 +44,10 @@
 - `apps/web/public/cards/` 当前共有 `79` 个文件：`78` 张正面牌面与 `1` 张背面
 - `npm run build` 当前通过
 - `npm run test:contract -w @aethertarot/web` 当前通过，最新已记录为 `38/38`
-- `npm run test:e2e` 在本轮 P1 改动后的最新本地复核为 `12/23`：11 条 reading API HTTP smoke 与 `/new` 表单有效性 smoke 通过，失败集中在既有 Web smoke 的客户端 hydration / `startReading()` 长按启动 / 受保护页面重定向等待，而不是新增重复主题提醒本身；这表示 P0 E2E 稳定性需要重新打开处理
+- `npm run test:e2e` 已在本轮 P1 / P0 收口后恢复 `23/23`：此前的 `12/23` 波动集中在 Web smoke 的客户端 hydration / `startReading()` 长按启动 / 受保护页面重定向等待，而不是新增重复主题提醒本身；当前已通过显式等待 ReadingProvider hydration 与逐项状态断言修复
 - `/new` 当前已经具备第一版“更适合问 / 尽量别问”提示、重大现实决策确认、重复主题提醒与 continuity source 横幅；这些机制不能再被当成“尚未产品化”
 
-因此，当前 UX 主线仍可围绕 `R3 / R6 / R7 / R8 / R12` 推进，但执行顺序必须调整：**先恢复 Web smoke 全套稳定性，再继续扩大前台机制。**
+因此，当前 UX 主线仍可围绕 `R3 / R6 / R7 / R8 / R12` 推进，但执行顺序必须保持克制：**先守住 Web smoke 全套稳定性与状态文档真相，再继续扩大前台机制。**
 
 ### 机制化关闭
 
