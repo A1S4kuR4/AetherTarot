@@ -59,7 +59,7 @@
 
 当前实现：`generateStructuredReading()` 保持 service 入口不变，内部委托最小 LangGraph。图节点只承载现有流水线的阶段拆分，不改变 `/api/reading` 的单入口 contract，也不引入 checkpoint、streaming、interrupt 或外部 LLM。
 
-固定流水线：
+固定流水线当前由 9 个 LangGraph 业务节点承载；schema validation 是分布在组装、安全复核与 capsule 附着节点中的协议守卫，不是独立 graph 节点：
 
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
@@ -69,8 +69,7 @@
 6. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile）
 7. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
 8. safety review
-9. completed reading 的 `session_capsule` 生成
-10. structured response validate
+9. completed reading 的 `session_capsule` 生成，并通过统一 schema 校验后返回
 
 ### Provider 层
 
