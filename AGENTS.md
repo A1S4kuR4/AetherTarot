@@ -87,6 +87,8 @@ AetherTarot Agent 是一个以**长上下文、深度推理、反思式塔罗解
 
 以下任务类型，优先调用对应 skill：
 
+- 涉及 TypeScript / JavaScript 代码修改、已有模块重构、bugfix、测试补齐、类型收窄、最小 diff 实现、验证顺序控制（targeted tests / typecheck / 必要时 lint/build）时，优先使用 `.agents/skills/disciplined-typescript-engineer/SKILL.md`
+
 - 仓库内所有 repo-local skill 的新增、迁移与维护，都应写入 `.agents/skills/`；`.agents/skills/` 是唯一 canonical skill root
 - 涉及 repo-local skills 的目录约定、迁移或新增规范时，先检查 `docs/00-overview/repo-local-skills.md`
 - 涉及 reading backend 状态建模、节点拆分、canonical context 组装、结构化字段流转或 `session_capsule` 接入时，优先使用 `.agents/skills/aethertarot-reading-state/SKILL.md`
@@ -94,6 +96,7 @@ AetherTarot Agent 是一个以**长上下文、深度推理、反思式塔罗解
 - 涉及危机、自伤、健康、法律、财务、关系操控、限制性输出或人工审核/安全升级时，优先使用 `.agents/skills/aethertarot-safety-escalation/SKILL.md`
 - 涉及 `knowledge/raw/ -> knowledge/wiki/` 的 ingest、知识层 lint、source registry / index / log 同步时，优先使用 `.agents/skills/ingest-wiki/SKILL.md`
 - 若任务同时跨越状态、记忆、安全边界，可组合使用多个 skill，并同步检查相关 docs / ADR
+- 若任务属于通用工程实现且不完全落入上述业务域 skill，默认先使用 `.agents/skills/disciplined-typescript-engineer/SKILL.md`，再按需要叠加 domain-specific skills
 
 ---
 
