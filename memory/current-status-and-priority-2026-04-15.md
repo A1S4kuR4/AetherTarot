@@ -27,8 +27,8 @@
 
 - reading 主链已闭环：`POST /api/reading`、结构化 `StructuredReading`、Two-Stage Reading MVP、最小 LangGraph 与 Dual-Tier Safety 已落地。
 - Web 主流程已存在并能构成完整体验：`/`、`/new`、`/ritual`、`/reveal`、`/reading`、`/journey`、`/history`、`/encyclopedia` 均已接入当前应用。
-- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 已从 `22/23` 的单点 follow-up 表单 flaky 恢复为全绿（`23/23`）；此前问题集中在 `four-aspects` smoke flow 的追问 textarea 偶发未落值与提交按钮 actionability 抖动。
-- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；当前 follow-up helper 已改为在校准区块内定位输入、逐项断言受控值同步，并通过键盘提交规避按钮过渡状态导致的点击不稳定。
+- 后端 contract 当前健康：`npm run build` 通过，`npm run test:contract -w @aethertarot/web` 全绿（`38/38`）。`npm run test:e2e` 在本轮 P1 改动后的最新本地复核为 `12/23`：11 条 reading API HTTP smoke 与 `/new` 表单有效性 smoke 通过，失败集中在既有 Web smoke 的客户端 hydration / `startReading()` 长按启动 / 受保护页面重定向等待。
+- Playwright 用例已对齐当前 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；但当前 Web smoke helper 的启动与路由等待仍不够稳定，需要重新作为 P0 打开。
 
 知识层现状：
 
@@ -45,6 +45,7 @@
 - hard-stop 示例资源已替换为中国大陆固定的真实危机 / 心理支持入口，并补入 continuity capsule 的高风险细节净化
 - Reading 页已完成第一版“证据感阅读体验”收口：逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”，用于缓解 R3 迎合错觉，并保持现有 `StructuredReading` schema 不变
 - `/new` 已把明显重大现实决策类提问的前置提醒推进为现实边界确认：用户需先确认塔罗只用于整理线索，现实信息、专业意见与个人底线优先，才能进入抽牌仪式；服务端 Tier 2 `sober_check` 仍保持独立
+- `/new` 已新增非阻断的重复主题提醒：基于本地 completed history 中最近若干条相同 `question_type` 的记录，提示用户先回看上一条线索；该机制不启用服务端 persistence、不打开 memory merge，也不改变 `POST /api/reading` 协议
 
 这意味着当前主瓶颈已经不是“知识是否足够”，而是：
 
@@ -111,7 +112,7 @@
 
 ### P0. 保持可信回归与真相同步
 
-状态：已完成第一轮修复，后续转为保持项。
+状态：重新打开。最新本地 `npm run test:e2e` 为 `12/23`，不是此前记录的 `23/23`。
 
 已完成：
 
@@ -121,6 +122,7 @@
 
 后续要求：
 
+- 先修复当前 Web smoke 的 hydration、长按启动与受保护路由重定向等待，使全套 E2E 回到绿色
 - 新 UI / 新流程改动必须同步更新 smoke 断言
 - 文档中的运行时牌库与资产数字必须继续跟仓库实物对齐
 

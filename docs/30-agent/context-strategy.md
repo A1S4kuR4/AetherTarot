@@ -53,6 +53,7 @@
 当前实现补充：
 
 - 本地 history replay 继续保存完整 `ReadingHistoryEntry`
+- `/new` 的重复主题提醒只读取本地 completed history 中最近若干条记录的 `question_type`、原问题与 themes，用于前台非阻断提醒；它不把 history 注入 `POST /api/reading`，不触发 `session_capsule` merge，也不等同于长期记忆读取
 - `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
 - `prior_session_capsule` 在进入 provider 前会先做安全净化：移除 `用户补充` 类原始细节，以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容
 - 若净化后只剩噪音或空壳，`prior_session_capsule` 会在服务层降为 `null`
