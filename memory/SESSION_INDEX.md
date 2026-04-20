@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-17`
+- `last_updated`: `2026-04-20`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -43,13 +43,13 @@
 
 ### 2.3 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-17.md`
-- 用途：记录 `2026-04-17` 的 safety realism、continuity regression 收紧与第二个高价值运行时牌阵 `seven-card` 上线
+- 文件：`memory/work-log-2026-04-20.md`
+- 用途：记录 `2026-04-20` 的证据感阅读体验、重大现实决策前置确认、重复主题提醒与 E2E 稳定性恢复
 - 当前重点：
-  - hard-stop 已切换到真实中国大陆危机 / 心理支持入口
-  - `prior_session_capsule` 已在进入 provider 前做安全净化
-  - `seven-card` 已作为第二个新增高价值运行时牌阵完成全链路接入
-  - contract / build / e2e 已再次通过
+  - reading 页已加入“牌面线索 / 位置语义 / 综合推断”的第一版证据分层
+  - `/new` 已加入重大现实决策前置确认与本地重复主题提醒
+  - 本轮没有打开服务端 memory persistence，也没有新增运行时牌阵
+  - contract / build / e2e 已再次通过，其中 `npm run test:e2e` 恢复 `23/23`
 
 
 ### 2.4 Near-Term Work Plan
@@ -62,6 +62,9 @@
   - 然后准备真实 provider / prompt baseline
   - UX 风险收口和 Runtime Alignment 并行但不抢主线
 ### 2.5 Previous Shared Work Logs
+
+- 文件：`memory/work-log-2026-04-17.md`
+- 用途：记录 `2026-04-17` 的 safety realism、continuity regression 收紧与第二个高价值运行时牌阵 `seven-card` 上线。
 
 - 文件：`memory/work-log-2026-04-12.md`
 - 用途：记录 `2026-04-12` 的 Ritual / Reveal 生产级抛光、布局溢出关闭与编译故障恢复。
@@ -91,7 +94,7 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-17.md`，确认安全真实化、continuity 边界收紧、`seven-card` 上线与最新回归状态
+3. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、前置现实边界、重复主题提醒与最新回归状态
 4. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
 5. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 
