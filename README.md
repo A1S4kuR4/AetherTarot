@@ -50,7 +50,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
 - 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
 - 将运行时牌组从早期示例牌扩展到当前 78 张，并接入本地资产路径
-- `npm run build` 与 `npm run test:contract -w @aethertarot/web` 当前已复核通过；contract tests 为 `38/38`。`npm run test:e2e` 当前复核未通过：API contract smoke 前 11 项通过，后续 smoke flow 从揭示阶段超时开始失败，需要修复后再恢复 `23/23` 健康基线
+- `npm run build` 与 `npm run test:contract -w @aethertarot/web` 当前已复核通过；contract tests 为 `40/40`。`npm run test:e2e` 当前复核通过（`23/23`），并继续作为后续 UX 改动的 P0 真相门槛
 - 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
 - 当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
 
