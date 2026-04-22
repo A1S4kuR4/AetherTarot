@@ -217,8 +217,111 @@ function buildSpreadSpecificGuidance(spread: Spread, phase: "initial" | "final")
   return null;
 }
 
+function getUnverifiedCondition(questionType: QuestionType) {
+  switch (questionType) {
+    case "relationship":
+      return "你自己的需求、边界和可观察到的互动事实";
+    case "career":
+      return "现实反馈、资源约束和下一步行动成本";
+    case "self_growth":
+      return "反复出现的情绪触发点和真实生活节奏";
+    case "decision":
+      return "尚未核实的条件、代价和可承受风险";
+    case "other":
+      return "哪些感受来自事实，哪些只是当下的惯性反应";
+  }
+}
+
+function formatTensionAnchor({
+  positionName,
+  cardName,
+  orientation,
+}: {
+  positionName: string;
+  cardName: string;
+  orientation: string;
+}) {
+  return `${positionName} 的 ${cardName}（${orientation}）`;
+}
+
+function buildConstructiveTension({
+  questionType,
+  spread,
+  drawnCards,
+}: {
+  questionType: QuestionType;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+}) {
+  const anchorCard =
+    drawnCards.find((drawnCard) => drawnCard.isReversed)
+    ?? drawnCards.at(-1)
+    ?? drawnCards[0];
+  const position = spread.positions.find((item) => item.id === anchorCard.positionId);
+  const orientation = anchorCard.isReversed ? "逆位" : "正位";
+  const anchor = formatTensionAnchor({
+    positionName: position?.name ?? "这个位置",
+    cardName: anchorCard.card.name,
+    orientation,
+  });
+  const condition = getUnverifiedCondition(questionType);
+
+  switch (questionType) {
+    case "relationship":
+      return `牌面在这里留下的阻力是：${anchor} 并不急着替你确认关系走向，而是把注意力推回${condition}。`;
+    case "career":
+      return `这里的阻力不在于能不能继续前进，而是 ${anchor} 没有让这件事自动等于理想答案；先把${condition}摆上桌。`;
+    case "self_growth":
+      return `这个位置的阻力更安静：${anchor} 提醒你，理解自己不等于立刻给自己新的要求；先看见${condition}。`;
+    case "decision":
+      return `这组牌留下的阻力很现实：${anchor} 不适合被读成直接裁决；先核实${condition}。`;
+    case "other":
+      return `这处阻力来自 ${anchor}：它没有把问题收成单一结论，而是要求你分辨${condition}。`;
+  }
+}
+
+function buildConstructiveGuidance(questionType: QuestionType) {
+  switch (questionType) {
+    case "relationship":
+      return "把最想得到确认的那一点暂时放慢，先写下你能观察到的互动事实和自己的边界。";
+    case "career":
+      return "把这处阻力转成一个现实检查项：资源、时间、反馈或成本，哪一项还没有被看清？";
+    case "self_growth":
+      return "别急着把阻力读成自我否定，先确认它是在提醒你休整、表达，还是重新安排节奏。";
+    case "decision":
+      return "在做选择前，把牌面没有替你确认的条件列出来，先验证其中最关键的一项。";
+    case "other":
+      return "把这处阻力当作停顿点：先分辨事实、感受和推测，再决定下一步要问什么。";
+  }
+}
+
+function buildFinalConstructiveTension(
+  initialReading: StructuredReading,
+  questionType: QuestionType,
+) {
+  const anchorCard =
+    initialReading.cards.find((card) => card.orientation === "reversed")
+    ?? initialReading.cards.at(-1)
+    ?? initialReading.cards[0];
+  const anchor = `${anchorCard.position} 的 ${anchorCard.name}`;
+
+  switch (questionType) {
+    case "relationship":
+      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充可以让关系图像更清楚，但不能把它改写成关系答案已经被证明。`;
+    case "career":
+      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能校准方向，却不能替现实反馈、资源约束和行动成本提前背书。`;
+    case "self_growth":
+      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能解释状态，却不应该变成新的自我苛责。`;
+    case "decision":
+      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能缩小选择范围，但不能把牌面改写成直接裁决。`;
+    case "other":
+      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能减少模糊，却不能把尚未验证的部分提前说成结论。`;
+  }
+}
+
 function buildInitialSynthesis(
   question: string,
+  questionType: QuestionType,
   agentProfile: AgentProfile,
   spread: Spread,
   themes: string[],
@@ -237,17 +340,24 @@ function buildInitialSynthesis(
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
   const spreadAxis = buildSpreadSpecificInitialAxis(spread);
+  const constructiveTension = buildConstructiveTension({
+    questionType,
+    spread,
+    drawnCards,
+  });
 
-  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${constructiveTension} ${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
 }
 
 function buildFinalSynthesis({
   question,
+  questionType,
   initialReading,
   followupAnswers,
   priorSessionCapsule,
 }: {
   question: string;
+  questionType: QuestionType;
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
@@ -259,8 +369,12 @@ function buildFinalSynthesis({
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
   const spreadAxis = buildSpreadSpecificFinalAxis(initialReading.spread);
+  const constructiveTension = buildFinalConstructiveTension(
+    initialReading,
+    questionType,
+  );
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${spreadAxis ?? ""} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${spreadAxis ?? ""} ${constructiveTension} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
 }
 
 function buildCards(
@@ -421,6 +535,9 @@ function buildOutputContract({
     "themes: 2-4 short, concrete thematic labels only; avoid headline packaging, stacked metaphors, or decorative category names.",
     "reflective_guidance: 2-4 items.",
     followupRule,
+    "Include at least one constructive tension point in synthesis or reflective_guidance: an observation that does not simply affirm the user's expected answer.",
+    "The constructive tension point must be anchored to a card, orientation, position meaning, spread relationship, or unverified reality condition.",
+    "Constructive tension must not become deterministic prophecy, third-party mind-reading, professional advice, or a command to make a major decision.",
     "If you return more than one follow_up_questions item, each question must be materially distinct.",
     "confidence_note: one short sentence that preserves uncertainty and avoids certainty claims.",
   ].join("\n");
@@ -464,6 +581,7 @@ export function buildPlaceholderInitialReadingDraft({
     ...(buildSpreadSpecificGuidance(spread, "initial")
       ? [buildSpreadSpecificGuidance(spread, "initial") as string]
       : []),
+    buildConstructiveGuidance(questionType),
     ...QUESTION_TYPE_GUIDANCE[questionType],
   ]);
   const reflectiveGuidance = agentProfile === "lite"
@@ -475,6 +593,7 @@ export function buildPlaceholderInitialReadingDraft({
     themes,
     synthesis: buildInitialSynthesis(
       question,
+      questionType,
       agentProfile,
       spread,
       themes,
@@ -503,12 +622,17 @@ export function buildPlaceholderFinalReadingDraft({
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
 }): PlaceholderReadingDraft {
+  const constructiveTension = buildFinalConstructiveTension(
+    initialReading,
+    questionType,
+  );
   const finalGuidance = uniqueStrings([
     `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
     "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
     ...(buildSpreadSpecificGuidance(initialReading.spread, "final")
       ? [buildSpreadSpecificGuidance(initialReading.spread, "final") as string]
       : []),
+    buildConstructiveGuidance(questionType),
     agentProfile === "sober"
       ? "在做重大决定前，先确认现实资源、风险承受边界和可咨询的专业对象。"
       : "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。",
@@ -520,6 +644,7 @@ export function buildPlaceholderFinalReadingDraft({
     themes: initialReading.themes,
     synthesis: buildFinalSynthesis({
       question,
+      questionType,
       initialReading,
       followupAnswers,
       priorSessionCapsule,
@@ -607,6 +732,7 @@ export function buildInitialReadingPrompt({
       "- Identify 2-4 themes at the spread level, not just per-card fragments.",
       "- Themes should be plain, compact, and insight-bearing; do not add headline wrappers such as 'current climate field' or other decorative framing labels.",
       "- Synthesis must summarize the spread arc, major tension, and realistic next orientation; do not list cards one by one.",
+      "- Preserve one constructive resistance point: name what the spread does not fully support, or what reality condition remains unverified.",
       "- Follow-up questions must be anchored to card tension, position semantics, or missing reality context.",
       "- Follow-up questions must be distinct from each other.",
       "- Do not rewrite the provided card names or position labels.",
@@ -672,6 +798,7 @@ export function buildFinalReadingPrompt({
       "- Keep card order and card identity aligned with the initial reading.",
       "- Use follow-up answers to narrow interpretation space, not to replace the card axis.",
       "- Keep the synthesis focused on the thematic axis, the clarified tension, and the next grounded reflection; avoid inflated summary packaging or repeated slogan-like labels.",
+      "- Preserve one constructive resistance point from the initial spread; do not let the user's answers turn the reading into simple agreement.",
       "- Return at most one extension question, and it must not block the flow.",
       "- Do not rewrite the provided card names or position labels.",
       "- Do not state what the other person secretly feels, thinks, wants, or intends; if needed, describe the relational pattern from the querent's point of view.",

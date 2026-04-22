@@ -165,6 +165,20 @@ const GENERIC_FOLLOW_UP_PATTERN =
 const SAFETY_NARROWING_PATTERN = /现实|风险|专业|信息|确认|症状|边界/i;
 const CAPSULE_UNSAFE_PATTERN =
   /自杀|自残|结束生命|kill myself|急救|急诊|无法呼吸|呼吸困难|大量出血|昏迷|跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫|用户补充/i;
+const CONSTRUCTIVE_TENSION_PATTERN =
+  /建设性阻力|阻力点|不完全支持|未验证|不能把牌面改写|现实条件|位置|正位|逆位|张力/i;
+const UNSAFE_TENSION_PATTERN =
+  /一定会|必然会|命中注定|必须立刻|他真实想法|她真实想法|对方真实想法|诊断|治疗建议|投资建议|法律意见/i;
+
+function collectReadingText(reading: StructuredReading) {
+  return [
+    reading.synthesis,
+    ...reading.reflective_guidance,
+    ...reading.follow_up_questions,
+    reading.confidence_note ?? "",
+    ...reading.cards.map((card) => card.interpretation),
+  ].join("\n");
+}
 
 export function preservesPrimaryTheme(
   initialReading: StructuredReading,
@@ -202,4 +216,18 @@ export function omitsUserSupplementLine(reading: StructuredReading) {
 export function mentionsSevenCardAxis(reading: StructuredReading) {
   return /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(reading.synthesis)
     || reading.follow_up_questions.some((item) => /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(item));
+}
+
+export function hasConstructiveTension(reading: StructuredReading) {
+  return CONSTRUCTIVE_TENSION_PATTERN.test(collectReadingText(reading));
+}
+
+export function avoidsUnsafeConstructiveTensionClaims(reading: StructuredReading) {
+  return !UNSAFE_TENSION_PATTERN.test(collectReadingText(reading));
+}
+
+export function getConstructiveTensionSignature(reading: StructuredReading) {
+  return collectReadingText(reading).match(
+    /牌面在这里留下的阻力|这里的阻力不在于|这个位置的阻力更安静|这组牌留下的阻力很现实|这处阻力来自/,
+  )?.[0] ?? null;
 }
