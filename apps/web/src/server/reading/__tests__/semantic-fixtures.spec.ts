@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { runReadingGraph } from "@/server/reading/graph";
 import {
+  avoidsUnsafeConstructiveTensionClaims,
   buildFollowupAnswers,
   buildHolyTrianglePayload,
   buildSevenCardPayload,
   buildSinglePayload,
+  getConstructiveTensionSignature,
   hasCompactSessionCapsule,
   hasAnchoredFollowupQuestion,
+  hasConstructiveTension,
   hasSafeSessionCapsule,
   hasSafetyNarrowedFollowup,
   hasSafetyNarrowedGuidance,
@@ -34,6 +37,36 @@ describe("reading semantic fixtures", () => {
 
     expect(reading.follow_up_questions.length).toBeGreaterThanOrEqual(1);
     expect(reading.follow_up_questions.every(hasAnchoredFollowupQuestion)).toBe(true);
+  });
+
+  it("keeps constructive tension in standard initial and final readings without unsafe claims", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: buildFollowupAnswers(initial),
+    });
+
+    expect(hasConstructiveTension(initial)).toBe(true);
+    expect(avoidsUnsafeConstructiveTensionClaims(initial)).toBe(true);
+    expect(hasConstructiveTension(final)).toBe(true);
+    expect(avoidsUnsafeConstructiveTensionClaims(final)).toBe(true);
+  });
+
+  it("varies constructive tension language across question types", async () => {
+    const readings = await Promise.all([
+      runReadingGraph(buildSinglePayload("这段关系里我最需要看清什么？")),
+      runReadingGraph(buildSinglePayload("我的职业方向接下来该看清什么？")),
+      runReadingGraph(buildSinglePayload("我的情绪状态最近反复出现什么模式？")),
+      runReadingGraph(buildSinglePayload("我该不该搬去另一个城市？")),
+      runReadingGraph(buildSinglePayload("最近这件事有什么值得看清？")),
+    ]);
+
+    const signatures = readings.map(getConstructiveTensionSignature);
+
+    expect(signatures.every(Boolean)).toBe(true);
+    expect(new Set(signatures).size).toBe(signatures.length);
   });
 
   it("narrows guidance and follow-up questions when a safety_note is added", async () => {
