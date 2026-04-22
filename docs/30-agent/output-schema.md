@@ -259,6 +259,8 @@
 - `prior_session_capsule` 只表示本地线程级 continuity，不引入 user id、thread id 或服务端 persistence 语义
 - 前台展示 `question` 时应以“本次提问”呈现，不应把它高密度复述到 `themes`、`synthesis` 与 `guidance` 中，避免放大迎合错觉
 - 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断。当前 reading 页已将逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”：牌面线索来自权威抽牌、正逆位与关键词；位置语义来自 `spread.positions[]` / `cards[].position_meaning`；综合推断来自 `cards[].interpretation` 与 `synthesis`
+- 前台当前会在 `/reveal` 与 `/reading` 展示“牌阵如何组织随机”的说明。这属于展示层解释：随机决定牌面与正逆位，牌阵决定阅读顺序、位置语义与综合路径；它不新增 response 字段，也不改变 `cards[]` 的权威顺序语义
+- provider 当前需要在 `synthesis` 或 `reflective_guidance` 中保留至少一个建设性阻力观察。该观察仍写入既有字段，不新增 `counterpoint` / `tension` 等协议字段
 - `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
 
 ---

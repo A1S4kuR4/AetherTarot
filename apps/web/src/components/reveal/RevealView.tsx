@@ -6,6 +6,18 @@ import { useEffect } from "react";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 
+const SPREAD_ORGANIZATION_MODELS: Record<string, string[]> = {
+  single: ["单一焦点", "把本轮随机收束到一个核心位置", "适合先看清当下最需要被照亮的线索"],
+  "holy-triangle": ["过去", "现在", "潜在流向"],
+  "four-aspects": ["身体", "情感", "心智", "精神"],
+  "seven-card": ["时间线", "答案 / 结果主轴", "外部气候 / 主观投射张力"],
+  "celtic-cross": ["核心 / 挑战", "意识 / 潜意识", "时间线", "自我 / 环境 / 希望恐惧 / 结果"],
+};
+
+function getSpreadOrganizationModel(spreadId: string, positionNames: string[]) {
+  return SPREAD_ORGANIZATION_MODELS[spreadId] ?? positionNames;
+}
+
 export default function RevealView() {
   const router = useRouter();
   const { selectedSpread, drawnCards } = useReading();
@@ -35,6 +47,10 @@ export default function RevealView() {
           : selectedSpread.positions.length === 7
             ? "md:grid-cols-2 xl:grid-cols-4"
           : "md:grid-cols-2 xl:grid-cols-3";
+  const organizationModel = getSpreadOrganizationModel(
+    selectedSpread.id,
+    selectedSpread.positions.map((position) => position.name),
+  );
 
   return (
     <section className="mx-auto w-full max-w-7xl px-6 pt-12 pb-10">
@@ -172,6 +188,30 @@ export default function RevealView() {
             <p className="text-sm leading-relaxed text-text-inverse-muted">
               你没有在操纵结果，而是在选择一副观看问题的镜框。随机给出牌面，牌阵负责把这些偶然组织成可阅读的结构。
             </p>
+          </div>
+
+          <div className="midnight-panel">
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-lg text-indigo">
+                account_tree
+              </span>
+              <h2 className="font-serif text-lg text-text-inverse">
+                牌阵如何组织随机
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-text-inverse-muted">
+              随机决定哪张牌进入哪个位置；{selectedSpread.name} 决定阅读顺序、位置语义与综合路径。
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {organizationModel.map((item, index) => (
+                <span
+                  key={`${selectedSpread.id}-organization-${item}`}
+                  className="rounded-full border border-midnight-border bg-midnight-elevated/60 px-3 py-1.5 font-sans text-[11px] text-text-inverse-muted"
+                >
+                  {index + 1}. {item}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="midnight-panel">

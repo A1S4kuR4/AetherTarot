@@ -15,6 +15,19 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   other: "综合议题",
 };
 
+const SPREAD_ORGANIZATION_COPY: Record<string, string> = {
+  single: "单牌启示把随机收束到一个核心位置，先看这张牌怎样照亮本轮问题最需要被看见的焦点。",
+  "holy-triangle": "圣三角形会按过去、现在与潜在流向阅读，把随机牌面放进一条可复核的时间与因果路径。",
+  "four-aspects": "四个面向会把随机牌面拆入身体、情感、心智与精神四层，让同一问题先被分层观看，再进入综合。",
+  "seven-card": "七张牌会先看时间线，再抓答案 / 结果主轴，并分辨外部气候与希望恐惧之间的张力。",
+  "celtic-cross": "赛尔特十字会从核心与挑战展开，再对照意识、潜意识、时间线、自我、环境、希望恐惧与结果。",
+};
+
+function getSpreadOrganizationCopy(spreadId: string, spreadName: string) {
+  return SPREAD_ORGANIZATION_COPY[spreadId]
+    ?? `${spreadName} 会按照权威位置顺序阅读本轮随机牌面，让每张牌先回到自己的位置语义，再进入整体综合。`;
+}
+
 export default function InterpretationView() {
   const router = useRouter();
   const {
@@ -60,6 +73,9 @@ export default function InterpretationView() {
   const areFollowupAnswersValid =
     followupQuestions.length > 0 &&
     followupQuestions.every((_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2);
+  const spreadOrganizationCopy = selectedSpread
+    ? getSpreadOrganizationCopy(selectedSpread.id, selectedSpread.name)
+    : "";
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -311,6 +327,30 @@ export default function InterpretationView() {
                       {theme}
                     </span>
                   ))}
+                </div>
+              </section>
+
+              <section className="reading-card border-terracotta/20 bg-paper-raised/70">
+                <div className="flex items-start gap-4">
+                  <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-terracotta/20 bg-terracotta/5 text-terracotta">
+                    <span className="material-symbols-outlined text-[20px]">
+                      account_tree
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                      阅读机制
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl text-ink">
+                      本次牌阵如何组织随机
+                    </h2>
+                    <p className="mt-3 text-sm leading-relaxed text-text-body">
+                      {spreadOrganizationCopy}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                      逐牌顺序来自权威位置；牌面线索和位置语义先行，综合推断后置。
+                    </p>
+                  </div>
                 </div>
               </section>
 

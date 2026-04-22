@@ -1,14 +1,14 @@
 # Mainline Priority Plan
 
-- `last_updated`: `2026-04-17`
+- `last_updated`: `2026-04-20`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / UX track active`
-- `verification`: `2026-04-17` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed（`38/38`）、`npm run test:e2e` passed（`23/23`）；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池与本地资产现已闭环，`four-aspects` 与 `seven-card` 已作为新增高价值运行时牌阵落地，hard-stop 资源与 continuity capsule 边界也已进入真实回归
+- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / R2-R3-R7 UX calibration active`
+- `verification`: `2026-04-20` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed（`40/40`）、`npm run lint -w @aethertarot/web` passed（`0` errors，`13` existing warnings）、`npm run test:e2e` passed（`23/23`）；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池、本地资产、`four-aspects` / `seven-card` 运行时牌阵、hard-stop 资源、continuity capsule 边界与 R2/R3/R7 第一版 UX 风险收口均已进入真实回归
 
 ## 1. 当前状态快照
 
-截至 `2026-04-15` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“回归已恢复、运行时牌池完整闭环，并形成并行 UX / Runtime Alignment 主线”的阶段。
+截至 `2026-04-20` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“回归已恢复、运行时牌池完整闭环，并形成并行 UX / Runtime Alignment 主线”的阶段；当前近端重点不是继续扩牌阵或打开长期记忆，而是校准既有 `R2 / R3 / R7` 前台体验。
 
 知识层现状：
 
@@ -38,7 +38,7 @@
 
 - 为了让 `celtic-cross` 与主流程能更稳定地真实跑通，运行时牌库已从早期示例牌扩展到完整 `78/78`；当前 Runtime Alignment 的剩余问题已不再是牌池缺口，而是牌阵与百科消费边界。
 
-当前瓶颈已经不再是“先补更多知识页”或“接入最小 LangGraph”，而是“在已稳定的结构化 reading contract 与最小 graph 边界上推进后续运行时能力”。
+当前瓶颈已经不再是“先补更多知识页”或“接入最小 LangGraph”，而是“在已稳定的结构化 reading contract 与最小 graph 边界上，先把既有前台理解机制与回归信号守稳”。
 
 `2026-04-09` 的补充更新表明，项目已经形成第二条并行主线：
 
@@ -223,7 +223,7 @@
 
 ### M4. Runtime Alignment
 
-状态：部分完成（运行时牌池完成，牌阵与百科消费策略待补）
+状态：部分完成（运行时牌池完成，新增牌阵暂缓，既有 5 个牌阵的前台组织机制与百科消费策略待继续收口）
 
 已启动部分：
 
@@ -235,7 +235,7 @@
 
 待完成部分：
 
-- 后续新增高价值牌阵
+- 观察既有 5 个运行时牌阵的前台组织机制是否足够清楚，暂缓继续新增运行时牌阵
 - 百科 runtime 接入策略
 - 与 `coverage.ts` 对应的 consistency / coverage 测试
 - 针对真实运行时缺口的定向 ingest 回补
@@ -245,7 +245,7 @@
 本轮主线执行后的关键验证如下：
 
 - `npm run build` 已通过
-- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `38/38` 全绿
+- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `40/40` 全绿
 - `npm run test:e2e` 已通过，当前 smoke suite 为 `23/23` 全绿
 - API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配、final 缺少 initial snapshot、Lite no-followup、final 主题延续、普通健康 safety_note
 - Reading smoke flow 已覆盖：单牌、圣三角、四个面向、七张牌、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
@@ -258,11 +258,11 @@
 
 下一阶段建议不要重新打开 M1 / M2 / M3 的边界讨论，而是按“两条并行主线”继续推进：
 
-1. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定
-2. 技术主线：在最小 graph 边界上评估后续 provider、memory、session capsule 或观测能力
-3. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 中的剩余风险做机制化收口，而不是再换一轮视觉方向
-4. 决定百科是否接知识层、以及新增哪些高价值牌阵
-5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki
+1. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定，继续把 `npm run test:e2e` 作为前台 UX 改动后的 P0 真相门槛。
+2. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 校准 `R2 / R3 / R7` 的读感，确认组织随机说明清楚但不过重、证据分层能降低迎合错觉、建设性阻力有张力但不越界。
+3. Runtime 主线：先观察现有 5 个运行时牌阵的前台组织效果，再决定是否需要新增高价值牌阵；当前不应马上继续扩 runtime spread。
+4. Continuity 主线：服务端 memory persistence、长期画像与 memory merge 继续暂缓；短期只维护 `session_capsule` 现有边界与文档清晰度。
+5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki。
 
 ## 7. 成功标准（更新后）
 
