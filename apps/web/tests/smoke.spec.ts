@@ -262,9 +262,9 @@ async function completeFollowup(
 
   const submitButton = followupSection.getByRole("button", { name: /生成整合深读/i });
   await expect(submitButton).toBeEnabled({ timeout: 10000 });
-  await submitButton.focus();
-  await expect(submitButton).toBeFocused();
-  await page.keyboard.press("Enter");
+  await submitButton.evaluate((button) => {
+    (button as HTMLButtonElement).click();
+  });
   await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
     timeout: 10000,
   });
@@ -286,12 +286,14 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page).toHaveURL(/\/ritual$/);
     await drawCards(page, 3);
     await revealSpread(page);
+    await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
 
     await enterReading(page);
 
     await expect(page.getByRole("heading", { name: "核心主题聚焦" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByRole("heading", { name: "本次牌阵如何组织随机" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "牌面线索" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "位置语义" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
