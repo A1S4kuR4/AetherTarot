@@ -226,7 +226,7 @@ function getUnverifiedCondition(questionType: QuestionType) {
     case "self_growth":
       return "反复出现的情绪触发点和真实生活节奏";
     case "decision":
-      return "尚未核实的条件、代价和可承受风险";
+      return "关键条件、代价和可承受风险";
     case "other":
       return "哪些感受来自事实，哪些只是当下的惯性反应";
   }
@@ -241,7 +241,7 @@ function formatTensionAnchor({
   cardName: string;
   orientation: string;
 }) {
-  return `${positionName} 的 ${cardName}（${orientation}）`;
+  return `${positionName}的${cardName}（${orientation}）`;
 }
 
 function buildConstructiveTension({
@@ -303,7 +303,7 @@ function buildFinalConstructiveTension(
     initialReading.cards.find((card) => card.orientation === "reversed")
     ?? initialReading.cards.at(-1)
     ?? initialReading.cards[0];
-  const anchor = `${anchorCard.position} 的 ${anchorCard.name}`;
+  const anchor = `${anchorCard.position}的${anchorCard.name}`;
 
   switch (questionType) {
     case "relationship":
