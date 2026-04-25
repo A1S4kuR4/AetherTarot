@@ -8,6 +8,7 @@ import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
 import { CARD_BACK_IMAGE } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 function shuffleDeck() {
   return [...getAllCards()].sort(() => Math.random() - 0.5);
@@ -189,14 +190,10 @@ export default function RitualView() {
           disabled={isShuffling || isComplete}
           className="btn-ritual"
         >
-          <span
-            className={cn(
-              "material-symbols-outlined text-lg",
-              isShuffling && "animate-spin",
-            )}
-          >
-            refresh
-          </span>
+          <LegacyIcon
+            name="refresh"
+            className={cn("text-lg", isShuffling && "animate-spin")}
+          />
           <span>洗牌</span>
         </button>
         <button
@@ -205,7 +202,7 @@ export default function RitualView() {
           disabled={!canDraw}
           className="btn-secondary-dark"
         >
-          <span className="material-symbols-outlined text-lg">style</span>
+          <LegacyIcon name="style" className="text-lg" />
           <span>抽取一张牌</span>
         </button>
         {isComplete ? (
@@ -214,9 +211,7 @@ export default function RitualView() {
             onClick={() => router.push("/reveal")}
             className="btn-primary"
           >
-            <span className="material-symbols-outlined text-lg">
-              visibility
-            </span>
+            <LegacyIcon name="visibility" className="text-lg" />
             <span>揭示牌阵</span>
           </button>
         ) : null}

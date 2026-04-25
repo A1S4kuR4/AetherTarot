@@ -6,6 +6,7 @@ import { getAllCards } from "@aethertarot/domain-tarot";
 import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 type OfflineCardInput = {
   cardId: string;
@@ -311,7 +312,7 @@ export default function OfflineDrawView() {
                   disabled={isComplete}
                   className="btn-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                  <LegacyIcon name="arrow_forward" className="text-lg" />
                   <span>下一张未录入</span>
                 </button>
               </div>
@@ -322,9 +323,7 @@ export default function OfflineDrawView() {
         <aside className="space-y-4">
           <div className="midnight-panel">
             <div className="mb-4 flex items-center gap-2 text-text-inverse">
-              <span className="material-symbols-outlined text-lg text-indigo">
-                account_tree
-              </span>
+              <LegacyIcon name="account_tree" className="text-lg text-indigo" />
               <h2 className="font-serif text-lg">牌阵位置</h2>
             </div>
             <div className="space-y-2">
@@ -381,7 +380,7 @@ export default function OfflineDrawView() {
             className="btn-primary w-full justify-center py-4 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span>揭示牌阵</span>
-            <span className="material-symbols-outlined text-lg">visibility</span>
+            <LegacyIcon name="visibility" className="text-lg" />
           </button>
         </aside>
       </div>

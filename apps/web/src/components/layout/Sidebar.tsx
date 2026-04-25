@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const navItems = [
   { href: "/", label: "首页", icon: "home" },
@@ -43,7 +44,7 @@ export default function Sidebar() {
             document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
           }}
         >
-          <span className="material-symbols-outlined text-xl">close</span>
+          <LegacyIcon name="close" className="text-xl" />
         </button>
 
         <nav className="flex flex-col gap-2">
@@ -67,9 +68,7 @@ export default function Sidebar() {
                     : "text-text-body hover:bg-paper-muted",
                 )}
               >
-                <span className="material-symbols-outlined text-lg">
-                  {item.icon}
-                </span>
+                <LegacyIcon name={item.icon} className="text-lg" />
                 {item.label}
               </Link>
             );

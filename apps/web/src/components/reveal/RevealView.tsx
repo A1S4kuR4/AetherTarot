@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const SPREAD_ORGANIZATION_MODELS: Record<string, string[]> = {
   single: ["单一焦点", "把本轮随机收束到一个核心位置", "适合先看清当下最需要被照亮的线索"],
@@ -170,9 +171,7 @@ export default function RevealView() {
             className="btn-primary mt-14"
           >
             <span className="text-sm font-medium">带着整组气候进入深读</span>
-            <span className="material-symbols-outlined text-lg">
-              arrow_right_alt
-            </span>
+            <LegacyIcon name="arrow_right_alt" className="text-lg" />
           </button>
         </div>
 
@@ -180,9 +179,7 @@ export default function RevealView() {
         <div className="space-y-6 lg:col-span-4">
           <div className="midnight-panel">
             <div className="mb-3 flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-lg text-terracotta">
-                flare
-              </span>
+              <LegacyIcon name="flare" className="text-lg text-terracotta" />
               <h2 className="font-serif text-lg text-text-inverse">
                 阅读容器
               </h2>
@@ -196,9 +193,7 @@ export default function RevealView() {
 
           <div className="midnight-panel">
             <div className="mb-4 flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-lg text-indigo">
-                account_tree
-              </span>
+              <LegacyIcon name="account_tree" className="text-lg text-indigo" />
               <h2 className="font-serif text-lg text-text-inverse">
                 牌阵如何组织随机
               </h2>
@@ -222,9 +217,7 @@ export default function RevealView() {
 
           <div className="midnight-panel">
             <div className="mb-5 flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-lg text-indigo">
-                auto_awesome
-              </span>
+              <LegacyIcon name="auto_awesome" className="text-lg text-indigo" />
               <h2 className="font-serif text-lg text-text-inverse">
                 牌阵解析
               </h2>

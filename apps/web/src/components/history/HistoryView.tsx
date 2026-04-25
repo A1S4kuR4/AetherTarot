@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { HISTORY_THUMBNAIL } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const spreads = getAllSpreads();
 
@@ -77,9 +78,7 @@ export default function HistoryView() {
       {history.length > 0 && recentTheme && (
         <div className="mb-10 rounded-3xl border border-terracotta/20 bg-gradient-to-r from-terracotta/5 to-paper p-6 shadow-sm">
           <div className="mb-3 flex items-center gap-3">
-            <span className="material-symbols-outlined text-xl text-terracotta/80">
-              psychology
-            </span>
+            <LegacyIcon name="psychology" className="text-xl text-terracotta/80" />
             <h3 className="font-serif text-xl text-ink">阶段觉察追踪</h3>
           </div>
           <p className="font-sans text-sm leading-[1.8] text-text-body">
@@ -124,9 +123,10 @@ export default function HistoryView() {
                       <span className="font-sans text-[11px] font-medium text-text-muted">
                         {formatHistoryDate(historyEntry.createdAt)}
                       </span>
-                      <span className="material-symbols-outlined text-sm text-terracotta opacity-0 transition-opacity group-hover:opacity-100">
-                        north_east
-                      </span>
+                      <LegacyIcon
+                        name="north_east"
+                        className="text-sm text-terracotta opacity-0 transition-opacity group-hover:opacity-100"
+                      />
                     </div>
 
                     <h3 className="mb-1.5 font-serif text-lg text-ink">
