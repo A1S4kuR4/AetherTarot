@@ -206,6 +206,8 @@ async function revealSpread(page: Parameters<typeof test>[0]["page"]) {
 
     try {
       await expect(page).toHaveURL(/\/reveal$/, { timeout: 3000 });
+      await expect(page.getByRole("heading", { name: "本轮观察重点" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
       return;
     } catch (error) {
       lastError = error;
@@ -294,6 +296,7 @@ test.describe("AetherTarot smoke flow", () => {
       timeout: 10000,
     });
     await expect(page.getByRole("heading", { name: "本次牌阵如何组织随机" })).toBeVisible();
+    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "牌面线索" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "位置语义" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
@@ -322,6 +325,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
 
     await gotoAppRoute(page, "/history");
@@ -408,6 +412,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
@@ -436,6 +441,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
     await expect(page.getByText("身体层面", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("精神层面", { exact: true }).first()).toBeVisible();
     await completeFollowup(page);
@@ -468,6 +474,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
     await expect(page.getByText("答案 / 当事人", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("周遭能量", { exact: true }).first()).toBeVisible();
     await completeFollowup(page);
@@ -499,6 +506,28 @@ test.describe("AetherTarot smoke flow", () => {
 
     await page.getByRole("button", { name: /清除这条延续线/i }).click();
     await expect(page.getByText(/延续中的线索/)).toBeHidden();
+  });
+
+  test("shows runtime and knowledge coverage with all four minor suits in encyclopedia", async ({
+    page,
+  }) => {
+    await page.goto("/encyclopedia", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(250);
+
+    await expect(page.getByRole("heading", { name: "塔罗百科" })).toBeVisible();
+    await expect(page.getByText("78 / 78").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /权杖 \(14\)/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /圣杯 \(14\)/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /宝剑 \(14\)/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /星币 \(14\)/ })).toBeVisible();
+
+    await page.getByRole("button", { name: /宝剑 \(14\)/ }).click();
+    await expect(page.getByRole("button", { name: "宝剑王牌" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "愚者" })).toBeHidden();
+
+    await page.getByRole("button", { name: /星币 \(14\)/ }).click();
+    await expect(page.getByRole("button", { name: "星币王牌" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "宝剑王牌" })).toBeHidden();
   });
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {

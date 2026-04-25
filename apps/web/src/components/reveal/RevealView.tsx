@@ -5,19 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
-
-const SPREAD_ORGANIZATION_MODELS: Record<string, string[]> = {
-  single: ["单一焦点", "把本轮随机收束到一个核心位置", "适合先看清当下最需要被照亮的线索"],
-  "holy-triangle": ["过去", "现在", "潜在流向"],
-  "four-aspects": ["身体", "情感", "心智", "精神"],
-  "seven-card": ["时间线", "答案 / 结果主轴", "外部气候 / 主观投射张力"],
-  "celtic-cross": ["核心 / 挑战", "意识 / 潜意识", "时间线", "自我 / 环境 / 希望恐惧 / 结果"],
-};
-
-function getSpreadOrganizationModel(spreadId: string, positionNames: string[]) {
-  return SPREAD_ORGANIZATION_MODELS[spreadId] ?? positionNames;
-}
 
 export default function RevealView() {
   const router = useRouter();
@@ -48,8 +37,9 @@ export default function RevealView() {
           : selectedSpread.positions.length === 7
             ? "md:grid-cols-2 xl:grid-cols-4"
           : "md:grid-cols-2 xl:grid-cols-3";
-  const organizationModel = getSpreadOrganizationModel(
+  const spreadExperience = getSpreadExperience(
     selectedSpread.id,
+    selectedSpread.name,
     selectedSpread.positions.map((position) => position.name),
   );
 
@@ -74,6 +64,9 @@ export default function RevealView() {
             ? `这些牌来自你的线下抽取，但你已经用 ${selectedSpread.name} 选择了观察角度。`
             : `这些牌的出现仍然带有随机性，但你已经用 ${selectedSpread.name} 选择了观察角度。`}
           接下来请先感受整组牌在不同位置形成的张力，而不是急着把它们听成一个确定答案。
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-text-inverse">
+          {spreadExperience.revealFocus}
         </p>
       </div>
 
@@ -193,6 +186,18 @@ export default function RevealView() {
 
           <div className="midnight-panel">
             <div className="mb-4 flex items-center gap-2.5">
+              <LegacyIcon name="travel_explore" className="text-lg text-terracotta" />
+              <h2 className="font-serif text-lg text-text-inverse">
+                本轮观察重点
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-text-inverse-muted">
+              {spreadExperience.revealFocus}
+            </p>
+          </div>
+
+          <div className="midnight-panel">
+            <div className="mb-4 flex items-center gap-2.5">
               <LegacyIcon name="account_tree" className="text-lg text-indigo" />
               <h2 className="font-serif text-lg text-text-inverse">
                 牌阵如何组织随机
@@ -204,7 +209,7 @@ export default function RevealView() {
                 : `随机决定哪张牌进入哪个位置；${selectedSpread.name} 决定阅读顺序、位置语义与综合路径。`}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {organizationModel.map((item, index) => (
+              {spreadExperience.organizationModel.map((item, index) => (
                 <span
                   key={`${selectedSpread.id}-organization-${item}`}
                   className="rounded-full border border-midnight-border bg-midnight-elevated/60 px-3 py-1.5 font-sans text-[11px] text-text-inverse-muted"

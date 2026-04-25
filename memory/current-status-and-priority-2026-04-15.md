@@ -1,6 +1,6 @@
 # 当前状态 + 优先级清单（2026-04-22 同步）
 
-- `last_updated`: `2026-04-22`
+- `last_updated`: `2026-04-25`
 - `owner`: `Codex`
 - `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
 
@@ -21,7 +21,7 @@
 
 ## 2. 当前状态快照
 
-截至 `2026-04-22`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、连续性边界开始收紧、第二个新增高价值牌阵已上线、R2/R3/R7 第一版读感机制已通过回归复核”的阶段。
+截至 `2026-04-25`，AetherTarot 已经不再处于“缺核心架构”的阶段，而进入了“主链已成、运行时牌池已完整、cardsV2 已切入 runtime、连续性边界开始收紧、第二个新增高价值牌阵已上线、R2/R3/R7 已推进到 5 个牌阵差异化读感校准”的阶段。
 
 当前可确认的事实如下：
 
@@ -40,19 +40,21 @@
 运行时现状：
 
 - `data/decks/rider-waite-smith.json` 当前包含完整 `78` 张运行时牌：Rider-Waite-Smith 全牌池已接入
-- `apps/web/public/cards/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面
+- `apps/web/public/cardsV2/` 当前包含 `79` 个文件：`78` 张正面牌面与 `1` 张背面；旧 `apps/web/public/cards/` 暂时保留但不再作为当前 runtime imageUrl 来源
 - `data/spreads/` 当前已上线 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross` 五个运行时牌阵，其中 `four-aspects` 与 `seven-card` 已完成 `/new -> /ritual -> /reveal -> /reading -> /journey` 全链路接入
 - hard-stop 示例资源已替换为中国大陆固定的真实危机 / 心理支持入口，并补入 continuity capsule 的高风险细节净化
 - Reading 页已完成第一版“证据感阅读体验”收口：逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”，用于缓解 R3 迎合错觉，并保持现有 `StructuredReading` schema 不变
 - `/reveal` 与 `/reading` 已补入第一版“牌阵如何组织随机”机制说明：随机决定牌面与正逆位，牌阵决定阅读顺序、位置语义与综合路径；该机制缓解 R2，但不宣称用户能操纵随机
 - reading provider / LLM prompt 已加入第一版“建设性阻力”规则：reading 至少保留一个来自牌面、正逆位、位置语义、牌阵张力或现实未验证条件的非迎合观察点；后续读感校准已让不同问题类型使用不同阻力表达，避免退回同一句模板；该规则缓解 R7，但不改变 safety layer 或输出协议
 - `2026-04-22` 已复跑 targeted semantic fixtures、build、完整 e2e 与 lint：`10/10`、build passed、`23/23`、`0` errors / `13` existing warnings；这次复核未暴露需要改变 schema、牌阵数量或 memory 边界的问题
+- `2026-04-25` 已完成 P1 轻量体验收口：`/reveal` 与 `/reading` 共用 5 个牌阵的 `spreadExperience` 前台口径，reading 机制区显式强化“牌面线索 -> 位置语义 -> 综合推断”的证据路径；provider / prompt bias 已补齐 5 个牌阵的 spread-specific reading axis；本轮没有新增牌阵、没有改变 `POST /api/reading` contract、没有改变 `StructuredReading` schema、没有打开服务端 persistence 或 memory merge
+- `2026-04-25` Runtime Alignment 小步推进已完成：Encyclopedia 继续消费 runtime deck JSON，但补全 wands / cups / swords / pentacles 四花色过滤与 runtime / knowledge 覆度展示；`scripts/validate-card-assets.mjs` 已增加 `78` 张 deck 与 `79` 条 manifest entries 的显式数量守卫
 - `/new` 已把明显重大现实决策类提问的前置提醒推进为现实边界确认：用户需先确认塔罗只用于整理线索，现实信息、专业意见与个人底线优先，才能进入抽牌仪式；服务端 Tier 2 `sober_check` 仍保持独立
 - `/new` 已新增非阻断的重复主题提醒：基于本地 completed history 中最近若干条相同 `question_type` 的记录，提示用户先回看上一条线索；该机制不启用服务端 persistence、不打开 memory merge，也不改变 `POST /api/reading` 协议
 
 这意味着当前主瓶颈已经不是“知识是否足够”，也不是“继续立刻扩 runtime / memory”，而是：
 
-- 现有 5 个运行时牌阵的前台组织机制是否真的清楚、不过载
+- 现有 5 个运行时牌阵的前台组织机制已经进入差异化表达，但仍需继续观察是否清楚、不过载
 - 文档是否持续与仓库实物同步
 - 长期连续性能力是否能先守住边界，不提前打开服务端 persistence、memory merge 或长期画像
 
@@ -174,14 +176,15 @@
 
 - 状态数字来自当前仓库实物：
   - `data/decks/rider-waite-smith.json`
-  - `apps/web/public/cards/`
+  - `apps/web/public/cardsV2/`
   - `knowledge/wiki/*`
 - 健康度结论来自当前本地验证：
   - `npm run build`：通过
   - `npm run test:contract -w @aethertarot/web`：通过（`40/40`）
-  - `npm run test:e2e`：通过（`23/23`；已覆盖 `/reveal` 与 `/reading` 的组织随机说明）
-  - `npm run test:contract -w @aethertarot/web -- src/server/reading/__tests__/semantic-fixtures.spec.ts`：通过（`10/10`，`2026-04-22` 复核）
-  - `npm run lint -w @aethertarot/web`：通过（`0` errors，`13` existing warnings，`2026-04-22` 复核）
+  - `npm run test:e2e`：通过（`24/24`；已覆盖 `/reveal` 与 `/reading` 的组织随机 / 证据路径说明，以及 Encyclopedia 四花色过滤）
+  - `npm run test:contract -w @aethertarot/web -- src/server/reading/__tests__/semantic-fixtures.spec.ts`：通过（`12/12`，`2026-04-25` 复核）
+  - `npm run lint -w @aethertarot/web`：通过（`0` errors，`14` existing-style warnings，`2026-04-25` 复核）
+  - `npm run validate:assets`：通过（`78` tarot cards plus card back in `apps\web\public\cardsV2`）
 
 ## 8. 默认假设
 
