@@ -33,6 +33,7 @@ export default function InterpretationView() {
   const {
     question,
     selectedSpread,
+    drawSource,
     drawnCards,
     reading,
     errorMessage,
@@ -139,7 +140,7 @@ export default function InterpretationView() {
     }
 
     if (drawnCards.length === 0) {
-      router.replace("/ritual");
+      router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
       return;
     }
 
@@ -148,6 +149,7 @@ export default function InterpretationView() {
     }
   }, [
     drawnCards.length,
+    drawSource,
     errorMessage,
     interpretReading,
     isLoading,
@@ -197,6 +199,9 @@ export default function InterpretationView() {
                   </span>
                 ) : null}
                 <span className="chip-warm text-[11px]">{selectedSpread.name}</span>
+                {drawSource === "offline_manual" ? (
+                  <span className="chip-accent text-[11px]">线下录入</span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -435,7 +440,7 @@ export default function InterpretationView() {
                             </div>
                           </div>
                           {drawnCard ? (
-                            <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-xl border border-paper-border md:ml-4">
+                            <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-card-sm border border-paper-border md:ml-4">
                               <img
                                 src={drawnCard.card.imageUrl}
                                 alt={drawnCard.card.name}
@@ -635,7 +640,12 @@ export default function InterpretationView() {
             解读流程
           </h4>
           <div className="space-y-3">
-            {["提问", "仪式", "揭示", "解读"].map((step, index) => (
+            {[
+              "提问",
+              drawSource === "offline_manual" ? "录入" : "仪式",
+              "揭示",
+              "解读",
+            ].map((step, index) => (
               <div
                 key={step}
                 className={cn("flex items-center gap-2.5", index < 3 && "opacity-40")}
@@ -667,7 +677,7 @@ export default function InterpretationView() {
             {drawnCards.map((drawnCard) => (
               <div
                 key={drawnCard.positionId}
-                className="group aspect-[1/1.7] overflow-hidden rounded-lg border border-paper-border transition-shadow hover:shadow-sm"
+                className="group aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border transition-shadow hover:shadow-sm"
               >
                 <img
                   src={drawnCard.card.imageUrl}

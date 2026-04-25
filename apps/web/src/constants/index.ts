@@ -1,4 +1,4 @@
-export const CARD_BACK_IMAGE = "/cards/back.png";
+export const CARD_BACK_IMAGE = "/cardsV2/back.png";
 
 export const HISTORY_THUMBNAIL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBSlNznSxIu7WuOoxcEEfVuzf0rnx-2tut032cZfimcZNo8AOmjM-H4Vot7Vb72v36SHTzqWLzmtJSYCO9B8bq8mlIoyVugdlbeHH7m7YjXUF1rvoxA0XDfHwYs8jBXszmjE6-CMLBPq3aH1LLDmPW7AH5nP3qHSerfzFD4in0mW9CE23AAIVn-vANEv6HAZlq2UOZxI4W0oqs9wcsJc-u-jUmQHgNIjnE-It8Ei93R0zixucnZDlV2MTTmlRBYremEFCmI9KxeeclQ";

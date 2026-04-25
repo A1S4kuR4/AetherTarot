@@ -15,16 +15,15 @@ const cardsRoot = path.join(publicRoot, "cards");
 const manifestPath = path.join(repoRoot, "data/decks/card-asset-manifest.json");
 const width = 1000;
 const height = 1700;
-const generatedAt = "2026-04-10";
+const generatedAt = "2026-04-23";
 
-const palettes = [
-  ["#16211f", "#d7b36a", "#f4ead6", "#7e3f32"],
-  ["#171b2a", "#8db7d7", "#f2e8cf", "#c86642"],
-  ["#241a20", "#cda46c", "#f6e6d0", "#5d7770"],
-  ["#102025", "#d8c17a", "#f3efe2", "#a14d39"],
-  ["#211d15", "#9fbf8a", "#f2e2c4", "#bf5b3d"],
-  ["#14161e", "#d39d74", "#f4eadb", "#6c7fb1"],
-];
+const palettes = {
+  major: ["#0b0d12", "#7170ff", "#f5f2e8", "#c96442", "#58734f"],
+  cups: ["#101820", "#7fa7b8", "#f5f2e8", "#b86a5b", "#3f6c73"],
+  wands: ["#181713", "#c96442", "#f5f2e8", "#a36a1f", "#7c4a35"],
+  swords: ["#11151d", "#a7afbc", "#f4f6f8", "#7170ff", "#6e685d"],
+  pentacles: ["#151912", "#58734f", "#f5f2e8", "#a36a1f", "#8a8377"],
+};
 
 function escapeXml(value) {
   return String(value)
@@ -41,8 +40,17 @@ function hashSeed(value) {
   );
 }
 
+function suitFor(card) {
+  const id = String(card.id);
+  if (id.includes("cups")) return "cups";
+  if (id.includes("wands")) return "wands";
+  if (id.includes("swords")) return "swords";
+  if (id.includes("pentacles")) return "pentacles";
+  return "major";
+}
+
 function paletteFor(card) {
-  return palettes[hashSeed(card.id) % palettes.length];
+  return palettes[suitFor(card)];
 }
 
 function romanFromArcana(arcana) {
@@ -122,6 +130,10 @@ function motif(card, accent, paper) {
     case "world":
       return `<ellipse cx="500" cy="900" rx="260" ry="365" ${commonStroke}/><path d="M500 650 C615 780 615 1020 500 1150 C385 1020 385 780 500 650 Z" ${commonStroke}/><circle cx="500" cy="900" r="86" ${softFill}/>`;
     default:
+      if (card.id.includes("cups")) {
+        return cupsMotif(card.id, commonStroke, softFill, paper);
+      }
+
       if (card.id.includes("swords")) {
         return swordsMotif(card.id, commonStroke, softFill, paper);
       }
@@ -132,6 +144,60 @@ function motif(card, accent, paper) {
 
       return wandsMotif(card.id, commonStroke, softFill);
   }
+}
+
+function cupsMotif(id, commonStroke, softFill, paper) {
+  const courtMotif = cupsCourtMotif(id, commonStroke, softFill, paper);
+  if (courtMotif) {
+    return courtMotif;
+  }
+
+  const positionsById = {
+    "ace-of-cups": [[500, 900]],
+    "two-of-cups": [[390, 900], [610, 900]],
+    "three-of-cups": [[500, 740], [365, 995], [635, 995]],
+    "four-of-cups": [[380, 760], [620, 760], [380, 1040], [620, 1040]],
+    "five-of-cups": [[500, 680], [350, 850], [650, 850], [410, 1080], [590, 1080]],
+    "six-of-cups": [[360, 720], [640, 720], [360, 900], [640, 900], [410, 1080], [590, 1080]],
+    "seven-of-cups": [[500, 650], [360, 790], [640, 790], [300, 960], [500, 960], [700, 960], [500, 1130]],
+    "eight-of-cups": [[360, 700], [640, 700], [300, 860], [500, 860], [700, 860], [360, 1020], [640, 1020], [500, 1180]],
+    "nine-of-cups": [[500, 640], [360, 760], [640, 760], [260, 910], [500, 910], [740, 910], [360, 1060], [640, 1060], [500, 1210]],
+    "ten-of-cups": [[500, 610], [360, 730], [640, 730], [250, 860], [500, 860], [750, 860], [360, 1010], [640, 1010], [430, 1180], [570, 1180]],
+  };
+
+  const cups = (positionsById[id] ?? [[500, 900]])
+    .map(([cx, cy]) => cupToken(cx, cy, commonStroke, softFill, paper))
+    .join("");
+
+  const wave = `<path d="M220 1260 C330 1195 430 1325 540 1260 C650 1195 720 1260 790 1228" stroke="${paper}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.55"/>`;
+
+  return `${cups}${wave}`;
+}
+
+function cupsCourtMotif(id, commonStroke, softFill, paper) {
+  const cup = cupToken(500, 860, commonStroke, softFill, paper);
+
+  switch (id) {
+    case "page-of-cups":
+      return `${cup}<path d="M500 1160 L500 1000 M430 1160 L570 1160 M445 1010 L555 1010" ${commonStroke}/><circle cx="500" cy="740" r="42" ${softFill}/><path d="M350 1225 C425 1165 575 1165 650 1225" ${commonStroke}/>`;
+    case "knight-of-cups":
+      return `${cup}<path d="M330 1130 C430 1030 570 1030 670 1130" ${commonStroke}/><path d="M380 1130 L340 1215 M620 1130 L660 1215 M420 1010 C455 940 545 940 580 1010" ${commonStroke}/><path d="M280 1250 C390 1175 610 1175 720 1250" ${commonStroke}/>`;
+    case "queen-of-cups":
+      return `${cup}<path d="M395 1100 C430 1015 470 990 500 990 C530 990 570 1015 605 1100" ${commonStroke}/><path d="M360 1180 L430 1060 M640 1180 L570 1060 M395 1180 L605 1180" ${commonStroke}/><circle cx="500" cy="715" r="38" ${softFill}/>`;
+    case "king-of-cups":
+      return `${cup}<path d="M390 720 L440 650 L500 700 L560 650 L610 720" ${commonStroke}/><path d="M360 1120 L640 1120 L605 1235 L395 1235 Z" ${commonStroke}/><path d="M430 1120 L430 1010 M570 1120 L570 1010" ${commonStroke}/><path d="M315 990 C400 940 600 1040 685 990" ${commonStroke}/>`;
+    default:
+      return null;
+  }
+}
+
+function cupToken(cx, cy, commonStroke, softFill, paper) {
+  return `<g transform="translate(${cx} ${cy})">
+    <path d="M-76 -92 C-62 18 -38 84 0 94 C38 84 62 18 76 -92 Z" ${commonStroke}/>
+    <path d="M-92 -92 C-58 -126 58 -126 92 -92 C58 -54 -58 -54 -92 -92 Z" fill="${paper}" opacity="0.18"/>
+    <path d="M-54 116 L54 116 M0 94 L0 116" stroke="${paper}" stroke-width="13" stroke-linecap="round" fill="none" opacity="0.88"/>
+    <circle cx="0" cy="-36" r="28" ${softFill}/>
+  </g>`;
 }
 
 function wandsMotif(id, commonStroke, softFill) {
@@ -357,46 +423,71 @@ function pentacleToken(cx, cy, commonStroke, softFill, paper) {
 }
 
 function cardSvg(card, index) {
-  const [base, accent, paper, ember] = paletteFor(card);
-  const mark = displayMark(card);
-  const glow = `${accent}55`;
-  const title = escapeXml(card.name);
-  const englishName = escapeXml(card.englishName);
+  const [base, accent, paper, ember, muted] = paletteFor(card);
+  const seed = hashSeed(card.id);
+  const glow = `${accent}66`;
+  const haze = `${ember}44`;
+  const drift = (seed % 180) - 90;
+  const scale = 1 + (seed % 5) * 0.012;
+  const lowerArc = 1260 + (seed % 42);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="${base}"/>
-      <stop offset="0.58" stop-color="${ember}"/>
+      <stop offset="0.52" stop-color="${ember}"/>
       <stop offset="1" stop-color="${base}"/>
+    </linearGradient>
+    <linearGradient id="veil" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="${paper}" stop-opacity="0.20"/>
+      <stop offset="0.45" stop-color="${paper}" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="${base}" stop-opacity="0.24"/>
     </linearGradient>
     <radialGradient id="halo" cx="50%" cy="50%" r="58%">
       <stop offset="0" stop-color="${glow}"/>
-      <stop offset="0.55" stop-color="${accent}22"/>
+      <stop offset="0.46" stop-color="${accent}24"/>
       <stop offset="1" stop-color="${base}00"/>
     </radialGradient>
-    <pattern id="grain" width="96" height="96" patternUnits="userSpaceOnUse">
-      <circle cx="14" cy="18" r="2" fill="${paper}" opacity="0.09"/>
-      <circle cx="68" cy="42" r="1.5" fill="${paper}" opacity="0.07"/>
-      <circle cx="44" cy="80" r="1.2" fill="${paper}" opacity="0.08"/>
+    <radialGradient id="ember" cx="50%" cy="78%" r="48%">
+      <stop offset="0" stop-color="${haze}"/>
+      <stop offset="1" stop-color="${base}00"/>
+    </radialGradient>
+    <filter id="inkBloom" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="${base}" flood-opacity="0.32"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="${accent}" flood-opacity="0.22"/>
+    </filter>
+    <pattern id="grain" width="80" height="80" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="18" r="1.8" fill="${paper}" opacity="0.10"/>
+      <circle cx="62" cy="34" r="1.2" fill="${paper}" opacity="0.07"/>
+      <circle cx="38" cy="68" r="1.4" fill="${paper}" opacity="0.08"/>
+      <path d="M0 40 C20 34 38 46 80 38" stroke="${paper}" stroke-width="1" opacity="0.045" fill="none"/>
     </pattern>
   </defs>
   <rect width="${width}" height="${height}" fill="url(#bg)"/>
   <rect width="${width}" height="${height}" fill="url(#grain)"/>
-  <circle cx="500" cy="900" r="560" fill="url(#halo)"/>
-  <path d="M92 190 C270 88 730 88 908 190 L908 1510 C730 1612 270 1612 92 1510 Z" fill="${paper}" opacity="0.065"/>
-  <rect x="52" y="52" width="896" height="1596" rx="58" fill="none" stroke="${paper}" stroke-width="6" opacity="0.58"/>
-  <rect x="88" y="88" width="824" height="1524" rx="42" fill="none" stroke="${accent}" stroke-width="3" opacity="0.62"/>
-  ${svgText(title, 500, 180, 70, paper, 650)}
-  ${svgText(englishName, 500, 242, 31, accent, 520)}
-  ${svgText(mark.text, 500, 354, mark.size, paper, 600)}
-  ${motif(card, accent, paper)}
-  <path d="M210 1300 C326 1235 674 1235 790 1300" stroke="${paper}" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.6"/>
-  ${svgText(keyword(card, 0), 340, 1390, 34, paper, 520)}
-  ${svgText(keyword(card, 1), 660, 1390, 34, paper, 520)}
-  ${svgText(card.element ?? "", 500, 1495, 28, accent, 520)}
-  <text x="500" y="1578" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" letter-spacing="6" fill="${paper}" opacity="0.58">AETHERTAROT ${String(index + 1).padStart(2, "0")}</text>
+  <rect width="${width}" height="${height}" fill="url(#veil)"/>
+  <circle cx="${500 + drift * 0.45}" cy="850" r="575" fill="url(#halo)"/>
+  <ellipse cx="${500 - drift * 0.32}" cy="1250" rx="410" ry="260" fill="url(#ember)"/>
+  <path d="M96 220 C250 92 750 92 904 220 L904 1480 C750 1608 250 1608 96 1480 Z" fill="${paper}" opacity="0.07"/>
+  <path d="M116 292 C295 176 705 176 884 292" stroke="${paper}" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.28"/>
+  <path d="M150 1420 C318 1530 682 1530 850 1420" stroke="${paper}" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.22"/>
+  <path d="M88 88 H912 V1612 H88 Z" fill="none" stroke="${paper}" stroke-width="4" opacity="0.25"/>
+  <path d="M126 126 H874 V1574 H126 Z" fill="none" stroke="${accent}" stroke-width="3" opacity="0.32"/>
+  <circle cx="500" cy="300" r="70" fill="none" stroke="${paper}" stroke-width="7" opacity="0.24"/>
+  <path d="M553 238 A82 82 0 1 0 553 362 A50 50 0 1 1 553 238" fill="${paper}" opacity="0.24"/>
+  <g opacity="0.46">
+    <circle cx="210" cy="310" r="12" fill="${accent}"/>
+    <circle cx="790" cy="310" r="12" fill="${accent}"/>
+    <circle cx="210" cy="1390" r="12" fill="${accent}"/>
+    <circle cx="790" cy="1390" r="12" fill="${accent}"/>
+  </g>
+  <g filter="url(#inkBloom)" transform="translate(0 -20) scale(${scale}) translate(${((1 - scale) * width) / 2} ${((1 - scale) * height) / 2})">
+    ${motif(card, accent, paper)}
+  </g>
+  <path d="M218 ${lowerArc} C330 ${lowerArc - 64} 670 ${lowerArc - 64} 782 ${lowerArc}" stroke="${muted}" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.46"/>
+  <path d="M270 ${lowerArc + 56} C390 ${lowerArc + 8} 610 ${lowerArc + 8} 730 ${lowerArc + 56}" stroke="${paper}" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.30"/>
+  <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="${base}" stroke-width="26" opacity="0.28"/>
 </svg>`;
 }
 
@@ -405,24 +496,34 @@ function backSvg() {
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#10141d"/>
-      <stop offset="0.48" stop-color="#433449"/>
-      <stop offset="1" stop-color="#15120f"/>
+      <stop offset="0" stop-color="#0b0d12"/>
+      <stop offset="0.50" stop-color="#181713"/>
+      <stop offset="1" stop-color="#32271f"/>
     </linearGradient>
     <radialGradient id="halo" cx="50%" cy="48%" r="62%">
-      <stop offset="0" stop-color="#d9b86b66"/>
-      <stop offset="1" stop-color="#d9b86b00"/>
+      <stop offset="0" stop-color="#7170ff66"/>
+      <stop offset="0.55" stop-color="#c9644230"/>
+      <stop offset="1" stop-color="#7170ff00"/>
     </radialGradient>
+    <pattern id="grain" width="82" height="82" patternUnits="userSpaceOnUse">
+      <circle cx="15" cy="19" r="1.8" fill="#f5f2e8" opacity="0.10"/>
+      <circle cx="60" cy="39" r="1.3" fill="#f5f2e8" opacity="0.07"/>
+      <path d="M0 48 C22 40 48 56 82 45" stroke="#f5f2e8" stroke-width="1" opacity="0.05" fill="none"/>
+    </pattern>
   </defs>
   <rect width="${width}" height="${height}" fill="url(#bg)"/>
+  <rect width="${width}" height="${height}" fill="url(#grain)"/>
   <circle cx="500" cy="830" r="580" fill="url(#halo)"/>
-  <rect x="52" y="52" width="896" height="1596" rx="58" fill="none" stroke="#f0dfba" stroke-width="6" opacity="0.62"/>
-  <rect x="104" y="104" width="792" height="1492" rx="38" fill="none" stroke="#d7b36a" stroke-width="3" opacity="0.7"/>
-  <path d="M500 420 L586 700 L880 700 L642 870 L732 1150 L500 975 L268 1150 L358 870 L120 700 L414 700 Z" fill="none" stroke="#f0dfba" stroke-width="18" stroke-linejoin="round" opacity="0.86"/>
-  <circle cx="500" cy="850" r="245" fill="none" stroke="#d7b36a" stroke-width="10" opacity="0.72"/>
-  <path d="M580 590 A270 270 0 1 0 580 1110 A165 165 0 1 1 580 590" fill="#f0dfba" opacity="0.8"/>
-  <text x="500" y="1415" text-anchor="middle" font-family="Noto Serif SC, Georgia, serif" font-size="58" font-weight="650" fill="#f0dfba">AetherTarot</text>
-  <text x="500" y="1482" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" letter-spacing="7" fill="#d7b36a">REFLECTIVE TAROT</text>
+  <path d="M96 220 C250 92 750 92 904 220 L904 1480 C750 1608 250 1608 96 1480 Z" fill="#f5f2e8" opacity="0.07"/>
+  <rect x="88" y="88" width="824" height="1524" fill="none" stroke="#f5f2e8" stroke-width="4" opacity="0.32"/>
+  <rect x="126" y="126" width="748" height="1448" fill="none" stroke="#c96442" stroke-width="3" opacity="0.34"/>
+  <circle cx="500" cy="850" r="302" fill="none" stroke="#f5f2e8" stroke-width="10" opacity="0.42"/>
+  <circle cx="500" cy="850" r="214" fill="none" stroke="#7170ff" stroke-width="7" opacity="0.42"/>
+  <path d="M500 430 L585 704 L873 704 L640 870 L728 1148 L500 976 L272 1148 L360 870 L127 704 L415 704 Z" fill="none" stroke="#f5f2e8" stroke-width="16" stroke-linejoin="round" opacity="0.78"/>
+  <path d="M575 594 A266 266 0 1 0 575 1106 A164 164 0 1 1 575 594" fill="#f5f2e8" opacity="0.72"/>
+  <path d="M500 612 C610 720 610 980 500 1088 C390 980 390 720 500 612 Z" fill="none" stroke="#c96442" stroke-width="10" stroke-linejoin="round" opacity="0.52"/>
+  <path d="M310 1320 C425 1268 575 1372 690 1320" stroke="#f5f2e8" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.36"/>
+  <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#0b0d12" stroke-width="26" opacity="0.28"/>
 </svg>`;
 }
 
@@ -483,7 +584,8 @@ function assetEntry(imageUrl, assetId, png) {
       status: "approved",
       reviewer: "Codex",
       reviewedAt: generatedAt,
-      notes: "Portrait-native generated composition; not stretched, padded, or cropped from a square source.",
+      notes:
+        "Local procedural v2 portrait composition rendered from SVG via sharp; no API call, no square source, full-bleed runtime PNG.",
     },
     sha256: sha256(png),
   };
