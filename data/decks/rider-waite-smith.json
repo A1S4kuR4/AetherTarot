@@ -23,7 +23,7 @@
       "悬崖边的狗：对过去经验对当下行动拉扯的警示。",
       "行囊：带着必要却不沉重的过去经验。"
     ],
-    "imageUrl": "/cards/major_0_fool.png"
+    "imageUrl": "/cardsV2/major_0_fool.png"
   },
   {
     "id": "magician",
@@ -49,7 +49,7 @@
       "四要素工具：对物质世界各种元素的掌控。",
       "指向天地的手势：传递意志，将灵感具象化为现实。"
     ],
-    "imageUrl": "/cards/major_1_magician.png"
+    "imageUrl": "/cardsV2/major_1_magician.png"
   },
   {
     "id": "high-priestess",
@@ -75,7 +75,7 @@
       "妥拉经卷：象征被部分遮蔽的更高智慧。",
       "月亮冠冕：象征与自然周期及潜意识的深刻连接。"
     ],
-    "imageUrl": "/cards/major_2_high_priestess.png"
+    "imageUrl": "/cardsV2/major_2_high_priestess.png"
   },
   {
     "id": "empress",
@@ -101,7 +101,7 @@
       "森林与流水：自然的生生不息与滋养力。",
       "十二星冠：代表对宇宙周期的统治与调和。"
     ],
-    "imageUrl": "/cards/major_3_empress.png"
+    "imageUrl": "/cardsV2/major_3_empress.png"
   },
   {
     "id": "emperor",
@@ -127,7 +127,7 @@
       "山岳背影：稳固、无可撼动的社会地位。",
       "权杖：代表将意志强制执行的权利。"
     ],
-    "imageUrl": "/cards/major_4_emperor.png"
+    "imageUrl": "/cardsV2/major_4_emperor.png"
   },
   {
     "id": "hierophant",
@@ -153,7 +153,7 @@
       "三重十字权杖：对三重世界的知识掌控。",
       "跪地的门徒：可被继承与传授的公共知识。"
     ],
-    "imageUrl": "/cards/major_5_hierophant.png"
+    "imageUrl": "/cardsV2/major_5_hierophant.png"
   },
   {
     "id": "lovers",
@@ -179,7 +179,7 @@
       "善恶树：诱惑、欲望与对后果的承担。",
       "山峰：成长后必须攀登的高度。"
     ],
-    "imageUrl": "/cards/major_6_lovers.png"
+    "imageUrl": "/cardsV2/major_6_lovers.png"
   },
   {
     "id": "chariot",
@@ -205,7 +205,7 @@
       "权杖与星空车篷：意志对命运轨迹的引导。",
       "未行动的姿态：成功来自意志的稳定，而非单纯盲动。"
     ],
-    "imageUrl": "/cards/major_7_chariot.png"
+    "imageUrl": "/cardsV2/major_7_chariot.png"
   },
   {
     "id": "strength",
@@ -231,7 +231,7 @@
       "无限符号：永恒且柔韧的内在稳定感。",
       "白袍与花环：纯真信念对生命力的美化与导引。"
     ],
-    "imageUrl": "/cards/major_8_strength.png"
+    "imageUrl": "/cardsV2/major_8_strength.png"
   },
   {
     "id": "hermit",
@@ -257,7 +257,7 @@
       "手杖：支撑探索过程的经验与权能。",
       "雪山：孤独求道的精神巅峰境界。"
     ],
-    "imageUrl": "/cards/major_9_hermit.png"
+    "imageUrl": "/cardsV2/major_9_hermit.png"
   },
   {
     "id": "wheel-of-fortune",
@@ -283,7 +283,7 @@
       "斯芬克斯：在轮盘顶端观察全局的超越意识。",
       "四角持书生灵：对宇宙法则的不变认知。"
     ],
-    "imageUrl": "/cards/major_10_wheel.png"
+    "imageUrl": "/cardsV2/major_10_wheel.png"
   },
   {
     "id": "justice",
@@ -309,7 +309,7 @@
       "宝剑：理智斩断迷惑，确立清晰判定。",
       "红袍：在做出判断后必须承担的现实后果。"
     ],
-    "imageUrl": "/cards/major_11_justice.png"
+    "imageUrl": "/cardsV2/major_11_justice.png"
   },
   {
     "id": "hanged-man",
@@ -335,7 +335,7 @@
       "平静的面容：在非惯常位置上获得的深层宁静。",
       "T字木：具有生长活力的神圣秩序框架。"
     ],
-    "imageUrl": "/cards/major_12_hanged_man.png"
+    "imageUrl": "/cardsV2/major_12_hanged_man.png"
   },
   {
     "id": "death",
@@ -361,7 +361,7 @@
       "升起的太阳：终结背后必然蕴含的新生种子。",
       "白花旗帜：纯净的转化与生命力洗礼。"
     ],
-    "imageUrl": "/cards/major_13_death.png"
+    "imageUrl": "/cardsV2/major_13_death.png"
   },
   {
     "id": "temperance",
@@ -387,7 +387,7 @@
       "跨越水陆的双足：调和潜意识与现实层面的能力。",
       "远方的日出之路：中道通往的更清明目标。"
     ],
-    "imageUrl": "/cards/major_14_temperance.png"
+    "imageUrl": "/cardsV2/major_14_temperance.png"
   },
   {
     "id": "devil",
@@ -413,7 +413,7 @@
       "五角星：意识被物质世界与低阶欲望彻底吞没。",
       "火把向下：生命之火被耗费在自我毁灭的欲望中。"
     ],
-    "imageUrl": "/cards/major_15_devil.png"
+    "imageUrl": "/cardsV2/major_15_devil.png"
   },
   {
     "id": "tower",
@@ -439,7 +439,7 @@
       "闪电：来自更高维度的揭露与真相之击。",
       "下落的人与皇冠：被迫从旧有的社会面具中脱离。"
     ],
-    "imageUrl": "/cards/major_16_tower.png"
+    "imageUrl": "/cardsV2/major_16_tower.png"
   },
   {
     "id": "star",
@@ -465,7 +465,7 @@
       "八角星：宇宙恒常的指引与灵性觉知。",
       "裸体身姿：在神圣面前的纯粹本真，不带任何防御。"
     ],
-    "imageUrl": "/cards/major_17_star.png"
+    "imageUrl": "/cardsV2/major_17_star.png"
   },
   {
     "id": "moon",
@@ -491,7 +491,7 @@
       "犬与狼：代表人类被驯化的认知与未被驯服的野性。",
       "穿过双塔的小径：通过未知与恐惧抵达觉醒的必经之路。"
     ],
-    "imageUrl": "/cards/major_18_moon.png"
+    "imageUrl": "/cardsV2/major_18_moon.png"
   },
   {
     "id": "sun",
@@ -517,7 +517,7 @@
       "向日葵：生命力始终追随光的元本能。",
       "高悬的烈日：穿透阴霾、让一切显形的本质力量。"
     ],
-    "imageUrl": "/cards/major_19_sun.png"
+    "imageUrl": "/cardsV2/major_19_sun.png"
   },
   {
     "id": "judgement",
@@ -543,7 +543,7 @@
       "复活的人物：被旧叙事困住的各个自我层面的重生。",
       "旗帜上的十字：建立在因果平衡之上的最后审视。"
     ],
-    "imageUrl": "/cards/major_20_judgement.png"
+    "imageUrl": "/cardsV2/major_20_judgement.png"
   },
   {
     "id": "world",
@@ -569,7 +569,7 @@
       "舞者：从二元性中彻底释放出的和谐自由感。",
       "四角神兽：物质世界的各种元素已得到完美的整合。"
     ],
-    "imageUrl": "/cards/major_21_world.png"
+    "imageUrl": "/cardsV2/major_21_world.png"
   },
   {
     "id": "ace-of-wands",
@@ -595,7 +595,7 @@
       "正在冒芽的权杖：火元素的生命力及其扩充性。",
       "远方城堡：明确的目标坐标正在前方显现。"
     ],
-    "imageUrl": "/cards/minor_wands_ace.png"
+    "imageUrl": "/cardsV2/minor_wands_ace.png"
   },
   {
     "id": "two-of-wands",
@@ -621,7 +621,7 @@
       "一根固定一根手持：在稳固基底与寻求变化间寻求平衡。",
       "在高处眺望：战略性视角与未出征前的评估姿态。"
     ],
-    "imageUrl": "/cards/minor_wands_2.png"
+    "imageUrl": "/cardsV2/minor_wands_2.png"
   },
   {
     "id": "three-of-wands",
@@ -647,7 +647,7 @@
       "金黄色的海面：充满成功希望的远景空间。",
       "背影与权杖：身处核心但已将影响力触及外围的状态。"
     ],
-    "imageUrl": "/cards/minor_wands_3.png"
+    "imageUrl": "/cardsV2/minor_wands_3.png"
   },
   {
     "id": "four-of-wands",
@@ -673,7 +673,7 @@
       "庆祝的人群：对现阶段成果的集体共创与接纳。",
       "远方城堡：稳定的家园感或长期发展的基底。"
     ],
-    "imageUrl": "/cards/minor_wands_4.png"
+    "imageUrl": "/cardsV2/minor_wands_4.png"
   },
   {
     "id": "five-of-wands",
@@ -699,7 +699,7 @@
       "挥棒姿态：不带恶意但极其消耗的资源抢位战。",
       "多样的服装：不同利益诉求在同一空间的混杂碰撞。"
     ],
-    "imageUrl": "/cards/minor_wands_5.png"
+    "imageUrl": "/cardsV2/minor_wands_5.png"
   },
   {
     "id": "six-of-wands",
@@ -725,7 +725,7 @@
       "桂冠与高举的权杖：荣誉、肯定与对自身能力的确认。",
       "后方跟随者：支持者、资源与舞台会随着成功一起出现。"
     ],
-    "imageUrl": "/cards/minor_wands_6.png"
+    "imageUrl": "/cardsV2/minor_wands_6.png"
   },
   {
     "id": "seven-of-wands",
@@ -751,7 +751,7 @@
       "下方袭来的权杖：外界质疑、竞争与不断逼近的挑战。",
       "单杖迎战的姿态：清晰表态与边界意识。"
     ],
-    "imageUrl": "/cards/minor_wands_7.png"
+    "imageUrl": "/cardsV2/minor_wands_7.png"
   },
   {
     "id": "eight-of-wands",
@@ -777,7 +777,7 @@
       "无人物握持：事情已经在路上，推进不再依赖单点控制。",
       "统一的飞行方向：目标清楚，行动能够集中落点。"
     ],
-    "imageUrl": "/cards/minor_wands_8.png"
+    "imageUrl": "/cardsV2/minor_wands_8.png"
   },
   {
     "id": "nine-of-wands",
@@ -803,7 +803,7 @@
       "背后的权杖列阵：既有成果与防线，也象征长期紧绷。",
       "戒备姿态：力量仍在，但已不再轻松。"
     ],
-    "imageUrl": "/cards/minor_wands_9.png"
+    "imageUrl": "/cardsV2/minor_wands_9.png"
   },
   {
     "id": "ten-of-wands",
@@ -829,7 +829,7 @@
       "被遮住的视线：负重方式失衡后，连方向感都会受影响。",
       "远处的房屋：目标还在，但需要换一种更有边界的前进方法。"
     ],
-    "imageUrl": "/cards/minor_wands_10.png"
+    "imageUrl": "/cardsV2/minor_wands_10.png"
   },
   {
     "id": "page-of-wands",
@@ -855,7 +855,7 @@
       "轻盈的姿态：火还在幼态，带着诚实、直接与未被驯化的好奇。",
       "单独持杖：一切仍在起点，关键是把火花变成行动。"
     ],
-    "imageUrl": "/cards/minor_wands_page.png"
+    "imageUrl": "/cardsV2/minor_wands_page.png"
   },
   {
     "id": "knight-of-wands",
@@ -881,7 +881,7 @@
       "快速动作感：强烈意志与立刻去做的冲劲。",
       "持杖前行：把热情带进外部世界的探索姿态。"
     ],
-    "imageUrl": "/cards/minor_wands_knight.png"
+    "imageUrl": "/cardsV2/minor_wands_knight.png"
   },
   {
     "id": "queen-of-wands",
@@ -907,7 +907,7 @@
       "向日葵与狮性意象：活力、光感与内在力量。",
       "黑猫般的直觉感：热烈之外仍保有敏锐感知。"
     ],
-    "imageUrl": "/cards/minor_wands_queen.png"
+    "imageUrl": "/cardsV2/minor_wands_queen.png"
   },
   {
     "id": "king-of-wands",
@@ -933,7 +933,7 @@
       "权杖在手：意志被保留为可执行的方向感。",
       "狮性与王座：号召力、权威与经得起结果检验的经验。"
     ],
-    "imageUrl": "/cards/minor_wands_king.png"
+    "imageUrl": "/cardsV2/minor_wands_king.png"
   },
   {
     "id": "ace-of-cups",
@@ -959,7 +959,7 @@
       "溢出的水：情感源源不断的生命力与扩散性。",
       "莲花与手：神圣的指引与宁静的受纳姿态。"
     ],
-    "imageUrl": "/cards/minor_cups_ace.png"
+    "imageUrl": "/cardsV2/minor_cups_ace.png"
   },
   {
     "id": "two-of-cups",
@@ -985,7 +985,7 @@
       "赫耳墨斯之杖：治愈与对立力量的完美整合。",
       "狮子头：热情、欲望与行动力在爱中的升华。"
     ],
-    "imageUrl": "/cards/minor_cups_2.png"
+    "imageUrl": "/cardsV2/minor_cups_2.png"
   },
   {
     "id": "three-of-cups",
@@ -1011,7 +1011,7 @@
       "果实与丰收：不仅是情绪的回应，也是现实的果实。",
       "圆舞姿态：群体中的和谐、流动与支持。"
     ],
-    "imageUrl": "/cards/minor_cups_3.png"
+    "imageUrl": "/cardsV2/minor_cups_3.png"
   },
   {
     "id": "four-of-cups",
@@ -1037,7 +1037,7 @@
       "云中伸出的杯子：被忽略的、来自更高维度的指引或机会。",
       "眼前的三个杯子：已有的、熟悉但无法再带来满足的事物。"
     ],
-    "imageUrl": "/cards/minor_cups_4.png"
+    "imageUrl": "/cardsV2/minor_cups_4.png"
   },
   {
     "id": "five-of-cups",
@@ -1063,7 +1063,7 @@
       "站立的两个杯子：仍存的资源、未断绝的连结。",
       "黑色的斗篷：完全沉浸在悲伤情绪中的自我隔离。"
     ],
-    "imageUrl": "/cards/minor_cups_5.png"
+    "imageUrl": "/cardsV2/minor_cups_5.png"
   },
   {
     "id": "six-of-cups",
@@ -1089,7 +1089,7 @@
       "城墙与庭院：被保护的安全感，也象征可能限制成长的熟悉环境。",
       "花朵盛开的杯子：记忆中的美好、童真与可被重新唤起的疗愈资源。"
     ],
-    "imageUrl": "/cards/minor_cups_6.png"
+    "imageUrl": "/cardsV2/minor_cups_6.png"
   },
   {
     "id": "seven-of-cups",
@@ -1115,7 +1115,7 @@
       "面对杯子的人影：正在为内在需求命名的自我。",
       "云雾般的背景：想象力丰沛，也暗示投射与幻象尚未澄清。"
     ],
-    "imageUrl": "/cards/minor_cups_7.png"
+    "imageUrl": "/cardsV2/minor_cups_7.png"
   },
   {
     "id": "eight-of-cups",
@@ -1141,7 +1141,7 @@
       "独自远行的人：回应内在召唤的行动与分离。",
       "山路与月光：通往更高视野的过程伴随孤独、试炼与直觉引导。"
     ],
-    "imageUrl": "/cards/minor_cups_8.png"
+    "imageUrl": "/cardsV2/minor_cups_8.png"
   },
   {
     "id": "nine-of-cups",
@@ -1167,7 +1167,7 @@
       "端坐的人物：对自身价值与所得成果的确认。",
       "横臂而坐的姿态：满足中的边界感，也可能透露保留与自我中心。"
     ],
-    "imageUrl": "/cards/minor_cups_9.png"
+    "imageUrl": "/cardsV2/minor_cups_9.png"
   },
   {
     "id": "ten-of-cups",
@@ -1193,7 +1193,7 @@
       "伴侣与孩子：幸福发生在共同体之中，而非只停留在个人满足。",
       "远处的家园：稳定归属、长期关系与可持续的温暖生活。"
     ],
-    "imageUrl": "/cards/minor_cups_10.png"
+    "imageUrl": "/cardsV2/minor_cups_10.png"
   },
   {
     "id": "page-of-cups",
@@ -1219,7 +1219,7 @@
       "安静柔和的姿态：先让感受浮上来，而不是急着征服世界。",
       "单杯在手：细微但真实的内在讯息。"
     ],
-    "imageUrl": "/cards/minor_cups_page.png"
+    "imageUrl": "/cardsV2/minor_cups_page.png"
   },
   {
     "id": "knight-of-cups",
@@ -1245,7 +1245,7 @@
       "手中的杯子：情感、愿景与想象力被带入现实。",
       "温柔的速度：重点不是征服，而是让内在与行动靠近。"
     ],
-    "imageUrl": "/cards/minor_cups_knight.png"
+    "imageUrl": "/cardsV2/minor_cups_knight.png"
   },
   {
     "id": "queen-of-cups",
@@ -1271,7 +1271,7 @@
       "特殊的杯子：被认真承接的感受与直觉。",
       "安静的姿态：影响力来自理解与接纳，而非强压。"
     ],
-    "imageUrl": "/cards/minor_cups_queen.png"
+    "imageUrl": "/cardsV2/minor_cups_queen.png"
   },
   {
     "id": "king-of-cups",
@@ -1297,7 +1297,7 @@
       "持杯的国王：感受被有分寸地承载与使用。",
       "稳定姿态：真正的成熟不是没有情绪，而是能管理情绪。"
     ],
-    "imageUrl": "/cards/minor_cups_king.png"
+    "imageUrl": "/cardsV2/minor_cups_king.png"
   },
   {
     "id": "ace-of-pentacles",
@@ -1323,7 +1323,7 @@
       "托住的星币：可以被投入、照料与兑现的资源。",
       "花园与门径：安全感与通往更大成果的现实路径。"
     ],
-    "imageUrl": "/cards/minor_pentacles_ace.png"
+    "imageUrl": "/cardsV2/minor_pentacles_ace.png"
   },
   {
     "id": "two-of-pentacles",
@@ -1349,7 +1349,7 @@
       "环绕的无限符号：持续周转而非一次性决定。",
       "起伏海浪：外部节律不断改变，平衡只能动态维持。"
     ],
-    "imageUrl": "/cards/minor_pentacles_2.png"
+    "imageUrl": "/cardsV2/minor_pentacles_2.png"
   },
   {
     "id": "three-of-pentacles",
@@ -1375,7 +1375,7 @@
       "旁观的他人：反馈、标准与协作共同塑造成果。",
       "教堂空间：作品需要被长远使用，而非只求即时完成。"
     ],
-    "imageUrl": "/cards/minor_pentacles_3.png"
+    "imageUrl": "/cardsV2/minor_pentacles_3.png"
   },
   {
     "id": "four-of-pentacles",
@@ -1401,7 +1401,7 @@
       "头顶胸前脚下的星币：稳定和僵硬纠缠在一起。",
       "收缩姿态：保护自己，也可能让流动停住。"
     ],
-    "imageUrl": "/cards/minor_pentacles_4.png"
+    "imageUrl": "/cardsV2/minor_pentacles_4.png"
   },
   {
     "id": "five-of-pentacles",
@@ -1427,7 +1427,7 @@
       "身后的彩窗：帮助可能存在，只是尚未被接住。",
       "并肩却仍孤独：困境不只在物质，也在精神失联。"
     ],
-    "imageUrl": "/cards/minor_pentacles_5.png"
+    "imageUrl": "/cardsV2/minor_pentacles_5.png"
   },
   {
     "id": "six-of-pentacles",
@@ -1453,7 +1453,7 @@
       "分发星币的动作：现实帮助终于出现。",
       "跪着的人：援助与不平等经常同时存在。"
     ],
-    "imageUrl": "/cards/minor_pentacles_6.png"
+    "imageUrl": "/cardsV2/minor_pentacles_6.png"
   },
   {
     "id": "seven-of-pentacles",
@@ -1479,7 +1479,7 @@
       "已成熟与未成熟的果实：收成不是非黑即白，而是阶段性的。",
       "靠着工具停下：下一步需要更聪明，而不是更盲目。"
     ],
-    "imageUrl": "/cards/minor_pentacles_7.png"
+    "imageUrl": "/cardsV2/minor_pentacles_7.png"
   },
   {
     "id": "eight-of-pentacles",
@@ -1505,7 +1505,7 @@
       "排列的成品：重复练习会累积成看得见的成果。",
       "身后的小镇：外部世界还在，但当下最重要的是练好手艺。"
     ],
-    "imageUrl": "/cards/minor_pentacles_8.png"
+    "imageUrl": "/cardsV2/minor_pentacles_8.png"
   },
   {
     "id": "nine-of-pentacles",
@@ -1531,7 +1531,7 @@
       "受训的猎鹰：自由与成果背后都有纪律代价。",
       "从容姿态：不需要再向谁证明自己的安定。"
     ],
-    "imageUrl": "/cards/minor_pentacles_9.png"
+    "imageUrl": "/cardsV2/minor_pentacles_9.png"
   },
   {
     "id": "ten-of-pentacles",
@@ -1557,7 +1557,7 @@
       "分布的星币：资源不只是拥有，而是结构化地被保存。",
       "稳固居所：现实世界中真正能承载生活的系统。"
     ],
-    "imageUrl": "/cards/minor_pentacles_10.png"
+    "imageUrl": "/cardsV2/minor_pentacles_10.png"
   },
   {
     "id": "page-of-pentacles",
@@ -1583,7 +1583,7 @@
       "稳稳站地的姿态：这不是空想，而是愿意慢慢学会。",
       "学生气的神情：真正的成长常从认真开始。"
     ],
-    "imageUrl": "/cards/minor_pentacles_page.png"
+    "imageUrl": "/cardsV2/minor_pentacles_page.png"
   },
   {
     "id": "knight-of-pentacles",
@@ -1609,7 +1609,7 @@
       "手中的星币：前进前先确认价值与方向。",
       "沉着姿态：真正可靠的成长往往不喧闹。"
     ],
-    "imageUrl": "/cards/minor_pentacles_knight.png"
+    "imageUrl": "/cardsV2/minor_pentacles_knight.png"
   },
   {
     "id": "queen-of-pentacles",
@@ -1635,7 +1635,7 @@
       "安静丰沃的气场：被照顾好的现实会自己开花。",
       "母性与土性融合：安全感可以被慢慢经营出来。"
     ],
-    "imageUrl": "/cards/minor_pentacles_queen.png"
+    "imageUrl": "/cardsV2/minor_pentacles_queen.png"
   },
   {
     "id": "king-of-pentacles",
@@ -1661,7 +1661,7 @@
       "手中星币与稳固座位：现实能力来自长期累积。",
       "丰盛环境：成功不只是拥有，更是能稳住系统。"
     ],
-    "imageUrl": "/cards/minor_pentacles_king.png"
+    "imageUrl": "/cardsV2/minor_pentacles_king.png"
   },
   {
     "id": "ace-of-swords",
@@ -1687,7 +1687,7 @@
       "穿过王冠的剑锋：真相会切开迷雾，也要求承担后果。",
       "双刃形态：事情的两面都开始显形。"
     ],
-    "imageUrl": "/cards/minor_swords_ace.png"
+    "imageUrl": "/cardsV2/minor_swords_ace.png"
   },
   {
     "id": "two-of-swords",
@@ -1713,7 +1713,7 @@
       "交叉的剑：防御维持了平衡，也制造了停滞。",
       "身后的水面：被压住的感受并未真正消失。"
     ],
-    "imageUrl": "/cards/minor_swords_2.png"
+    "imageUrl": "/cardsV2/minor_swords_2.png"
   },
   {
     "id": "three-of-swords",
@@ -1739,7 +1739,7 @@
       "整齐穿透的三把剑：伤口也在要求被理解与命名。",
       "风雨背景：情绪上的冲击真实存在。"
     ],
-    "imageUrl": "/cards/minor_swords_3.png"
+    "imageUrl": "/cardsV2/minor_swords_3.png"
   },
   {
     "id": "four-of-swords",
@@ -1765,7 +1765,7 @@
       "安静空间：恢复需要隔绝外界噪音。",
       "悬挂的剑：思路仍在，但暂时不再主导一切。"
     ],
-    "imageUrl": "/cards/minor_swords_4.png"
+    "imageUrl": "/cardsV2/minor_swords_4.png"
   },
   {
     "id": "five-of-swords",
@@ -1791,7 +1791,7 @@
       "离开的身影：冲突带来的代价是真实的。",
       "散落的剑：关系结构已经被拉扯出裂痕。"
     ],
-    "imageUrl": "/cards/minor_swords_5.png"
+    "imageUrl": "/cardsV2/minor_swords_5.png"
   },
   {
     "id": "six-of-swords",
@@ -1817,7 +1817,7 @@
       "船中的剑：过去不会瞬间消失，只是被换了位置。",
       "水面的变化：从急流到平水是一种现实过渡。"
     ],
-    "imageUrl": "/cards/minor_swords_6.png"
+    "imageUrl": "/cardsV2/minor_swords_6.png"
   },
   {
     "id": "seven-of-swords",
@@ -1843,7 +1843,7 @@
       "偷走的剑：聪明可能是弹性，也可能是逃责。",
       "未正面交锋的场景：问题被避开了，但未必被解决。"
     ],
-    "imageUrl": "/cards/minor_swords_7.png"
+    "imageUrl": "/cardsV2/minor_swords_7.png"
   },
   {
     "id": "eight-of-swords",
@@ -1869,7 +1869,7 @@
       "围住人的剑：外部结构与内在恐惧一起形成牢笼。",
       "仍留有空隙的路径：并非完全没有选择。"
     ],
-    "imageUrl": "/cards/minor_swords_8.png"
+    "imageUrl": "/cardsV2/minor_swords_8.png"
   },
   {
     "id": "nine-of-swords",
@@ -1895,7 +1895,7 @@
       "悬在头顶的剑：心智的锋利开始转向自己。",
       "昏暗房间：被压住的恐惧终于无法回避。"
     ],
-    "imageUrl": "/cards/minor_swords_9.png"
+    "imageUrl": "/cardsV2/minor_swords_9.png"
   },
   {
     "id": "ten-of-swords",
@@ -1921,7 +1921,7 @@
       "背景微光：终结里也藏着下一轮开始。",
       "静下来的水面：最剧烈的阶段正在耗尽。"
     ],
-    "imageUrl": "/cards/minor_swords_10.png"
+    "imageUrl": "/cardsV2/minor_swords_10.png"
   },
   {
     "id": "page-of-swords",
@@ -1947,7 +1947,7 @@
       "灵活姿态：想法来得快，但还未真正定型。",
       "轻盈之剑：语言和思维先于现实落地。"
     ],
-    "imageUrl": "/cards/minor_swords_page.png"
+    "imageUrl": "/cardsV2/minor_swords_page.png"
   },
   {
     "id": "knight-of-swords",
@@ -1973,7 +1973,7 @@
       "高举的剑：目标被立刻推向现实。",
       "高速姿态：推进力强，也容易越过细节和他人节奏。"
     ],
-    "imageUrl": "/cards/minor_swords_knight.png"
+    "imageUrl": "/cardsV2/minor_swords_knight.png"
   },
   {
     "id": "queen-of-swords",
@@ -1999,7 +1999,7 @@
       "高坐姿态：清醒来自经验，而不是冷漠。",
       "冷冽气质：心智已学会不再轻易失真。"
     ],
-    "imageUrl": "/cards/minor_swords_queen.png"
+    "imageUrl": "/cardsV2/minor_swords_queen.png"
   },
   {
     "id": "king-of-swords",
@@ -2025,6 +2025,6 @@
       "手中的利剑：判断必须清楚，也必须负责。",
       "秩序化的姿态：想法开始变成结构与规则。"
     ],
-    "imageUrl": "/cards/minor_swords_king.png"
+    "imageUrl": "/cardsV2/minor_swords_king.png"
   }
 ]

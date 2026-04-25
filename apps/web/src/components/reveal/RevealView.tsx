@@ -20,7 +20,7 @@ function getSpreadOrganizationModel(spreadId: string, positionNames: string[]) {
 
 export default function RevealView() {
   const router = useRouter();
-  const { selectedSpread, drawnCards } = useReading();
+  const { selectedSpread, drawSource, drawnCards } = useReading();
 
   useEffect(() => {
     if (!selectedSpread) {
@@ -29,9 +29,9 @@ export default function RevealView() {
     }
 
     if (drawnCards.length === 0) {
-      router.replace("/ritual");
+      router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
     }
-  }, [drawnCards.length, router, selectedSpread]);
+  }, [drawSource, drawnCards.length, router, selectedSpread]);
 
   if (!selectedSpread || drawnCards.length === 0) {
     return null;
@@ -69,7 +69,9 @@ export default function RevealView() {
           先看整组牌的气候
         </p>
         <p className="mt-2 text-sm leading-relaxed text-text-inverse-muted">
-          这些牌的出现仍然带有随机性，但你已经用 {selectedSpread.name} 选择了观察角度。
+          {drawSource === "offline_manual"
+            ? `这些牌来自你的线下抽取，但你已经用 ${selectedSpread.name} 选择了观察角度。`
+            : `这些牌的出现仍然带有随机性，但你已经用 ${selectedSpread.name} 选择了观察角度。`}
           接下来请先感受整组牌在不同位置形成的张力，而不是急着把它们听成一个确定答案。
         </p>
       </div>
@@ -113,7 +115,7 @@ export default function RevealView() {
                   {/* Card */}
                   <div
                     className={cn(
-                      "relative aspect-[1/1.7] w-full overflow-hidden rounded-2xl border shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition-transform duration-500 hover:scale-[1.02]",
+                      "relative aspect-[1/1.7] w-full overflow-hidden rounded-card-lg border shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition-transform duration-500 hover:scale-[1.02]",
                       index === 1
                         ? "border-indigo/20"
                         : "border-midnight-border",
@@ -186,7 +188,9 @@ export default function RevealView() {
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-text-inverse-muted">
-              你没有在操纵结果，而是在选择一副观看问题的镜框。随机给出牌面，牌阵负责把这些偶然组织成可阅读的结构。
+              {drawSource === "offline_manual"
+                ? "你在线下完成抽取，系统只接收牌面与正逆位。牌阵负责把这些实体牌结果组织成可阅读的结构。"
+                : "你没有在操纵结果，而是在选择一副观看问题的镜框。随机给出牌面，牌阵负责把这些偶然组织成可阅读的结构。"}
             </p>
           </div>
 
@@ -200,7 +204,9 @@ export default function RevealView() {
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-text-inverse-muted">
-              随机决定哪张牌进入哪个位置；{selectedSpread.name} 决定阅读顺序、位置语义与综合路径。
+              {drawSource === "offline_manual"
+                ? `线下抽取决定哪张牌进入哪个位置；${selectedSpread.name} 决定阅读顺序、位置语义与综合路径。`
+                : `随机决定哪张牌进入哪个位置；${selectedSpread.name} 决定阅读顺序、位置语义与综合路径。`}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {organizationModel.map((item, index) => (

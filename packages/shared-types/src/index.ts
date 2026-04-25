@@ -45,6 +45,8 @@ export type AgentProfile = "lite" | "standard" | "sober";
 
 export type ReadingPhase = "initial" | "final";
 
+export type DrawSource = "digital_random" | "offline_manual";
+
 export interface ReadingRequestCardInput {
   positionId: string;
   cardId: string;
@@ -62,6 +64,7 @@ export interface ReadingRequestPayload {
   drawnCards: ReadingRequestCardInput[];
   agent_profile?: AgentProfile;
   phase?: ReadingPhase;
+  draw_source?: DrawSource;
   prior_session_capsule?: string | null;
   initial_reading?: StructuredReading;
   followup_answers?: FollowupAnswer[];
@@ -107,6 +110,7 @@ export interface ReadingHistoryEntry {
   id: string;
   createdAt: string;
   spreadId: string;
+  drawSource?: DrawSource;
   drawnCards: ReadingRequestCardInput[];
   reading: StructuredReading;
   user_notes?: string;

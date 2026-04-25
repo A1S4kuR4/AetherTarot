@@ -53,6 +53,11 @@
 
   /* Focus */
   --color-focus-halo: rgba(113, 112, 255, 0.28);
+
+  /* Card Radius */
+  --radius-card-sm: 16px;
+  --radius-card-md: 18px;
+  --radius-card-lg: 22px;
 }
 
 /* ============================================================

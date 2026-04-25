@@ -82,6 +82,7 @@
 - provider draft 若越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量，会在 graph/service 层直接失败
 - 至少稳定包含 `question_type`、`cards[]`、`themes`、`synthesis`、`reflective_guidance`
 - 历史记录回放与前端展示不需要退回 markdown fallback
+- `draw_source = offline_manual` 时，线下录入的 `drawnCards[]` 仍按权威牌阵位置校验、重排和渲染，不引入第二套 reading shape
 
 ### 3.8 风格一致性
 
@@ -122,6 +123,7 @@
 - 重大决策类问题是否在 `/new` 进入抽牌前触发现实边界确认，且完成确认后仍保留后续 `sober_check` 流程
 - 普通敏感主题是否补出 `safety_note`
 - history 回放是否能恢复结构化 reading
+- 线下塔罗模式是否能恢复实体牌录入来源、牌面与正逆位，且仍通过同一 `/api/reading` 流程生成结果
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
 - completed `session_capsule` 是否足够短、稳定，且不带 `用户补充`、高风险安全细节或未验证第三方意图
 - reading 是否包含建设性阻力点，且该阻力点没有变成确定性预言、第三方读心、医疗/法律/财务替代建议或命令式决策

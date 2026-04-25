@@ -145,7 +145,7 @@ export default function EncyclopediaView({
               type="button"
               onClick={() => setSelectedCard(card)}
               className={cn(
-                "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200",
+                "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
                 activeCard.id === card.id
                   ? "scale-[1.04] border-terracotta shadow-sm"
                   : "border-transparent opacity-60 hover:opacity-100",
@@ -167,7 +167,7 @@ export default function EncyclopediaView({
         <div className="flex flex-col gap-10 md:flex-row">
           {/* Card Image */}
           <div className="w-full md:w-5/12">
-            <div className="relative aspect-[1/1.7] overflow-hidden rounded-2xl border border-paper-border shadow-sm">
+            <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
               <img
                 src={activeCard.imageUrl}
                 alt={activeCard.name}

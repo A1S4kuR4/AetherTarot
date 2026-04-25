@@ -150,7 +150,7 @@ export default function RitualView() {
             <div key={position.id} className="flex flex-col items-center gap-3">
               <div
                 className={cn(
-                  "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-2xl border transition-all duration-300 md:w-[120px]",
+                  "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300 md:w-[120px]",
                   drawn
                     ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
                     : "border-dashed border-midnight-border",
@@ -243,7 +243,7 @@ export default function RitualView() {
                   ? { duration: 12, repeat: Infinity, ease: "linear" }
                   : { duration: 0.8, type: "spring" },
               }}
-              className="absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-xl border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
+              className="absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{
                 transformOrigin: "center 150px",
                 transform: `rotate(${baseAngle}deg)`,
@@ -253,7 +253,7 @@ export default function RitualView() {
               onClick={handleDraw}
               disabled={!canDraw}
             >
-              <div className="h-full w-full overflow-hidden rounded-lg border border-midnight-border-subtle bg-midnight-elevated">
+              <div className="h-full w-full overflow-hidden rounded-[12px] border border-midnight-border-subtle bg-midnight-elevated">
                 <img
                   src={CARD_BACK_IMAGE}
                   alt="Tarot Back"
