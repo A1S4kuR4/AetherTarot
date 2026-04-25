@@ -177,44 +177,122 @@ function getSpreadPositionName(spread: Spread, positionId: string, fallback: str
 }
 
 function buildSpreadSpecificInitialAxis(spread: Spread) {
-  if (spread.id === "seven-card") {
-    const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
-    const outcome = getSpreadPositionName(spread, "outcome", "结果");
-    const past = getSpreadPositionName(spread, "past", "过去");
-    const present = getSpreadPositionName(spread, "present", "现在");
-    const nearResult = getSpreadPositionName(spread, "near-result", "最近结果");
-    const environment = getSpreadPositionName(spread, "environment", "周遭能量");
-    const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+  switch (spread.id) {
+    case "single": {
+      const focus = getSpreadPositionName(spread, "focus", "核心指引");
 
-    return `${spread.name} 这次应先抓住「${answer} -> ${outcome}」这条答案与结果主轴，再回看「${past} -> ${present} -> ${nearResult}」怎样把它一步步推出来，并分清「${environment}」的外部气候与「${hopesFears}」的主观投射是不是混在一起。`;
+      return `${spread.name} 这次只保留「${focus}」这一处焦点，因此这张牌只能作为观察入口，不能被读成已经替用户裁定答案。`;
+    }
+    case "holy-triangle": {
+      const past = getSpreadPositionName(spread, "past", "过去");
+      const present = getSpreadPositionName(spread, "present", "现在");
+      const future = getSpreadPositionName(spread, "future", "潜在流向");
+
+      return `${spread.name} 这次应按「${past} -> ${present} -> ${future}」阅读，把牌面放回时间与因果路径中，而不是孤立挑出一张牌下结论。`;
+    }
+    case "four-aspects": {
+      const body = getSpreadPositionName(spread, "body", "身体层面");
+      const emotion = getSpreadPositionName(spread, "emotion", "情感层面");
+      const mind = getSpreadPositionName(spread, "mind", "心智层面");
+      const spirit = getSpreadPositionName(spread, "spirit", "精神层面");
+
+      return `${spread.name} 这次应分开看「${body} / ${emotion} / ${mind} / ${spirit}」，先保留层次差异，再判断哪一层支持行动、哪一层形成阻力。`;
+    }
+    case "seven-card": {
+      const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
+      const outcome = getSpreadPositionName(spread, "outcome", "结果");
+      const past = getSpreadPositionName(spread, "past", "过去");
+      const present = getSpreadPositionName(spread, "present", "现在");
+      const nearResult = getSpreadPositionName(spread, "near-result", "最近结果");
+      const environment = getSpreadPositionName(spread, "environment", "周遭能量");
+      const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+
+      return `${spread.name} 这次应先抓住「${answer} -> ${outcome}」这条答案与结果主轴，再回看「${past} -> ${present} -> ${nearResult}」怎样把它一步步推出来，并分清「${environment}」的外部气候与「${hopesFears}」的主观投射是不是混在一起。`;
+    }
+    case "celtic-cross": {
+      const core = getSpreadPositionName(spread, "core", "核心");
+      const challenge = getSpreadPositionName(spread, "challenge", "挑战");
+      const conscious = getSpreadPositionName(spread, "conscious", "意识");
+      const unconscious = getSpreadPositionName(spread, "unconscious", "潜意识");
+      const environment = getSpreadPositionName(spread, "environment", "环境");
+      const outcome = getSpreadPositionName(spread, "outcome", "结果");
+
+      return `${spread.name} 这次应先守住「${core} / ${challenge}」，再对照「${conscious} / ${unconscious}」和「${environment} / ${outcome}」，避免把复杂牌阵压平成一句确定结论。`;
+    }
+    default:
+      return null;
   }
-
-  return null;
 }
 
 function buildSpreadSpecificFinalAxis(spread: Spread) {
-  if (spread.id === "seven-card") {
-    const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
-    const outcome = getSpreadPositionName(spread, "outcome", "结果");
-    const environment = getSpreadPositionName(spread, "environment", "周遭能量");
-    const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+  switch (spread.id) {
+    case "single": {
+      const focus = getSpreadPositionName(spread, "focus", "核心指引");
 
-    return `七张牌的第二阶段仍要先对照「${answer} -> ${outcome}」是否更清楚，再用「${environment}」和「${hopesFears}」分辨外界现实与内在担心，避免把补充信息读成新的命令。`;
+      return `单牌的第二阶段仍以「${focus}」为入口；用户补充只能帮助校准这一处焦点，不能把单牌改写成确定裁决。`;
+    }
+    case "holy-triangle": {
+      const past = getSpreadPositionName(spread, "past", "过去");
+      const present = getSpreadPositionName(spread, "present", "现在");
+      const future = getSpreadPositionName(spread, "future", "潜在流向");
+
+      return `圣三角形的第二阶段仍要对照「${past} -> ${present} -> ${future}」是否连贯，避免让补充信息盖过时间与因果路径。`;
+    }
+    case "four-aspects": {
+      const body = getSpreadPositionName(spread, "body", "身体层面");
+      const emotion = getSpreadPositionName(spread, "emotion", "情感层面");
+      const mind = getSpreadPositionName(spread, "mind", "心智层面");
+      const spirit = getSpreadPositionName(spread, "spirit", "精神层面");
+
+      return `四个面向的第二阶段仍要让「${body} / ${emotion} / ${mind} / ${spirit}」彼此校准，而不是把某一层的感受直接升级成总答案。`;
+    }
+    case "seven-card": {
+      const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
+      const outcome = getSpreadPositionName(spread, "outcome", "结果");
+      const environment = getSpreadPositionName(spread, "environment", "周遭能量");
+      const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
+
+      return `七张牌的第二阶段仍要先对照「${answer} -> ${outcome}」是否更清楚，再用「${environment}」和「${hopesFears}」分辨外界现实与内在担心，避免把补充信息读成新的命令。`;
+    }
+    case "celtic-cross": {
+      const core = getSpreadPositionName(spread, "core", "核心");
+      const challenge = getSpreadPositionName(spread, "challenge", "挑战");
+      const self = getSpreadPositionName(spread, "self", "自我");
+      const environment = getSpreadPositionName(spread, "environment", "环境");
+      const outcome = getSpreadPositionName(spread, "outcome", "结果");
+
+      return `赛尔特十字的第二阶段仍要从「${core} / ${challenge}」出发，再核对「${self} / ${environment} / ${outcome}」是否互相支持，避免把复杂结构读成单一路径。`;
+    }
+    default:
+      return null;
   }
-
-  return null;
 }
 
 function buildSpreadSpecificGuidance(spread: Spread, phase: "initial" | "final") {
-  if (spread.id === "seven-card" && phase === "initial") {
-    return "先分清七张牌里真正像答案的位置，和那些只是解释这个答案为什么成立的辅助位置。";
+  switch (spread.id) {
+    case "single":
+      return phase === "initial"
+        ? "先把单牌当作一个观察入口，而不是把它当成已经完成的答案。"
+        : "回看这张牌最稳定的提醒，再决定现实中要验证哪一个小信号。";
+    case "holy-triangle":
+      return phase === "initial"
+        ? "先观察过去、现在与潜在流向之间是否真的连成一条线。"
+        : "回看补充信息是否让时间线更清楚，而不是让其中某一点过度放大。";
+    case "four-aspects":
+      return phase === "initial"
+        ? "先分清身体、情感、心智与精神四层里，哪一层最支持你，哪一层最有阻力。"
+        : "回看四个层面是否彼此校准，再选择最容易落地的一层先行动。";
+    case "seven-card":
+      return phase === "initial"
+        ? "先分清七张牌里真正像答案的位置，和那些只是解释这个答案为什么成立的辅助位置。"
+        : "回看「答案 / 当事人」与「结果」是否仍在同一条线上，再决定你下一步要验证的是答案本身还是结果代价。";
+    case "celtic-cross":
+      return phase === "initial"
+        ? "先守住核心与挑战，再让其他位置补充层次，不要急着把十张牌压成一句话。"
+        : "回看核心、挑战、自我与环境是否形成同一组张力，再决定下一步现实观察点。";
+    default:
+      return null;
   }
-
-  if (spread.id === "seven-card" && phase === "final") {
-    return "回看「答案 / 当事人」与「结果」是否仍在同一条线上，再决定你下一步要验证的是答案本身还是结果代价。";
-  }
-
-  return null;
 }
 
 function getUnverifiedCondition(questionType: QuestionType) {
@@ -456,15 +534,30 @@ function selectFollowUpQuestions(
 }
 
 function buildSpreadPromptBias(spread: Spread, phase: "initial" | "final") {
-  if (spread.id !== "seven-card") {
-    return null;
+  switch (spread.id) {
+    case "single":
+      return phase === "initial"
+        ? "Single-card spread bias: treat the only card as a focused observation point, not as a deterministic verdict."
+        : "Single-card spread bias: preserve the focused card axis; use follow-up answers only to calibrate the observation, not to turn it into a verdict.";
+    case "holy-triangle":
+      return phase === "initial"
+        ? "Holy-triangle spread bias: read past -> present -> future/potential flow as one causal path; do not isolate one card as the whole answer."
+        : "Holy-triangle spread bias: preserve the past/present/future path and use follow-up answers to clarify the path, not overwrite it.";
+    case "four-aspects":
+      return phase === "initial"
+        ? "Four-aspects spread bias: separate body, emotion, mind, and spirit first; then synthesize where the layers support or resist each other."
+        : "Four-aspects spread bias: preserve the four-layer structure and use follow-up answers to identify which layer is most actionable.";
+    case "seven-card":
+      return phase === "initial"
+        ? "Seven-card spread bias: start from the answer/result axis (position 4 -> position 7), then use the past/present/near-result timeline (positions 1 -> 2 -> 3) and the environment vs hopes-fears tension (positions 5 and 6) to explain why that axis is forming."
+        : "Seven-card spread bias: preserve the answer/result axis first, then use positions 5 and 6 to separate external conditions from the querent's projection; do not reduce the spread to isolated per-card commentary.";
+    case "celtic-cross":
+      return phase === "initial"
+        ? "Celtic-cross spread bias: start from core/challenge, then compare conscious/unconscious, timeline, self/environment, hopes-fears, and outcome as layered evidence."
+        : "Celtic-cross spread bias: preserve the core/challenge axis and use follow-up answers to clarify self/environment and outcome without flattening the ten-card structure.";
+    default:
+      return null;
   }
-
-  if (phase === "initial") {
-    return "Seven-card spread bias: start from the answer/result axis (position 4 -> position 7), then use the past/present/near-result timeline (positions 1 -> 2 -> 3) and the environment vs hopes-fears tension (positions 5 and 6) to explain why that axis is forming.";
-  }
-
-  return "Seven-card spread bias: preserve the answer/result axis first, then use positions 5 and 6 to separate external conditions from the querent's projection; do not reduce the spread to isolated per-card commentary.";
 }
 
 function formatSpread(spread: Spread) {
