@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function MindsetSection() {
   return (
@@ -30,7 +31,7 @@ export default function MindsetSection() {
                 “我会和他/她结婚吗？”
               </p>
               <div className="mt-4 flex items-center gap-2 text-terracotta">
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <LegacyIcon name="arrow_forward" className="text-sm" />
                 <span className="font-serif text-lg italic">
                   “在这段关系中，我需要学习什么？”
                 </span>
@@ -51,7 +52,7 @@ export default function MindsetSection() {
                 “我要不要辞职？”
               </p>
               <div className="mt-4 flex items-center gap-2 text-terracotta">
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <LegacyIcon name="arrow_forward" className="text-sm" />
                 <span className="font-serif text-lg italic">
                   “如果离开，我的核心恐惧和渴望是什么？”
                 </span>

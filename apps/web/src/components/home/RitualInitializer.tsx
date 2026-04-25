@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
+  DrawSource,
   QuestionType,
   ReadingHistoryEntry,
 } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
 const MAJOR_DECISION_TERM_REGEX =
@@ -33,6 +35,21 @@ const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: strin
     id: "sober",
     name: "清醒塔罗师",
     description: "更强调现实边界，适合重大决定或高压力议题。",
+  },
+];
+
+const DRAW_SOURCES: Array<{ id: DrawSource; name: string; description: string; icon: string }> = [
+  {
+    id: "digital_random",
+    name: "线上抽牌",
+    description: "由系统洗牌并随机抽取，适合快速完成完整仪式。",
+    icon: "style",
+  },
+  {
+    id: "offline_manual",
+    name: "线下录入",
+    description: "使用你的实体牌抽取，再按牌阵位置录入牌面。",
+    icon: "edit_square",
   },
 ];
 
@@ -121,11 +138,13 @@ export default function RitualInitializer() {
     question,
     selectedSpread,
     agentProfile,
+    drawSource,
     continuitySource,
     history,
     setQuestion,
     setSelectedSpread,
     setAgentProfile,
+    setDrawSource,
     clearContinuitySource,
     startRitual,
   } = useReading();
@@ -209,7 +228,7 @@ export default function RitualInitializer() {
       return;
     }
 
-    router.push("/ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
   };
 
   return (
@@ -225,7 +244,7 @@ export default function RitualInitializer() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-terracotta">
-                <span className="material-symbols-outlined text-[18px]">history</span>
+                <LegacyIcon name="history" className="text-[18px]" />
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
                   延续中的线索
                 </p>
@@ -284,7 +303,7 @@ export default function RitualInitializer() {
           className="rounded-2xl border border-indigo/25 bg-indigo/10 p-4 text-left shadow-sm"
         >
           <div className="flex items-center gap-2 text-indigo">
-            <span className="material-symbols-outlined text-[18px]">history_edu</span>
+            <LegacyIcon name="history_edu" className="text-[18px]" />
             <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
               重复主题提醒
             </p>
@@ -318,9 +337,7 @@ export default function RitualInitializer() {
         className="rounded-2xl border border-midnight-border bg-midnight-panel/80 p-4 text-left shadow-sm"
       >
         <div className="mb-3 flex items-center gap-2 text-text-inverse">
-          <span className="material-symbols-outlined text-[18px] text-indigo">
-            center_focus_strong
-          </span>
+          <LegacyIcon name="center_focus_strong" className="text-[18px] text-indigo" />
           <h2 className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-text-inverse-muted">
             焦点校准
           </h2>
@@ -419,9 +436,7 @@ export default function RitualInitializer() {
                     : "bg-white/5 text-text-inverse-muted group-hover:text-text-inverse",
                 )}
               >
-                <span className="material-symbols-outlined text-2xl">
-                  {spread.icon}
-                </span>
+                <LegacyIcon name={spread.icon} className="text-2xl" />
               </div>
               <h3 className={cn(
                 "mb-1 font-serif text-base transition-colors",
@@ -468,7 +483,60 @@ export default function RitualInitializer() {
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+        transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+        className="space-y-3"
+      >
+        <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
+          选择抽牌方式 · Choose Draw Mode
+        </h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {DRAW_SOURCES.map((source) => (
+            <button
+              key={source.id}
+              type="button"
+              onClick={() => setDrawSource(source.id)}
+              className={cn(
+                "flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200",
+                drawSource === source.id
+                  ? "border-terracotta/50 bg-midnight-elevated shadow-sm"
+                  : "border-midnight-border bg-midnight-panel hover:border-midnight-border-subtle hover:shadow-sm",
+              )}
+            >
+              <LegacyIcon
+                name={source.icon}
+                className={cn(
+                  "mt-0.5 text-xl",
+                  drawSource === source.id ? "text-terracotta" : "text-text-inverse-muted",
+                )}
+              />
+              <span>
+                <span
+                  className={cn(
+                    "block font-serif text-base",
+                    drawSource === source.id ? "text-text-inverse" : "text-text-inverse-muted",
+                  )}
+                >
+                  {source.name}
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 block text-xs leading-relaxed",
+                    drawSource === source.id ? "text-text-inverse-muted" : "text-text-inverse-muted/60",
+                  )}
+                >
+                  {source.description}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
         className="relative inline-block"
       >
         <motion.button
@@ -492,13 +560,19 @@ export default function RitualInitializer() {
             style={{ width: `${progress}%`, transition: "width 0.1s linear" }}
           />
           <span className="relative z-10 font-serif tracking-wide">
-            {isPressing ? "正在收束意图..." : "长按开始仪式"}
+            {isPressing
+              ? "正在收束意图..."
+              : drawSource === "offline_manual"
+                ? "长按开始录入"
+                : "长按开始仪式"}
           </span>
         </motion.button>
         <p className="mt-4 min-h-[20px] max-w-lg text-xs leading-relaxed text-text-inverse-muted transition-all">
           {isPressing
             ? "你选择的是阅读容器，不是结果。让随机先发生，再让牌阵组织意义。"
-            : `${spreadGuide} 解读用于反思与启发，不替代专业建议。`}
+            : drawSource === "offline_manual"
+              ? `${spreadGuide} 你在线下完成抽取，系统只负责按牌阵与牌面进行反思式解读。`
+              : `${spreadGuide} 解读用于反思与启发，不替代专业建议。`}
         </p>
       </motion.div>
 
@@ -516,7 +590,7 @@ export default function RitualInitializer() {
             className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-paper-border bg-paper p-8 shadow-2xl"
           >
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500">
-              <span className="material-symbols-outlined text-3xl">warning</span>
+              <LegacyIcon name="warning" className="text-3xl" />
             </div>
             <h3 className="mb-3 text-center font-serif text-2xl text-ink">
               重大现实决定前的校准

@@ -5,6 +5,7 @@ import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const tarotCards = getAllCards();
 
@@ -73,9 +74,7 @@ export default function EncyclopediaView({
 
         <div className="rounded-3xl border border-paper-border bg-paper-raised p-5 shadow-sm">
           <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-lg text-terracotta">
-              stacks
-            </span>
+            <LegacyIcon name="stacks" className="text-lg text-terracotta" />
             <h2 className="font-serif text-lg text-ink">覆度状态</h2>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -145,7 +144,7 @@ export default function EncyclopediaView({
               type="button"
               onClick={() => setSelectedCard(card)}
               className={cn(
-                "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200",
+                "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
                 activeCard.id === card.id
                   ? "scale-[1.04] border-terracotta shadow-sm"
                   : "border-transparent opacity-60 hover:opacity-100",
@@ -167,7 +166,7 @@ export default function EncyclopediaView({
         <div className="flex flex-col gap-10 md:flex-row">
           {/* Card Image */}
           <div className="w-full md:w-5/12">
-            <div className="relative aspect-[1/1.7] overflow-hidden rounded-2xl border border-paper-border shadow-sm">
+            <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
               <img
                 src={activeCard.imageUrl}
                 alt={activeCard.name}

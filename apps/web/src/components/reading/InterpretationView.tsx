@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   relationship: "关系议题",
@@ -33,6 +34,7 @@ export default function InterpretationView() {
   const {
     question,
     selectedSpread,
+    drawSource,
     drawnCards,
     reading,
     errorMessage,
@@ -76,6 +78,10 @@ export default function InterpretationView() {
   const spreadOrganizationCopy = selectedSpread
     ? getSpreadOrganizationCopy(selectedSpread.id, selectedSpread.name)
     : "";
+  const followupSectionTitle =
+    reading?.reading_phase === "final" ? "延伸自省" : "延伸追问";
+  const followupSectionKicker =
+    reading?.reading_phase === "final" ? "自省" : "延伸";
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -139,7 +145,7 @@ export default function InterpretationView() {
     }
 
     if (drawnCards.length === 0) {
-      router.replace("/ritual");
+      router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
       return;
     }
 
@@ -148,6 +154,7 @@ export default function InterpretationView() {
     }
   }, [
     drawnCards.length,
+    drawSource,
     errorMessage,
     interpretReading,
     isLoading,
@@ -197,6 +204,9 @@ export default function InterpretationView() {
                   </span>
                 ) : null}
                 <span className="chip-warm text-[11px]">{selectedSpread.name}</span>
+                {drawSource === "offline_manual" ? (
+                  <span className="chip-accent text-[11px]">线下录入</span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -210,7 +220,7 @@ export default function InterpretationView() {
         ) : safetyIntercept ? (
           <div className="reading-card border-red-900/30 bg-red-950/10 ring-1 ring-inset ring-red-900/20">
             <div className="flex items-center gap-3 border-b border-red-900/20 pb-4">
-              <span className="material-symbols-outlined text-3xl text-red-500">gavel</span>
+              <LegacyIcon name="gavel" className="text-3xl text-red-500" />
               <h2 className="font-serif text-2xl text-red-400">界限阻断</h2>
             </div>
             <p className="mt-5 text-base leading-relaxed text-red-200">
@@ -261,9 +271,7 @@ export default function InterpretationView() {
         ) : reading ? (
           reading.sober_check && !isSoberCheckPassed ? (
             <div className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm">
-              <span className="material-symbols-outlined mb-6 text-4xl text-terracotta">
-                psychiatry
-              </span>
+              <LegacyIcon name="psychiatry" className="mb-6 text-4xl text-terracotta" />
               <h2 className="mb-4 font-serif text-2xl text-ink">
                 降温与检视 (Sober Check)
               </h2>
@@ -305,9 +313,10 @@ export default function InterpretationView() {
                 )}
               >
                 <div className="absolute left-8 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm">
-                  <span className="material-symbols-outlined text-[14px] text-terracotta/70">
-                    auto_awesome
-                  </span>
+                  <LegacyIcon
+                    name="auto_awesome"
+                    className="text-[14px] text-terracotta/70"
+                  />
                   <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
                     当前气候场
                   </span>
@@ -333,9 +342,7 @@ export default function InterpretationView() {
               <section className="reading-card border-terracotta/20 bg-paper-raised/70">
                 <div className="flex items-start gap-4">
                   <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-terracotta/20 bg-terracotta/5 text-terracotta">
-                    <span className="material-symbols-outlined text-[20px]">
-                      account_tree
-                    </span>
+                    <LegacyIcon name="account_tree" className="text-[20px]" />
                   </div>
                   <div>
                     <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
@@ -435,7 +442,7 @@ export default function InterpretationView() {
                             </div>
                           </div>
                           {drawnCard ? (
-                            <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-xl border border-paper-border md:ml-4">
+                            <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-card-sm border border-paper-border md:ml-4">
                               <img
                                 src={drawnCard.card.imageUrl}
                                 alt={drawnCard.card.name}
@@ -511,9 +518,9 @@ export default function InterpretationView() {
                 )}
               >
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  延伸
+                  {followupSectionKicker}
                 </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">延伸追问</h2>
+                <h2 className="mt-1 font-serif text-2xl text-ink">{followupSectionTitle}</h2>
                 <ul className="mt-4 space-y-3">
                   {reading.follow_up_questions.map((prompt, index) => (
                     <li
@@ -564,7 +571,7 @@ export default function InterpretationView() {
               {reading.safety_note ? (
                 <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
                   <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">
-                    <span className="material-symbols-outlined text-red-500/80">warning</span>
+                    <LegacyIcon name="warning" className="text-red-500/80" />
                     <div>
                       <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500/80">
                         边界强制声明
@@ -601,7 +608,7 @@ export default function InterpretationView() {
                     </div>
                     {isSavingNote && (
                       <span className="flex items-center gap-1 font-sans text-xs text-terracotta opacity-80">
-                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <LegacyIcon name="check_circle" className="text-[14px]" />
                         已保存
                       </span>
                     )}
@@ -635,7 +642,12 @@ export default function InterpretationView() {
             解读流程
           </h4>
           <div className="space-y-3">
-            {["提问", "仪式", "揭示", "解读"].map((step, index) => (
+            {[
+              "提问",
+              drawSource === "offline_manual" ? "录入" : "仪式",
+              "揭示",
+              "解读",
+            ].map((step, index) => (
               <div
                 key={step}
                 className={cn("flex items-center gap-2.5", index < 3 && "opacity-40")}
@@ -667,7 +679,7 @@ export default function InterpretationView() {
             {drawnCards.map((drawnCard) => (
               <div
                 key={drawnCard.positionId}
-                className="group aspect-[1/1.7] overflow-hidden rounded-lg border border-paper-border transition-shadow hover:shadow-sm"
+                className="group aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border transition-shadow hover:shadow-sm"
               >
                 <img
                   src={drawnCard.card.imageUrl}
