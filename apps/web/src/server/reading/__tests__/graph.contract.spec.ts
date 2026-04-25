@@ -213,7 +213,10 @@ describe("reading graph contract hardening", () => {
   });
 
   it("reorders four-aspects drawn cards into authoritative spread position order", async () => {
-    const reading = await runReadingGraph(buildFourAspectsPayload());
+    const reading = await runReadingGraph({
+      ...buildFourAspectsPayload(),
+      draw_source: "offline_manual",
+    });
 
     expect(reading.spread.id).toBe("four-aspects");
     expect(reading.cards.map((card) => card.position_id)).toEqual([

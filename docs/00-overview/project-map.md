@@ -123,7 +123,7 @@
 
 ### `scripts/`
 
-仓库级脚本层。当前用于生成与校验运行时卡牌资产，例如 `generate-card-assets.mjs` 与 `validate-card-assets.mjs`。
+仓库级脚本层。当前用于生成与校验运行时卡牌资产，例如 `generate-card-assets.mjs` 与 `validate-card-assets.mjs`。运行时牌面资产的操作说明见 `docs/70-ops/card-asset-generation.md`。
 
 ### `.github/`
 

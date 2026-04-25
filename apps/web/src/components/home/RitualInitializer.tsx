@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
+  DrawSource,
   QuestionType,
   ReadingHistoryEntry,
 } from "@aethertarot/shared-types";
@@ -33,6 +34,21 @@ const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: strin
     id: "sober",
     name: "清醒塔罗师",
     description: "更强调现实边界，适合重大决定或高压力议题。",
+  },
+];
+
+const DRAW_SOURCES: Array<{ id: DrawSource; name: string; description: string; icon: string }> = [
+  {
+    id: "digital_random",
+    name: "线上抽牌",
+    description: "由系统洗牌并随机抽取，适合快速完成完整仪式。",
+    icon: "style",
+  },
+  {
+    id: "offline_manual",
+    name: "线下录入",
+    description: "使用你的实体牌抽取，再按牌阵位置录入牌面。",
+    icon: "edit_square",
   },
 ];
 
@@ -121,11 +137,13 @@ export default function RitualInitializer() {
     question,
     selectedSpread,
     agentProfile,
+    drawSource,
     continuitySource,
     history,
     setQuestion,
     setSelectedSpread,
     setAgentProfile,
+    setDrawSource,
     clearContinuitySource,
     startRitual,
   } = useReading();
@@ -209,7 +227,7 @@ export default function RitualInitializer() {
       return;
     }
 
-    router.push("/ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
   };
 
   return (
@@ -468,7 +486,61 @@ export default function RitualInitializer() {
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+        transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+        className="space-y-3"
+      >
+        <h2 className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
+          选择抽牌方式 · Choose Draw Mode
+        </h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {DRAW_SOURCES.map((source) => (
+            <button
+              key={source.id}
+              type="button"
+              onClick={() => setDrawSource(source.id)}
+              className={cn(
+                "flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200",
+                drawSource === source.id
+                  ? "border-terracotta/50 bg-midnight-elevated shadow-sm"
+                  : "border-midnight-border bg-midnight-panel hover:border-midnight-border-subtle hover:shadow-sm",
+              )}
+            >
+              <span
+                className={cn(
+                  "material-symbols-outlined mt-0.5 text-xl",
+                  drawSource === source.id ? "text-terracotta" : "text-text-inverse-muted",
+                )}
+              >
+                {source.icon}
+              </span>
+              <span>
+                <span
+                  className={cn(
+                    "block font-serif text-base",
+                    drawSource === source.id ? "text-text-inverse" : "text-text-inverse-muted",
+                  )}
+                >
+                  {source.name}
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 block text-xs leading-relaxed",
+                    drawSource === source.id ? "text-text-inverse-muted" : "text-text-inverse-muted/60",
+                  )}
+                >
+                  {source.description}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
         className="relative inline-block"
       >
         <motion.button
@@ -492,13 +564,19 @@ export default function RitualInitializer() {
             style={{ width: `${progress}%`, transition: "width 0.1s linear" }}
           />
           <span className="relative z-10 font-serif tracking-wide">
-            {isPressing ? "正在收束意图..." : "长按开始仪式"}
+            {isPressing
+              ? "正在收束意图..."
+              : drawSource === "offline_manual"
+                ? "长按开始录入"
+                : "长按开始仪式"}
           </span>
         </motion.button>
         <p className="mt-4 min-h-[20px] max-w-lg text-xs leading-relaxed text-text-inverse-muted transition-all">
           {isPressing
             ? "你选择的是阅读容器，不是结果。让随机先发生，再让牌阵组织意义。"
-            : `${spreadGuide} 解读用于反思与启发，不替代专业建议。`}
+            : drawSource === "offline_manual"
+              ? `${spreadGuide} 你在线下完成抽取，系统只负责按牌阵与牌面进行反思式解读。`
+              : `${spreadGuide} 解读用于反思与启发，不替代专业建议。`}
         </p>
       </motion.div>
 

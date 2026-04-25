@@ -12,6 +12,7 @@ import {
 import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
+  DrawSource,
   DrawnCard,
   FollowupAnswer,
   ReadingErrorPayload,
@@ -21,8 +22,10 @@ import type {
   StructuredReading,
 } from "@aethertarot/shared-types";
 
-const HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
+const HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
+const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
+const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
 const EMPTY_SOBER_GATE: SoberGateState = {
   readingId: null,
   input: "",
@@ -47,6 +50,7 @@ type ReadingContextValue = {
   question: string;
   selectedSpread: Spread | null;
   agentProfile: AgentProfile;
+  drawSource: DrawSource;
   drawnCards: DrawnCard[];
   reading: StructuredReading | null;
   errorMessage: string | null;
@@ -60,6 +64,7 @@ type ReadingContextValue = {
   setQuestion: (question: string) => void;
   setSelectedSpread: (spread: Spread | null) => void;
   setAgentProfile: (profile: AgentProfile) => void;
+  setDrawSource: (source: DrawSource) => void;
   startRitual: () => boolean;
   completeRitual: (cards: DrawnCard[]) => void;
   interpretReading: () => Promise<boolean>;
@@ -129,6 +134,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
   const [agentProfile, setAgentProfileState] = useState<AgentProfile>(DEFAULT_AGENT_PROFILE);
+  const [drawSource, setDrawSourceState] = useState<DrawSource>(DEFAULT_DRAW_SOURCE);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState<StructuredReading | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -142,7 +148,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+    const savedHistory =
+      localStorage.getItem(HISTORY_STORAGE_KEY)
+      ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY);
 
     if (!savedHistory) {
       setIsHydrated(true);
@@ -175,6 +183,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           id: nextReading.reading_id,
           createdAt: new Date().toISOString(),
           spreadId: selectedSpread.id,
+          drawSource,
           drawnCards: requestDrawnCards,
           reading: nextReading,
         },
@@ -184,7 +193,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       serializeHistory(nextHistory);
       return nextHistory;
     });
-  }, [drawnCards, selectedSpread]);
+  }, [drawSource, drawnCards, selectedSpread]);
 
   const clearGeneratedState = () => {
     interpretSignatureRef.current = null;
@@ -208,6 +217,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const setAgentProfile = (profile: AgentProfile) => {
     setAgentProfileState(profile);
+    clearGeneratedState();
+  };
+
+  const setDrawSource = (source: DrawSource) => {
+    setDrawSourceState(source);
     clearGeneratedState();
   };
 
@@ -247,6 +261,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       drawnCards: requestDrawnCards,
       agent_profile: agentProfile,
       phase: "initial",
+      draw_source: drawSource,
       prior_session_capsule: continuitySource?.capsule ?? null,
     });
 
@@ -272,6 +287,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           drawnCards: requestDrawnCards,
           agent_profile: agentProfile,
           phase: "initial",
+          draw_source: drawSource,
           prior_session_capsule: continuitySource?.capsule ?? null,
         }),
       });
@@ -314,7 +330,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  }, [agentProfile, continuitySource, drawnCards, persistCompletedReading, question, selectedSpread]);
+  }, [agentProfile, continuitySource, drawSource, drawnCards, persistCompletedReading, question, selectedSpread]);
 
   const submitFollowupAnswers = useCallback(async (answers: FollowupAnswer[]) => {
     if (
@@ -335,6 +351,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       drawnCards: requestDrawnCards,
       agent_profile: getReadingAgentProfile(reading),
       phase: "final",
+      draw_source: drawSource,
       initial_reading_id: reading.reading_id,
       followup_answers: answers,
       prior_session_capsule: continuitySource?.capsule ?? null,
@@ -362,6 +379,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           drawnCards: requestDrawnCards,
           agent_profile: getReadingAgentProfile(reading),
           phase: "final",
+          draw_source: drawSource,
           prior_session_capsule: continuitySource?.capsule ?? null,
           initial_reading: reading,
           followup_answers: answers,
@@ -411,7 +429,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  }, [continuitySource, drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
+  }, [continuitySource, drawSource, drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     interpretSignatureRef.current = null;
@@ -435,6 +453,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setQuestionState(historyEntry.reading.question);
     setSelectedSpreadState(spread);
     setAgentProfileState(historyEntry.reading.agent_profile ?? DEFAULT_AGENT_PROFILE);
+    setDrawSourceState(historyEntry.drawSource ?? DEFAULT_DRAW_SOURCE);
     setDrawnCards(reconstructedCards);
     setReading(historyEntry.reading);
     setErrorMessage(null);
@@ -454,6 +473,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setQuestionState("");
     setSelectedSpreadState(null);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);
+    setDrawSourceState(DEFAULT_DRAW_SOURCE);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
@@ -474,6 +494,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setQuestionState("");
     setSelectedSpreadState(null);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);
+    setDrawSourceState(DEFAULT_DRAW_SOURCE);
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
@@ -498,6 +519,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         question,
         selectedSpread,
         agentProfile,
+        drawSource,
         drawnCards,
         reading,
         errorMessage,
@@ -511,6 +533,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         setQuestion,
         setSelectedSpread,
         setAgentProfile,
+        setDrawSource,
         startRitual,
         completeRitual,
         interpretReading,

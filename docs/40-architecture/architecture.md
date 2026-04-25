@@ -24,7 +24,7 @@
 - 用户交互
 - Agent Profile 选择
 - 问题输入
-- 抽牌展示
+- 线上抽牌展示与线下实体牌录入
 - 初读、追问与整合深读渲染
 - 本地历史记录与回放
 
@@ -36,6 +36,7 @@
 
 - `POST /api/reading` 的 request parsing
 - 输入 schema 校验
+- `draw_source` 兼容解析
 - 错误映射
 - HTTP response 返回
 
@@ -48,6 +49,7 @@
 - 问题分类
 - Agent Profile / phase 归一化
 - 权威牌阵 / 牌面上下文还原
+- 线上随机与线下录入两种 `drawnCards[]` 来源的统一校验
 - initial/final 阶段验证
 - `prior_session_capsule` continuity context 注入与安全净化
 - provider 调用
@@ -118,18 +120,19 @@
 
 ## 4. 当前 reading 数据流
 
-1. 用户输入问题、选择 Agent Profile、选择牌阵并完成抽牌
-2. 前端提交 `question + spreadId + drawnCards + agent_profile + phase + prior_session_capsule?`
-3. Route 进行基础 schema 校验
-4. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验
+1. 用户输入问题、选择 Agent Profile、选择牌阵，并选择线上抽牌或线下实体牌录入
+2. 前端完成线上随机抽牌，或按牌阵位置录入线下实体牌与正逆位
+3. 前端提交 `question + spreadId + drawnCards + draw_source + agent_profile + phase + prior_session_capsule?`
+4. Route 进行基础 schema 校验
+5. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验
    当前 graph 会在 provider draft 之后先执行一层 contract validation，防止 provider 越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量。
-5. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
-6. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
-7. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它会先在服务层移除 `用户补充` 类原始细节以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容，再作为低优先级 continuity context 注入 provider
-8. Safety review 补充常规 `safety_note`，并收窄 guidance / follow-up
-9. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`，且 completed capsule 会被模板化压缩为“问题 / 牌阵 / 核心主题 / 延续主轴 / 边界提醒”
-10. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
-11. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
+6. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
+7. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
+8. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它会先在服务层移除 `用户补充` 类原始细节以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容，再作为低优先级 continuity context 注入 provider
+9. Safety review 补充常规 `safety_note`，并收窄 guidance / follow-up
+10. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`，且 completed capsule 会被模板化压缩为“问题 / 牌阵 / 核心主题 / 延续主轴 / 边界提醒”
+11. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
+12. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
 
 ---
 
@@ -143,6 +146,7 @@
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history
 - MVP 不引入服务端会话存储；final 请求由前端带回 initial reading 快照
 - 本地线程连续性已实现，但仍不引入 user id、thread id 或服务端 history persistence
+- 线下塔罗模式不得新建第二套解读链路；它只能作为 `drawnCards[]` 输入来源进入同一 `POST /api/reading` contract
 - 新增 provider、扩展 LangGraph 节点或引入更复杂 graph 能力时，应复用现有 service 边界，而不是从 route 重新起一套流程
 
 ---
