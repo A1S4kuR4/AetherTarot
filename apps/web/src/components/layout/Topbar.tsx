@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const navItems = [
   { href: "/", label: "首页", englishLabel: "Home" },
@@ -76,7 +77,7 @@ export default function Topbar({ isMidnight = false }: { isMidnight?: boolean })
           sidebar?.classList.toggle("translate-x-full");
         }}
       >
-        <span className="material-symbols-outlined text-xl">menu</span>
+        <LegacyIcon name="menu" className="text-xl" />
       </button>
     </nav>
   );

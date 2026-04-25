@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function IntroSection() {
   return (
@@ -30,9 +31,10 @@ export default function IntroSection() {
           transition={{ delay: 1, duration: 1 }}
           className="pt-12"
         >
-          <span className="material-symbols-outlined animate-float-slow text-text-placeholder">
-            keyboard_double_arrow_down
-          </span>
+          <LegacyIcon
+            name="keyboard_double_arrow_down"
+            className="animate-float-slow text-text-placeholder"
+          />
         </motion.div>
       </motion.div>
     </section>
