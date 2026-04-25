@@ -12,6 +12,7 @@ import type {
 } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
 const MAJOR_DECISION_TERM_REGEX =
@@ -243,7 +244,7 @@ export default function RitualInitializer() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-terracotta">
-                <span className="material-symbols-outlined text-[18px]">history</span>
+                <LegacyIcon name="history" className="text-[18px]" />
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
                   延续中的线索
                 </p>
@@ -302,7 +303,7 @@ export default function RitualInitializer() {
           className="rounded-2xl border border-indigo/25 bg-indigo/10 p-4 text-left shadow-sm"
         >
           <div className="flex items-center gap-2 text-indigo">
-            <span className="material-symbols-outlined text-[18px]">history_edu</span>
+            <LegacyIcon name="history_edu" className="text-[18px]" />
             <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]">
               重复主题提醒
             </p>
@@ -336,9 +337,7 @@ export default function RitualInitializer() {
         className="rounded-2xl border border-midnight-border bg-midnight-panel/80 p-4 text-left shadow-sm"
       >
         <div className="mb-3 flex items-center gap-2 text-text-inverse">
-          <span className="material-symbols-outlined text-[18px] text-indigo">
-            center_focus_strong
-          </span>
+          <LegacyIcon name="center_focus_strong" className="text-[18px] text-indigo" />
           <h2 className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-text-inverse-muted">
             焦点校准
           </h2>
@@ -437,9 +436,7 @@ export default function RitualInitializer() {
                     : "bg-white/5 text-text-inverse-muted group-hover:text-text-inverse",
                 )}
               >
-                <span className="material-symbols-outlined text-2xl">
-                  {spread.icon}
-                </span>
+                <LegacyIcon name={spread.icon} className="text-2xl" />
               </div>
               <h3 className={cn(
                 "mb-1 font-serif text-base transition-colors",
@@ -505,14 +502,13 @@ export default function RitualInitializer() {
                   : "border-midnight-border bg-midnight-panel hover:border-midnight-border-subtle hover:shadow-sm",
               )}
             >
-              <span
+              <LegacyIcon
+                name={source.icon}
                 className={cn(
-                  "material-symbols-outlined mt-0.5 text-xl",
+                  "mt-0.5 text-xl",
                   drawSource === source.id ? "text-terracotta" : "text-text-inverse-muted",
                 )}
-              >
-                {source.icon}
-              </span>
+              />
               <span>
                 <span
                   className={cn(
@@ -594,7 +590,7 @@ export default function RitualInitializer() {
             className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-paper-border bg-paper p-8 shadow-2xl"
           >
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500">
-              <span className="material-symbols-outlined text-3xl">warning</span>
+              <LegacyIcon name="warning" className="text-3xl" />
             </div>
             <h3 className="mb-3 text-center font-serif text-2xl text-ink">
               重大现实决定前的校准

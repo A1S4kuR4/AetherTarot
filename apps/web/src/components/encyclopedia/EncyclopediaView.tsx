@@ -5,6 +5,7 @@ import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const tarotCards = getAllCards();
 
@@ -73,9 +74,7 @@ export default function EncyclopediaView({
 
         <div className="rounded-3xl border border-paper-border bg-paper-raised p-5 shadow-sm">
           <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-lg text-terracotta">
-              stacks
-            </span>
+            <LegacyIcon name="stacks" className="text-lg text-terracotta" />
             <h2 className="font-serif text-lg text-ink">覆度状态</h2>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

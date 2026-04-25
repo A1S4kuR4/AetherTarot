@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function JourneyView() {
   const router = useRouter();
@@ -91,7 +92,7 @@ export default function JourneyView() {
             onClick={handleNewReading}
             className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <LegacyIcon name="add" className="text-[18px]" />
             开启新的抽牌
           </button>
         </div>
@@ -138,9 +139,10 @@ export default function JourneyView() {
           </AnimatePresence>
         ) : (
           <div className="reading-card bg-paper/50 py-24 text-center">
-            <span className="material-symbols-outlined mb-4 text-4xl text-terracotta/40">
-              auto_awesome
-            </span>
+            <LegacyIcon
+              name="auto_awesome"
+              className="mb-4 text-4xl text-terracotta/40"
+            />
             <h3 className="font-serif text-xl text-ink">尚无回溯线索</h3>
             <p className="mt-2 text-sm text-text-muted">
               你还没有在这里留下过印记。
@@ -194,9 +196,7 @@ function HistoryCard({
         </div>
         {entry.user_notes && (
           <div className="flex items-center gap-2 border-t border-paper-border/30 pt-4 text-text-muted">
-            <span className="material-symbols-outlined text-[16px] text-terracotta/60">
-              edit_note
-            </span>
+            <LegacyIcon name="edit_note" className="text-[16px] text-terracotta/60" />
             <span className="truncate text-[11px]">沉淀了感悟</span>
           </div>
         )}
@@ -249,7 +249,7 @@ function ThemeClusterCard({
           </div>
           <p className="text-xs text-text-muted">{cluster.entries.length} 次意识共振</p>
         </div>
-        <span className="material-symbols-outlined text-4xl text-paper-border/40">cloud</span>
+        <LegacyIcon name="cloud" className="text-4xl text-paper-border/40" />
       </div>
 
       <div className="space-y-4">
