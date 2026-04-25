@@ -319,6 +319,36 @@ function buildFinalConstructiveTension(
   }
 }
 
+function summarizeFollowupAnswer(answer: string, maxLength = 42) {
+  const normalized = answer.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1)}…`;
+}
+
+function buildFollowupAnswerGuidance(followupAnswers: FollowupAnswer[]) {
+  return followupAnswers.slice(0, 2).map((item, index) => {
+    const answer = summarizeFollowupAnswer(item.answer);
+
+    return `把第 ${index + 1} 个追问里你提到的“${answer}”先当作校准线索：它更像事实、感受，还是仍待验证的推测？`;
+  });
+}
+
+function buildFinalExtensionQuestion(followupAnswers: FollowupAnswer[]) {
+  const primaryAnswer = followupAnswers[0]?.answer
+    ? summarizeFollowupAnswer(followupAnswers[0].answer, 30)
+    : null;
+
+  if (!primaryAnswer) {
+    return "经过这次补充后，你最愿意在现实中先验证哪一个小信号？";
+  }
+
+  return `围绕你提到的“${primaryAnswer}”，接下来哪一个现实信号最值得先温和验证？`;
+}
+
 function buildInitialSynthesis(
   question: string,
   questionType: QuestionType,
@@ -374,7 +404,7 @@ function buildFinalSynthesis({
     questionType,
   );
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。结合你的补充：${answerSummary}。${spreadAxis ?? ""} ${constructiveTension} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，看见哪些担心来自事实，哪些来自惯性反应，并为下一步保留可验证的行动空间。`;
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。你的回答带来的校准是：${answerSummary}。这意味着综合解读不再只停留在牌面主轴本身，而是要把这些补充放回 ${primaryTheme} 里，分辨哪些已经是可观察事实，哪些仍是感受、担心或待验证条件。${spreadAxis ?? ""} ${constructiveTension} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，为下一步保留可验证的行动空间。`;
 }
 
 function buildCards(
@@ -628,6 +658,7 @@ export function buildPlaceholderFinalReadingDraft({
   );
   const finalGuidance = uniqueStrings([
     `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
+    ...buildFollowupAnswerGuidance(followupAnswers),
     "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
     ...(buildSpreadSpecificGuidance(initialReading.spread, "final")
       ? [buildSpreadSpecificGuidance(initialReading.spread, "final") as string]
@@ -650,9 +681,7 @@ export function buildPlaceholderFinalReadingDraft({
       priorSessionCapsule,
     }),
     reflective_guidance: finalGuidance,
-    follow_up_questions: [
-      "经过这次补充后，你最愿意在现实中先验证哪一个小信号？",
-    ],
+    follow_up_questions: [buildFinalExtensionQuestion(followupAnswers)],
     confidence_note:
       "这是第二阶段整合深读。它延续第一阶段的牌面主轴，并结合你的补充信息做校正；它仍然不是对未来的确定承诺。",
   };
