@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { runReadingGraph } from "@/server/reading/graph";
 import {
   avoidsUnsafeConstructiveTensionClaims,
+  buildCelticCrossPayload,
   buildFollowupAnswers,
+  buildFourAspectsPayload,
   buildHolyTrianglePayload,
   buildSevenCardPayload,
   buildSinglePayload,
@@ -14,6 +16,7 @@ import {
   hasSafetyNarrowedFollowup,
   hasSafetyNarrowedGuidance,
   mentionsSevenCardAxis,
+  mentionsSpreadAxis,
   omitsUserSupplementLine,
   preservesPrimaryTheme,
 } from "@/server/reading/__tests__/fixtures";
@@ -74,6 +77,31 @@ describe("reading semantic fixtures", () => {
     expect(avoidsUnsafeConstructiveTensionClaims(initial)).toBe(true);
     expect(hasConstructiveTension(final)).toBe(true);
     expect(avoidsUnsafeConstructiveTensionClaims(final)).toBe(true);
+  });
+
+  it("anchors constructive tension to all active spread structures", async () => {
+    const payloads = [
+      buildSinglePayload(),
+      buildHolyTrianglePayload(),
+      buildFourAspectsPayload(),
+      buildSevenCardPayload(),
+      buildCelticCrossPayload(),
+    ];
+    const readings = await Promise.all(payloads.map((payload) => runReadingGraph(payload)));
+
+    expect(readings.map((reading) => reading.spread.id)).toEqual([
+      "single",
+      "holy-triangle",
+      "four-aspects",
+      "seven-card",
+      "celtic-cross",
+    ]);
+
+    for (const reading of readings) {
+      expect(hasConstructiveTension(reading), reading.spread.id).toBe(true);
+      expect(mentionsSpreadAxis(reading), reading.spread.id).toBe(true);
+      expect(avoidsUnsafeConstructiveTensionClaims(reading), reading.spread.id).toBe(true);
+    }
   });
 
   it("varies constructive tension language across question types", async () => {

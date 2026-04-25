@@ -10,6 +10,8 @@ const manifestPath = path.join(repoRoot, "data/decks/card-asset-manifest.json");
 const publicRoot = path.join(repoRoot, "apps/web/public");
 const runtimeCardsRoot = path.join(publicRoot, "cardsV2");
 const cardBackImageUrl = "/cardsV2/back.png";
+const expectedCardCount = 78;
+const expectedManifestEntryCount = expectedCardCount + 1;
 const expectedAspectRatio = 1 / 1.7;
 const aspectRatioTolerance = 0.035;
 const expectedImagePaths = new Set();
@@ -91,6 +93,16 @@ if (!Array.isArray(deck)) {
   process.exit();
 }
 
+if (deck.length !== expectedCardCount) {
+  fail(`deck must contain exactly ${expectedCardCount} tarot cards; found ${deck.length}`);
+}
+
+if (manifestEntries.size !== expectedManifestEntryCount) {
+  fail(
+    `asset manifest must contain exactly ${expectedManifestEntryCount} entries (${expectedCardCount} card fronts plus card back); found ${manifestEntries.size}`,
+  );
+}
+
 const seenIds = new Set();
 for (const card of deck) {
   if (!card?.id) {
@@ -116,6 +128,10 @@ for (const card of deck) {
 const cardBackPath = path.join(publicRoot, cardBackImageUrl.slice(1));
 expectedImagePaths.add(cardBackPath);
 validateImage(cardBackPath, "card back", cardBackImageUrl);
+
+if (!manifestEntries.has(cardBackImageUrl)) {
+  fail(`asset manifest must include the card back: ${cardBackImageUrl}`);
+}
 
 for (const entry of fs.readdirSync(runtimeCardsRoot, { withFileTypes: true })) {
   if (!entry.isFile()) {
