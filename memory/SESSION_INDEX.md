@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-22`
+- `last_updated`: `2026-04-25`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -44,12 +44,14 @@
 
 ### 2.3 Latest Work Log
 
-- 文件：`memory/work-log-2026-04-22.md`
-- 用途：记录 `2026-04-22` 对最新工作日志、状态文档与 UX 风险文档的复核，以及本轮执行计划、回归结果和后续口径
+- 文件：`memory/work-log-2026-04-25.md`
+- 用途：记录 `2026-04-25` 中世纪欧洲风格 `cardsV2` 资源接入、运行时路径切换、卡背切换、manifest / validator 更新与验证结果
 - 当前重点：
-  - 确认当前不重新打开 `M1 / M2 / M3`，不新增运行时牌阵，不打开服务端 memory persistence
-  - 本轮计划固定为先验证 2026-04-20 的 `R2 / R3 / R7` 改动，再把真实状态写回 `memory/`
-  - 已复跑 targeted semantic fixtures、build、完整 e2e 与 lint；结果分别为 `10/10`、build passed、`23/23`、`0` errors / `13` existing warnings
+  - `data/decks/rider-waite-smith.json` 的 78 张牌已全部切到 `/cardsV2/...`
+  - `CARD_BACK_IMAGE` 已切到 `/cardsV2/back.png`
+  - `data/decks/card-asset-manifest.json` 已记录 `78` 张正面牌与 `1` 张卡背的真实尺寸和 SHA-256
+  - `scripts/validate-card-assets.mjs` 已改为校验 `cardsV2`、portrait ratio、manifest coverage、source kind、visual review、recorded dimensions 与 hash
+  - 已复跑 `npm run validate:assets` 与 `npm run build`，均通过
 
 ### 2.4 Near-Term Work Plan
 
@@ -62,6 +64,21 @@
   - UX 风险收口和 Runtime Alignment 并行但不抢主线
 
 ### 2.5 Previous Shared Work Logs
+
+- 文件：`memory/work-log-2026-04-24.md`
+- 用途：记录 `2026-04-24` 线下塔罗模式的设计落地、前端录入流程、`draw_source` 协议兼容、文档同步与验证结果
+- 当前重点：
+  - 线下塔罗模式作为 `drawnCards[]` 的新输入来源接入现有 `/api/reading`，不新建第二套 reading pipeline
+  - 新增 `/offline-draw`，支持按牌阵位置录入实体牌、正逆位与重复牌约束
+  - 新增 `draw_source = digital_random | offline_manual`，但不改变 `StructuredReading` response shape
+  - 已复跑 focused graph contract test、build 与 diff whitespace check；结果分别为 `20/20`、build passed、无 whitespace error
+
+- 文件：`memory/work-log-2026-04-22.md`
+- 用途：记录 `2026-04-22` 对最新工作日志、状态文档与 UX 风险文档的复核，以及本轮执行计划、回归结果和后续口径
+- 当前重点：
+  - 确认当前不重新打开 `M1 / M2 / M3`，不新增运行时牌阵，不打开服务端 memory persistence
+  - 本轮计划固定为先验证 2026-04-20 的 `R2 / R3 / R7` 改动，再把真实状态写回 `memory/`
+  - 已复跑 targeted semantic fixtures、build、完整 e2e 与 lint；结果分别为 `10/10`、build passed、`23/23`、`0` errors / `13` existing warnings
 
 - 文件：`memory/work-log-2026-04-20.md`
 - 用途：记录 `2026-04-20` 的证据感阅读体验、重大现实决策前置确认、重复主题提醒、被组织的随机、建设性阻力与 E2E 稳定性恢复
@@ -104,10 +121,12 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-22.md`，确认本轮计划判断与最新回归结果
-4. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、组织随机、建设性阻力、前置现实边界、重复主题提醒与上一轮落地细节
-5. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
-6. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
+3. 再看 `memory/work-log-2026-04-25.md`，确认 `cardsV2` 资源接入、卡背切换、manifest / validator 变更与验证结果
+4. 再看 `memory/work-log-2026-04-24.md`，确认线下塔罗模式的输入来源、前端录入流程与验证结果
+5. 再看 `memory/work-log-2026-04-22.md`，确认上一轮计划判断与回归结果
+6. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、组织随机、建设性阻力、前置现实边界、重复主题提醒与上一轮落地细节
+7. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
+8. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useReading } from "@/context/ReadingContext";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 import JourneyView from "@/components/home/JourneyView";
 import NextLink from "next/link";
 
@@ -21,7 +22,7 @@ export default function JourneyPage() {
     <main className="mx-auto flex min-h-[92vh] max-w-4xl flex-col items-center justify-center px-6 text-center">
       <div className="space-y-8">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-paper-raised border border-paper-border text-text-placeholder">
-          <span className="material-symbols-outlined text-4xl">history_edu</span>
+          <LegacyIcon name="history_edu" className="text-4xl" />
         </div>
         <div className="space-y-4">
           <h1 className="font-serif text-3xl font-semibold text-ink md:text-4xl">

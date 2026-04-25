@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function KnowledgeSection() {
   return (
@@ -22,7 +23,7 @@ export default function KnowledgeSection() {
             className="rounded-3xl border border-paper-border bg-paper p-8 shadow-sm transition-all hover:shadow-md"
           >
             <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
-              <span className="material-symbols-outlined">stars</span>
+              <LegacyIcon name="stars" />
             </div>
             <h3 className="mb-4 font-serif text-2xl text-ink">大阿尔卡纳 · Major Arcana</h3>
             <p className="font-sans text-base leading-relaxed text-text-body">
@@ -43,7 +44,7 @@ export default function KnowledgeSection() {
             className="rounded-3xl border border-paper-border bg-paper p-8 shadow-sm transition-all hover:shadow-md"
           >
             <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-              <span className="material-symbols-outlined">waves</span>
+              <LegacyIcon name="waves" />
             </div>
             <h3 className="mb-4 font-serif text-2xl text-ink">小阿尔卡纳 · Minor Arcana</h3>
             <p className="font-sans text-base leading-relaxed text-text-body">

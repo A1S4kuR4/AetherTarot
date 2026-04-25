@@ -1,1276 +1,1275 @@
 {
-  "version": 1,
+  "version": 2,
   "target": {
-    "width": 1000,
-    "height": 1700,
     "aspectRatio": "1:1.7",
-    "fullBleed": true
+    "fullBleed": true,
+    "dimensionPolicy": "source-native portrait PNG; exact dimensions are recorded per manifest entry"
   },
-  "generatedAt": "2026-04-10",
+  "generatedAt": "2026-04-25",
   "entries": [
     {
       "assetId": "fool",
-      "imageUrl": "/cards/major_0_fool.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_0_fool.png",
+      "width": 962,
+      "height": 1634,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "44f39d02c90d7e8f5cb9050b1d4b39f55fd5a53819b0d856a91b3ce4550da440"
+      "sha256": "508b5ea362c20079df5d8408ebdbfe136328c0162275bc25d0e3672c1ab97d82"
     },
     {
       "assetId": "magician",
-      "imageUrl": "/cards/major_1_magician.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_1_magician.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "c27debfc4472af7b8be426613287836df388eff23c99a57a7598e4240ad8464c"
+      "sha256": "7845ec69c599ae2c80de03677d15b8d4f0f604f6c15a15523a52ea943b3e75e9"
     },
     {
       "assetId": "high-priestess",
-      "imageUrl": "/cards/major_2_high_priestess.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_2_high_priestess.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "a78789bea53723abce3924a01b6c3082edd473ec58064b553332bcb0b275f547"
+      "sha256": "13531b3e167f01f340c8bb0d769086e30eb745465d20a0c3e996ed2e98834487"
     },
     {
       "assetId": "empress",
-      "imageUrl": "/cards/major_3_empress.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_3_empress.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "c1b097aa6422f8aa0e90837fd25142aa1e8ece8a7f4f40ba8252150858944c7d"
+      "sha256": "5c8b551d91dfda696568ca6e7005c1c4a60aed27bb571854aa2a7a610fde29d5"
     },
     {
       "assetId": "emperor",
-      "imageUrl": "/cards/major_4_emperor.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_4_emperor.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "a48b9542db09e68e3f263b5119eed0c1edb8cb4fc58df0a09a86a8393075ff65"
+      "sha256": "1fca0aadc5a4a97f59ed03a8167f01c1b484d864265828efe6fc303e9adfc5f0"
     },
     {
       "assetId": "hierophant",
-      "imageUrl": "/cards/major_5_hierophant.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_5_hierophant.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "17016ac4be66a23118be6912bd33885f431ef6a75b20b229f39f86abe9f83e78"
+      "sha256": "ee61d6735890b1cc1742875a123ac3f2e3bf1b360c3b4e50aaf5a8c122254d9c"
     },
     {
       "assetId": "lovers",
-      "imageUrl": "/cards/major_6_lovers.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_6_lovers.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "cfc722fcac95ce202de3bef47c1f1f4ee826f76608e0ebc043e872afc0b5c046"
+      "sha256": "8e94ad915788e78280140454f6aa2e195ba43f09c7b2758c79e31ec509843e68"
     },
     {
       "assetId": "chariot",
-      "imageUrl": "/cards/major_7_chariot.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_7_chariot.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "3794e1e924a6852ee7654b51f6716e02e719b7e5e2635a46c692a503f9277eb9"
+      "sha256": "ec9018553098882c862db2a19d32aed735c6263ad502b7fa4b73957eef9021e4"
     },
     {
       "assetId": "strength",
-      "imageUrl": "/cards/major_8_strength.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_8_strength.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "bc8e9cd191918bc2f0d5cc32db6dfd9e9a57e445a721787fa85a23a1df7cb9a4"
+      "sha256": "3d253f2fec4ae7a08bbf3c30947cd71a037214cacaf008ad4755e155d8f4c969"
     },
     {
       "assetId": "hermit",
-      "imageUrl": "/cards/major_9_hermit.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_9_hermit.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "aece12cc5c2215a39bea0f3bd5cdf4a2ed2998e3e5b96266d74aeea9164d4baf"
+      "sha256": "ea21736a5273ccb4e592cfeff2783d30ba47112f45575b72f3542a91af6bc4ba"
     },
     {
       "assetId": "wheel-of-fortune",
-      "imageUrl": "/cards/major_10_wheel.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_10_wheel.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "f6742f5b25883c739f8571312f1d6e79aab903794e2624b6981222d442d39fab"
+      "sha256": "de8992e13d7721336afd2ba65248a999ae90966c92e2764aeed13f7745faf245"
     },
     {
       "assetId": "justice",
-      "imageUrl": "/cards/major_11_justice.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_11_justice.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "4bb5b233e6c2f7e96d4e5e0c768fb2f62bfc1c8bc59dc432bdcc100a5078929e"
+      "sha256": "ba5d291efce58a9d03317c827370d216b5caaa605c254d9287c1d3abe24c82c0"
     },
     {
       "assetId": "hanged-man",
-      "imageUrl": "/cards/major_12_hanged_man.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_12_hanged_man.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "00cb2e790a0fc185ce3a8f1033627479e6a7b913bd994a0840da47287709c463"
+      "sha256": "6149a49d058400fe53ac6e9cb67fb330a0ac26cbd7c6c287d98145d97450981b"
     },
     {
       "assetId": "death",
-      "imageUrl": "/cards/major_13_death.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_13_death.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "54ef03269edb2b072c39af459754d57620b66e6c58a7666a9ad127e643a45403"
+      "sha256": "e805f6ea0613c24b232293fc301c531634029ae366c4f02b55614963e10fa8e6"
     },
     {
       "assetId": "temperance",
-      "imageUrl": "/cards/major_14_temperance.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_14_temperance.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "e3eb2cee447d85b04958623de3b8654f40409189ab5712c001480826a6e86478"
+      "sha256": "3857de7b6eb7c68ba878d7fbbd04226e3dd36c1ff7943c85263e287cd605df6f"
     },
     {
       "assetId": "devil",
-      "imageUrl": "/cards/major_15_devil.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_15_devil.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "9b2e542f97f0e57ac8746855df529b15e7088ef8e9bc795a9e9189d180cb4609"
+      "sha256": "ef8ae6a1e0fc93ede623ea3b1bb9dcf6d7c9848ed68b0b4cd6158ac8ca2ec5e6"
     },
     {
       "assetId": "tower",
-      "imageUrl": "/cards/major_16_tower.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_16_tower.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "bd04008f2fe05a33cb500d0080797943daaa6e351ba6ec8cd37716d67ed30ac3"
+      "sha256": "761b3fd44463478a6f34098b97dc9aa09a2ed294292c0c5f291e77b8bca5dedc"
     },
     {
       "assetId": "star",
-      "imageUrl": "/cards/major_17_star.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_17_star.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "8662cc317891a08aaf5689bb398cadbd32a43ec01de906eaed9d37ce8455bcb0"
+      "sha256": "fdf1549f1dff7d6f565dd177edb21b492367444370ca32983cf286beaa930cdb"
     },
     {
       "assetId": "moon",
-      "imageUrl": "/cards/major_18_moon.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_18_moon.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "054744a0c155680d17bde0e2d485f0dc7001fe489b4a58c610fa17e951028632"
+      "sha256": "5ae598ff3597279a3581f3d9521dd58c89e8b8c351865d814aabe0e23380cd83"
     },
     {
       "assetId": "sun",
-      "imageUrl": "/cards/major_19_sun.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_19_sun.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "3f6e35826ea380f0729aa8fe7e65910c747a3d0375a309c99c49b7e8fde5f300"
+      "sha256": "6884a6353d42ee009377bc98e6dd1624b0d50c432bbe60c84f82192460b3e1d5"
     },
     {
       "assetId": "judgement",
-      "imageUrl": "/cards/major_20_judgement.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_20_judgement.png",
+      "width": 960,
+      "height": 1637,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "72e65c5133ffc90e7aff9f936262df3f0499698133b7ad5cf49c4722dfc6c12a"
+      "sha256": "ffd4042cdba2c9320939fef3b83b087371f0e9e4944ed3c29052a699c89cb15c"
     },
     {
       "assetId": "world",
-      "imageUrl": "/cards/major_21_world.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/major_21_world.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "be968b96b9555b262907445128a6fc641bab6d4b028925e439026a44456bc7e2"
+      "sha256": "01c5f1073af1ddb5acfbbac4f3cf05b2962b25947d96ce02a6fc49ba6327bd0d"
     },
     {
       "assetId": "ace-of-wands",
-      "imageUrl": "/cards/minor_wands_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_ace.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "3d73dd8b6a8d006491854cbd7b8db23afc6607c0050be099a40ec594c696e318"
+      "sha256": "56cc87c3359c787341c1567eeb98c17cb8510b2ef06775f0648b848d24481e3e"
     },
     {
       "assetId": "two-of-wands",
-      "imageUrl": "/cards/minor_wands_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_2.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "840c85f4bd6e65009736403f303952cfe61fc12979b0e636b81be4b7c4865854"
+      "sha256": "cb5d953cdd592c3e849c2830104a8df222f3d4566ce1e00ed1f43ea2ccf024de"
     },
     {
       "assetId": "three-of-wands",
-      "imageUrl": "/cards/minor_wands_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_3.png",
+      "width": 971,
+      "height": 1619,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "3f71172f2b20ebfc17578be692d4a60b47edbf6ec2dc77977980337df86e59d0"
+      "sha256": "956b66b525a0b2ea9adb509950d308c9ba42ad9f92e5864e7489754d19875ee6"
     },
     {
       "assetId": "four-of-wands",
-      "imageUrl": "/cards/minor_wands_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_4.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "b434fc02c9f482d615ec1ce7234e3de34b34e7e9d78777e893b9ebe632d1ffc3"
+      "sha256": "95ca060837ca48df8aaea03f59a4e88bd4cf763ac2343300b32f58dd3b2cb4c5"
     },
     {
       "assetId": "five-of-wands",
-      "imageUrl": "/cards/minor_wands_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_5.png",
+      "width": 971,
+      "height": 1619,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "c5557b9bd4350fa1d3efe6a42d05dfa876d4fc1da0167c26a7e8237d405faedf"
+      "sha256": "91cdf5d09dcef259e28e4cb7451935a412adb1a7446a7c8b73b8bdc5405c1e28"
     },
     {
       "assetId": "six-of-wands",
-      "imageUrl": "/cards/minor_wands_6.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_6.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "d6a6260d64c1fea0c54fdc192dde203c54dca8b4e6c38011df7cc5999d9e6c51"
+      "sha256": "c05309a7cf557353401029851e75474512a55087255c40049570b9f72b31d5b1"
     },
     {
       "assetId": "seven-of-wands",
-      "imageUrl": "/cards/minor_wands_7.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_7.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "0acea99b7bea00d3d1a323754bacbe50a8336b7efc078eb67b283555e63696a4"
+      "sha256": "f07b1848009e011920e2bf4fc0fc3fa36fd77eac7c023b08a2b3ea280c356389"
     },
     {
       "assetId": "eight-of-wands",
-      "imageUrl": "/cards/minor_wands_8.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_8.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "eb50402ccf47a12cae555ceea507632cc9b6c58d09b9beade60b37c439be70b8"
+      "sha256": "4602adf0d560ddc5d38839516e0682bc12d67fe67768cf0dfd031bfd5954244e"
     },
     {
       "assetId": "nine-of-wands",
-      "imageUrl": "/cards/minor_wands_9.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_9.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "a56ed31d6051ccd613c294eaaa2f13b7b14b21d6f363f105ac867e2cd3a5e988"
+      "sha256": "50b7384c33e30b36d5b611953434f9a8586576b4f566ceded493886c5ca874ea"
     },
     {
       "assetId": "ten-of-wands",
-      "imageUrl": "/cards/minor_wands_10.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_10.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "a831edc2f6db3f798d3e9855cd8c5ad1a31f10e3a62995cebffdafd4a2d87bb2"
+      "sha256": "5ba2ea0eb86e25afcc280b947dbb30a97179441fe0e3c844660fc5f035172e74"
     },
     {
       "assetId": "page-of-wands",
-      "imageUrl": "/cards/minor_wands_page.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_page.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "68fc934e7e7542d19857e4bb02ea971625957159ddf8a0832128c4019fabc848"
+      "sha256": "ad775473594a3b068ed2798d93df36630e055361873e89ef37ff6c44ff9221c9"
     },
     {
       "assetId": "knight-of-wands",
-      "imageUrl": "/cards/minor_wands_knight.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_knight.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "0bee84547a1f0202a587edd890cd920cef55093b54230ee904e85bb7c069b15e"
+      "sha256": "f020bba9b0cfd9b2c946ed7110f5d4b6ed9054d73542e0e246cb5b5d6aa891ef"
     },
     {
       "assetId": "queen-of-wands",
-      "imageUrl": "/cards/minor_wands_queen.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_queen.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "836d700e91b9d9b350f96d9ea2bca2239424432eeaf967f6f9e6441285d048ac"
+      "sha256": "b853468bb0de72cb566f2f3ac079c766dd1e1fb8eb459632dbd51f1bb1c50613"
     },
     {
       "assetId": "king-of-wands",
-      "imageUrl": "/cards/minor_wands_king.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_wands_king.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "fba7e46da00758106326a94b1723acd733356d5482608c721940c7c00b26c8e7"
+      "sha256": "6ae0baa7bc627f94302aa2dfc4a2bdddfb0b0cd593b17d1a1b4451520f3e90b6"
     },
     {
       "assetId": "ace-of-cups",
-      "imageUrl": "/cards/minor_cups_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_ace.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "886638bb43390489d5a79d79240d547a2c1d41441943a72e29acb4fa03015e1a"
+      "sha256": "e055ae057c116f688ca877afeafe04dcf8c99541f4069bffa85af9d905ce4696"
     },
     {
       "assetId": "two-of-cups",
-      "imageUrl": "/cards/minor_cups_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_2.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "fec8521fc11dfa6c981e814d4ff468aae710f72cd81f82b6d5dd5e170d021439"
+      "sha256": "a613fad11e7f34843d1e52a6500c69ede4861261aaeb630827660fe1c74b79ea"
     },
     {
       "assetId": "three-of-cups",
-      "imageUrl": "/cards/minor_cups_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_3.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "e0f75437cfa69e598b41ba99c58c63609adcdd718fe3f147c0cc143d507f40e6"
+      "sha256": "bdc9949ee3615f7cbca3762613e35d93360aef7203fb7e5bd3b259b215f7d8ce"
     },
     {
       "assetId": "four-of-cups",
-      "imageUrl": "/cards/minor_cups_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_4.png",
+      "width": 960,
+      "height": 1638,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "46db8fb381a5a392d491b9c66046b931505c1bc231249b6f5ededd2febc5c70b"
+      "sha256": "72771e1d49766f44084c519860221ea6278b124940586d57fe394a26510877d6"
     },
     {
       "assetId": "five-of-cups",
-      "imageUrl": "/cards/minor_cups_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_5.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "2fdfe2e16efd25198eebebdb27032d1126a1308376d8d174d16e25d714a6a5bc"
+      "sha256": "86aa8a00b1b94271aaf1aa5c876356a352fbca6455fc1c9d46ee7e0221091f19"
     },
     {
       "assetId": "six-of-cups",
-      "imageUrl": "/cards/minor_cups_6.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_6.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "6b38fad82d3b491b373b06743cd9d67d6d02be0bbbe5a7dfd28d69c66805174a"
+      "sha256": "3c2e0787f91c5b389ec0967a6bb38b5254b3d7688cd19316f2b5f87d07619734"
     },
     {
       "assetId": "seven-of-cups",
-      "imageUrl": "/cards/minor_cups_7.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_7.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "43951cfa0c7dfccca8875b3f020c2231e5ad8ccb38920abce2be734325386075"
+      "sha256": "11f21313fc36bb020f208f1eb60ad6d841b0d0513c7b5eb01bc6b976007817d4"
     },
     {
       "assetId": "eight-of-cups",
-      "imageUrl": "/cards/minor_cups_8.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_8.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "08e9090ac1814636ba2e4a60b52586b4e869678f3103b1a03daa26fb309a9415"
+      "sha256": "57aeb8149f9fa9d0a9edb41674891bfc1376e3e161514193a4906beb4bc430c3"
     },
     {
       "assetId": "nine-of-cups",
-      "imageUrl": "/cards/minor_cups_9.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_9.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "fc7f54255929f2c662e07b913a6d1564c53315c9b9c6642666fd1f83a3523cb3"
+      "sha256": "188fdf729c23320c834fd3d68fcd2ebf7cedc983ef8b924b1c4cc3f251596d25"
     },
     {
       "assetId": "ten-of-cups",
-      "imageUrl": "/cards/minor_cups_10.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_10.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "2a2c0d92973941f9e805f598099b2020620839d5ccc5c6faf8e987df8cc4ef59"
+      "sha256": "fa484547399e152936826d9be40cc7e89904e7100e20fc3f36533f40b3593cce"
     },
     {
       "assetId": "page-of-cups",
-      "imageUrl": "/cards/minor_cups_page.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_page.png",
+      "width": 973,
+      "height": 1616,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "055caff1cf0b20ef0146151ced99079ebbbc7aa8148063eb1eb9327f91542b05"
+      "sha256": "e58db32a44d1b1815cd730c41f4335d034236dec0a4f26b72b3880e5f10fb411"
     },
     {
       "assetId": "knight-of-cups",
-      "imageUrl": "/cards/minor_cups_knight.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_knight.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "12689060902c4c23a2ebd5d9835ee489c6794a4f3fe6a864fddc8858cbd5bd09"
+      "sha256": "5cbe20386319bbf78f830ab3ef73ca293c8670e1f706c2b864851636cbc76467"
     },
     {
       "assetId": "queen-of-cups",
-      "imageUrl": "/cards/minor_cups_queen.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_queen.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "c2bd3b442dcea9b9fa1025315414e45d927ab9aebc145c7649c271df7c01c8c1"
+      "sha256": "5baa8cd4ef1ef38c8b19317eecee5c111a2aac2c0fc32523c4a6f0abda906c3c"
     },
     {
       "assetId": "king-of-cups",
-      "imageUrl": "/cards/minor_cups_king.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_cups_king.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "f5a75d6cd78acf0404d81325cc4f1620a1912ff1ff8eb919d7bf5b4365677de3"
+      "sha256": "fb82a0205bce3226e792bd7c0be4e1ec1c1ee931edaad1fec07e65551230e7b0"
     },
     {
       "assetId": "ace-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_ace.png",
+      "width": 971,
+      "height": 1619,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "57e9c6fb75f7ecaff99b0e6778691c0cf70222eb54a1b3d0dc247c5245528a26"
+      "sha256": "759b225a81fff1c0995e6b0c236f2deafc063c0091ca969913ad65ab15bb9a37"
     },
     {
       "assetId": "two-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_2.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "8ae29028cce857fed1c9faba292869d0a7abc0cae3006bfdab614e1f0208e1fc"
+      "sha256": "dbda4dd429d3fa55c06f9cc087bdac76416475fe98a24585f3cb3b41a20376a4"
     },
     {
       "assetId": "three-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_3.png",
+      "width": 971,
+      "height": 1619,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "b861c1111572b923ac12b9c0ce6043a7239432d2d2c8bba2b97029175c88a63f"
+      "sha256": "1dac0bf7ff8b01ce3f602bada0e74cc41dd54148b0ca2f2daace18143c325bba"
     },
     {
       "assetId": "four-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_4.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "033265fd97c273457439b42bfceb8e3b9eb59fda20d83a3db0152c65b6241259"
+      "sha256": "ced8036837d31e0613aeab5b19b851eed171baf127b98f93f1526456669cf321"
     },
     {
       "assetId": "five-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_5.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "84135d17f06a667db76766375177bb39cbcf4a9d908dbc1a5c397080fb04b312"
+      "sha256": "f54f7acda43381be8d6fbaf579258ced6d31fa37e50af2e3bdb1fac426bd7308"
     },
     {
       "assetId": "six-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_6.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_6.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "f630e9effce2cf3349f1d9d9475482a7401e0c0a0f432d2b46bbf529db16a2e9"
+      "sha256": "6f9c261fcf041eae34ae7002b76f93b6fc59d7aa3c53969609324d468b1cb0f5"
     },
     {
       "assetId": "seven-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_7.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_7.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "5871464ffd5cb28431695c77bcff34a1177a6ad9c466c274f1002505ab12ea3c"
+      "sha256": "ce4b7e97ca537131e7cc4e51495d6263db5cf17b4ae143b8bd5ab1010190efa3"
     },
     {
       "assetId": "eight-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_8.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_8.png",
+      "width": 971,
+      "height": 1619,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "81d11c6f736de3ac37ceb3af4b772a60e581c56736cab56a26fd4839b6ed9ea8"
+      "sha256": "8c813cf468acf08d280cc83ce8c4936a224f91cab6cb7867222fbbd540c06886"
     },
     {
       "assetId": "nine-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_9.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_9.png",
+      "width": 973,
+      "height": 1616,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "598abc968aa360682a64e82e291b54a8d622c52f6f31b35d2988b3f3b71e6405"
+      "sha256": "d7f7feecdc0e260e7cca41cf4bb993f41868ee872bb1fc721ef4b745c75943fc"
     },
     {
       "assetId": "ten-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_10.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_10.png",
+      "width": 973,
+      "height": 1616,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "34140e46f6b2dff16db44177425cbad9b312516ecd16d2e5bbd950942177f2ab"
+      "sha256": "8666ef99f3f2cda3940c0ecf564ea3c2c9046ca7e8baa31547d37e5c113f4df1"
     },
     {
       "assetId": "page-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_page.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_page.png",
+      "width": 973,
+      "height": 1616,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "addd39538264f8ed804a918e0e4a53c2097681dc945d5c1869e3877474e02192"
+      "sha256": "7ef3fd9adcd68175abe7a069de87fd149b62ccaa5fcfc1f530196d792acf6c50"
     },
     {
       "assetId": "knight-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_knight.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_knight.png",
+      "width": 976,
+      "height": 1612,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "d1636b707fae599618d262d921536489f1942f545d68bee9249f64640548d2ea"
+      "sha256": "c0bd38d03d30dd0a0c60a5fed0050defb9ca85c74d0082b1fb017e82da8655a7"
     },
     {
       "assetId": "queen-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_queen.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_queen.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "af9527c01d119fbd11466c8054b0e3831023d3f22b406315c5e3f5a696eb6122"
+      "sha256": "f83511a52270b541143b59908d5560fabe4fd9350b43eb4512157b10bd167d07"
     },
     {
       "assetId": "king-of-pentacles",
-      "imageUrl": "/cards/minor_pentacles_king.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_pentacles_king.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "4c1f06d5e3781830c2acacbf0581fbab1d8172e7817d702f69143cf0b63dbdf1"
+      "sha256": "40adacfefb900e562a6da432df24fbc341c994a4f0b9849eda4640302d17f880"
     },
     {
       "assetId": "ace-of-swords",
-      "imageUrl": "/cards/minor_swords_ace.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_ace.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "3e83315648820ce888f8e3a60a1f61ed8429f51b8584f6ab9e295279906feab5"
+      "sha256": "c9627c84a8a87122821e6f74f1357570ce87842eb81d3ee51da803c0b35c40ac"
     },
     {
       "assetId": "two-of-swords",
-      "imageUrl": "/cards/minor_swords_2.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_2.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "602f377b7c034da5a42466210a921661f09f9e4e5cac2c533cf2c6177683b0ae"
+      "sha256": "8fa0e3dc542894952d641ff193ddd27822f1f6e60fef9ca12d6a8721bafe26ee"
     },
     {
       "assetId": "three-of-swords",
-      "imageUrl": "/cards/minor_swords_3.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_3.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "0ef74d95f31fa06eb51cae61d99306be9f5fb9c72e4c07529198b28b10126ae3"
+      "sha256": "b92ac834468bd1f021b419083f3a0b7ac00152760abbe5901a0173c60044c6a7"
     },
     {
       "assetId": "four-of-swords",
-      "imageUrl": "/cards/minor_swords_4.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_4.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "467c7ef2badd2b4c4210824d9c9ca0537ff3b37b494363455536c0a984e278a7"
+      "sha256": "9c2283a80ff9b2119fcf46dc17184a43e4c8a74339b9b3dab7cd9da85acc4e30"
     },
     {
       "assetId": "five-of-swords",
-      "imageUrl": "/cards/minor_swords_5.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_5.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "67e8b256a934e71c99b75a1b9ca80fd3daaff3217fe190d0cc136ca34bcd3f29"
+      "sha256": "652d811902f6937a72fdb4cbd02bbe4073d839af01becc286e91aeb5e344b364"
     },
     {
       "assetId": "six-of-swords",
-      "imageUrl": "/cards/minor_swords_6.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_6.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "57a022ca7dc5e8a89ab65f0aee44b85b18e3fcc1769e7c5cfe31a245639f95c1"
+      "sha256": "7ff53d37283c7a13373b6c31d1ec8eabbec7de31a7a694072bee751f8485c808"
     },
     {
       "assetId": "seven-of-swords",
-      "imageUrl": "/cards/minor_swords_7.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_7.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "2e5298ed4640e31940de56779d1004b094e0bceaea892ceb4ba81b2a058c510f"
+      "sha256": "e86e4f2f9803cc4d9111548edcbcee02dc853ed56755d1a6cecaa6c17c39eed7"
     },
     {
       "assetId": "eight-of-swords",
-      "imageUrl": "/cards/minor_swords_8.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_8.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "c52423a22522ed924452fd2c8706bd02b57a584bc6e01a51c20b93acdf3623ed"
+      "sha256": "4f8762c451337c51d054f382f23193621ecaaad81f8a8e68913330fee26858b8"
     },
     {
       "assetId": "nine-of-swords",
-      "imageUrl": "/cards/minor_swords_9.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_9.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "bdb259c68c5afc02d0172d3dd90b4fcf06b0c2447c127e9895efff5de6b1ad04"
+      "sha256": "8f41f66c08790955746a5c9c494c16966a446e19081e123f3c787c55f72823e6"
     },
     {
       "assetId": "ten-of-swords",
-      "imageUrl": "/cards/minor_swords_10.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_10.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "24c18e2b06fe837a7ca643b5e383eea1d38373a4a93c6edbe6f142b732e6b803"
+      "sha256": "a06d3987f52efa069de62f44616c36db235a6afc78e9b644cb4736ed74975df5"
     },
     {
       "assetId": "page-of-swords",
-      "imageUrl": "/cards/minor_swords_page.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_page.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "9cd1b920de028527ded42fee7443f1aab0e2b4de4a46cd79b984c04ee586ad5d"
+      "sha256": "cf836b75298041c035c1601e4ff2c5ad60175780be8c41ca38f51576a5be2380"
     },
     {
       "assetId": "knight-of-swords",
-      "imageUrl": "/cards/minor_swords_knight.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_knight.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "000748f5c9eddd18bad04c052e276b26577970c72e14cd51e46061cfc7180a4f"
+      "sha256": "05a5670a62c528c9534307811165dc312e17167f0c9bb10284d8cc8e04e224e2"
     },
     {
       "assetId": "queen-of-swords",
-      "imageUrl": "/cards/minor_swords_queen.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_queen.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "2de9f84616472621f89fc02172e928f19c11fb8abcb9a0309a75d26a91dcec64"
+      "sha256": "b0cec7e076e211b51ae11668a5405f61fb6ad1a8324d0c636371f277d162327c"
     },
     {
       "assetId": "king-of-swords",
-      "imageUrl": "/cards/minor_swords_king.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/minor_swords_king.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card front batch generated from docs/70-ops/medieval-europe-card-image-prompts.md; source-native portrait PNG retained except minor_wands_4, which was center-cropped to match the runtime card ratio."
       },
-      "sha256": "febfe15f7fb973bede462f7ce227a239a551223acfa6d5bcf6204bfe3bbda2f3"
+      "sha256": "cae77633d0e001eff82a6df20ac71440604811db06cf1730a1ea914362a5a59a"
     },
     {
       "assetId": "card-back",
-      "imageUrl": "/cards/back.png",
-      "width": 1000,
-      "height": 1700,
-      "sourceKind": "procedural-portrait-svg",
+      "imageUrl": "/cardsV2/back.png",
+      "width": 962,
+      "height": 1635,
+      "sourceKind": "image-model-medieval-europe",
       "derivedFromSquare": false,
       "fullBleed": true,
       "visualReview": {
         "status": "approved",
         "reviewer": "Codex",
-        "reviewedAt": "2026-04-10",
-        "notes": "Portrait-native generated composition; not stretched, padded, or cropped from a square source."
+        "reviewedAt": "2026-04-25",
+        "notes": "Medieval Europe card back generated to match the cardsV2 front-card batch; source-native portrait PNG retained without stretching."
       },
-      "sha256": "f22220edec674abf748dfc8d835348848a5dd1231398f83649707817e99c62e1"
+      "sha256": "21830d728eee92f38c922d79a3372dd33e6d27ade065e0fbc96d96d6590ce18b"
     }
   ]
 }

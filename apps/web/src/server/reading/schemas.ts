@@ -13,6 +13,8 @@ export const agentProfileSchema = z.enum(["lite", "standard", "sober"]);
 
 export const readingPhaseSchema = z.enum(["initial", "final"]);
 
+export const drawSourceSchema = z.enum(["digital_random", "offline_manual"]);
+
 export const followupAnswerSchema = z.object({
   question: z.string().trim().min(1, "followup question 不能为空。"),
   answer: z.string().trim().min(1, "followup answer 不能为空。"),
@@ -82,6 +84,7 @@ export const readingRequestPayloadSchema = z
       .min(1, "drawnCards 至少需要包含一张牌。"),
     agent_profile: agentProfileSchema.default("standard"),
     phase: readingPhaseSchema.default("initial"),
+    draw_source: drawSourceSchema.default("digital_random"),
     prior_session_capsule: z.string().trim().min(1).nullable().optional(),
     initial_reading: z.lazy(() => structuredReadingSchema).optional(),
     followup_answers: z.array(followupAnswerSchema).optional(),

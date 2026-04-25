@@ -8,11 +8,13 @@ const repoRoot = path.resolve(__dirname, "..");
 const deckPath = path.join(repoRoot, "data/decks/rider-waite-smith.json");
 const manifestPath = path.join(repoRoot, "data/decks/card-asset-manifest.json");
 const publicRoot = path.join(repoRoot, "apps/web/public");
-const cardsRoot = path.join(publicRoot, "cards");
-const expectedWidth = 1000;
-const expectedHeight = 1700;
+const runtimeCardsRoot = path.join(publicRoot, "cardsV2");
+const cardBackImageUrl = "/cardsV2/back.png";
+const expectedAspectRatio = 1 / 1.7;
+const aspectRatioTolerance = 0.035;
 const expectedImagePaths = new Set();
 const allowedSourceKinds = new Set([
+  "image-model-medieval-europe",
   "human-reviewed-portrait",
   "native-portrait-generation",
   "procedural-portrait-svg",
@@ -80,13 +82,8 @@ if (!Array.isArray(manifest.entries)) {
   }
 }
 
-if (
-  manifest.target?.width !== expectedWidth ||
-  manifest.target?.height !== expectedHeight ||
-  manifest.target?.aspectRatio !== "1:1.7" ||
-  manifest.target?.fullBleed !== true
-) {
-  fail("asset manifest target must be 1000x1700, 1:1.7, fullBleed=true");
+if (manifest.target?.aspectRatio !== "1:1.7" || manifest.target?.fullBleed !== true) {
+  fail("asset manifest target must be 1:1.7, fullBleed=true");
 }
 
 if (!Array.isArray(deck)) {
@@ -106,7 +103,7 @@ for (const card of deck) {
   }
   seenIds.add(card.id);
 
-  if (typeof card.imageUrl !== "string" || !card.imageUrl.startsWith("/cards/")) {
+  if (typeof card.imageUrl !== "string" || !card.imageUrl.startsWith("/cardsV2/")) {
     fail(`${card.id} has invalid imageUrl: ${card.imageUrl}`);
     continue;
   }
@@ -116,22 +113,22 @@ for (const card of deck) {
   validateImage(imagePath, card.id, card.imageUrl);
 }
 
-const cardBackPath = path.join(cardsRoot, "back.png");
+const cardBackPath = path.join(publicRoot, cardBackImageUrl.slice(1));
 expectedImagePaths.add(cardBackPath);
-validateImage(cardBackPath, "card back", "/cards/back.png");
+validateImage(cardBackPath, "card back", cardBackImageUrl);
 
-for (const entry of fs.readdirSync(cardsRoot, { withFileTypes: true })) {
+for (const entry of fs.readdirSync(runtimeCardsRoot, { withFileTypes: true })) {
   if (!entry.isFile()) {
     continue;
   }
 
-  const imagePath = path.join(cardsRoot, entry.name);
+  const imagePath = path.join(runtimeCardsRoot, entry.name);
   if (path.extname(entry.name).toLowerCase() !== ".png") {
-    fail(`unexpected non-PNG file in cards directory: ${path.relative(repoRoot, imagePath)}`);
+    fail(`unexpected non-PNG file in cardsV2 directory: ${path.relative(repoRoot, imagePath)}`);
     continue;
   }
 
-  const imageUrl = `/cards/${entry.name}`;
+  const imageUrl = `/cardsV2/${entry.name}`;
   validateImage(imagePath, entry.name, imageUrl);
 
   if (!expectedImagePaths.has(imagePath)) {
@@ -148,7 +145,7 @@ for (const imageUrl of manifestEntries.keys()) {
 
 if (!process.exitCode) {
   console.log(
-    `Validated ${deck.length} tarot cards plus card back at ${expectedWidth}x${expectedHeight}.`,
+    `Validated ${deck.length} tarot cards plus card back in ${path.relative(repoRoot, runtimeCardsRoot)}.`,
   );
 }
 
@@ -161,10 +158,9 @@ function validateImage(imagePath, label, imageUrl) {
 
   try {
     const { width, height } = readPngSize(imagePath);
-    if (width !== expectedWidth || height !== expectedHeight) {
-      fail(
-        `${relativePath} is ${width}x${height}; expected ${expectedWidth}x${expectedHeight}`,
-      );
+    const aspectRatio = width / height;
+    if (Math.abs(aspectRatio - expectedAspectRatio) > aspectRatioTolerance) {
+      fail(`${relativePath} is ${width}x${height}; expected portrait ratio close to 1:1.7`);
     }
   } catch (error) {
     fail(`${relativePath} is invalid (${error.message})`);
@@ -183,8 +179,9 @@ function validateManifestEntry(imagePath, imageUrl) {
     return;
   }
 
-  if (entry.width !== expectedWidth || entry.height !== expectedHeight) {
-    fail(`${imageUrl} manifest dimensions must be ${expectedWidth}x${expectedHeight}`);
+  const { width, height } = readPngSize(imagePath);
+  if (entry.width !== width || entry.height !== height) {
+    fail(`${imageUrl} manifest dimensions must be ${width}x${height}`);
   }
 
   if (!allowedSourceKinds.has(entry.sourceKind)) {
