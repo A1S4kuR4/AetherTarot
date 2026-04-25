@@ -9,7 +9,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const tarotCards = getAllCards();
 
-type RuntimeFilter = "all" | "major" | "wands" | "cups";
+type RuntimeFilter = "all" | "major" | "wands" | "cups" | "swords" | "pentacles";
 
 const FILTERS: Array<{
   id: RuntimeFilter;
@@ -24,17 +24,27 @@ const FILTERS: Array<{
   {
     id: "major",
     label: "大阿卡纳",
-    predicate: (card) => card.arcana === "major",
+    predicate: (card) => card.arcana.startsWith("Major Arcana"),
   },
   {
     id: "wands",
     label: "权杖",
-    predicate: (card) => card.arcana === "minor" && card.element === "Fire",
+    predicate: (card) => card.arcana.startsWith("Minor Arcana") && card.element === "Fire",
   },
   {
     id: "cups",
     label: "圣杯",
-    predicate: (card) => card.arcana === "minor" && card.element === "Water",
+    predicate: (card) => card.arcana.startsWith("Minor Arcana") && card.element === "Water",
+  },
+  {
+    id: "swords",
+    label: "宝剑",
+    predicate: (card) => card.arcana.startsWith("Minor Arcana") && card.element === "Air",
+  },
+  {
+    id: "pentacles",
+    label: "星币",
+    predicate: (card) => card.arcana.startsWith("Minor Arcana") && card.element === "Earth",
   },
 ];
 
@@ -86,7 +96,7 @@ export default function EncyclopediaView({
                 {coverage.runtimeCards} / 78
               </p>
               <p className="mt-1 text-xs leading-relaxed text-text-muted">
-                当前已接入 {coverage.runtimeMajor} 张大阿卡纳、{coverage.runtimeBySuit.wands} 张权杖、{coverage.runtimeBySuit.cups} 张圣杯。
+                当前已接入 {coverage.runtimeMajor} 张大阿卡纳、{coverage.runtimeBySuit.wands} 张权杖、{coverage.runtimeBySuit.cups} 张圣杯、{coverage.runtimeBySuit.swords} 张宝剑、{coverage.runtimeBySuit.pentacles} 张星币。
               </p>
             </div>
             <div className="rounded-2xl border border-paper-border bg-paper p-4">

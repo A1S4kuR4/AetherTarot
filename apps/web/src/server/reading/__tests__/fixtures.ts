@@ -132,6 +132,67 @@ export function buildSevenCardPayload(
   };
 }
 
+export function buildCelticCrossPayload(
+  question = "我需要如何梳理接下来三个月的整体方向？",
+): ReadingRequestPayload {
+  return {
+    question,
+    spreadId: "celtic-cross",
+    drawnCards: [
+      {
+        positionId: "core",
+        cardId: "star",
+        isReversed: false,
+      },
+      {
+        positionId: "challenge",
+        cardId: "moon",
+        isReversed: true,
+      },
+      {
+        positionId: "conscious",
+        cardId: "justice",
+        isReversed: false,
+      },
+      {
+        positionId: "unconscious",
+        cardId: "high-priestess",
+        isReversed: false,
+      },
+      {
+        positionId: "past",
+        cardId: "wheel-of-fortune",
+        isReversed: false,
+      },
+      {
+        positionId: "future",
+        cardId: "chariot",
+        isReversed: false,
+      },
+      {
+        positionId: "self",
+        cardId: "hermit",
+        isReversed: false,
+      },
+      {
+        positionId: "environment",
+        cardId: "three-of-pentacles",
+        isReversed: false,
+      },
+      {
+        positionId: "hopes",
+        cardId: "lovers",
+        isReversed: true,
+      },
+      {
+        positionId: "outcome",
+        cardId: "sun",
+        isReversed: false,
+      },
+    ],
+  };
+}
+
 export function buildFollowupAnswers(initial: StructuredReading) {
   return initial.follow_up_questions.map((question) => ({
     question,
@@ -216,6 +277,25 @@ export function omitsUserSupplementLine(reading: StructuredReading) {
 export function mentionsSevenCardAxis(reading: StructuredReading) {
   return /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(reading.synthesis)
     || reading.follow_up_questions.some((item) => /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(item));
+}
+
+export function mentionsSpreadAxis(reading: StructuredReading) {
+  const text = collectReadingText(reading);
+
+  switch (reading.spread.id) {
+    case "single":
+      return /观察入口|核心指引|单牌/.test(text);
+    case "holy-triangle":
+      return /过去|现在|未来|潜在流向|时间与因果路径/.test(text);
+    case "four-aspects":
+      return /身体层面|情感层面|心智层面|精神层面|四层/.test(text);
+    case "seven-card":
+      return /答案\s*\/\s*当事人|结果|周遭能量|希望与恐惧/.test(text);
+    case "celtic-cross":
+      return /核心|挑战|意识|潜意识|环境|赛尔特十字/.test(text);
+    default:
+      return false;
+  }
 }
 
 export function hasConstructiveTension(reading: StructuredReading) {

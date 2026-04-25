@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -15,19 +16,6 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   decision: "行动选择",
   other: "综合议题",
 };
-
-const SPREAD_ORGANIZATION_COPY: Record<string, string> = {
-  single: "单牌启示把随机收束到一个核心位置，先看这张牌怎样照亮本轮问题最需要被看见的焦点。",
-  "holy-triangle": "圣三角形会按过去、现在与潜在流向阅读，把随机牌面放进一条可复核的时间与因果路径。",
-  "four-aspects": "四个面向会把随机牌面拆入身体、情感、心智与精神四层，让同一问题先被分层观看，再进入综合。",
-  "seven-card": "七张牌会先看时间线，再抓答案 / 结果主轴，并分辨外部气候与希望恐惧之间的张力。",
-  "celtic-cross": "赛尔特十字会从核心与挑战展开，再对照意识、潜意识、时间线、自我、环境、希望恐惧与结果。",
-};
-
-function getSpreadOrganizationCopy(spreadId: string, spreadName: string) {
-  return SPREAD_ORGANIZATION_COPY[spreadId]
-    ?? `${spreadName} 会按照权威位置顺序阅读本轮随机牌面，让每张牌先回到自己的位置语义，再进入整体综合。`;
-}
 
 export default function InterpretationView() {
   const router = useRouter();
@@ -75,9 +63,13 @@ export default function InterpretationView() {
   const areFollowupAnswersValid =
     followupQuestions.length > 0 &&
     followupQuestions.every((_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2);
-  const spreadOrganizationCopy = selectedSpread
-    ? getSpreadOrganizationCopy(selectedSpread.id, selectedSpread.name)
-    : "";
+  const spreadExperience = selectedSpread
+    ? getSpreadExperience(
+      selectedSpread.id,
+      selectedSpread.name,
+      selectedSpread.positions.map((position) => position.name),
+    )
+    : null;
   const followupSectionTitle =
     reading?.reading_phase === "final" ? "延伸自省" : "延伸追问";
   const followupSectionKicker =
@@ -352,11 +344,36 @@ export default function InterpretationView() {
                       本次牌阵如何组织随机
                     </h2>
                     <p className="mt-3 text-sm leading-relaxed text-text-body">
-                      {spreadOrganizationCopy}
+                      {spreadExperience?.readingMechanism}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-text-muted">
                       逐牌顺序来自权威位置；牌面线索和位置语义先行，综合推断后置。
                     </p>
+                    <div className="mt-5 space-y-3">
+                      <div>
+                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
+                          证据路径
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-text-body">
+                          {spreadExperience?.evidencePath}
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        {["牌面线索", "位置语义", "综合推断"].map((label, index) => (
+                          <div
+                            key={label}
+                            className={cn(
+                              "border-l-2 py-1 pl-3",
+                              index === 2 ? "border-terracotta/40" : "border-paper-border",
+                            )}
+                          >
+                            <p className="font-sans text-[11px] font-medium text-text-muted">
+                              {index + 1}. {label}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>

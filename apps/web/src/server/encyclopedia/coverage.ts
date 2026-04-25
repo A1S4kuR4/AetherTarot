@@ -33,12 +33,12 @@ function resolveKnowledgeWikiRoot() {
 export async function getEncyclopediaCoverageSummary(): Promise<EncyclopediaCoverageSummary> {
   const cards = getAllCards();
   const knowledgeWikiRoot = resolveKnowledgeWikiRoot();
-  const runtimeMajor = cards.filter((card) => card.arcana === "major").length;
+  const runtimeMajor = cards.filter((card) => card.arcana.startsWith("Major Arcana")).length;
   const runtimeBySuit = {
-    wands: cards.filter((card) => card.arcana === "minor" && card.element === "Fire").length,
-    cups: cards.filter((card) => card.arcana === "minor" && card.element === "Water").length,
-    swords: cards.filter((card) => card.arcana === "minor" && card.element === "Air").length,
-    pentacles: cards.filter((card) => card.arcana === "minor" && card.element === "Earth").length,
+    wands: cards.filter((card) => card.arcana.startsWith("Minor Arcana") && card.element === "Fire").length,
+    cups: cards.filter((card) => card.arcana.startsWith("Minor Arcana") && card.element === "Water").length,
+    swords: cards.filter((card) => card.arcana.startsWith("Minor Arcana") && card.element === "Air").length,
+    pentacles: cards.filter((card) => card.arcana.startsWith("Minor Arcana") && card.element === "Earth").length,
   };
   const knowledgeMajor = await countFiles(path.join(knowledgeWikiRoot, "major-arcana"));
   const knowledgeMinor = await countFiles(path.join(knowledgeWikiRoot, "minor-arcana", "wands"))
