@@ -32,6 +32,28 @@ describe("reading semantic fixtures", () => {
     expect(final.synthesis).toMatch(/第二阶段/);
   });
 
+  it("makes the final reading visibly integrate follow-up answers", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const followupAnswers = initial.follow_up_questions.map((question, index) => ({
+      question,
+      answer:
+        index === 0
+          ? "我担心现在的工作资源不够稳定。"
+          : "两周内我会观察直属反馈和任务节奏。",
+    }));
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: followupAnswers,
+    });
+
+    expect(final.synthesis).toContain("工作资源不够稳定");
+    expect(final.synthesis).toContain("直属反馈和任务节奏");
+    expect(final.reflective_guidance.some((item) => item.includes("工作资源不够稳定"))).toBe(true);
+    expect(final.follow_up_questions[0]).toContain("工作资源不够稳定");
+  });
+
   it("keeps standard follow-up questions anchored to card or spread cues", async () => {
     const reading = await runReadingGraph(buildHolyTrianglePayload());
 
