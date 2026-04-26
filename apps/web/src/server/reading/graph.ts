@@ -339,7 +339,9 @@ function validateDraftFollowupContract({
 function normalizeCapsuleLine(value: string, maxLength = 140) {
   const normalized = value.replace(/\s+/g, " ").trim();
   const sanitized = normalized
+    .replace(/用户补充[:：]\s*/gi, "")
     .replace(/自杀|自残|不想活|结束生命|kill myself/gi, "[高风险细节略]")
+    .replace(/崩溃|绝望|撑不下去|受不了了|活不下去/gi, "[急性情绪略]")
     .replace(/急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|emergency|can't breathe/gi, "[紧急健康细节略]")
     .replace(/跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/gi, "[越界行为略]")
     .replace(/(他|她|对方)(到底|会不会|是不是|真实).{0,8}(爱|想|打算|回|喜欢|讨厌)/gi, "[第三方意图推测略]");

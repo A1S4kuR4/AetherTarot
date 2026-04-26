@@ -117,6 +117,8 @@
 - `cards[]` 顺序是否与牌阵位置一致
 - `prior_session_capsule` 是否只作为补充线索，不覆盖当前问题主轴
 - incoming `prior_session_capsule` 是否已剔除原始补充与高风险细节
+- local history 是否仍只作为 completed reading replay cache，而不是隐式长期记忆
+- `session_capsule` 是否仍是低优先级 continuity summary，而不是 thread/session/user identity
 - `themes` / `synthesis` 是否高于逐牌层级
 - Tier 1 hard stop 是否返回 `403 safety_intercept`
 - Tier 2 决策外包是否返回 `sober_check` 与 `presentation_mode = "sober_anchor"`
@@ -126,6 +128,7 @@
 - 线下塔罗模式是否能恢复实体牌录入来源、牌面与正逆位，且仍通过同一 `/api/reading` 流程生成结果
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
 - completed `session_capsule` 是否足够短、稳定，且不带 `用户补充`、高风险安全细节或未验证第三方意图
+- future thread/session 或 long-term memory 若被引入，是否已有 identity、read/write、merge/overwrite、eviction/deletion 与 safety redaction 规则
 - reading 是否包含建设性阻力点，且该阻力点没有变成确定性预言、第三方读心、医疗/法律/财务替代建议或命令式决策
 - 不同 `question_type` 的建设性阻力是否有可感差异，避免全部退回同一句模板化阻力表达
 

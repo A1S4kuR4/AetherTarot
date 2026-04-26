@@ -61,6 +61,13 @@
 
 当前实现：`generateStructuredReading()` 保持 service 入口不变，内部委托最小 LangGraph。图节点只承载现有流水线的阶段拆分，不改变 `/api/reading` 的单入口 contract，也不引入 checkpoint、streaming、interrupt 或外部 LLM。
 
+P2 memory / persistence 边界：
+
+- Reading Service 当前只消费 request 侧显式传入的 `prior_session_capsule`，不主动读取服务端 history、thread checkpoint 或 user memory。
+- `prior_session_capsule` 必须先经过服务层净化，才能进入 provider context。
+- completed `session_capsule` 是输出协议字段，不是 thread/session/user identity。
+- 服务端 history persistence、thread/session persistence、长期画像与 memory merge 仍未实现；后续开启时必须先明确 identity、读写规则、清理规则与测试边界。
+
 固定流水线当前由 9 个 LangGraph 业务节点承载；schema validation 是分布在组装、安全复核与 capsule 附着节点中的协议守卫，不是独立 graph 节点：
 
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
@@ -116,6 +123,20 @@
 - 质量评测与失败归类
 - 文档与实现同步
 
+### Future Persistence 层（P2 设计，暂未实现）
+
+未来若引入服务端持久化，应拆成独立边界，而不是并入现有 localStorage history 或 `session_capsule`：
+
+| Future layer | 作用 | 身份边界 | 当前状态 |
+| --- | --- | --- | --- |
+| Thread / session persistence | 恢复一条 reading line 或短期会话 | `thread_id` / `session_id`，不得复用 `reading_id` | 暂缓 |
+| Long-term user memory | 保存稳定偏好、授权背景与反复主题 | `user_id`，不得从本地 history 静默推导 | 暂缓 |
+| Memory merge | 合并稳定记忆、处理冲突和删除 | 必须定义 merge / overwrite / eviction / deletion | 暂缓 |
+
+该层只能向 provider 注入摘要化、净化后的 context。它不能绕过 reading service 的 canonical context、safety review 或 output schema。
+
+P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thread_id` 作为用户主动选择的一条 reading line；`session_id` 继续暂缓，除非需要恢复未完成的短期流程。该 RFC 不改变当前 `/api/reading` contract，见 `docs/30-agent/thread-session-rfc.md`。
+
 ---
 
 ## 4. 当前 reading 数据流
@@ -146,6 +167,9 @@
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history
 - MVP 不引入服务端会话存储；final 请求由前端带回 initial reading 快照
 - 本地线程连续性已实现，但仍不引入 user id、thread id 或服务端 history persistence
+- `reading_id` 只标识一次 reading artifact，不可复用为 `thread_id`、`session_id` 或 `user_id`
+- localStorage history 是本地 replay cache，不是 canonical memory store
+- `session_capsule` 是 completed reading 的低优先级 continuity summary，不是长期画像或 thread checkpoint
 - 线下塔罗模式不得新建第二套解读链路；它只能作为 `drawnCards[]` 输入来源进入同一 `POST /api/reading` contract
 - 新增 provider、扩展 LangGraph 节点或引入更复杂 graph 能力时，应复用现有 service 边界，而不是从 route 重新起一套流程
 
@@ -155,5 +179,8 @@
 
 - [ ] 部署拓扑
 - [x] provider 配置说明（见 `docs/70-ops/dev-setup.md` 的 llm baseline env 变量）
-- [~] session capsule 与长期记忆接入方式（本地线程级 continuity 已落地；服务端持久化与长期记忆仍待补）
+- [x] session capsule、completed reading、future thread/session 与长期记忆边界设计（见 `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`）
+- [x] memory persistence roadmap 与测试矩阵（见 `docs/30-agent/memory-persistence-roadmap.md`）
+- [x] P2.2 Thread / Session RFC 草案（见 `docs/30-agent/thread-session-rfc.md`）
+- [ ] 服务端持久化与长期记忆实现方案
 - [ ] 观测指标与告警设计
