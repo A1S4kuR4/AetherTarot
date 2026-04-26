@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
@@ -8,6 +8,7 @@ import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import RadarChart from "./RadarChart";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   relationship: "关系议题",
@@ -74,6 +75,32 @@ export default function InterpretationView() {
     reading?.reading_phase === "final" ? "延伸自省" : "延伸追问";
   const followupSectionKicker =
     reading?.reading_phase === "final" ? "自省" : "延伸";
+
+  const radarValues = useMemo(() => {
+    let fire = 0, water = 0, air = 0, earth = 0, spirit = 0, chaos = 0;
+    const total = drawnCards.length || 1;
+    drawnCards.forEach(({ card, isReversed }) => {
+      const arcana = card.arcana?.toLowerCase() || "";
+      const element = card.element?.toLowerCase() || "";
+      if (arcana === "major") spirit += 1;
+      else {
+        if (element.includes("fire") || element.includes("wands")) fire += 1;
+        if (element.includes("water") || element.includes("cups")) water += 1;
+        if (element.includes("air") || element.includes("swords")) air += 1;
+        if (element.includes("earth") || element.includes("pentacles")) earth += 1;
+      }
+      if (isReversed) chaos += 1;
+    });
+    const multiplier = 2.5;
+    return {
+      fire: Math.min((fire / total) * multiplier, 1), 
+      water: Math.min((water / total) * multiplier, 1),
+      air: Math.min((air / total) * multiplier, 1),
+      earth: Math.min((earth / total) * multiplier, 1),
+      spirit: Math.min((spirit / total) * multiplier, 1),
+      chaos: Math.min((chaos / total) * multiplier, 1),
+    };
+  }, [drawnCards]);
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -319,6 +346,9 @@ export default function InterpretationView() {
                 <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-text-body">
                   在深入每一张牌的具体启示之前，请先感受这组牌共同编织的全局氛围与核心张力。
                 </p>
+                <div className="mt-10 flex flex-col items-center justify-center">
+                  <RadarChart values={radarValues} size={320} />
+                </div>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
                   {reading.themes.map((theme) => (
                     <span

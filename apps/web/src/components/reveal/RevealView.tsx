@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useReading } from "@/context/ReadingContext";
@@ -11,6 +11,22 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 export default function RevealView() {
   const router = useRouter();
   const { selectedSpread, drawSource, drawnCards } = useReading();
+  const [scope, animate] = useAnimate();
+
+  useEffect(() => {
+    if (drawnCards.length > 0 && selectedSpread) {
+      animate(
+        ".reveal-card-container",
+        { opacity: [0, 1], y: [40, 0] },
+        { duration: 0.6, ease: "easeOut", delay: (el, i) => i * 0.3 }
+      );
+      animate(
+        ".reveal-card-inner",
+        { rotateY: [180, 0] },
+        { duration: 0.8, type: "spring", delay: (el, i) => i * 0.3 + 0.15 }
+      );
+    }
+  }, [animate, drawnCards.length, selectedSpread]);
 
   useEffect(() => {
     if (!selectedSpread) {
@@ -74,7 +90,7 @@ export default function RevealView() {
         {/* Card Spread Area */}
         <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-8 pt-16 pb-8 lg:col-span-8">
           {/* Spread Cards */}
-          <div className={cn("relative z-10 grid w-full max-w-4xl grid-cols-1 gap-10", spreadCardGridClass)}>
+          <div ref={scope} className={cn("relative z-10 grid w-full max-w-4xl grid-cols-1 gap-10", spreadCardGridClass)}>
             {selectedSpread.positions.map((position, index) => {
               const drawn = drawnCards.find(
                 (card) => card.positionId === position.id,
@@ -85,17 +101,10 @@ export default function RevealView() {
               }
 
               return (
-                <motion.div
+                <div
                   key={position.id}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    delay: index * 0.35,
-                    duration: 0.45,
-                    ease: "easeOut",
-                  }}
                   className={cn(
-                    "group flex flex-col items-center",
+                    "reveal-card-container group flex flex-col items-center opacity-0",
                     selectedSpread.id === "holy-triangle" && index === 1 && "md:-mt-12",
                   )}
                 >
@@ -106,15 +115,17 @@ export default function RevealView() {
                     </span>
                   </div>
 
-                  {/* Card */}
-                  <div
-                    className={cn(
-                      "relative aspect-[1/1.7] w-full overflow-hidden rounded-card-lg border shadow-[0_12px_32px_rgba(0,0,0,0.28)] transition-transform duration-500 hover:scale-[1.02]",
-                      index === 1
-                        ? "border-indigo/20"
-                        : "border-midnight-border",
-                    )}
-                  >
+                  {/* Card 3D Container */}
+                  <div className="w-full" style={{ perspective: 1000 }}>
+                    <motion.div
+                      className={cn(
+                        "reveal-card-inner relative aspect-[1/1.7] w-full overflow-hidden rounded-card-lg border shadow-[0_0_30px_rgba(113,112,255,0.15)] transition-transform duration-500 hover:scale-[1.02]",
+                        index === 1
+                          ? "border-indigo/20 shadow-[0_0_40px_rgba(113,112,255,0.25)]"
+                          : "border-midnight-border",
+                      )}
+                      style={{ transformStyle: "preserve-3d" }}
+                    >
                     <img
                       src={drawn.card.imageUrl}
                       alt={drawn.card.name}
@@ -152,7 +163,7 @@ export default function RevealView() {
                         ))}
                     </div>
                   </div>
-                </motion.div>
+                </div></div>
               );
             })}
           </div>

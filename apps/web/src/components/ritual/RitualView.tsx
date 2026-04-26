@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
@@ -24,6 +24,7 @@ export default function RitualView() {
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
   const revealScheduledRef = useRef(false);
+  const [scope, animate] = useAnimate();
 
   useEffect(() => {
     drawnCardsRef.current = drawnCards;
@@ -65,22 +66,32 @@ export default function RitualView() {
   const canDraw = !isShuffling && !isComplete && deck.length > 0;
   const nextPosition = selectedSpread.positions[drawnCards.length] ?? null;
 
-  const handleShuffle = () => {
+  const handleShuffle = async () => {
+    if (isShuffling || isRevealing) return;
     setIsShuffling(true);
     revealScheduledRef.current = false;
     setIsRevealing(false);
 
-    window.setTimeout(() => {
-      setDeck(() => {
-        const nextDeck = shuffleDeck();
-        deckRef.current = nextDeck;
-        return nextDeck;
-      });
-      setIsShuffling(false);
-    }, 1000);
+    try {
+      await animate(".deck-card", {
+        scale: [1, 1.1, 1],
+        boxShadow: [
+          "0 12px 32px rgba(0,0,0,0.28)",
+          "0 0 40px rgba(113, 112, 255, 0.6)",
+          "0 12px 32px rgba(0,0,0,0.28)"
+        ]
+      }, { duration: 1, ease: "easeInOut" });
+    } catch (e) {}
+
+    setDeck(() => {
+      const nextDeck = shuffleDeck();
+      deckRef.current = nextDeck;
+      return nextDeck;
+    });
+    setIsShuffling(false);
   };
 
-  const handleDraw = () => {
+  const handleDraw = async () => {
     const currentDrawnCards = drawnCardsRef.current;
     const currentDeck = deckRef.current;
 
@@ -92,13 +103,26 @@ export default function RitualView() {
       return;
     }
 
+    setIsShuffling(true);
+
     const nextPosition = selectedSpread.positions[currentDrawnCards.length];
     const randomIndex = Math.floor(Math.random() * currentDeck.length);
     const card = currentDeck[randomIndex];
 
     if (!card || !nextPosition) {
+      setIsShuffling(false);
       return;
     }
+
+    try {
+      await animate(".deck-card:last-child", {
+        y: [0, -150],
+        scale: [1, 1.5, 0],
+        opacity: [1, 1, 0]
+      }, { duration: 0.6, ease: "easeOut" });
+      
+      animate(".deck-card:last-child", { y: 0, scale: 1, opacity: 1 }, { duration: 0 });
+    } catch (e) {}
 
     const remainingDeck = currentDeck.filter((_, index) => index !== randomIndex);
     const nextDrawnCards = [
@@ -114,6 +138,8 @@ export default function RitualView() {
     drawnCardsRef.current = nextDrawnCards;
     setDeck(remainingDeck);
     setDrawnCards(nextDrawnCards);
+
+    setIsShuffling(false);
 
     if (nextDrawnCards.length === selectedSpread.positions.length) {
       setIsRevealing(true);
@@ -217,7 +243,7 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
+      <div ref={scope} className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
         {Array.from({ length: 22 }).map((_, index) => {
           const baseAngle = (index / 22) * 360;
           return (
@@ -238,7 +264,7 @@ export default function RitualView() {
                   ? { duration: 12, repeat: Infinity, ease: "linear" }
                   : { duration: 0.8, type: "spring" },
               }}
-              className="absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
+              className="deck-card absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{
                 transformOrigin: "center 150px",
                 transform: `rotate(${baseAngle}deg)`,
