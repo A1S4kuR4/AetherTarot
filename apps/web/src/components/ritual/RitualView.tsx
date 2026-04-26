@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useAnimate } from "motion/react";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
@@ -14,6 +14,25 @@ function shuffleDeck() {
   return [...getAllCards()].sort(() => Math.random() - 0.5);
 }
 
+const DRAW_ANIMATION_MS = 1050;
+
+interface RectSnapshot {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface DrawOverlayState {
+  key: number;
+  drawnCard: DrawnCard;
+  remainingDeck: TarotCard[];
+  isMajorArcana: boolean;
+  positionName: string;
+  from: RectSnapshot;
+  to: RectSnapshot;
+}
+
 export default function RitualView() {
   const router = useRouter();
   const { question, selectedSpread, completeRitual } = useReading();
@@ -21,10 +40,12 @@ export default function RitualView() {
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleDeck());
   const [isRevealing, setIsRevealing] = useState(false);
+  const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
   const revealScheduledRef = useRef(false);
-  const [scope, animate] = useAnimate();
+  const deckOriginRef = useRef<HTMLDivElement | null>(null);
+  const slotRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     drawnCardsRef.current = drawnCards;
@@ -72,16 +93,9 @@ export default function RitualView() {
     revealScheduledRef.current = false;
     setIsRevealing(false);
 
-    try {
-      await animate(".deck-card", {
-        scale: [1, 1.1, 1],
-        boxShadow: [
-          "0 12px 32px rgba(0,0,0,0.28)",
-          "0 0 40px rgba(113, 112, 255, 0.6)",
-          "0 12px 32px rgba(0,0,0,0.28)"
-        ]
-      }, { duration: 1, ease: "easeInOut" });
-    } catch (e) {}
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 1250);
+    });
 
     setDeck(() => {
       const nextDeck = shuffleDeck();
@@ -114,24 +128,51 @@ export default function RitualView() {
       return;
     }
 
-    try {
-      await animate(".deck-card:last-child", {
-        y: [0, -150],
-        scale: [1, 1.5, 0],
-        opacity: [1, 1, 0]
-      }, { duration: 0.6, ease: "easeOut" });
-      
-      animate(".deck-card:last-child", { y: 0, scale: 1, opacity: 1 }, { duration: 0 });
-    } catch (e) {}
+    const isMajorArcana = card.arcana.toLowerCase().startsWith("major");
+    const slotRect = slotRefs.current[nextPosition.id]?.getBoundingClientRect();
+    const deckRect = deckOriginRef.current?.getBoundingClientRect();
 
+    if (!slotRect || !deckRect) {
+      setIsShuffling(false);
+      return;
+    }
+
+    const drawnCard: DrawnCard = {
+      positionId: nextPosition.id,
+      card,
+      isReversed: Math.random() > 0.8,
+    };
     const remainingDeck = currentDeck.filter((_, index) => index !== randomIndex);
+    const startWidth = slotRect.width;
+    const startHeight = slotRect.height;
+
+    setDrawOverlay({
+      key: Date.now(),
+      drawnCard,
+      remainingDeck,
+      isMajorArcana,
+      positionName: nextPosition.name,
+      from: {
+        left: deckRect.left + deckRect.width / 2 - startWidth / 2,
+        top: deckRect.top + deckRect.height / 2 - startHeight / 2,
+        width: startWidth,
+        height: startHeight,
+      },
+      to: {
+        left: slotRect.left,
+        top: slotRect.top,
+        width: slotRect.width,
+        height: slotRect.height,
+      },
+    });
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, DRAW_ANIMATION_MS);
+    });
+
     const nextDrawnCards = [
       ...currentDrawnCards,
-      {
-        positionId: nextPosition.id,
-        card,
-        isReversed: Math.random() > 0.8,
-      },
+      drawnCard,
     ];
 
     deckRef.current = remainingDeck;
@@ -139,7 +180,12 @@ export default function RitualView() {
     setDeck(remainingDeck);
     setDrawnCards(nextDrawnCards);
 
-    setIsShuffling(false);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setDrawOverlay(null);
+        setIsShuffling(false);
+      });
+    });
 
     if (nextDrawnCards.length === selectedSpread.positions.length) {
       setIsRevealing(true);
@@ -148,6 +194,62 @@ export default function RitualView() {
 
   return (
     <section className="relative flex min-h-screen flex-col items-center px-6 pt-4 pb-4">
+      {drawOverlay ? (
+        <motion.div
+          key={drawOverlay.key}
+          initial={{
+            left: drawOverlay.from.left,
+            top: drawOverlay.from.top,
+            width: drawOverlay.from.width,
+            height: drawOverlay.from.height,
+            rotate: -10,
+            scale: 1,
+            opacity: 0.96,
+          }}
+          animate={{
+            left: [drawOverlay.from.left, (drawOverlay.from.left + drawOverlay.to.left) / 2, drawOverlay.to.left],
+            top: [drawOverlay.from.top, drawOverlay.to.top - 84, drawOverlay.to.top],
+            width: drawOverlay.to.width,
+            height: drawOverlay.to.height,
+            rotate: [-10, 6, 0],
+            scale: [1, drawOverlay.isMajorArcana ? 1.16 : 1.1, 1],
+            opacity: 1,
+          }}
+          transition={{
+            duration: DRAW_ANIMATION_MS / 1000,
+            ease: [0.16, 1, 0.3, 1],
+            times: [0, 0.62, 1],
+          }}
+          className="pointer-events-none fixed z-[100] will-change-transform"
+          style={{
+            filter: drawOverlay.isMajorArcana
+              ? "drop-shadow(0 0 38px rgba(214,107,61,0.66))"
+              : "drop-shadow(0 16px 30px rgba(0,0,0,0.32))",
+          }}
+        >
+          {drawOverlay.isMajorArcana ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.72 }}
+              animate={{ opacity: [0, 0.9, 0.62], scale: [0.72, 1.35, 1.05] }}
+              transition={{ duration: DRAW_ANIMATION_MS / 1000, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-[-28px] rounded-full bg-[radial-gradient(circle,rgba(214,107,61,0.34),transparent_68%)]"
+            />
+          ) : null}
+          <div
+            className={cn(
+              "relative h-full w-full overflow-hidden rounded-card-md border bg-midnight-elevated",
+              drawOverlay.isMajorArcana ? "border-terracotta/80" : "border-indigo/40",
+            )}
+          >
+            <img
+              src={CARD_BACK_IMAGE}
+              alt={`${drawOverlay.positionName} card back`}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </motion.div>
+      ) : null}
       <div className="relative z-10 mb-1 flex w-full max-w-3xl flex-col items-center text-center">
         <div className="mb-2 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
           <span
@@ -176,6 +278,9 @@ export default function RitualView() {
           return (
             <div key={position.id} className="flex flex-col items-center gap-3">
               <div
+                ref={(node) => {
+                  slotRefs.current[position.id] = node;
+                }}
                 className={cn(
                   "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300 md:w-[120px]",
                   drawn
@@ -243,9 +348,17 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div ref={scope} className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
+      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
+        <div
+          ref={deckOriginRef}
+          className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
+        />
         {Array.from({ length: 22 }).map((_, index) => {
           const baseAngle = (index / 22) * 360;
+          const cutDirection = index % 2 === 0 ? 1 : -1;
+          const packetOffset = index % 4;
+          const shuffleX = cutDirection * (42 + packetOffset * 12);
+          const shuffleY = -24 + packetOffset * 14;
           return (
             <motion.button
               key={index}
@@ -255,14 +368,23 @@ export default function RitualView() {
               animate={
                 isShuffling
                   ? {
-                      rotate: [baseAngle, baseAngle + 360],
+                      rotate: [
+                        baseAngle,
+                        baseAngle + cutDirection * (18 + packetOffset * 4),
+                        baseAngle - cutDirection * (34 + packetOffset * 7),
+                        baseAngle + 360,
+                      ],
+                      x: [0, shuffleX, -shuffleX * 0.72, 0],
+                      y: [0, shuffleY, 26 - packetOffset * 5, 0],
+                      scale: [1, 1.08, 0.94, 1],
                     }
-                  : { rotate: baseAngle }
+                  : { rotate: baseAngle, x: 0, y: 0, scale: 1 }
               }
               transition={{
-                rotate: isShuffling
-                  ? { duration: 12, repeat: Infinity, ease: "linear" }
-                  : { duration: 0.8, type: "spring" },
+                duration: isShuffling ? 1.15 : 0.8,
+                delay: isShuffling ? (index % 7) * 0.018 : 0,
+                ease: isShuffling ? "easeInOut" : undefined,
+                type: isShuffling ? "tween" : "spring",
               }}
               className="deck-card absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{

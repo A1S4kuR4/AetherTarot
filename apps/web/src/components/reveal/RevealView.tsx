@@ -126,15 +126,16 @@ export default function RevealView() {
                       )}
                       style={{ transformStyle: "preserve-3d" }}
                     >
-                    <img
-                      src={drawn.card.imageUrl}
-                      alt={drawn.card.name}
-                      className={cn(
-                        "h-full w-full object-cover",
-                        drawn.isReversed && "rotate-180",
-                      )}
-                      referrerPolicy="no-referrer"
-                    />
+                      <img
+                        src={drawn.card.imageUrl}
+                        alt={drawn.card.name}
+                        className={cn(
+                          "h-full w-full object-cover",
+                          drawn.isReversed && "rotate-180",
+                        )}
+                        referrerPolicy="no-referrer"
+                      />
+                    </motion.div>
                   </div>
 
                   {/* Card info */}
@@ -160,10 +161,10 @@ export default function RevealView() {
                           <span key={keyword} className="chip-dark text-[10px]">
                             {keyword}
                           </span>
-                        ))}
+                      ))}
                     </div>
                   </div>
-                </div></div>
+                </div>
               );
             })}
           </div>
