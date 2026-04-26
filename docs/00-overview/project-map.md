@@ -36,7 +36,10 @@
 4. `docs/30-agent/langgraph-reading-workflow.md`
 5. `docs/40-architecture/architecture.md`
 6. `docs/30-agent/provider-prompt-contract.md`
-7. `docs/00-overview/repo-local-skills.md`
+7. `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`
+8. `docs/30-agent/memory-persistence-roadmap.md`
+9. `docs/30-agent/thread-session-rfc.md`
+10. `docs/00-overview/repo-local-skills.md`
 
 ### 面向 UI / 前端 / 体验开发
 
@@ -155,6 +158,9 @@ CI 配置层。当前维护 Web CI workflow，覆盖依赖安装、资产校验�
 
 - `docs/30-agent/context-strategy.md`
 - `docs/40-architecture/architecture.md`
+- `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`
+- `docs/30-agent/memory-persistence-roadmap.md`
+- `docs/30-agent/thread-session-rfc.md`
 - 相关 ADR
 
 ### 我想调整输出格式

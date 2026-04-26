@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-25`
+- `last_updated`: `2026-04-26`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -43,6 +43,18 @@
   - 不再把 ingest backlog 作为默认主线入口
 
 ### 2.3 Latest Work Log
+
+- 文件：`memory/work-log-2026-04-26-p2-memory-boundaries.md`
+- 用途：记录 `2026-04-26` P2 长期连续性 / memory 边界设计启动
+- 当前重点：
+  - 新增 `ADR-0004 Memory and Persistence Boundaries`
+  - 明确 current task state、local completed history、`session_capsule`、future thread/session persistence、future long-term memory 五层边界
+  - 新增 `docs/30-agent/memory-persistence-roadmap.md`，把 P2 拆成 capsule contract hardening、thread/session RFC、long-term memory RFC 与 memory merge design
+  - P2.1 capsule contract hardening 已完成当前基线：补充 capsule 格式 / 长度 / identity 字段缺失断言，并加强 completed capsule 对 `用户补充` 与急性情绪细节的清洗
+  - 新增 `docs/30-agent/thread-session-rfc.md`：P2.2 推荐未来优先用 `thread_id` 表示用户主动选择的一条 reading line，`session_id` 继续暂缓
+  - `session_capsule` 继续保持 `string | null`，仅作为 completed reading 的低优先级 continuity summary
+  - `reading_id` 不得复用为 `thread_id`、`session_id` 或 `user_id`
+  - 服务端 history persistence、长期画像、memory merge、LangGraph checkpointing 与 schema 变更继续暂缓
 
 - 文件：`memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`
 - 用途：记录 `2026-04-25` P1 轻量体验收口与 Runtime Alignment 小步推进
@@ -131,13 +143,14 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`，确认 P1 体验收口、百科四花色过滤、validator 数量守卫与回归结果
-4. 再看 `memory/work-log-2026-04-25.md`，确认 `cardsV2` 资源接入、卡背切换、manifest / validator 变更与验证结果
-5. 再看 `memory/work-log-2026-04-24.md`，确认线下塔罗模式的输入来源、前端录入流程与验证结果
-6. 再看 `memory/work-log-2026-04-22.md`，确认上一轮计划判断与回归结果
-7. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、组织随机、建设性阻力、前置现实边界、重复主题提醒与上一轮落地细节
-8. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
-9. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
+3. 再看 `memory/work-log-2026-04-26-p2-memory-boundaries.md`，确认 P2 memory / persistence 边界设计、roadmap 与暂缓项
+4. 再看 `memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`，确认 P1 体验收口、百科四花色过滤、validator 数量守卫与回归结果
+5. 再看 `memory/work-log-2026-04-25.md`，确认 `cardsV2` 资源接入、卡背切换、manifest / validator 变更与验证结果
+6. 再看 `memory/work-log-2026-04-24.md`，确认线下塔罗模式的输入来源、前端录入流程与验证结果
+7. 再看 `memory/work-log-2026-04-22.md`，确认上一轮计划判断与回归结果
+8. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、组织随机、建设性阻力、前置现实边界、重复主题提醒与上一轮落地细节
+9. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
+10. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 
 如果你的目标是继续执行 ingest，建议按以下路径进入：
 

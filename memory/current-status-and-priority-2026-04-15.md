@@ -1,6 +1,6 @@
 # 当前状态 + 优先级清单（2026-04-22 同步）
 
-- `last_updated`: `2026-04-25`
+- `last_updated`: `2026-04-26`
 - `owner`: `Codex`
 - `scope`: `formal current-state snapshot and next-priority bridge between mainline and UX risk tracking`
 
@@ -156,11 +156,23 @@
 
 目标：在不打断当前 contract 稳定性的前提下，先定义后续 memory / persistence 边界。
 
+状态：已启动边界设计，仍不进入服务端持久化实现。
+
+`2026-04-26` 已新增 `ADR-0004 Memory and Persistence Boundaries`，并同步 `context-strategy`、`architecture`、`output-schema` 与 `rubrics`。当前结论是先把当前任务状态、本地 completed history、`session_capsule`、future thread/session persistence、future long-term memory 分层，不把它们合并成一个泛化 memory bucket。随后新增 `docs/30-agent/memory-persistence-roadmap.md`，把 P2 拆成 P2.1 capsule contract hardening、P2.2 thread/session RFC、P2.3 long-term memory RFC 与 P2.4 memory merge design。P2.2 RFC 草案已新增为 `docs/30-agent/thread-session-rfc.md`。
+
 执行项：
 
-1. 定义 `session_capsule` 接入点。
-2. 定义历史 completed reading 与 future thread/session 的边界。
-3. 定义服务端 history persistence 与长期记忆的演进顺序。
+1. `session_capsule` 接入点已定义：仅 completed reading 产出，仍为 `string | null`，显式 opt-in 带入下一轮，并在服务层净化后作为低优先级 continuity context。
+2. 历史 completed reading 与 future thread/session 的边界已定义：localStorage history 是 replay cache；`reading_id` 只标识 reading artifact，不能复用为 `thread_id`、`session_id` 或 `user_id`。
+3. 服务端 history persistence 与长期记忆的演进顺序已定义为暂缓：后续必须先明确 identity、读写规则、merge / overwrite / eviction / deletion、安全净化与测试边界。
+4. P2.1 capsule contract hardening 已完成当前基线：新增 section/length/identity-field absence 测试，并加强 completed capsule 对 `用户补充` 标签与急性情绪细节的清洗。
+5. P2.2 Thread / Session RFC 已完成草案：推荐未来若开启服务端连续性，优先以 `thread_id` 表示用户主动选择的一条 reading line；`session_id` 继续暂缓；RFC 不改变当前 `/api/reading` contract。
+
+下一步建议：
+
+1. 继续观察本地 continuity 体验，不立刻接服务端 persistence。
+2. 只有当跨设备或服务端连续性成为明确产品需求时，才把 P2.2 RFC 升级为实现计划。
+3. 长期画像与 memory merge 继续暂缓，直到用户授权、审查和删除模型成立。
 
 在此之前，不打开大规模 memory / thread / profile 持久化实现。
 

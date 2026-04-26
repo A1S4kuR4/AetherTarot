@@ -234,6 +234,14 @@
 - capsule 不直带 `followup_answers` 原文，不承载原始 transcript
 - capsule 必须避免泄露高风险安全细节、急性情绪细节与未验证的第三方意图
 
+P2 边界补充：
+
+- 本阶段不改变字段 shape，仍保持 `string | null`。
+- `session_capsule` 不是 thread id、session id、user id、长期画像或服务端 checkpoint。
+- `prior_session_capsule` 只能由前端显式 opt-in 带回 request，且服务端必须先净化再注入 provider。
+- capsule 的优先级低于当前问题、当前牌阵、当前抽牌与 safety layer。
+- 若未来改成结构化 capsule，需要同步更新 shared types、request validation、历史兼容、前端 consumer、contract tests 与本文档。
+
 ### `sober_check`
 
 用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
@@ -271,6 +279,7 @@
 - 线下塔罗模式下，展示层应把上述说明改为“线下抽取决定牌面与正逆位，牌阵决定阅读顺序、位置语义与综合路径”。这仍不新增 response 字段，也不能暗示实体抽牌带来确定性预言。
 - provider 当前需要在 `synthesis` 或 `reflective_guidance` 中保留至少一个建设性阻力观察。该观察仍写入既有字段，不新增 `counterpoint` / `tension` 等协议字段
 - `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
+- P2 memory boundary 不新增 `thread_id`、`session_id`、`user_id`、`memory_profile` 或 `memory_merge` 字段；未来若引入这些身份字段，必须先通过 ADR 或独立协议设计确定读写与删除边界
 
 ---
 

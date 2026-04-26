@@ -1,6 +1,6 @@
 # Mainline Priority Plan
 
-- `last_updated`: `2026-04-20`
+- `last_updated`: `2026-04-26`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
 - `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / R2-R3-R7 UX calibration active`
@@ -261,7 +261,7 @@
 1. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定，继续把 `npm run test:e2e` 作为前台 UX 改动后的 P0 真相门槛。
 2. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 校准 `R2 / R3 / R7` 的读感，确认组织随机说明清楚但不过重、证据分层能降低迎合错觉、建设性阻力有张力但不越界。
 3. Runtime 主线：先观察现有 5 个运行时牌阵的前台组织效果，再决定是否需要新增高价值牌阵；当前不应马上继续扩 runtime spread。
-4. Continuity 主线：服务端 memory persistence、长期画像与 memory merge 继续暂缓；短期只维护 `session_capsule` 现有边界与文档清晰度。
+4. Continuity 主线：P2 已进入边界设计阶段，见 `ADR-0004 Memory and Persistence Boundaries`。服务端 memory persistence、长期画像与 memory merge 继续暂缓；短期只维护 `session_capsule`、completed reading、future thread/session 与 long-term memory 的边界清晰度。
 5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki。
 
 ## 7. 成功标准（更新后）

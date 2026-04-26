@@ -135,6 +135,25 @@ describe("reading graph contract hardening", () => {
     expect(final.session_capsule).toMatch(/边界提醒：/);
   });
 
+  it("formats completed session capsules as compact summaries without identity fields", async () => {
+    const initial = await runReadingGraph(buildHolyTrianglePayload());
+    const final = await runReadingGraph({
+      ...buildHolyTrianglePayload(),
+      phase: "final",
+      initial_reading: initial,
+      followup_answers: buildFollowupAnswers(initial),
+    });
+    const capsule = final.session_capsule ?? "";
+
+    expect(capsule.length).toBeLessThanOrEqual(280);
+    expect(capsule).toMatch(/^本轮问题：/);
+    expect(capsule).toMatch(/\n牌阵：/);
+    expect(capsule).toMatch(/\n核心主题：/);
+    expect(capsule).toMatch(/\n延续主轴：/);
+    expect(capsule).toMatch(/\n边界提醒：/);
+    expect(capsule).not.toMatch(/thread_id|session_id|user_id|memory_profile|memory_merge/i);
+  });
+
   it("passes prior_session_capsule into the provider context without changing authority cards", async () => {
     const provider = new TestReadingProvider({
       initial: (draft, context) => {
@@ -401,5 +420,31 @@ describe("reading graph contract hardening", () => {
     expect(final.session_capsule).not.toContain("监控");
     expect(final.session_capsule).not.toContain("崩溃");
     expect(final.session_capsule).not.toContain("用户补充");
+  });
+
+  it("redacts unsafe provider guidance before attaching completed session capsules", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft) => ({
+        ...draft,
+        reflective_guidance: [
+          "用户补充：我想控制她，也想继续监控对方的行踪。",
+          ...draft.reflective_guidance,
+        ],
+      }),
+    });
+
+    const reading = await runReadingGraph(
+      {
+        ...buildSinglePayload(),
+        agent_profile: "lite",
+      },
+      { provider },
+    );
+
+    expect(reading.session_capsule).toBeTruthy();
+    expect(reading.session_capsule).toContain("[越界行为略]");
+    expect(reading.session_capsule).not.toContain("用户补充");
+    expect(reading.session_capsule).not.toContain("控制她");
+    expect(reading.session_capsule).not.toContain("监控");
   });
 });
