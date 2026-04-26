@@ -82,7 +82,7 @@ export default function InterpretationView() {
     drawnCards.forEach(({ card, isReversed }) => {
       const arcana = card.arcana?.toLowerCase() || "";
       const element = card.element?.toLowerCase() || "";
-      if (arcana === "major") spirit += 1;
+      if (arcana.startsWith("major")) spirit += 1;
       else {
         if (element.includes("fire") || element.includes("wands")) fire += 1;
         if (element.includes("water") || element.includes("cups")) water += 1;
@@ -91,14 +91,16 @@ export default function InterpretationView() {
       }
       if (isReversed) chaos += 1;
     });
-    const multiplier = 2.5;
+    const counts = { fire, water, air, earth, spirit, chaos };
+    const peakCount = Math.max(...Object.values(counts), 1);
+
     return {
-      fire: Math.min((fire / total) * multiplier, 1), 
-      water: Math.min((water / total) * multiplier, 1),
-      air: Math.min((air / total) * multiplier, 1),
-      earth: Math.min((earth / total) * multiplier, 1),
-      spirit: Math.min((spirit / total) * multiplier, 1),
-      chaos: Math.min((chaos / total) * multiplier, 1),
+      fire: { count: fire, total, score: fire / peakCount },
+      water: { count: water, total, score: water / peakCount },
+      air: { count: air, total, score: air / peakCount },
+      earth: { count: earth, total, score: earth / peakCount },
+      spirit: { count: spirit, total, score: spirit / peakCount },
+      chaos: { count: chaos, total, score: chaos / peakCount },
     };
   }, [drawnCards]);
 
