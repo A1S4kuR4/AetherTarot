@@ -9,6 +9,7 @@ const navItems = [
   { href: "/", label: "首页", icon: "home" },
   { href: "/journey", label: "旅程", icon: "history" },
   { href: "/encyclopedia", label: "百科", icon: "auto_stories" },
+  { href: "/login", label: "登录", icon: "login" },
 ] as const;
 
 /**
