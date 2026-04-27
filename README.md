@@ -2,6 +2,8 @@
 
 **基于长上下文、结构化输出与反思式解读的深度塔罗智能体**
 
+![AetherTarot 宣传海报](docs/assets/aethertarot-poster.png)
+
 AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可解释、可追踪、可评测、可长期迭代**的塔罗 Agent。
 
 ---
