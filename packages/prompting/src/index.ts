@@ -654,6 +654,7 @@ function buildOutputContract({
     "Do not return metadata such as reading_id, locale, question_type, reading_phase, requires_followup, spread, safety_note, session_capsule, sober_check, or presentation_mode.",
     "cards must be an array aligned with the authority drawn card order.",
     "Each card item must include: card_id, name, english_name, orientation, position_id, position, position_meaning, interpretation.",
+    "Every card interpretation must be a non-empty Chinese string under the exact key interpretation; never leave it blank, null, an object, or an array.",
     "For card metadata fields (card_id, name, english_name, orientation, position_id, position, position_meaning), copy the authority values exactly and do not rewrite, translate, paraphrase, or invent replacements.",
     "themes: 2-4 short, concrete thematic labels only; avoid headline packaging, stacked metaphors, or decorative category names.",
     "reflective_guidance: 2-4 items.",

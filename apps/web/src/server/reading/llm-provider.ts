@@ -10,6 +10,11 @@ import type {
   ReadingPhase,
 } from "@aethertarot/shared-types";
 import { ReadingServiceError } from "@/server/reading/errors";
+import {
+  calculateLlmCostUsd,
+  estimateTokenCount,
+  recordLlmCall,
+} from "@/server/observability/llm-usage";
 import type {
   FinalReadingContext,
   HydratedReadingContext,
@@ -23,6 +28,7 @@ interface LlmProviderConfig {
   model: string;
   temperature: number;
   timeoutMs: number;
+  maxOutputTokens: number;
 }
 
 type FetchImplementation = typeof fetch;
@@ -33,6 +39,53 @@ function asNonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : null;
+}
+
+function collectInterpretationText(value: unknown): string[] {
+  if (typeof value === "string") {
+    const normalized = asNonEmptyString(value);
+    return normalized ? [normalized] : [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectInterpretationText(item));
+  }
+
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  return Object.values(value as JsonRecord).flatMap((item) =>
+    collectInterpretationText(item),
+  );
+}
+
+function normalizeCardInterpretation(record: JsonRecord) {
+  const direct = asNonEmptyString(record.interpretation);
+
+  if (direct) {
+    return direct;
+  }
+
+  const aliases = [
+    record.interpretation,
+    record.card_interpretation,
+    record.cardInterpretation,
+    record.meaning,
+    record.reading,
+    record.analysis,
+    record.explanation,
+  ];
+
+  for (const value of aliases) {
+    const joined = collectInterpretationText(value).join(" ").trim();
+
+    if (joined) {
+      return joined;
+    }
+  }
+
+  return null;
 }
 
 function parseTemperature(value: string | undefined) {
@@ -71,6 +124,24 @@ function parseTimeoutMs(value: string | undefined) {
   return parsed;
 }
 
+function parseMaxOutputTokens(value: string | undefined) {
+  if (!value) {
+    return 1800;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "AETHERTAROT_LLM_MAX_OUTPUT_TOKENS 必须是大于 0 的整数。",
+      503,
+    );
+  }
+
+  return parsed;
+}
+
 export function resolveLlmProviderConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): LlmProviderConfig {
@@ -91,6 +162,7 @@ export function resolveLlmProviderConfig(
     model,
     temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),
     timeoutMs: parseTimeoutMs(env.AETHERTAROT_LLM_TIMEOUT_MS),
+    maxOutputTokens: parseMaxOutputTokens(env.AETHERTAROT_LLM_MAX_OUTPUT_TOKENS),
   };
 }
 
@@ -209,6 +281,35 @@ function extractMessageText(payload: unknown) {
   );
 }
 
+function extractUsage(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const usage = (payload as { usage?: unknown }).usage;
+
+  if (!usage || typeof usage !== "object") {
+    return null;
+  }
+
+  const record = usage as Record<string, unknown>;
+  const promptTokens = Number(record.prompt_tokens);
+  const completionTokens = Number(record.completion_tokens);
+  const totalTokens = Number(record.total_tokens);
+
+  if (!Number.isFinite(promptTokens) || !Number.isFinite(completionTokens)) {
+    return null;
+  }
+
+  return {
+    promptTokens: Math.max(0, Math.round(promptTokens)),
+    completionTokens: Math.max(0, Math.round(completionTokens)),
+    totalTokens: Number.isFinite(totalTokens)
+      ? Math.max(0, Math.round(totalTokens))
+      : Math.max(0, Math.round(promptTokens + completionTokens)),
+  };
+}
+
 function normalizeStringArray({
   value,
   field,
@@ -288,7 +389,7 @@ function normalizeCards({
     }
 
     const record = rawCard as JsonRecord;
-    const interpretation = asNonEmptyString(record.interpretation);
+    const interpretation = normalizeCardInterpretation(record);
     const rawCardId = asNonEmptyString(record.card_id);
     const rawPositionId = asNonEmptyString(record.position_id);
     const rawOrientation = asNonEmptyString(record.orientation);
@@ -435,11 +536,47 @@ export class LlmReadingProvider implements ReadingProvider {
 
   private async requestDraft(prompt: { system: string; user: string }) {
     let response: Response;
+    const startedAt = Date.now();
     const abortController = new AbortController();
     const timeoutHandle = setTimeout(
       () => abortController.abort(),
       this.config.timeoutMs,
     );
+    const promptText = `${prompt.system}\n${prompt.user}`;
+
+    const recordCall = ({
+      success,
+      httpStatus,
+      outputText = "",
+      errorCode,
+      usage,
+    }: {
+      success: boolean;
+      httpStatus?: number;
+      outputText?: string;
+      errorCode?: string;
+      usage?: ReturnType<typeof extractUsage> | null;
+    }) => {
+      const promptTokens = usage?.promptTokens ?? estimateTokenCount(promptText);
+      const completionTokens = usage?.completionTokens ?? estimateTokenCount(outputText);
+      const totalTokens = usage?.totalTokens ?? promptTokens + completionTokens;
+
+      recordLlmCall({
+        provider: "llm",
+        model: this.config.model,
+        success,
+        durationMs: Date.now() - startedAt,
+        httpStatus,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        estimatedCostUsd: calculateLlmCostUsd({
+          promptTokens,
+          completionTokens,
+        }),
+        errorCode,
+      });
+    };
 
     try {
       response = await this.fetchImplementation(
@@ -455,6 +592,7 @@ export class LlmReadingProvider implements ReadingProvider {
           body: JSON.stringify({
             model: this.config.model,
             temperature: this.config.temperature,
+            max_tokens: this.config.maxOutputTokens,
             stream: false,
             messages: [
               { role: "system", content: prompt.system },
@@ -468,13 +606,15 @@ export class LlmReadingProvider implements ReadingProvider {
       clearTimeout(timeoutHandle);
 
       if (error instanceof Error && error.name === "AbortError") {
+        recordCall({ success: false, errorCode: "timeout" });
         throw new ReadingServiceError(
           "provider_unavailable",
-          `llm provider 请求超时（>${this.config.timeoutMs}ms）。请检查本地模型响应速度或提高 AETHERTAROT_LLM_TIMEOUT_MS。`,
+          "llm provider 请求超时，请稍后再试。",
           503,
         );
       }
 
+      recordCall({ success: false, errorCode: "fetch_failed" });
       throw new ReadingServiceError(
         "provider_unavailable",
         "llm provider 当前不可用，请检查本地 API 是否已启动。",
@@ -485,6 +625,11 @@ export class LlmReadingProvider implements ReadingProvider {
     clearTimeout(timeoutHandle);
 
     if (!response.ok) {
+      recordCall({
+        success: false,
+        httpStatus: response.status,
+        errorCode: `http_${response.status}`,
+      });
       throw new ReadingServiceError(
         "provider_unavailable",
         `llm provider 请求失败（HTTP ${response.status}）。`,
@@ -497,6 +642,11 @@ export class LlmReadingProvider implements ReadingProvider {
     try {
       payload = await response.json();
     } catch {
+      recordCall({
+        success: false,
+        httpStatus: response.status,
+        errorCode: "invalid_json",
+      });
       throw new ReadingServiceError(
         "generation_failed",
         "llm provider 返回的响应不是合法 JSON。",
@@ -504,7 +654,29 @@ export class LlmReadingProvider implements ReadingProvider {
       );
     }
 
-    return parseJsonRecord(extractMessageText(payload));
+    const usage = extractUsage(payload);
+    let messageText = "";
+
+    try {
+      messageText = extractMessageText(payload);
+      const parsed = parseJsonRecord(messageText);
+      recordCall({
+        success: true,
+        httpStatus: response.status,
+        outputText: messageText,
+        usage,
+      });
+      return parsed;
+    } catch (error) {
+      recordCall({
+        success: false,
+        httpStatus: response.status,
+        outputText: messageText,
+        errorCode: "invalid_provider_payload",
+        usage,
+      });
+      throw error;
+    }
   }
 
   async generateInitialRead(context: HydratedReadingContext) {
