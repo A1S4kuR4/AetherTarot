@@ -69,6 +69,7 @@ describe("llm provider baseline", () => {
     expect(prompt.system).toMatch(/Return JSON only/);
     expect(prompt.system).toMatch(/Simplified Chinese/);
     expect(prompt.system).toMatch(/do not rewrite, translate, paraphrase/i);
+    expect(prompt.system).toMatch(/Every card interpretation must be a non-empty Chinese string/);
     expect(prompt.system).toMatch(/Do not fabricate hidden motives, private thoughts, or unverified feelings for any third party/);
     expect(prompt.user).toMatch(/Authority drawn cards/);
     expect(prompt.user).toMatch(/Question: 我该如何看待当前的职业选择/);
@@ -175,6 +176,55 @@ describe("llm provider baseline", () => {
     ]);
   });
 
+  it("normalizes common llm card interpretation aliases into the canonical field", () => {
+    const context = buildHydratedContext();
+    const normalized = normalizeReadingDraft({
+      payload: {
+        cards: context.drawnCards.map((drawnCard, index) => ({
+          card_id: drawnCard.card.id,
+          position_id: drawnCard.positionId,
+          orientation: drawnCard.isReversed ? "reversed" : "upright",
+          ...(index === 0
+            ? {
+                card_interpretation:
+                  `${drawnCard.card.name} 仍然给出当前位置下的有效解释。`,
+              }
+            : index === 1
+              ? {
+                  meaning: [
+                    `${drawnCard.card.name} 提醒先看清节奏，`,
+                    "再决定下一步。",
+                  ],
+                }
+              : {
+                  interpretation: {
+                    summary:
+                      `${drawnCard.card.name} 在这里指向现实条件的再确认。`,
+                  },
+                }),
+        })),
+        themes: ["职业节奏", "现实验证"],
+        synthesis: "先让牌面建立主轴，再决定如何收束行动。",
+        reflective_guidance: [
+          "先记录已经出现的现实反馈。",
+          "把事实、情绪和推测分开。",
+        ],
+        follow_up_questions: [
+          "这组牌里最卡住行动的位置，对应到现实工作中是哪一类任务、关系或选择？",
+        ],
+        confidence_note: "这是一版需要结合现实继续观察的初读。",
+      },
+      context,
+      phase: "initial",
+    });
+
+    expect(normalized.cards.map((card) => card.interpretation)).toEqual([
+      `${context.drawnCards[0]?.card.name} 仍然给出当前位置下的有效解释。`,
+      `${context.drawnCards[1]?.card.name} 提醒先看清节奏， 再决定下一步。`,
+      `${context.drawnCards[2]?.card.name} 在这里指向现实条件的再确认。`,
+    ]);
+  });
+
   it("rejects mismatched authority identity fields in llm draft cards", () => {
     const context = buildHydratedContext();
 
@@ -252,6 +302,7 @@ describe("llm provider baseline", () => {
         model: "test-model",
         temperature: 0.2,
         timeoutMs: 5_000,
+        maxOutputTokens: 1800,
       },
       fetchMock as typeof fetch,
     );
@@ -262,6 +313,11 @@ describe("llm provider baseline", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "http://127.0.0.1:11434/v1/chat/completions",
     );
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)),
+    ).toMatchObject({
+      max_tokens: 1800,
+    });
     expect(draft.themes).toEqual(context.initialReading.themes);
     expect(draft.follow_up_questions).toHaveLength(1);
     expect(draft.reflective_guidance).toHaveLength(3);

@@ -256,6 +256,7 @@ Provider 不得自行决定：
 - 保持 `cards[]` 数量和顺序与 `drawnCards` / `spread.positions` 一致
 - 保持 `cards[]` 的 `position_id` / `card_id` / `orientation` 与 authority `drawnCards` 完全一致
 - `cards[]` 的 `name` / `english_name` / `position` / `position_meaning` 视为 authority-owned 字段；provider 如返回变体，normalize 必须覆盖回权威值
+- `cards[].interpretation` 的最终协议字段仍必须是非空字符串；为兼容小型思考模型的字段漂移，provider-local normalize 可以把 `interpretation` 分段对象 / 数组，或 `card_interpretation`、`meaning`、`reading`、`analysis`、`explanation` 等等价解释字段收敛回 `interpretation`
 - 缺失或不可修复时抛服务错误，不返回半结构化内容
 
 补充理解：
