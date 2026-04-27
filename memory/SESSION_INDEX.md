@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-25`
+- `last_updated`: `2026-04-27`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -28,10 +28,10 @@
 - 文件：`memory/current-status-and-priority-2026-04-15.md`
 - 用途：作为当前主线优先级文档与 UX 风险文档之间的桥接入口，统一回答“现在做到哪了、卡在哪里、下一步先做什么”
 - 当前重点：
-  - 项目已进入“主链已成、回归已恢复、运行时牌池已完整、continuity 边界开始收紧、第二个新增运行时牌阵已上线”阶段
-  - 当前最大风险重新收束到现有 5 个牌阵的前台组织机制、`R2 / R3 / R7` 读感校准与文档持续同步
+  - 项目已进入“主链已成、回归已恢复、运行时牌池已完整、continuity 边界开始收紧、第一轮内测风控与观测已接入”阶段
+  - 当前最大风险重新收束到现有 5 个牌阵的前台组织机制、快速解读、核心速读、三层可信路径、`R2 / R3 / R7` 读感校准与文档持续同步
   - 优先级固定为：先保持可信回归与文档同步，再收口牌阵与运行时体验，再开长期连续性能力
-  - 最新运行时扩展已把牌库推进到 `78` 张、卡图推进到 `79` 个文件、运行时牌阵推进到 `5` 个，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
+  - 最新状态已把牌库推进到 `78` 张、`cardsV2` 卡图推进到 `79` 个文件、运行时牌阵推进到 `5` 个，并在 Encyclopedia 前台显式展示 `78/78` vs `78/78` 覆度
 
 ### 2.2 Mainline Priority Plan
 
@@ -42,7 +42,40 @@
   - `2026-04-09` 启动的 UX / 产品主线与技术主线并行推进
   - 不再把 ingest backlog 作为默认主线入口
 
-### 2.3 Latest Work Log
+### 2.3 Latest Work Logs
+
+- 文件：`memory/work-log-2026-04-27-beta-ops-local-supabase.md`
+- 用途：记录 `2026-04-27` 第一轮内测风控、Supabase 本地 stack、admin 白名单、登录邮件失败修复、LLM provider 403 排查与本地手测流程。
+- 当前重点：
+  - `/api/reading` 已接入 Supabase 登录、邮箱白名单、邮箱/IP/全局 LLM 成本 quota、失败观测与明确错误码。
+  - `/admin` 与 `/api/admin/*` 已按 `beta_testers.role = admin` 保护。
+  - `643490291@qq.com` 已作为本地 admin 白名单账号，可用于最高权限测试；admin 绕过 reading quota 但仍写入观测事件。
+  - 本地 Supabase 端口从默认 `5432x` 迁到 `5542x`，规避 Windows/WSL `54319-54418` 系统保留端口冲突。
+  - 本地可用地址固定为 API `http://127.0.0.1:55421`、Studio `http://127.0.0.1:55423`、Mailpit `http://127.0.0.1:55424`、DB `postgresql://postgres:postgres@127.0.0.1:55422/postgres`。
+  - 登录 magic-link 本地进入 Mailpit，不发送到真实邮箱。
+  - `docs/70-ops/local-supabase-auth-troubleshooting.md` 已沉淀为稳定故障手册。
+  - LLM `HTTP 403 Model.AccessDenied` 已确认不是 CORS；后续通过百炼工作空间模型授权恢复，当前第一轮内测 baseline 为 `qwen3.6-flash`。
+
+- 文件：`docs/70-ops/ux-trust-risk-closeout-2026-04-27.md`
+- 用途：记录 `2026-04-27` 快速解读、核心速读、三层可信路径、e2e-only beta access bypass 与最终回归。
+- 当前重点：
+  - `/new` 已新增快速解读：未选牌阵默认单牌，已选牌阵尊重选择，使用 `lite` profile 自动抽牌并直达 `/reading`。
+  - 快速解读仍复用重大现实决策前置确认、服务端 hard stop、`sober_check` 与 `presentation_mode = sober_anchor`。
+  - `/reading` 首屏已改为核心速读，后续展示“你说了什么 / 牌本身说了什么 / 如何连接二者”的三层可信路径。
+  - Playwright e2e-only beta access bypass 仅在非 production 且明确测试标记下生效。
+  - 最终复核：contract 58 个 tests 通过，e2e 27 个 tests 通过，lint 与 build 通过。
+
+- 文件：`memory/work-log-2026-04-26-p2-memory-boundaries.md`
+- 用途：记录 `2026-04-26` P2 长期连续性 / memory 边界设计启动
+- 当前重点：
+  - 新增 `ADR-0004 Memory and Persistence Boundaries`
+  - 明确 current task state、local completed history、`session_capsule`、future thread/session persistence、future long-term memory 五层边界
+  - 新增 `docs/30-agent/memory-persistence-roadmap.md`，把 P2 拆成 capsule contract hardening、thread/session RFC、long-term memory RFC 与 memory merge design
+  - P2.1 capsule contract hardening 已完成当前基线：补充 capsule 格式 / 长度 / identity 字段缺失断言，并加强 completed capsule 对 `用户补充` 与急性情绪细节的清洗
+  - 新增 `docs/30-agent/thread-session-rfc.md`：P2.2 推荐未来优先用 `thread_id` 表示用户主动选择的一条 reading line，`session_id` 继续暂缓
+  - `session_capsule` 继续保持 `string | null`，仅作为 completed reading 的低优先级 continuity summary
+  - `reading_id` 不得复用为 `thread_id`、`session_id` 或 `user_id`
+  - 服务端 history persistence、长期画像、memory merge、LangGraph checkpointing 与 schema 变更继续暂缓
 
 - 文件：`memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`
 - 用途：记录 `2026-04-25` P1 轻量体验收口与 Runtime Alignment 小步推进
@@ -52,7 +85,7 @@
   - provider / prompt bias 已补齐 5 个现有运行时牌阵的 spread-specific reading axis
   - Encyclopedia 继续消费 runtime deck JSON，并补全四花色过滤与覆度展示
   - 本轮没有新增牌阵、没有改变 schema、没有打开服务端 persistence 或 memory merge
-  - 已复跑 semantic fixtures、asset validation、build、lint 与完整 e2e；结果分别为 `12/12`、通过、build passed、`0` errors / `14` warnings、`24/24`
+  - 已复跑 semantic fixtures、asset validation、build、lint 与完整 e2e；具体历史测试数量以该 work log 为准，不再作为当前状态入口
 
 - 文件：`memory/work-log-2026-04-25.md`
 - 用途：记录 `2026-04-25` 中世纪欧洲风格 `cardsV2` 资源接入、运行时路径切换、卡背切换、manifest / validator 更新与验证结果
@@ -88,7 +121,7 @@
 - 当前重点：
   - 确认当前不重新打开 `M1 / M2 / M3`，不新增运行时牌阵，不打开服务端 memory persistence
   - 本轮计划固定为先验证 2026-04-20 的 `R2 / R3 / R7` 改动，再把真实状态写回 `memory/`
-  - 已复跑 targeted semantic fixtures、build、完整 e2e 与 lint；结果分别为 `10/10`、build passed、`23/23`、`0` errors / `13` existing warnings
+  - 已复跑 targeted semantic fixtures、build、完整 e2e 与 lint；具体历史测试数量以该 work log 为准，不再作为当前状态入口
 
 - 文件：`memory/work-log-2026-04-20.md`
 - 用途：记录 `2026-04-20` 的证据感阅读体验、重大现实决策前置确认、重复主题提醒、被组织的随机、建设性阻力与 E2E 稳定性恢复
@@ -98,7 +131,7 @@
   - provider / prompt 已加入按问题类型分化的建设性阻力，避免 reading 只顺着用户期待展开或退回固定模板句
   - `/new` 已加入重大现实决策前置确认与本地重复主题提醒
   - 本轮没有打开服务端 memory persistence，也没有新增运行时牌阵
-  - contract / build / e2e 已再次通过，其中 `npm run test:contract -w @aethertarot/web` 为 `40/40`，`npm run test:e2e` 为 `23/23`
+  - contract / build / e2e 已再次通过；具体历史测试数量以该 work log 为准，不再作为当前状态入口
 
 - 文件：`memory/work-log-2026-04-17.md`
 - 用途：记录 `2026-04-17` 的 safety realism、continuity regression 收紧与第二个高价值运行时牌阵 `seven-card` 上线。
@@ -131,11 +164,11 @@
 
 1. 先看 `memory/current-status-and-priority-2026-04-15.md`，确认当前整体状态、真实阻塞点与下一步优先级
 2. 再看 `memory/mainline-priority-plan-2026-04-08.md`
-3. 再看 `memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`，确认 P1 体验收口、百科四花色过滤、validator 数量守卫与回归结果
-4. 再看 `memory/work-log-2026-04-25.md`，确认 `cardsV2` 资源接入、卡背切换、manifest / validator 变更与验证结果
-5. 再看 `memory/work-log-2026-04-24.md`，确认线下塔罗模式的输入来源、前端录入流程与验证结果
-6. 再看 `memory/work-log-2026-04-22.md`，确认上一轮计划判断与回归结果
-7. 再看 `memory/work-log-2026-04-20.md`，确认证据感阅读体验、组织随机、建设性阻力、前置现实边界、重复主题提醒与上一轮落地细节
+3. 再看 `memory/work-log-2026-04-27-beta-ops-local-supabase.md`，确认第一轮内测访问控制、quota、admin、观测、本地 Supabase 与 LLM baseline
+4. 再看 `docs/70-ops/ux-trust-risk-closeout-2026-04-27.md`，确认快速解读、核心速读、三层可信路径与最新 e2e 回归
+5. 再看 `memory/work-log-2026-04-26-p2-memory-boundaries.md`，确认 P2 memory / persistence 边界设计、roadmap 与暂缓项
+6. 再看 `memory/work-log-2026-04-25-p1-experience-runtime-alignment.md`，确认 P1 体验收口、百科四花色过滤、validator 数量守卫与回归结果
+7. 再看 `memory/work-log-2026-04-25.md`，确认 `cardsV2` 资源接入、卡背切换、manifest / validator 变更与验证结果
 8. 查看 `memory/near-term-work-plan-2026-04-10.md`，按最近工作顺序继续执行
 9. 配合 `docs/10-product/ux-risk-status.md` 理解 UX 主线进度与当前 runtime 落地与回归信号状态
 

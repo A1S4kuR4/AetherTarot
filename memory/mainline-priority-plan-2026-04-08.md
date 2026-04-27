@@ -1,14 +1,14 @@
 # Mainline Priority Plan
 
-- `last_updated`: `2026-04-20`
+- `last_updated`: `2026-04-27`
 - `owner`: `Codex`
 - `scope`: `product mainline priorities after knowledge-layer phase`
-- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / R2-R3-R7 UX calibration active`
-- `verification`: `2026-04-20` 本地验证结果为 `npm run build` passed、`npm run test:contract -w @aethertarot/web` passed（`40/40`）、`npm run lint -w @aethertarot/web` passed（`0` errors，`13` existing warnings）、`npm run test:e2e` passed（`23/23`）；Playwright 已对齐现行 `/new -> /ritual -> /reveal -> /reading -> /journey` 路径，并在测试环境固定使用 `placeholder` provider；完整 `78/78` runtime 牌池、本地资产、`four-aspects` / `seven-card` 运行时牌阵、hard-stop 资源、continuity capsule 边界与 R2/R3/R7 第一版 UX 风险收口均已进入真实回归
+- `execution_status`: `M1 completed / M2 completed / M3 completed / Two-Stage Reading MVP completed / M4 card-pool completed / spread alignment partial / beta ops baseline completed / R2-R3-R7 UX calibration active`
+- `verification`: 当前验证入口以 `memory/current-status-and-priority-2026-04-15.md` 为准；早期测试数量只保留在对应 work log 中作为历史快照。
 
 ## 1. 当前状态快照
 
-截至 `2026-04-20` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“回归已恢复、运行时牌池完整闭环，并形成并行 UX / Runtime Alignment 主线”的阶段；当前近端重点不是继续扩牌阵或打开长期记忆，而是校准既有 `R2 / R3 / R7` 前台体验。
+截至 `2026-04-27` 最新同步，项目主线已经从“知识层领先、运行时偏轻”推进到“回归已恢复、运行时牌池完整闭环、第一轮内测风控与观测已接入，并形成并行 UX / Runtime Alignment 主线”的阶段；当前近端重点不是继续扩牌阵或打开长期记忆，而是校准既有 `R2 / R3 / R7` 前台体验、快速解读与可信路径。
 
 知识层现状：
 
@@ -245,8 +245,9 @@
 本轮主线执行后的关键验证如下：
 
 - `npm run build` 已通过
-- `npm run test:contract -w @aethertarot/web` 已通过，当前为 `40/40` 全绿
-- `npm run test:e2e` 已通过，当前 smoke suite 为 `23/23` 全绿
+- `npm run lint -w @aethertarot/web` 已通过
+- `npm run test:contract -w @aethertarot/web` 已通过；当前测试数量以最新状态入口为准
+- `npm run test:e2e -w @aethertarot/web` 已通过；当前测试数量以最新状态入口为准
 - API 校验已覆盖：无效 JSON、缺字段、未知 `spreadId`、未知 `cardId`、空 `drawnCards`、重复 `positionId`、重复 `cardId`、位置集合不完整、牌数不匹配、final 缺少 initial snapshot、Lite no-followup、final 主题延续、普通健康 safety_note
 - Reading smoke flow 已覆盖：单牌、圣三角、四个面向、七张牌、凯尔特十字、Standard 两阶段、Lite 快速完成、历史回放、Tier 1 hard stop 与 Tier 2 sober check
 
@@ -261,7 +262,7 @@
 1. 技术主线：保持 `POST /api/reading` 的 request / response contract 稳定，继续把 `npm run test:e2e` 作为前台 UX 改动后的 P0 真相门槛。
 2. UX 主线：继续围绕 `docs/10-product/ux-risk-status.md` 校准 `R2 / R3 / R7` 的读感，确认组织随机说明清楚但不过重、证据分层能降低迎合错觉、建设性阻力有张力但不越界。
 3. Runtime 主线：先观察现有 5 个运行时牌阵的前台组织效果，再决定是否需要新增高价值牌阵；当前不应马上继续扩 runtime spread。
-4. Continuity 主线：服务端 memory persistence、长期画像与 memory merge 继续暂缓；短期只维护 `session_capsule` 现有边界与文档清晰度。
+4. Continuity 主线：P2 已进入边界设计阶段，见 `ADR-0004 Memory and Persistence Boundaries`。服务端 memory persistence、长期画像与 memory merge 继续暂缓；短期只维护 `session_capsule`、completed reading、future thread/session 与 long-term memory 的边界清晰度。
 5. 只有当运行时明确暴露知识缺口时，再触发定向 ingest-wiki。
 
 ## 7. 成功标准（更新后）

@@ -54,6 +54,8 @@
 
 - 语言具体、顺畅、有结构
 - 不空洞、不堆砌抽象词
+- 结果页首屏能先给出核心速读：一句核心判断、3 个关键词、一个行动提醒和一个边界提醒
+- 快速解读路径能在不牺牲结构边界的前提下减少等待成本
 
 ### 3.5 反思价值
 
@@ -61,6 +63,7 @@
 
 - 能帮助用户看到盲点、需求或下一步观察点
 - 建议具有启发性但不强迫
+- 用户能看见“你说了什么 / 牌本身说了什么 / 如何连接二者”的可信路径，而不是只看到一段顺着问题展开的结论
 
 ### 3.6 安全边界遵守
 
@@ -83,6 +86,7 @@
 - 至少稳定包含 `question_type`、`cards[]`、`themes`、`synthesis`、`reflective_guidance`
 - 历史记录回放与前端展示不需要退回 markdown fallback
 - `draw_source = offline_manual` 时，线下录入的 `drawnCards[]` 仍按权威牌阵位置校验、重排和渲染，不引入第二套 reading shape
+- 快速解读只改变前台路径：默认 `lite`、线上随机、必要时默认单牌启示；不新增 `StructuredReading` 字段，不绕过同一 `/api/reading` contract
 
 ### 3.8 风格一致性
 
@@ -117,6 +121,8 @@
 - `cards[]` 顺序是否与牌阵位置一致
 - `prior_session_capsule` 是否只作为补充线索，不覆盖当前问题主轴
 - incoming `prior_session_capsule` 是否已剔除原始补充与高风险细节
+- local history 是否仍只作为 completed reading replay cache，而不是隐式长期记忆
+- `session_capsule` 是否仍是低优先级 continuity summary，而不是 thread/session/user identity
 - `themes` / `synthesis` 是否高于逐牌层级
 - Tier 1 hard stop 是否返回 `403 safety_intercept`
 - Tier 2 决策外包是否返回 `sober_check` 与 `presentation_mode = "sober_anchor"`
@@ -126,8 +132,11 @@
 - 线下塔罗模式是否能恢复实体牌录入来源、牌面与正逆位，且仍通过同一 `/api/reading` 流程生成结果
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
 - completed `session_capsule` 是否足够短、稳定，且不带 `用户补充`、高风险安全细节或未验证第三方意图
+- future thread/session 或 long-term memory 若被引入，是否已有 identity、read/write、merge/overwrite、eviction/deletion 与 safety redaction 规则
 - reading 是否包含建设性阻力点，且该阻力点没有变成确定性预言、第三方读心、医疗/法律/财务替代建议或命令式决策
 - 不同 `question_type` 的建设性阻力是否有可感差异，避免全部退回同一句模板化阻力表达
+- reading 页是否可见核心速读和三层可信路径，且前台派生摘要没有遮蔽逐牌证据、综合深读和安全说明
+- 快速解读是否仍触发重大现实决策前置确认，并在服务端返回 `sober_check` 时保留结果揭示前摩擦
 
 ---
 

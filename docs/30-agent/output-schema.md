@@ -16,6 +16,8 @@
 - 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
 - 前端当前按“问题 / 主题 / 逐牌 / 综合 / 指引 / 延伸 / 安全说明”的顺序消费结果，不应把结构化结果重新折叠为单段长文
+- 前端允许从既有字段派生“核心速读”首屏摘要，但它不是协议字段：一句核心判断来自 `synthesis` 的安全截取，关键词来自 `themes` / 牌面关键词，行动提醒来自 `reflective_guidance`，边界提醒来自 `confidence_note`
+- 前端允许展示“三层可信路径”（用户输入、牌面线索、解释连接）来降低迎合错觉；该展示仍必须保留 `cards[]`、`spread` 与 `synthesis` 的结构边界，不能反向要求 provider 输出隐藏推理过程
 
 ---
 
@@ -112,6 +114,22 @@
   "presentation_mode?": "standard | void_narrative | sober_anchor"
 }
 ```
+
+错误响应保持统一 envelope：
+
+```json
+{
+  "error": {
+    "code": "invalid_request | unauthorized | forbidden | rate_limited | cost_limit_exceeded | provider_unavailable | generation_failed | safety_intercept",
+    "message": "string",
+    "details": "object | undefined",
+    "intercept_reason": "string | undefined",
+    "referral_links": ["string"]
+  }
+}
+```
+
+第一轮内测新增的访问与成本错误不会改变成功 `StructuredReading` shape。`rate_limited` 与 `cost_limit_exceeded` 必须在 provider 调用前返回，避免超限请求继续消耗付费 LLM。
 
 ---
 
@@ -234,6 +252,14 @@
 - capsule 不直带 `followup_answers` 原文，不承载原始 transcript
 - capsule 必须避免泄露高风险安全细节、急性情绪细节与未验证的第三方意图
 
+P2 边界补充：
+
+- 本阶段不改变字段 shape，仍保持 `string | null`。
+- `session_capsule` 不是 thread id、session id、user id、长期画像或服务端 checkpoint。
+- `prior_session_capsule` 只能由前端显式 opt-in 带回 request，且服务端必须先净化再注入 provider。
+- capsule 的优先级低于当前问题、当前牌阵、当前抽牌与 safety layer。
+- 若未来改成结构化 capsule，需要同步更新 shared types、request validation、历史兼容、前端 consumer、contract tests 与本文档。
+
 ### `sober_check`
 
 用于重大决策外包场景（Tier 2 安全拦截）。当系统检测到用户存在重度依赖时，写入此字段。前端须通过阻滞型前置交互，要求用户手写反思此引导问题后，方可解锁解读内容。
@@ -267,10 +293,13 @@
 - `prior_session_capsule` 只表示本地线程级 continuity，不引入 user id、thread id 或服务端 persistence 语义
 - 前台展示 `question` 时应以“本次提问”呈现，不应把它高密度复述到 `themes`、`synthesis` 与 `guidance` 中，避免放大迎合错觉
 - 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断。当前 reading 页已将逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”：牌面线索来自权威抽牌、正逆位与关键词；位置语义来自 `spread.positions[]` / `cards[].position_meaning`；综合推断来自 `cards[].interpretation` 与 `synthesis`
+- 前台“核心速读”是展示层派生摘要，不进入 `StructuredReading`。它可以帮助用户先抓重点，但不能替代后续逐牌证据、牌阵机制、完整综合与安全说明。
+- 前台“三层可信路径”应明确区分“你说了什么 / 牌本身说了什么 / AetherTarot 如何连接二者”。第三层只能称为解释推断，不应包装成神谕、确定预言或模型隐藏推理。
 - 前台当前会在 `/reveal` 与 `/reading` 展示“牌阵如何组织随机”的说明。这属于展示层解释：随机决定牌面与正逆位，牌阵决定阅读顺序、位置语义与综合路径；它不新增 response 字段，也不改变 `cards[]` 的权威顺序语义
 - 线下塔罗模式下，展示层应把上述说明改为“线下抽取决定牌面与正逆位，牌阵决定阅读顺序、位置语义与综合路径”。这仍不新增 response 字段，也不能暗示实体抽牌带来确定性预言。
 - provider 当前需要在 `synthesis` 或 `reflective_guidance` 中保留至少一个建设性阻力观察。该观察仍写入既有字段，不新增 `counterpoint` / `tension` 等协议字段
 - `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
+- P2 memory boundary 不新增 `thread_id`、`session_id`、`user_id`、`memory_profile` 或 `memory_merge` 字段；未来若引入这些身份字段，必须先通过 ADR 或独立协议设计确定读写与删除边界
 
 ---
 

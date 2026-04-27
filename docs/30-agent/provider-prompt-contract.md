@@ -256,6 +256,7 @@ Provider 不得自行决定：
 - 保持 `cards[]` 数量和顺序与 `drawnCards` / `spread.positions` 一致
 - 保持 `cards[]` 的 `position_id` / `card_id` / `orientation` 与 authority `drawnCards` 完全一致
 - `cards[]` 的 `name` / `english_name` / `position` / `position_meaning` 视为 authority-owned 字段；provider 如返回变体，normalize 必须覆盖回权威值
+- `cards[].interpretation` 的最终协议字段仍必须是非空字符串；为兼容小型思考模型的字段漂移，provider-local normalize 可以把 `interpretation` 分段对象 / 数组，或 `card_interpretation`、`meaning`、`reading`、`analysis`、`explanation` 等等价解释字段收敛回 `interpretation`
 - 缺失或不可修复时抛服务错误，不返回半结构化内容
 
 补充理解：
@@ -265,10 +266,11 @@ Provider 不得自行决定：
 
 ---
 
-## 9. 当前本地联调基线
+## 9. 当前联调基线
 
-- 截至 `2026-04-11`，本地兼容 API 手工联调中，`gemma4:e4b` 是当前更推荐的 baseline。`llama3.1:8b` 虽可跑通 live smoke，但在中文稳定性、`reflective_guidance` 完整性和局部第三方内心归因上波动更大。
-- 该结论只是当前本地开发建议，不是长期模型选型定论；接入其他模型时仍需重新做 `test:llm` + 人工抽样。
+- 当前第一轮内测 baseline 为 DashScope OpenAI-compatible endpoint + `qwen3.6-flash`。
+- 推荐示例：`AETHERTAROT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1`、`AETHERTAROT_LLM_MODEL=qwen3.6-flash`、`AETHERTAROT_LLM_API_KEY=$DASHSCOPE_API_KEY`。
+- 早期本地兼容 API 手工联调记录只作为历史开发参考，不是长期模型选型定论；接入其他模型时仍需重新做 `test:llm` + 人工抽样。
 
 ## 10. 第一版验收
 
