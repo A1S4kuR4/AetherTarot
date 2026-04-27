@@ -18,6 +18,36 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   other: "综合议题",
 };
 
+const FEEDBACK_OPTIONS = [
+  { label: "准确", value: "accurate" },
+  { label: "有帮助", value: "helpful" },
+  { label: "像模板", value: "template_like" },
+  { label: "有点迎合", value: "too_agreeable" },
+] as const;
+
+type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
+
+function getLeadSentence(value: string, fallbackKeywords: string[]) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return `这次重点落在：${fallbackKeywords.join("、")}。`;
+  }
+
+  const match = normalized.match(/^.+?[。！？!?]/);
+  const sentence = match?.[0] ?? normalized;
+
+  if (sentence.length <= 44) {
+    return sentence;
+  }
+
+  return `这次重点落在：${fallbackKeywords.join("、")}。`;
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
+
 export default function InterpretationView() {
   const router = useRouter();
   const {
@@ -34,6 +64,7 @@ export default function InterpretationView() {
     interpretReading,
     submitFollowupAnswers,
     history,
+    continuitySource,
     updateHistoryNotes,
   } = useReading();
 
@@ -41,6 +72,10 @@ export default function InterpretationView() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<Record<string, Record<number, string>>>({});
+  const [feedbackLabelsByReadingId, setFeedbackLabelsByReadingId] = useState<Record<string, FeedbackLabel[]>>({});
+  const [feedbackNotesByReadingId, setFeedbackNotesByReadingId] = useState<Record<string, string>>({});
+  const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<Record<string, boolean>>({});
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -75,6 +110,16 @@ export default function InterpretationView() {
     reading?.reading_phase === "final" ? "延伸自省" : "延伸追问";
   const followupSectionKicker =
     reading?.reading_phase === "final" ? "自省" : "延伸";
+  const isCompletedReading = Boolean(reading && !reading.requires_followup);
+  const activeFeedbackLabels = activeReadingId
+    ? feedbackLabelsByReadingId[activeReadingId] ?? []
+    : [];
+  const activeFeedbackNote = activeReadingId
+    ? feedbackNotesByReadingId[activeReadingId] ?? ""
+    : "";
+  const hasSubmittedFeedback = activeReadingId
+    ? submittedFeedbackByReadingId[activeReadingId] === true
+    : false;
 
   const radarValues = useMemo(() => {
     let fire = 0, water = 0, air = 0, earth = 0, spirit = 0, chaos = 0;
@@ -103,6 +148,67 @@ export default function InterpretationView() {
       chaos: { count: chaos, total, score: chaos / peakCount },
     };
   }, [drawnCards]);
+
+  const trustPathCards = useMemo(() => {
+    if (!reading) {
+      return [];
+    }
+
+    return reading.cards.slice(0, 3).map((card) => {
+      const drawnCard = drawnCards.find(
+        (item) => item.positionId === card.position_id,
+      );
+      const keywords = drawnCard
+        ? (
+          drawnCard.isReversed
+            ? drawnCard.card.reversedKeywords
+            : drawnCard.card.uprightKeywords
+        ).slice(0, 3)
+        : [];
+
+      return {
+        ...card,
+        keywords,
+      };
+    });
+  }, [drawnCards, reading]);
+
+  const coreQuickRead = useMemo(() => {
+    if (!reading) {
+      return null;
+    }
+
+    const keywordCandidates = uniqueStrings([
+      ...reading.themes,
+      ...trustPathCards.flatMap((card) => card.keywords),
+      QUESTION_TYPE_LABELS[reading.question_type],
+      selectedSpread?.name ?? "",
+    ]);
+    const keywords = keywordCandidates.slice(0, 3);
+
+    for (const fallback of ["留意边界", "观察现实", "保留弹性"]) {
+      if (keywords.length >= 3) {
+        break;
+      }
+
+      if (!keywords.includes(fallback)) {
+        keywords.push(fallback);
+      }
+    }
+
+    return {
+      core:
+        getLeadSentence(reading.synthesis, keywords)
+        || `这次解读的核心落在${keywords.join("、")}。`,
+      keywords,
+      action:
+        reading.reflective_guidance[0]
+        ?? "先把这次解读转成一个现实中可以观察的小信号。",
+      boundary:
+        reading.confidence_note
+        ?? "不要把综合推断当成唯一答案；它只是把牌面和你的问题暂时连接起来。",
+    };
+  }, [reading, selectedSpread?.name, trustPathCards]);
 
   const handleSaveNotes = () => {
     if (!currentHistoryEntryId) {
@@ -157,6 +263,71 @@ export default function InterpretationView() {
       ...currentDrafts,
       [currentHistoryEntryId]: value,
     }));
+  };
+
+  const toggleFeedbackLabel = (value: FeedbackLabel) => {
+    if (!activeReadingId || hasSubmittedFeedback) {
+      return;
+    }
+
+    setFeedbackError(null);
+    setFeedbackLabelsByReadingId((current) => {
+      const existing = current[activeReadingId] ?? [];
+      const next = existing.includes(value)
+        ? existing.filter((item) => item !== value)
+        : [...existing, value];
+
+      return {
+        ...current,
+        [activeReadingId]: next,
+      };
+    });
+  };
+
+  const handleFeedbackNoteChange = (value: string) => {
+    if (!activeReadingId || hasSubmittedFeedback) {
+      return;
+    }
+
+    setFeedbackNotesByReadingId((current) => ({
+      ...current,
+      [activeReadingId]: value,
+    }));
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!activeReadingId || activeFeedbackLabels.length === 0) {
+      return;
+    }
+
+    setFeedbackError(null);
+
+    try {
+      const response = await fetch("/api/reading-feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reading_id: activeReadingId,
+          labels: activeFeedbackLabels,
+          note: activeFeedbackNote.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("反馈提交失败，请稍后再试。");
+      }
+
+      setSubmittedFeedbackByReadingId((current) => ({
+        ...current,
+        [activeReadingId]: true,
+      }));
+    } catch (error) {
+      setFeedbackError(
+        error instanceof Error ? error.message : "反馈提交失败，请稍后再试。",
+      );
+    }
   };
 
   useEffect(() => {
@@ -325,87 +496,133 @@ export default function InterpretationView() {
                 reading.presentation_mode === "sober_anchor" && "opacity-90 grayscale-[20%]",
               )}
             >
-              <section
-                className={cn(
-                  "relative my-16 rounded-3xl border p-8 shadow-sm",
-                  reading.presentation_mode === "sober_anchor"
-                    ? "border-paper-border bg-paper"
-                    : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper",
-                )}
-              >
-                <div className="absolute left-8 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm">
-                  <LegacyIcon
-                    name="auto_awesome"
-                    className="text-[14px] text-terracotta/70"
-                  />
-                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
-                    当前气候场
-                  </span>
-                </div>
-                <h2 className="mt-4 text-center font-serif text-3xl text-ink">
-                  核心主题聚焦
-                </h2>
-                <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-text-body">
-                  在深入每一张牌的具体启示之前，请先感受这组牌共同编织的全局氛围与核心张力。
-                </p>
-                <div className="mt-10 flex flex-col items-center justify-center">
-                  <RadarChart values={radarValues} size={320} />
-                </div>
-                <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  {reading.themes.map((theme) => (
-                    <span
-                      key={theme}
-                      className="chip-accent border-terracotta/20 bg-terracotta/5 px-4 py-2 text-[13px] shadow-sm transition-all hover:bg-terracotta/10"
-                    >
-                      {theme}
+              {coreQuickRead ? (
+                <section
+                  className={cn(
+                    "relative my-16 rounded-3xl border p-8 shadow-sm",
+                    reading.presentation_mode === "sober_anchor"
+                      ? "border-paper-border bg-paper"
+                      : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper",
+                  )}
+                >
+                  <div className="absolute left-8 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm">
+                    <LegacyIcon
+                      name="auto_awesome"
+                      className="text-[14px] text-terracotta/70"
+                    />
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
+                      核心速读
                     </span>
-                  ))}
-                </div>
-              </section>
+                  </div>
+                  <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+                    <div className="min-w-0 space-y-6">
+                      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                        一句话先看重点
+                      </p>
+                      <div className="max-w-[34rem]">
+                        <h2 className="font-serif text-[28px] leading-[1.45] text-ink">
+                          {coreQuickRead.core}
+                        </h2>
+                      </div>
+                      <div className="flex max-w-[34rem] flex-wrap gap-2.5">
+                        {coreQuickRead.keywords.map((keyword) => (
+                          <span
+                            key={`quick-keyword-${keyword}`}
+                            className="chip-accent border-terracotta/20 bg-terracotta/5 px-3.5 py-1.5 text-xs shadow-sm"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
+                            现在可以怎么做
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed text-text-body">
+                            {coreQuickRead.action}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+                            不要过度相信
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed text-text-body">
+                            {coreQuickRead.boundary}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="min-w-0 justify-self-center lg:w-[260px] lg:justify-self-end">
+                      <RadarChart
+                        values={radarValues}
+                        size={210}
+                        layout="stacked"
+                      />
+                    </div>
+                  </div>
+                </section>
+              ) : null}
 
               <section className="reading-card border-terracotta/20 bg-paper-raised/70">
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-terracotta/20 bg-terracotta/5 text-terracotta">
-                    <LegacyIcon name="account_tree" className="text-[20px]" />
-                  </div>
-                  <div>
-                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                      阅读机制
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                  可信路径
+                </p>
+                <h2 className="mt-1 font-serif text-2xl text-ink">
+                  这不是神谕，是可检查的解释路径
+                </h2>
+                <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                    <div className="mb-3 flex items-center gap-2 text-terracotta">
+                      <LegacyIcon name="edit_note" className="text-[18px]" />
+                      <h3 className="font-serif text-lg text-ink">你说了什么</h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-text-body">
+                      {question}
                     </p>
-                    <h2 className="mt-1 font-serif text-2xl text-ink">
-                      本次牌阵如何组织随机
-                    </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-text-body">
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="chip-accent text-[10px]">
+                        {QUESTION_TYPE_LABELS[reading.question_type]}
+                      </span>
+                      <span className="chip-warm text-[10px]">
+                        {continuitySource ? "带延续线索" : "无延续线索"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                    <div className="mb-3 flex items-center gap-2 text-terracotta">
+                      <LegacyIcon name="style" className="text-[18px]" />
+                      <h3 className="font-serif text-lg text-ink">牌本身说了什么</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {trustPathCards.map((card) => (
+                        <div key={`trust-${card.position_id}`} className="border-l-2 border-paper-border pl-3">
+                          <p className="text-sm font-medium text-ink">
+                            {card.position}：{card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
+                          </p>
+                          {card.keywords.length > 0 ? (
+                            <p className="mt-1 text-xs leading-relaxed text-text-muted">
+                              {card.keywords.join(" / ")}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                    <div className="mb-3 flex items-center gap-2 text-terracotta">
+                      <LegacyIcon name="account_tree" className="text-[18px]" />
+                      <h3 className="font-serif text-lg text-ink">如何连接二者</h3>
+                    </div>
+                    <p className="text-sm leading-relaxed text-text-body">
                       {spreadExperience?.readingMechanism}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                      {spreadExperience?.evidencePath}
+                    </p>
+                    <p className="mt-3 text-xs leading-relaxed text-text-muted">
                       逐牌顺序来自权威位置；牌面线索和位置语义先行，综合推断后置。
                     </p>
-                    <div className="mt-5 space-y-3">
-                      <div>
-                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
-                          证据路径
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-text-body">
-                          {spreadExperience?.evidencePath}
-                        </p>
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-3">
-                        {["牌面线索", "位置语义", "综合推断"].map((label, index) => (
-                          <div
-                            key={label}
-                            className={cn(
-                              "border-l-2 py-1 pl-3",
-                              index === 2 ? "border-terracotta/40" : "border-paper-border",
-                            )}
-                          >
-                            <p className="font-sans text-[11px] font-medium text-text-muted">
-                              {index + 1}. {label}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </section>
@@ -643,6 +860,58 @@ export default function InterpretationView() {
                   <p className="mt-4 text-base leading-[1.85] text-text-body">
                     {reading.confidence_note}
                   </p>
+                </section>
+              ) : null}
+
+              {isCompletedReading ? (
+                <section className="reading-card bg-paper-raised">
+                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                    反馈
+                  </p>
+                  <h2 className="mt-1 font-serif text-2xl text-ink">这次解读给你的感觉</h2>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {FEEDBACK_OPTIONS.map((option) => {
+                      const isSelected = activeFeedbackLabels.includes(option.value);
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          disabled={hasSubmittedFeedback}
+                          onClick={() => toggleFeedbackLabel(option.value)}
+                          className={cn(
+                            "rounded-full border px-4 py-2 text-sm font-medium transition",
+                            isSelected
+                              ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
+                              : "border-paper-border bg-paper text-text-body hover:bg-paper-muted",
+                            hasSubmittedFeedback && "cursor-not-allowed opacity-70",
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <textarea
+                    value={activeFeedbackNote}
+                    onChange={(event) => handleFeedbackNoteChange(event.target.value)}
+                    disabled={hasSubmittedFeedback}
+                    placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
+                    className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 disabled:opacity-70"
+                  />
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <p className="text-sm text-text-muted">
+                      {hasSubmittedFeedback ? "反馈已记录，谢谢。" : feedbackError}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={hasSubmittedFeedback || activeFeedbackLabels.length === 0}
+                      onClick={() => void handleSubmitFeedback()}
+                      className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      提交反馈
+                    </button>
+                  </div>
                 </section>
               ) : null}
 

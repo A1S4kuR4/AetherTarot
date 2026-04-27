@@ -12,6 +12,7 @@ import type {
 } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import { drawCardsForSpread } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
@@ -19,6 +20,7 @@ const MAJOR_DECISION_TERM_REGEX =
   /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂|起诉|诉讼|官司|借贷|贷款|法律|财务|理财/i;
 
 const spreads = getAllSpreads();
+const QUICK_DEFAULT_SPREAD = spreads.find((spread) => spread.id === "single") ?? spreads[0];
 
 const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: string }> = [
   {
@@ -146,6 +148,7 @@ export default function RitualInitializer() {
     setAgentProfile,
     setDrawSource,
     clearContinuitySource,
+    completeRitual,
     startRitual,
   } = useReading();
 
@@ -156,6 +159,7 @@ export default function RitualInitializer() {
 
   const [showDecisionBoundaryModal, setShowDecisionBoundaryModal] = useState(false);
   const [decisionBoundaryAcknowledged, setDecisionBoundaryAcknowledged] = useState(false);
+  const [pendingStartMode, setPendingStartMode] = useState<"ritual" | "quick" | null>(null);
   const trimmedQuestion = question.trim();
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
@@ -188,14 +192,7 @@ export default function RitualInitializer() {
 
     if (completed) {
       setProgress(100);
-      if (isMajorDecisionQuestion) {
-        setShowDecisionBoundaryModal(true);
-        setDecisionBoundaryAcknowledged(false);
-        setIsPressing(false);
-        setProgress(0);
-      } else {
-        handleStart();
-      }
+      requestStart("ritual");
     } else {
       setIsPressing(false);
       setProgress(0);
@@ -205,6 +202,7 @@ export default function RitualInitializer() {
   const closeDecisionBoundaryModal = () => {
     setShowDecisionBoundaryModal(false);
     setDecisionBoundaryAcknowledged(false);
+    setPendingStartMode(null);
   };
 
   const handleDecisionBoundaryConfirm = () => {
@@ -212,7 +210,15 @@ export default function RitualInitializer() {
       return;
     }
 
+    const mode = pendingStartMode ?? "ritual";
     setShowDecisionBoundaryModal(false);
+    setPendingStartMode(null);
+
+    if (mode === "quick") {
+      handleQuickStart();
+      return;
+    }
+
     handleStart();
   };
 
@@ -229,6 +235,44 @@ export default function RitualInitializer() {
     }
 
     router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
+  };
+
+  const handleQuickStart = () => {
+    const targetSpread = selectedSpread ?? QUICK_DEFAULT_SPREAD;
+
+    if (!trimmedQuestion || !targetSpread) {
+      return;
+    }
+
+    const quickDrawnCards = drawCardsForSpread(targetSpread.positions);
+
+    if (quickDrawnCards.length !== targetSpread.positions.length) {
+      return;
+    }
+
+    setAgentProfile("lite");
+    setDrawSource("digital_random");
+    setSelectedSpread(targetSpread);
+    completeRitual(quickDrawnCards);
+    router.push("/reading");
+  };
+
+  const requestStart = (mode: "ritual" | "quick") => {
+    if (isMajorDecisionQuestion) {
+      setPendingStartMode(mode);
+      setShowDecisionBoundaryModal(true);
+      setDecisionBoundaryAcknowledged(false);
+      setIsPressing(false);
+      setProgress(0);
+      return;
+    }
+
+    if (mode === "quick") {
+      handleQuickStart();
+      return;
+    }
+
+    handleStart();
   };
 
   return (
@@ -567,6 +611,19 @@ export default function RitualInitializer() {
                 : "长按开始仪式"}
           </span>
         </motion.button>
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => requestStart("quick")}
+            disabled={!trimmedQuestion}
+            className="rounded-full border border-midnight-border bg-midnight-panel px-6 py-2.5 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            快速解读
+          </button>
+          <p className="max-w-lg text-xs leading-relaxed text-text-inverse-muted/70">
+            跳过仪式，使用{selectedSpread?.name ?? QUICK_DEFAULT_SPREAD?.name ?? "单牌启示"}生成轻量初读；牌面仍随机，牌阵仍决定解释路径。
+          </p>
+        </div>
         <p className="mt-4 min-h-[20px] max-w-lg text-xs leading-relaxed text-text-inverse-muted transition-all">
           {isPressing
             ? "你选择的是阅读容器，不是结果。让随机先发生，再让牌阵组织意义。"
