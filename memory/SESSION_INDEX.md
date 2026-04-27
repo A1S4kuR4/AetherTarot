@@ -1,6 +1,6 @@
 # Session Index
 
-- `last_updated`: `2026-04-26`
+- `last_updated`: `2026-04-27`
 - `owner`: `Codex`
 - `scope`: `shared memory/ session entry index`
 
@@ -43,6 +43,18 @@
   - 不再把 ingest backlog 作为默认主线入口
 
 ### 2.3 Latest Work Log
+
+- 文件：`memory/work-log-2026-04-27-beta-ops-local-supabase.md`
+- 用途：记录 `2026-04-27` 第一轮内测风控、Supabase 本地 stack、admin 白名单、登录邮件失败修复、LLM provider 403 排查与本地手测流程。
+- 当前重点：
+  - `/api/reading` 已接入 Supabase 登录、邮箱白名单、邮箱/IP/全局 LLM 成本 quota、失败观测与明确错误码。
+  - `/admin` 与 `/api/admin/*` 已按 `beta_testers.role = admin` 保护。
+  - `643490291@qq.com` 已作为本地 admin 白名单账号，可用于最高权限测试；admin 绕过 reading quota 但仍写入观测事件。
+  - 本地 Supabase 端口从默认 `5432x` 迁到 `5542x`，规避 Windows/WSL `54319-54418` 系统保留端口冲突。
+  - 本地可用地址固定为 API `http://127.0.0.1:55421`、Studio `http://127.0.0.1:55423`、Mailpit `http://127.0.0.1:55424`、DB `postgresql://postgres:postgres@127.0.0.1:55422/postgres`。
+  - 登录 magic-link 本地进入 Mailpit，不发送到真实邮箱。
+  - `docs/70-ops/local-supabase-auth-troubleshooting.md` 已沉淀为稳定故障手册。
+  - LLM `HTTP 403` 已确认不是 CORS，而是 provider 返回 `Model.AccessDenied`，需从供应商 API key、模型权限、地域、余额和 model name 继续排查。
 
 - 文件：`memory/work-log-2026-04-26-p2-memory-boundaries.md`
 - 用途：记录 `2026-04-26` P2 长期连续性 / memory 边界设计启动
