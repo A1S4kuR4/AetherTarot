@@ -462,9 +462,78 @@ admin 邮箱：
 
 ## 11. 当前已知风险 / 后续事项
 
-- LLM provider `403 Model.AccessDenied` 未通过代码修复，因为根因在供应商权限 / 模型授权 / 余额 / region / model name 配置。
+- LLM provider `403 Model.AccessDenied` 已确认根因是百炼工作空间未授权模型；授权后已恢复。当前默认使用 `qwen3.6-flash` 作为第一轮内测成本 baseline。
 - `.env.local` 为本地私有配置，不进入 git；若更换 provider / model / key，必须重启 Next dev server。
 - Supabase CLI 输出中 `imgproxy` 与 `pooler` 停止不影响当前登录、REST、数据库、观测与 Mailpit。
 - Windows Docker Desktop 仍可能提示 analytics 需要 Docker daemon 暴露到 `tcp://localhost:2375`；当前不阻塞本地 Auth 和 DB 使用。
 - 后续如果要做真实外部 tester 邮件发送，需要配置生产 SMTP / hosted Supabase，而不是依赖本地 Mailpit。
 - admin quota bypass 只适合内测维护和压力测试；生产运营中应谨慎保留最高权限账号的操作审计。
+
+## 12. 百炼授权恢复与最终风险判断
+
+### 12.1 百炼模型授权
+
+最初 `.env.local` 已切到百炼 OpenAI-compatible endpoint：
+
+```dotenv
+AETHERTAROT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AETHERTAROT_LLM_API_KEY=$DASHSCOPE_API_KEY
+```
+
+但 `/chat/completions` 对多个模型返回：
+
+```text
+HTTP 403 Model.AccessDenied
+```
+
+后续确认原因不是 CORS、endpoint、key 格式或 model id 拼写，而是百炼工作空间未对目标模型授权。
+
+授权后验证：
+
+- `qwen3.6-flash`: `200`
+- `qwen3.5-flash`: `200`
+- `qwen3.5-plus`: `200`
+
+当前 `.env.local` 默认模型：
+
+```dotenv
+AETHERTAROT_LLM_MODEL=qwen3.6-flash
+```
+
+### 12.2 服务端 env 引用解析
+
+为避免真实 DashScope key 写入 `.env.local`，补充服务端解析：
+
+- `AETHERTAROT_LLM_API_KEY=$DASHSCOPE_API_KEY`
+- `AETHERTAROT_LLM_API_KEY=${DASHSCOPE_API_KEY}`
+
+相关文件：
+
+- `apps/web/src/server/reading/llm-provider.ts`
+- `apps/web/src/server/reading/__tests__/llm-provider.spec.ts`
+
+这样本地文件只保存引用，真实 key 继续来自系统环境变量。
+
+### 12.3 最终验证
+
+已完成：
+
+- 百炼 `qwen3.6-flash` 直连 `/chat/completions`：`200`
+- `npm run test:contract -w @aethertarot/web -- src/server/reading/__tests__/llm-provider.spec.ts`：`9/9` 通过
+- `npm run test:llm -w @aethertarot/web`：`1/1` 通过，完整 reading pipeline 可生成 standard initial reading
+- Supabase stack 通过 `docker start` 恢复已有容器：
+  - API `http://127.0.0.1:55421` 返回 `200`
+  - Mailpit `http://127.0.0.1:55424` 返回 `200`
+  - admin 白名单：`643490291@qq.com | admin | t`
+  - Auth OTP 直连：`status=200 {}`
+- `/api/reading` 未登录保护：返回 `401 unauthorized`
+
+### 12.4 五项风险状态
+
+当前判断：
+
+- LLM API 成本风险：第一轮白名单内测已基本解决。仍建议放量前把 `AETHERTAROT_LLM_COST_RESERVATION_USD` 按最坏情况调保守，或补实际成本回写。
+- `/api/reading` 被刷风险：普通 tester 已基本解决；未登录、非白名单、邮箱/IP/全局预算限额都会阻断 provider 调用。
+- 管理后台访问风险：已解决；`/admin` 与 `/api/admin/*` 均要求 `role = admin`。
+- 密钥暴露风险：基本解决；真实 DashScope key 只放系统环境变量，服务端解析引用，不使用 `NEXT_PUBLIC_`。
+- 观测缺失风险：第一轮内测已基本解决；可看请求量、用户数、成功/失败、LLM 耗时、token、估算成本、two-stage 完成和反馈。后续建议补 provider 细分 `http_status/provider_error_code` 到 dashboard。
