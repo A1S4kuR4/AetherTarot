@@ -29,6 +29,7 @@ interface RadarChartProps {
   values: RadarChartValues;
   size?: number;
   className?: string;
+  layout?: "inline" | "stacked";
 }
 
 const AXES: Array<{
@@ -95,7 +96,7 @@ function getPointsString(center: number, radius: number, angles: number[], value
 function RadarChartComposition({ values, size }: RadarChartCompositionProps) {
   const frame = useCurrentFrame();
   const center = size / 2;
-  const radius = size * 0.32;
+  const radius = size * 0.29;
   const drawProgress = interpolate(frame, [6, 56], [0, 1], {
     easing: Easing.bezier(0.16, 1, 0.3, 1),
     extrapolateLeft: "clamp",
@@ -168,7 +169,7 @@ function RadarChartComposition({ values, size }: RadarChartCompositionProps) {
         {angles.map((angle, index) => {
           const axis = AXES[index] ?? AXES[0];
           const value = values[axis.key];
-          const labelRadius = radius + 28;
+          const labelRadius = radius + 24;
           const x = center + labelRadius * Math.cos(angle);
           const y = center + labelRadius * Math.sin(angle);
 
@@ -240,7 +241,12 @@ function RadarChartComposition({ values, size }: RadarChartCompositionProps) {
   );
 }
 
-export default function RadarChart({ values, size = 300, className }: RadarChartProps) {
+export default function RadarChart({
+  values,
+  size = 300,
+  className,
+  layout = "inline",
+}: RadarChartProps) {
   const orderedAxes = AXES.map((axis) => ({
     ...axis,
     value: values[axis.key],
@@ -251,7 +257,13 @@ export default function RadarChart({ values, size = 300, className }: RadarChart
 
   return (
     <div className={className}>
-      <div className="mx-auto flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-center">
+      <div
+        className={
+          layout === "stacked"
+            ? "mx-auto flex flex-col items-center gap-4"
+            : "mx-auto flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-center"
+        }
+      >
         <div style={{ width: size, height: size }}>
           <Player
             component={RadarChartComposition}

@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { getAllCards } from "@aethertarot/domain-tarot";
 import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
 import { CARD_BACK_IMAGE } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
+import {
+  drawRandomCardForPosition,
+  shuffleTarotDeck,
+} from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
-
-function shuffleDeck() {
-  return [...getAllCards()].sort(() => Math.random() - 0.5);
-}
 
 const DRAW_ANIMATION_MS = 1050;
 
@@ -38,7 +37,7 @@ export default function RitualView() {
   const { question, selectedSpread, completeRitual } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [deck, setDeck] = useState<TarotCard[]>(() => shuffleDeck());
+  const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
   const [isRevealing, setIsRevealing] = useState(false);
   const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
@@ -98,7 +97,7 @@ export default function RitualView() {
     });
 
     setDeck(() => {
-      const nextDeck = shuffleDeck();
+      const nextDeck = shuffleTarotDeck();
       deckRef.current = nextDeck;
       return nextDeck;
     });
@@ -120,15 +119,17 @@ export default function RitualView() {
     setIsShuffling(true);
 
     const nextPosition = selectedSpread.positions[currentDrawnCards.length];
-    const randomIndex = Math.floor(Math.random() * currentDeck.length);
-    const card = currentDeck[randomIndex];
+    const { drawnCard, remainingDeck } = drawRandomCardForPosition(
+      currentDeck,
+      nextPosition?.id ?? "",
+    );
 
-    if (!card || !nextPosition) {
+    if (!drawnCard || !nextPosition) {
       setIsShuffling(false);
       return;
     }
 
-    const isMajorArcana = card.arcana.toLowerCase().startsWith("major");
+    const isMajorArcana = drawnCard.card.arcana.toLowerCase().startsWith("major");
     const slotRect = slotRefs.current[nextPosition.id]?.getBoundingClientRect();
     const deckRect = deckOriginRef.current?.getBoundingClientRect();
 
@@ -137,12 +138,6 @@ export default function RitualView() {
       return;
     }
 
-    const drawnCard: DrawnCard = {
-      positionId: nextPosition.id,
-      card,
-      isReversed: Math.random() > 0.8,
-    };
-    const remainingDeck = currentDeck.filter((_, index) => index !== randomIndex);
     const startWidth = slotRect.width;
     const startHeight = slotRect.height;
 

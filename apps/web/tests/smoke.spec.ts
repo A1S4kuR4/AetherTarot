@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 async function waitForReadingHydration(
   page: Parameters<typeof test>[0]["page"],
@@ -32,6 +32,25 @@ function journeyTimelineEntry(
   return page.locator("div").filter({ hasText: question }).filter({
     has: page.getByRole("button", { name: /回看解读/i }),
   }).first();
+}
+
+async function expectTrustPath(page: Parameters<typeof test>[0]["page"]) {
+  await expect(page.getByRole("heading", { name: "这不是神谕，是可检查的解释路径" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "你说了什么" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "牌本身说了什么" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "如何连接二者" })).toBeVisible();
+  await expect(page.getByText(/证据路径/).first()).toBeVisible();
+  await expect(page.getByText(/逐牌顺序来自权威位置/).first()).toBeVisible();
+}
+
+async function fillTextarea(
+  input: Locator,
+  value: string,
+) {
+  await input.click();
+  await input.fill("");
+  await input.pressSequentially(value);
+  await expect(input).toHaveValue(value);
 }
 
 async function seedRecentCareerHistory(page: Parameters<typeof test>[0]["page"]) {
@@ -257,9 +276,10 @@ async function completeFollowup(
 
   for (let index = 0; index < count; index += 1) {
     const value = `${answer} (${index + 1})`;
-    const input = inputs.nth(index);
-    await input.fill(value);
-    await expect(input).toHaveValue(value);
+    const input = followupSection.getByRole("textbox", {
+      name: new RegExp(`^${index + 1}\\.`),
+    });
+    await fillTextarea(input, value);
   }
 
   const submitButton = followupSection.getByRole("button", { name: /生成整合深读/i });
@@ -270,7 +290,7 @@ async function completeFollowup(
   await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
     timeout: 10000,
   });
-  await expect(page.getByText(/第二阶段整合深读/)).toBeVisible();
+  await expect(page.getByText(/第二阶段整合深读/).first()).toBeVisible();
 }
 
 test.describe("AetherTarot smoke flow", () => {
@@ -292,11 +312,10 @@ test.describe("AetherTarot smoke flow", () => {
 
     await enterReading(page);
 
-    await expect(page.getByRole("heading", { name: "核心主题聚焦" })).toBeVisible({
+    await expect(page.getByText("核心速读")).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByRole("heading", { name: "本次牌阵如何组织随机" })).toBeVisible();
-    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
+    await expectTrustPath(page);
     await expect(page.getByRole("heading", { name: "牌面线索" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "位置语义" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
@@ -325,11 +344,48 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "初步解读" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
+    await expectTrustPath(page);
     await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
 
     await gotoAppRoute(page, "/history");
     await expect(historyEntry(page, "我现在最该注意什么？")).toBeVisible();
+  });
+
+  test("starts a quick reading without a selected spread and defaults to single-card lite", async ({
+    page,
+  }) => {
+    await gotoAppRoute(page, "/new");
+
+    const input = page.getByPlaceholder("今天，你想向内心询问什么？");
+    await input.fill("我现在最该注意什么？");
+    await page.getByRole("button", { name: "快速解读" }).click();
+
+    await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
+    await expect(page.getByText("核心速读")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "单牌启示" })).toBeVisible();
+    await expectTrustPath(page);
+    await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
+
+    await gotoAppRoute(page, "/history");
+    await expect(historyEntry(page, "我现在最该注意什么？")).toBeVisible();
+  });
+
+  test("quick reading respects the selected spread", async ({ page }) => {
+    await gotoAppRoute(page, "/new");
+
+    await page
+      .getByPlaceholder("今天，你想向内心询问什么？")
+      .fill("我该如何看待当前的职业选择？");
+    await page.getByRole("button", { name: /圣三角/i }).click();
+    await page.getByRole("button", { name: "快速解读" }).click();
+
+    await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
+    await expect(page.getByText("核心速读")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/圣三角/).first()).toBeVisible();
+    await expect(page.getByText(/过去/).first()).toBeVisible();
+    await expect(page.getByText(/现在/).first()).toBeVisible();
+    await expect(page.getByText(/未来|潜在/).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
   });
 
   test("reopens a saved reading from history", async ({ page }) => {
@@ -412,7 +468,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
+    await expectTrustPath(page);
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
     await completeFollowup(page);
     await gotoAppRoute(page, "/history");
@@ -441,7 +497,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
+    await expectTrustPath(page);
     await expect(page.getByText("身体层面", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("精神层面", { exact: true }).first()).toBeVisible();
     await completeFollowup(page);
@@ -474,7 +530,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "逐牌展开" })).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("证据路径", { exact: true })).toBeVisible();
+    await expectTrustPath(page);
     await expect(page.getByText("答案 / 当事人", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("周遭能量", { exact: true }).first()).toBeVisible();
     await completeFollowup(page);
@@ -511,8 +567,7 @@ test.describe("AetherTarot smoke flow", () => {
   test("shows runtime and knowledge coverage with all four minor suits in encyclopedia", async ({
     page,
   }) => {
-    await page.goto("/encyclopedia", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(250);
+    await gotoAppRoute(page, "/encyclopedia");
 
     await expect(page.getByRole("heading", { name: "塔罗百科" })).toBeVisible();
     await expect(page.getByText("78 / 78").first()).toBeVisible();
@@ -521,13 +576,25 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("button", { name: /宝剑 \(14\)/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /星币 \(14\)/ })).toBeVisible();
 
+    const runtimeCardGrid = page.getByTestId("runtime-card-grid");
+
     await page.getByRole("button", { name: /宝剑 \(14\)/ }).click();
-    await expect(page.getByRole("button", { name: "宝剑王牌" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "愚者" })).toBeHidden();
+    await expect(runtimeCardGrid.getByRole("button")).toHaveCount(14);
+    await expect(
+      runtimeCardGrid.getByRole("button", { name: "宝剑王牌" }),
+    ).toBeVisible();
+    await expect(
+      runtimeCardGrid.getByRole("button", { name: "愚者" }),
+    ).toHaveCount(0);
 
     await page.getByRole("button", { name: /星币 \(14\)/ }).click();
-    await expect(page.getByRole("button", { name: "星币王牌" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "宝剑王牌" })).toBeHidden();
+    await expect(runtimeCardGrid.getByRole("button")).toHaveCount(14);
+    await expect(
+      runtimeCardGrid.getByRole("button", { name: "星币王牌" }),
+    ).toBeVisible();
+    await expect(
+      runtimeCardGrid.getByRole("button", { name: "宝剑王牌" }),
+    ).toHaveCount(0);
   });
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
@@ -584,6 +651,30 @@ test.describe("AetherTarot smoke flow", () => {
     await unlockButton.click();
 
     await expect(page.getByRole("heading", { name: "综合解读" })).toBeVisible();
+  });
+
+  test("quick reading still requires decision boundary confirmation and sober-check", async ({
+    page,
+  }) => {
+    await gotoAppRoute(page, "/new");
+
+    await page.getByPlaceholder("今天，你想向内心询问什么？").fill("我应该离婚吗？");
+    await page.getByRole("button", { name: "快速解读" }).click();
+
+    await expect(page.getByRole("heading", { name: "重大现实决定前的校准" })).toBeVisible();
+    const decisionContinueButton = page.getByRole("button", {
+      name: /确认现实边界并继续/i,
+    });
+    await expect(decisionContinueButton).toBeDisabled();
+    await page.getByLabel(/我确认这次阅读只用于整理线索/i).check();
+    await expect(decisionContinueButton).toBeEnabled();
+    await decisionContinueButton.click();
+
+    await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /降温与检视/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByRole("heading", { name: "综合解读" })).toBeHidden();
   });
 
   test("keeps the start button disabled until question and spread are both valid", async ({

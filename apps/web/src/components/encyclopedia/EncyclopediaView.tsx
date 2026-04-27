@@ -147,7 +147,10 @@ export default function EncyclopediaView({
           </div>
         </div>
 
-        <div className="grid max-h-[60vh] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:grid-cols-4">
+        <div
+          data-testid="runtime-card-grid"
+          className="grid max-h-[60vh] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:grid-cols-4"
+        >
           {visibleCards.map((card) => (
             <button
               key={card.id}
