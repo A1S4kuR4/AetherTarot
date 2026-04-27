@@ -41,6 +41,20 @@ function asNonEmptyString(value: unknown) {
     : null;
 }
 
+function resolveEnvReference(value: string | null, env: NodeJS.ProcessEnv) {
+  if (!value) {
+    return null;
+  }
+
+  const reference = value.match(/^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/);
+
+  if (!reference) {
+    return value;
+  }
+
+  return asNonEmptyString(env[reference[1] ?? reference[2]]);
+}
+
 function collectInterpretationText(value: unknown): string[] {
   if (typeof value === "string") {
     const normalized = asNonEmptyString(value);
@@ -157,7 +171,11 @@ export function resolveLlmProviderConfig(
   }
 
   return {
-    apiKey: asNonEmptyString(env.AETHERTAROT_LLM_API_KEY) ?? undefined,
+    apiKey:
+      resolveEnvReference(
+        asNonEmptyString(env.AETHERTAROT_LLM_API_KEY),
+        env,
+      ) ?? undefined,
     baseUrl: baseUrl.replace(/\/+$/, ""),
     model,
     temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),

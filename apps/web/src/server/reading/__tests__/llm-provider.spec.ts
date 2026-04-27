@@ -101,6 +101,26 @@ describe("llm provider baseline", () => {
     );
   });
 
+  it("resolves llm api key references from server environment variables", () => {
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        AETHERTAROT_LLM_MODEL: "qwen3.6-flash",
+        AETHERTAROT_LLM_API_KEY: "$DASHSCOPE_API_KEY",
+        DASHSCOPE_API_KEY: "sk-test-dashscope",
+      }).apiKey,
+    ).toBe("sk-test-dashscope");
+
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        AETHERTAROT_LLM_MODEL: "qwen3.6-flash",
+        AETHERTAROT_LLM_API_KEY: "${DASHSCOPE_API_KEY}",
+        DASHSCOPE_API_KEY: "sk-test-braced",
+      }).apiKey,
+    ).toBe("sk-test-braced");
+  });
+
   it("normalizes initial llm draft output and trims oversized arrays", () => {
     const context = buildHydratedContext();
     const normalized = normalizeReadingDraft({
