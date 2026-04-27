@@ -10,6 +10,8 @@
 - `/history` 查看本地历史记录，并支持“回看这次解读”与“延续这条线”两个分离动作
 - `/encyclopedia` 浏览静态塔罗百科
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
+- `/login` Supabase magic-link 内测登录
+- `/admin` 第一轮内测最小观测台，仅 `beta_testers.role = admin` 可访问
 
 ## State Flow
 
@@ -26,8 +28,12 @@
 
 ## Supabase Skeleton
 
-仓库保留了 Supabase 的浏览器端、服务端和请求前 session refresh 骨架。
+仓库使用 Supabase 承载第一轮内测的 session、邮箱白名单、quota 与观测数据。
 
 - 运行期入口使用 `src/proxy.ts`
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
-- 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，应用仍可正常启动
+- 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，页面仍可启动，但 `/api/reading` 会拒绝内测调用
+- `/api/reading` 还需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 `consume_reading_quota` RPC
+- schema 位于 `supabase/migrations/202604270001_beta_ops.sql`
+- 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth
+- 本地 magic-link 邮件进入 Mailpit：`http://127.0.0.1:55424`
