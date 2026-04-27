@@ -5,13 +5,15 @@ export class ReadingServiceError extends Error {
   status: number;
   intercept_reason?: string;
   referral_links?: string[];
+  details?: Record<string, unknown>;
 
   constructor(
     code: ReadingErrorCode,
     message: string,
     status: number,
     intercept_reason?: string,
-    referral_links?: string[]
+    referral_links?: string[],
+    details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "ReadingServiceError";
@@ -19,6 +21,7 @@ export class ReadingServiceError extends Error {
     this.status = status;
     this.intercept_reason = intercept_reason;
     this.referral_links = referral_links;
+    this.details = details;
   }
 }
 

@@ -10,6 +10,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/server/reading/**/*.spec.ts", "src/lib/**/*.spec.ts"],
+    include: ["src/server/**/*.spec.ts", "src/lib/**/*.spec.ts"],
   },
 });

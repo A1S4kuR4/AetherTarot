@@ -9,6 +9,7 @@ const navItems = [
   { href: "/", label: "首页", englishLabel: "Home" },
   { href: "/journey", label: "旅程", englishLabel: "Journey" },
   { href: "/encyclopedia", label: "百科", englishLabel: "Encyclopedia" },
+  { href: "/login", label: "登录", englishLabel: "Login" },
 ] as const;
 
 export default function Topbar({ isMidnight = false }: { isMidnight?: boolean }) {
