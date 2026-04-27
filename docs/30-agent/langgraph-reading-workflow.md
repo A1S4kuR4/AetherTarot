@@ -458,9 +458,9 @@ POST {AETHERTAROT_LLM_BASE_URL}/chat/completions
 
 ```env
 AETHERTAROT_READING_PROVIDER=llm
-AETHERTAROT_LLM_BASE_URL=http://127.0.0.1:11434/v1
-AETHERTAROT_LLM_MODEL=gemma4:e4b
-AETHERTAROT_LLM_API_KEY=
+AETHERTAROT_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AETHERTAROT_LLM_MODEL=qwen3.6-flash
+AETHERTAROT_LLM_API_KEY=$DASHSCOPE_API_KEY
 AETHERTAROT_LLM_TEMPERATURE=0.3
 AETHERTAROT_LLM_TIMEOUT_MS=120000
 ```
@@ -472,18 +472,20 @@ AETHERTAROT_LLM_TIMEOUT_MS=120000
 - 期待模型返回 JSON 对象
 - 允许模型把 JSON 包在 code fence 中，但 provider 会剥离后解析
 
-### 9.4 当前本地 baseline
+### 9.4 当前第一轮内测 baseline
 
-根据现有仓库文档，截止 `2026-04-11` 的本地联调建议是：
+当前第一轮内测使用 DashScope OpenAI-compatible endpoint：
 
-- 推荐：`gemma4:e4b`
-- 次选 smoke：`llama3.1:8b`
+- endpoint：`https://dashscope.aliyuncs.com/compatible-mode/v1`
+- model：`qwen3.6-flash`
+- key：通过服务端环境变量引用，例如 `AETHERTAROT_LLM_API_KEY=$DASHSCOPE_API_KEY`
 
 这里要特别说明：
 
 - graph 不固定某个模型名
 - 真正的模型由 `AETHERTAROT_LLM_MODEL` 决定
-- 文档中的 `gemma4:e4b` 是当前推荐 baseline，不是硬编码依赖
+- 当前 baseline 是内测成本与权限验证后的运行建议，不是硬编码依赖
+- 早期本地 compatible API 模型抽样记录只作为历史开发参考，切换 provider 后仍需重新跑 `test:llm` 与人工抽样
 
 ---
 
