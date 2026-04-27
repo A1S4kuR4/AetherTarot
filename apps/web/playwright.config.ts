@@ -14,6 +14,9 @@ export default defineConfig({
       : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
+    extraHTTPHeaders: {
+      "x-aethertarot-e2e-access": "1",
+    },
     trace: "on-first-retry",
   },
   projects: [
@@ -28,6 +31,7 @@ export default defineConfig({
       "npm run dev -- --hostname 127.0.0.1 --port 3000",
     env: {
       ...process.env,
+      AETHERTAROT_E2E_BYPASS_BETA_ACCESS: "1",
       AETHERTAROT_READING_PROVIDER: "placeholder",
     },
     url: baseURL,

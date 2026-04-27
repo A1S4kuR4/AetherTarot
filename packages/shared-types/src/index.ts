@@ -118,6 +118,10 @@ export interface ReadingHistoryEntry {
 
 export type ReadingErrorCode =
   | "invalid_request"
+  | "unauthorized"
+  | "forbidden"
+  | "rate_limited"
+  | "cost_limit_exceeded"
   | "provider_unavailable"
   | "generation_failed"
   | "safety_intercept";
