@@ -542,6 +542,11 @@ Motion is essential, but it must be emotionally aligned.
 
 ## 9. Responsive Behavior
 
+### Desktop Viewport Contracts
+- Home (`/`) is a snap narrative workspace below the fixed topbar. Its scroll container must occupy `calc(100dvh - 4rem)`, hide browser-level body scrolling, and move one section per wheel gesture or pagination-dot click.
+- New reading (`/new`) is a focused ritual workspace on regular desktop heights. Question input, focus calibration, reader selection, spread selection, draw mode, long-press start, and quick reading should fit without body scrolling; low-height desktop and mobile may fall back to natural page scrolling.
+- Encyclopedia (`/encyclopedia`) is a two-pane desktop workspace. Card search/filter/grid belong in the left internal browser pane, card details belong in the right internal reader pane, and switching cards should not require page-level scrolling.
+
 ### Mobile Principles
 - Prioritize question input, primary CTA, and card visuals
 - Keep text blocks comfortably padded
