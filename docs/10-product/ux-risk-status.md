@@ -1,6 +1,6 @@
 # UX 风险状态（UX Risk Status）
 
-- `last_updated`: `2026-04-27` (Updated: quick reading path + reading trust path)
+- `last_updated`: `2026-04-28` (Updated: new/ritual viewport adaptation + mobile CTA)
 - `owner`: `Codex`
 - `scope`: `rolling UX risk status`
 
@@ -67,6 +67,16 @@
 - `/reading` 已把可信解释路径显式拆成三层：“你说了什么 / 牌本身说了什么 / 如何连接二者”。这进一步收口 R3 迎合错觉：用户能看见当前问题、牌面线索、牌阵机制与综合推断之间的边界。
 - 本轮对“仪式感变等待成本”的收口策略不是削弱完整仪式，而是新增快速路径；完整 `/new -> /ritual -> /reveal -> /reading` 仍保留，供深度仪式模式使用。
 - 当前最新回归信号：contract 58 个 tests 通过，e2e 27 个 tests 通过，lint 与 build 通过。
+
+### 额外状态同步（2026-04-28）
+
+- 首页 `/` 的全屏叙事快照滚屏重新收口到固定导航栏下方的单一视口工作区：浏览器 body 不再承担页面滚动，鼠标滚轮与四个圆点统一驱动逐节跳转。
+- `/new` 在常规桌面高度下改为无 body 滚动的仪式工作区：问题输入、焦点校准、塔罗师、抽牌方式、牌阵选择、长按开始与快速解读都保留在首屏；牌阵列与设置列拥有内部滚动边界，避免新增选项后被静默裁切。
+- `/new` 移动端保留自然滚动，但长按开始与快速解读固定在底部 CTA 条，用户填完问题并选择牌阵后不需要回滚到顶部触发下一步；重复的底部路径说明已裁剪为单一流程提示。
+- `/ritual` 已使用固定导航栏下方的 fullscreen stage，并将牌堆区域改为 viewport-aware 高度；常规桌面高度下抽牌槽、操作按钮、牌堆与状态面板应保持在同一视口内。
+- `/encyclopedia` 改为左侧卡牌浏览器与右侧详情阅读器：覆度状态压缩到顶部，过滤、搜索与卡牌网格提前进入首屏，切换卡牌不再要求用户在页面上下往返滚动。
+- 本轮只改变前端布局、滚动边界与 e2e 验收，不修改 reading API、结构化输出 schema、抽牌逻辑或 safety / sober 边界。
+- 当前最新回归信号：`npm run build -w @aethertarot/web` 通过，`npm run test:e2e -w @aethertarot/web` 为 `32/32` 通过；本地 stale dev server 曾导致 hydration false negative，已通过重启标准 dev-mode Playwright 服务排除。
 
 ### 机制化关闭
 
