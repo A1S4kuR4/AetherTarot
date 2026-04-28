@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
@@ -61,64 +61,87 @@ export default function EncyclopediaView({
 }) {
   const [selectedCard, setSelectedCard] = useState<TarotCard>(tarotCards[0]);
   const [runtimeFilter, setRuntimeFilter] = useState<RuntimeFilter>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
+
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
-    return tarotCards.filter(activeFilter?.predicate ?? (() => true));
-  }, [runtimeFilter]);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return tarotCards.filter((card) => {
+      const matchesFilter = activeFilter?.predicate(card) ?? true;
+      const matchesSearch =
+        !normalizedSearch ||
+        card.name.toLowerCase().includes(normalizedSearch) ||
+        card.englishName.toLowerCase().includes(normalizedSearch);
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [runtimeFilter, searchTerm]);
 
   const isSelectedCardVisible = visibleCards.some((card) => card.id === selectedCard.id);
-  const activeCard = isSelectedCardVisible ? selectedCard : visibleCards[0] ?? tarotCards[0];
+  const activeCard = isSelectedCardVisible ? selectedCard : visibleCards[0] ?? selectedCard;
+
+  useEffect(() => {
+    detailRef.current?.scrollTo({ top: 0 });
+  }, [activeCard.id]);
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16 lg:flex-row lg:px-8">
-      {/* Card Grid */}
-      <div className="w-full space-y-6 lg:w-1/3">
-        <header>
+    <section className="viewport-workspace mx-auto grid w-full max-w-7xl gap-5 px-6 py-4 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:px-8">
+      <aside className="flex min-h-0 flex-col gap-4">
+        <header className="shrink-0">
           <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
             塔罗百科
           </h1>
           <p className="font-sans text-sm text-text-muted">
-            当前页面展示的是已接入运行时的牌库；runtime / knowledge 的当前覆度请以下方状态为准。
+            左侧切换牌面，右侧保持介绍阅读。
           </p>
         </header>
 
-        <div className="rounded-3xl border border-paper-border bg-paper-raised p-5 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <LegacyIcon name="stacks" className="text-lg text-terracotta" />
+        <div className="shrink-0 rounded-3xl border border-paper-border bg-paper-raised p-4 shadow-sm">
+          <div className="flex items-center gap-2.5 text-terracotta">
+            <LegacyIcon name="stacks" className="text-lg" />
             <h2 className="font-serif text-lg text-ink">覆度状态</h2>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-2xl border border-paper-border bg-paper p-4">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-2xl border border-paper-border bg-paper px-4 py-3">
               <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted">
                 Runtime
               </p>
-              <p className="mt-2 font-serif text-2xl text-ink">
+              <p className="mt-1 font-serif text-xl text-ink">
                 {coverage.runtimeCards} / 78
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-text-muted">
-                当前已接入 {coverage.runtimeMajor} 张大阿卡纳、{coverage.runtimeBySuit.wands} 张权杖、{coverage.runtimeBySuit.cups} 张圣杯、{coverage.runtimeBySuit.swords} 张宝剑、{coverage.runtimeBySuit.pentacles} 张星币。
-              </p>
             </div>
-            <div className="rounded-2xl border border-paper-border bg-paper p-4">
+            <div className="rounded-2xl border border-paper-border bg-paper px-4 py-3">
               <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted">
                 Knowledge
               </p>
-              <p className="mt-2 font-serif text-2xl text-ink">
+              <p className="mt-1 font-serif text-xl text-ink">
                 {coverage.knowledgeCards} / 78
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-text-muted">
-                知识页已完整，另有 {coverage.knowledgeConcepts} 个概念页与 {coverage.knowledgeSpreads} 个牌阵页。
               </p>
             </div>
           </div>
-          <div className="mt-4 rounded-2xl border border-terracotta/15 bg-terracotta/5 px-4 py-3">
-            <p className="text-xs leading-relaxed text-text-body">
-              当前百科仍直接消费 runtime deck JSON。这一版先把“已接入运行时”与“知识层已完成”明确分开；后续若接入 `knowledge/wiki`，应作为独立的下一阶段对齐工作推进。
-            </p>
-          </div>
+          <p className="mt-3 text-xs leading-relaxed text-text-muted">
+            已接入 {coverage.runtimeMajor} 张大阿卡纳；四花色各 14 张。知识层另有 {coverage.knowledgeConcepts} 个概念页与 {coverage.knowledgeSpreads} 个牌阵页。
+          </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="shrink-0 space-y-3">
+          <label className="relative block">
+            <LegacyIcon
+              name="search"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-text-muted"
+            />
+            <input
+              type="search"
+              aria-label="搜索卡牌"
+              placeholder="搜索卡牌名称"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full rounded-2xl border border-paper-border bg-paper-raised py-2.5 pl-10 pr-4 text-sm text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
+            />
+          </label>
+
           <h2 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
             Runtime 过滤
           </h2>
@@ -127,13 +150,7 @@ export default function EncyclopediaView({
               <button
                 key={filter.id}
                 type="button"
-                onClick={() => {
-                  setRuntimeFilter(filter.id);
-                  const nextVisibleCards = tarotCards.filter(filter.predicate);
-                  if (!nextVisibleCards.some((card) => card.id === activeCard.id)) {
-                    setSelectedCard(nextVisibleCards[0] ?? tarotCards[0]);
-                  }
-                }}
+                onClick={() => setRuntimeFilter(filter.id)}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs transition-all",
                   runtimeFilter === filter.id
@@ -149,35 +166,43 @@ export default function EncyclopediaView({
 
         <div
           data-testid="runtime-card-grid"
-          className="grid max-h-[60vh] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:grid-cols-4"
+          className="grid min-h-[280px] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:min-h-0 lg:flex-1 lg:grid-cols-4"
         >
-          {visibleCards.map((card) => (
-            <button
-              key={card.id}
-              type="button"
-              onClick={() => setSelectedCard(card)}
-              className={cn(
-                "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
-                activeCard.id === card.id
-                  ? "scale-[1.04] border-terracotta shadow-sm"
-                  : "border-transparent opacity-60 hover:opacity-100",
-              )}
-            >
-              <img
-                src={card.imageUrl}
-                alt={card.name}
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </button>
-          ))}
+          {visibleCards.length > 0 ? (
+            visibleCards.map((card) => (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => setSelectedCard(card)}
+                className={cn(
+                  "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
+                  activeCard.id === card.id
+                    ? "scale-[1.04] border-terracotta shadow-sm"
+                    : "border-transparent opacity-60 hover:opacity-100",
+                )}
+              >
+                <img
+                  src={card.imageUrl}
+                  alt={card.name}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </button>
+            ))
+          ) : (
+            <div className="col-span-full rounded-2xl border border-paper-border bg-paper-raised p-6 text-sm text-text-muted">
+              没有找到匹配的牌。
+            </div>
+          )}
         </div>
-      </div>
+      </aside>
 
-      {/* Card Detail */}
-      <div className="flex-1 rounded-3xl border border-paper-border bg-paper-raised p-8 md:p-10">
+      <article
+        ref={detailRef}
+        data-testid="encyclopedia-card-detail"
+        className="min-h-0 overflow-y-auto rounded-3xl border border-paper-border bg-paper-raised p-8 md:p-10"
+      >
         <div className="flex flex-col gap-10 md:flex-row">
-          {/* Card Image */}
           <div className="w-full md:w-5/12">
             <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
               <img
@@ -189,7 +214,6 @@ export default function EncyclopediaView({
             </div>
           </div>
 
-          {/* Card Info */}
           <div className="flex-1 space-y-7">
             <div>
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
@@ -203,7 +227,6 @@ export default function EncyclopediaView({
               </p>
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
                 描述
@@ -213,7 +236,6 @@ export default function EncyclopediaView({
               </p>
             </div>
 
-            {/* Keywords Grid */}
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2.5">
                 <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-terracotta">
@@ -249,7 +271,6 @@ export default function EncyclopediaView({
               </div>
             </div>
 
-            {/* Symbolism */}
             <div className="space-y-2.5">
               <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
                 象征意义
@@ -267,7 +288,7 @@ export default function EncyclopediaView({
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </section>
   );
 }

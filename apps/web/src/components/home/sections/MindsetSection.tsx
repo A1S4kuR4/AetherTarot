@@ -5,8 +5,8 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function MindsetSection() {
   return (
-    <section className="scroll-snap-section px-6 py-24 text-center">
-      <div className="w-full max-w-3xl space-y-12">
+    <section className="flex h-full w-full items-center justify-center px-6 py-10 text-center">
+      <div className="w-full max-w-3xl space-y-10">
         <header className="space-y-4">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">
             如何发问：从预言到反思
