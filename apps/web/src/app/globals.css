@@ -252,18 +252,90 @@
   /* ---- Scroll Snap (for narrative pages) ---- */
   .scroll-snap-container {
     scroll-snap-type: y mandatory;
-    height: 100vh;
+    height: 100%;
     overflow-y: scroll;
     scroll-behavior: smooth;
+    overscroll-behavior: contain;
   }
 
   .scroll-snap-section {
     scroll-snap-align: start;
-    height: 100vh;
+    height: 100%;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .viewport-workspace {
+    min-height: calc(100dvh - 4rem);
+  }
+
+  .new-reading-workspace {
+    /* Mobile: natural scroll; lg+ locks to viewport via media query below */
+    min-height: auto;
+  }
+
+  @media (min-width: 1024px) and (min-height: 860px) {
+    .viewport-workspace {
+      height: calc(100dvh - 4rem);
+      max-height: calc(100vh - 4rem);
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+
+  @media (min-width: 1024px) and (min-height: 720px) {
+    .new-reading-workspace {
+      height: calc(100dvh - 4rem);
+      max-height: calc(100vh - 4rem);
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+
+  /* ---- Mobile sticky CTA bar (hidden on lg+) ---- */
+  .ritual-cta-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--color-night) 60%, transparent);
+  }
+
+  @media (min-width: 1024px) {
+    .ritual-cta-bar {
+      display: none;
+    }
+  }
+
+  /* ---- RitualView fullscreen stage ---- */
+  .ritual-view-stage {
+    min-height: calc(100dvh - 4rem);
+  }
+
+  .ritual-deck-field {
+    height: min(34dvh, 350px);
+    min-height: 190px;
+  }
+
+  @media (min-width: 768px) {
+    .ritual-deck-field {
+      height: min(30dvh, 300px);
+      min-height: 210px;
+    }
+  }
+
+  @media (min-width: 1024px) and (min-height: 720px) {
+    .ritual-view-stage {
+      height: calc(100dvh - 4rem);
+      overflow: hidden;
+    }
   }
 
   /* Hide scrollbar but keep functionality */

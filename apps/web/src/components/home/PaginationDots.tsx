@@ -16,6 +16,7 @@ export default function PaginationDots({ total, active, onChange }: PaginationDo
         <button
           key={i}
           onClick={() => onChange(i)}
+          aria-current={active === i ? "true" : undefined}
           className="group relative flex items-center justify-center p-2"
           aria-label={`跳转到第 ${i + 1} 节`}
         >

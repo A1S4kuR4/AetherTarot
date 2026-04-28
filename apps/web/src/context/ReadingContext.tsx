@@ -148,21 +148,23 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const savedHistory =
-      localStorage.getItem(HISTORY_STORAGE_KEY)
-      ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY);
-
-    if (!savedHistory) {
-      setIsHydrated(true);
-      return;
-    }
-
     try {
-      setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
+      const savedHistory =
+        localStorage.getItem(HISTORY_STORAGE_KEY)
+        ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY);
+
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
+      }
     } catch {
-      localStorage.removeItem(HISTORY_STORAGE_KEY);
+      try {
+        localStorage.removeItem(HISTORY_STORAGE_KEY);
+      } catch {
+        // Storage can be unavailable in restricted browser contexts.
+      }
     } finally {
       setIsHydrated(true);
+      (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
     }
   }, []);
 

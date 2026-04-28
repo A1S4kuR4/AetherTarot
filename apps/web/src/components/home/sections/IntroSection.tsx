@@ -5,7 +5,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function IntroSection() {
   return (
-    <section className="scroll-snap-section px-6 text-center">
+    <section className="flex h-full w-full items-center justify-center px-6 text-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
