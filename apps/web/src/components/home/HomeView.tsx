@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
 import { motion } from "motion/react";
 import NextLink from "next/link";
-import { useReading } from "@/context/ReadingContext";
 
 import IntroSection from "./sections/IntroSection";
 import KnowledgeSection from "./sections/KnowledgeSection";
@@ -11,13 +10,16 @@ import MindsetSection from "./sections/MindsetSection";
 import PaginationDots from "./PaginationDots";
 
 export default function HomeView() {
-  const { history } = useReading();
-  const hasHistory = history.length > 0;
-  
   const [activeSection, setActiveSection] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wheelLockRef = useRef(false);
 
-  // Intersection Observer to detect current section
+  const getSections = useCallback(() => {
+    return containerRef.current?.querySelectorAll<HTMLElement>(
+      ":scope > .scroll-snap-section",
+    );
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -28,24 +30,64 @@ export default function HomeView() {
           }
         });
       },
-      { threshold: 0.6 } // High threshold to ensure snap is nearly complete
+      { threshold: 0.6 },
     );
 
-    const sections = containerRef.current?.querySelectorAll(":scope > .scroll-snap-section");
+    const sections = getSections();
     sections?.forEach((section) => observer.observe(section));
 
     return () => observer.disconnect();
-  }, []);
+  }, [getSections]);
 
-  const scrollToSection = (index: number) => {
-    const sections = containerRef.current?.querySelectorAll(":scope > .scroll-snap-section");
-    if (sections?.[index]) {
-      sections[index].scrollIntoView({ behavior: "smooth" });
+  const scrollToSection = useCallback(
+    (index: number) => {
+      const container = containerRef.current;
+      const sections = getSections();
+
+      if (!container || !sections?.[index]) {
+        return;
+      }
+
+      container.scrollTo({
+        top: sections[index].offsetTop,
+        behavior: "smooth",
+      });
+      setActiveSection(index);
+    },
+    [getSections],
+  );
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaY) < 8) {
+      return;
     }
+
+    event.preventDefault();
+
+    if (wheelLockRef.current) {
+      return;
+    }
+
+    const sections = getSections();
+    const total = sections?.length ?? 0;
+    const nextIndex = Math.max(
+      0,
+      Math.min(total - 1, activeSection + (event.deltaY > 0 ? 1 : -1)),
+    );
+
+    if (nextIndex === activeSection) {
+      return;
+    }
+
+    wheelLockRef.current = true;
+    scrollToSection(nextIndex);
+    window.setTimeout(() => {
+      wheelLockRef.current = false;
+    }, 700);
   };
 
   return (
-    <main className="relative h-screen bg-paper overflow-hidden">
+    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-paper">
       {/* Pagination Dots */}
       <PaginationDots 
         total={4} 
@@ -56,7 +98,9 @@ export default function HomeView() {
       {/* Snap Scroll Container */}
       <div 
         ref={containerRef}
+        data-testid="home-snap-container"
         className="scroll-snap-container hide-scrollbar"
+        onWheel={handleWheel}
       >
         {/* Section 0: Intro */}
         <div data-index="0" className="scroll-snap-section">

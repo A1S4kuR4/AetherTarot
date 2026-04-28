@@ -188,7 +188,7 @@ export default function RitualView() {
   };
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center px-6 pt-4 pb-4">
+    <section className="ritual-view-stage relative flex flex-col items-center px-4 pb-4 pt-4 md:px-6 lg:min-h-0">
       {drawOverlay ? (
         <motion.div
           key={drawOverlay.key}
@@ -343,7 +343,7 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div className="relative flex h-[350px] w-full max-w-4xl items-center justify-center md:h-[300px]">
+      <div className="ritual-deck-field relative flex w-full max-w-4xl items-center justify-center">
         <div
           ref={deckOriginRef}
           className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
