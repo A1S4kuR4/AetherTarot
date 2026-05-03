@@ -129,6 +129,66 @@ export interface Database {
         };
         Relationships: [];
       };
+      encyclopedia_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          user_id: string | null;
+          email: string | null;
+          ip_hash: string;
+          provider: string;
+          query_text: string | null;
+          card_id: string | null;
+          source_count: number;
+          status: "success" | "failure";
+          error_code: string | null;
+          duration_ms: number;
+          llm_duration_ms: number;
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+          estimated_cost_usd: number;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          user_id?: string | null;
+          email?: string | null;
+          ip_hash: string;
+          provider: string;
+          query_text?: string | null;
+          card_id?: string | null;
+          source_count?: number;
+          status: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
+          llm_duration_ms?: number;
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+          estimated_cost_usd?: number;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          user_id?: string | null;
+          email?: string | null;
+          ip_hash?: string;
+          provider?: string;
+          query_text?: string | null;
+          card_id?: string | null;
+          source_count?: number;
+          status?: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
+          llm_duration_ms?: number;
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+          estimated_cost_usd?: number;
+        };
+        Relationships: [];
+      };
       reading_feedback: {
         Row: {
           id: string;
@@ -166,6 +226,19 @@ export interface Database {
     Views: Record<string, never>;
     Functions: {
       consume_reading_quota: {
+        Args: {
+          p_email: string;
+          p_user_id: string;
+          p_ip_hash: string;
+          p_email_daily_limit: number;
+          p_ip_minute_limit: number;
+          p_ip_daily_limit: number;
+          p_daily_cost_limit_usd: number;
+          p_cost_reservation_usd: number;
+        };
+        Returns: Json;
+      };
+      consume_encyclopedia_quota: {
         Args: {
           p_email: string;
           p_user_id: string;

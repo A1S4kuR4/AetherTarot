@@ -6,6 +6,7 @@ import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import EncyclopediaQuestionPanel from "@/components/encyclopedia/EncyclopediaQuestionPanel";
 
 const tarotCards = getAllCards();
 
@@ -215,6 +216,8 @@ export default function EncyclopediaView({
           </div>
 
           <div className="flex-1 space-y-7">
+            <EncyclopediaQuestionPanel activeCard={activeCard} />
+
             <div>
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
                 {activeCard.arcana} · {activeCard.element}

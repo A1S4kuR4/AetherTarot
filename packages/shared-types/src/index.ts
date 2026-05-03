@@ -135,3 +135,27 @@ export interface ReadingErrorPayload {
     referral_links?: string[];
   };
 }
+
+export type EncyclopediaSourceType = "card" | "concept" | "spread";
+
+export interface EncyclopediaQueryRequest {
+  query: string;
+  cardId?: string;
+}
+
+export interface EncyclopediaSource {
+  title: string;
+  path: string;
+  type: EncyclopediaSourceType;
+  source_ids: string[];
+  excerpt: string;
+}
+
+export interface EncyclopediaQueryResponse {
+  answer: string;
+  sources: EncyclopediaSource[];
+  related_cards: string[];
+  related_concepts: string[];
+  related_spreads: string[];
+  boundary_note: string | null;
+}

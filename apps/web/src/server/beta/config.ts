@@ -10,6 +10,14 @@ export interface BetaOpsConfig {
   llmCostReservationUsd: number;
 }
 
+export interface EncyclopediaQuotaConfig {
+  emailDailyLimit: number;
+  ipMinuteLimit: number;
+  ipDailyLimit: number;
+  dailyLlmCostLimitUsd: number;
+  llmCostReservationUsd: number;
+}
+
 function parsePositiveInteger({
   env,
   name,
@@ -103,5 +111,37 @@ export function getBetaOpsConfig(
         fallback: 0.05,
       })
       : 0,
+  };
+}
+
+export function getEncyclopediaQuotaConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): EncyclopediaQuotaConfig {
+  return {
+    emailDailyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_EMAIL",
+      fallback: 20,
+    }),
+    ipMinuteLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_ENCYCLOPEDIA_IP_LIMIT_PER_MINUTE",
+      fallback: 6,
+    }),
+    ipDailyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_ENCYCLOPEDIA_IP_LIMIT_PER_DAY",
+      fallback: 60,
+    }),
+    dailyLlmCostLimitUsd: parseNonNegativeNumber({
+      env,
+      name: "AETHERTAROT_LLM_DAILY_COST_LIMIT_USD",
+      fallback: 1,
+    }),
+    llmCostReservationUsd: parseNonNegativeNumber({
+      env,
+      name: "AETHERTAROT_ENCYCLOPEDIA_LLM_COST_RESERVATION_USD",
+      fallback: 0.01,
+    }),
   };
 }
