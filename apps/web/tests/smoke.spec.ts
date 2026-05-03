@@ -718,6 +718,29 @@ test.describe("AetherTarot smoke flow", () => {
   test("shows runtime and knowledge coverage with all four minor suits in encyclopedia", async ({
     page,
   }) => {
+    await page.route("**/api/encyclopedia/query", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          answer: "愚者的逆位常提醒自由感需要先回到现实边界。",
+          sources: [
+            {
+              title: "愚者 (The Fool)",
+              path: "knowledge/wiki/major-arcana/the-fool.md",
+              type: "card",
+              source_ids: ["78W"],
+              excerpt: "逆位时，愚者的力量常从自由的跃出转成失衡的失足。",
+            },
+          ],
+          related_cards: ["愚者 (The Fool)"],
+          related_concepts: [],
+          related_spreads: [],
+          boundary_note: null,
+        }),
+      });
+    });
+
     await gotoAppRoute(page, "/encyclopedia");
 
     await expect(page.getByRole("heading", { name: "塔罗百科" })).toBeVisible();
@@ -746,6 +769,13 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(
       runtimeCardGrid.getByRole("button", { name: "宝剑王牌" }),
     ).toHaveCount(0);
+
+    await expect(page.getByTestId("encyclopedia-agent-panel")).toBeVisible();
+    await page.getByLabel("向塔罗百科提问").fill("这张牌逆位怎么理解？");
+    await page.getByRole("button", { name: "提问" }).click();
+    await expect(page.getByTestId("encyclopedia-agent-answer")).toBeVisible();
+    await expect(page.getByText(/愚者的逆位/)).toBeVisible();
+    await expect(page.getByText(/knowledge\/wiki\/major-arcana\/the-fool\.md/)).toBeVisible();
   });
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
