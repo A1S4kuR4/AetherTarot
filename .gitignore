@@ -50,3 +50,6 @@ prototype/dist/
 # Local operator notes
 memory/*-health-report-*.md
 memory/knowledge-ingest-backlog.md
+
+# Graphify local navigation outputs
+graphify-out/
