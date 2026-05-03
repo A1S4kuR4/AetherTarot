@@ -22,7 +22,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
-## 📍 当前主线状态（2026-04-27）
+## 📍 当前主线状态（2026-04-29）
 
 项目已经进入“主链已成、运行时牌池完整、第一轮内测风控已接入、UX 信任风险继续收口”的阶段。
 
@@ -46,7 +46,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 3. Beta Ops 主线：Supabase 登录、邮箱白名单、admin 权限、reading quota、LLM 成本预算、reading events 与 reading feedback 已接入第一轮内测闭环。
 4. Memory / Persistence 主线：`session_capsule`、本地 history、future thread/session 与 long-term memory 边界已由 ADR-0004 和 P2 roadmap 收紧；服务端 persistence 与 memory merge 继续暂缓。
 
-`2026-04-09` 至 `2026-04-27` 同步确认的关键收口包括：
+`2026-04-09` 至 `2026-04-29` 同步确认的关键收口包括：
 
 - 引入 `ADR-0002` Dual-Tier Safety Escalation
 - 在正式输出协议中稳定纳入 `sober_check` 与 `presentation_mode`
@@ -54,11 +54,14 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 完成 Web CI / Playwright / lockfile 的一轮系统排障
 - 完成首轮本地卡牌 PNG 注入、manifest 记录与 1:1.7 渲染规范化，并扩展到当前 78 张正面牌面
 - 将运行时牌组从早期示例牌扩展到当前 78 张，并将当前 runtime imageUrl 切到 `/cardsV2/...`
-- `npm run test:contract -w @aethertarot/web` 当前复核通过（58 个 tests），`npm run test:e2e -w @aethertarot/web` 当前复核通过（27 个 tests），`npm run lint -w @aethertarot/web` 与 `npm run build -w @aethertarot/web` 当前通过
+- `npm run test:contract -w @aethertarot/web` 当前复核通过（74 个 tests），`npm run test:e2e -w @aethertarot/web` 当前复核通过（32 个 tests），`npm run lint -w @aethertarot/web` 当前通过（0 errors / 12 warnings），`npm run build -w @aethertarot/web` 当前通过
+- Web CI 已把 `test:contract` 纳入 lint/build job；本地 Node.js 基线通过 `.nvmrc` 固定为 `20.19.0`，与 CI 一致
+- 生产环境缺少 `AETHERTAROT_IP_HASH_SALT` 时不再回退到开发默认 salt；非 production 仍保留 dev fallback 方便本地调试
 - 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
 - `/new` 已新增快速解读入口：未选牌阵时默认单牌启示，已选牌阵时尊重当前牌阵，使用 `lite` profile 自动抽牌并直达 `/reading`
 - `/reading` 已新增核心速读与三层可信路径：从既有字段派生首屏摘要，并区分“用户输入 / 牌面线索 / 解释连接”
 - `/api/reading` 已接入 Supabase session、`beta_testers` 白名单、邮箱/IP/全局 LLM 成本 quota、admin quota bypass 与 reading event 观测
+- `/encyclopedia` 已新增第一版塔罗百科 Agent：从 `knowledge/wiki` 检索牌义 / 概念 / 牌阵来源，经独立 `/api/encyclopedia/query` 返回带来源的百科问答，不改变 `/api/reading` 与 `StructuredReading`
 - `/admin` 与 `/api/admin/*` 当前只允许 `role = admin`
 - OpenAI-compatible `llm` baseline 当前第一轮内测默认使用 DashScope `qwen3.6-flash`，真实 key 通过服务端环境变量引用
 - 当前运行时牌阵为 `single`、`holy-triangle`、`four-aspects`、`seven-card`、`celtic-cross`
@@ -81,6 +84,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 - 首页 / 抽牌 / reveal / reading / history / encyclopedia 页面
 - 轻量 BFF Route：`POST /api/reading`
+- 独立百科问答 Route：`POST /api/encyclopedia/query`
 - Supabase magic-link 内测登录、admin 观测台、reading feedback
 - 本地结构化 history 回放
 
@@ -120,6 +124,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
 - 快速解读路径、完整仪式路径、核心速读与三层可信路径
 - 第一轮内测访问控制、quota、LLM 成本预算、reading events 与 feedback
+- 第一版塔罗百科 Agent：`knowledge/wiki` 检索 + OpenAI-compatible LLM 生成带来源回答，独立于 reading 主链
 - 78 张运行时牌与 79 个 `cardsV2` 本地卡牌文件，均按竖版规范接入
 
 当前不做：
