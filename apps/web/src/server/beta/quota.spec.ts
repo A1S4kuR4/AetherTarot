@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { shouldBypassReadingQuota } from "@/server/beta/quota";
+import {
+  consumeEncyclopediaQuota,
+  shouldBypassReadingQuota,
+} from "@/server/beta/quota";
 import type { AuthenticatedTester } from "@/server/beta/access";
 
 function buildTester(role: AuthenticatedTester["role"]): AuthenticatedTester {
@@ -17,5 +20,14 @@ describe("reading quota", () => {
 
   it("keeps regular testers under reading quota", () => {
     expect(shouldBypassReadingQuota(buildTester("tester"))).toBe(false);
+  });
+
+  it("lets admins bypass encyclopedia quota as well", async () => {
+    await expect(
+      consumeEncyclopediaQuota({
+        tester: buildTester("admin"),
+        ipHash: "ip-hash",
+      }),
+    ).resolves.toBeUndefined();
   });
 });
