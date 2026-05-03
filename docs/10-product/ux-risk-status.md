@@ -1,6 +1,6 @@
 # UX 风险状态（UX Risk Status）
 
-- `last_updated`: `2026-04-28` (Updated: new/ritual viewport adaptation + mobile CTA)
+- `last_updated`: `2026-04-29` (Updated: urgent CI/config risk closeout)
 - `owner`: `Codex`
 - `scope`: `rolling UX risk status`
 
@@ -54,7 +54,7 @@
 - placeholder provider 与 LLM prompt bias 已补齐 5 个牌阵的 spread-specific reading axis；建设性阻力继续要求锚定牌面、正逆位、位置语义、牌阵关系或未验证现实条件，不得升级成确定性预言、第三方读心、专业替代建议或命令式决策
 - Encyclopedia 继续直接消费 runtime deck JSON，但已补全 wands / cups / swords / pentacles 四花色过滤与 runtime / knowledge 覆度展示；本轮没有把百科切到 `knowledge/wiki`
 - `cardsV2` asset validator 已增加显式数量守卫：deck 必须为 78 张，manifest 必须覆盖 78 张正面牌与 1 张 `/cardsV2/back.png`，目录中不能存在未引用 PNG
-- 本轮回归结果在对应 work log 中作为历史快照保留；当前状态入口以本文件的 `2026-04-27` 同步段与 `memory/current-status-and-priority-2026-04-15.md` 为准
+- 本轮回归结果在对应 work log 中作为历史快照保留；当前状态入口以本文件的 `2026-04-29` 同步段与 `memory/current-status-and-priority-2026-04-15.md` 为准
 
 因此，当前 UX 主线仍可围绕 `R3 / R6 / R7 / R8 / R12` 推进，但执行顺序必须保持克制：**先守住 Web smoke 全套稳定性与状态文档真相，再继续扩大前台机制。**
 
@@ -66,7 +66,7 @@
 - `/reading` 首屏已从“核心主题聚焦”改为“核心速读”：先展示一句核心判断、3 个关键词、一个行动提醒和一个不要过度相信的边界提醒。该内容全部从既有 `synthesis`、`themes`、`reflective_guidance`、`confidence_note` 派生，不改变 schema。
 - `/reading` 已把可信解释路径显式拆成三层：“你说了什么 / 牌本身说了什么 / 如何连接二者”。这进一步收口 R3 迎合错觉：用户能看见当前问题、牌面线索、牌阵机制与综合推断之间的边界。
 - 本轮对“仪式感变等待成本”的收口策略不是削弱完整仪式，而是新增快速路径；完整 `/new -> /ritual -> /reveal -> /reading` 仍保留，供深度仪式模式使用。
-- 当前最新回归信号：contract 58 个 tests 通过，e2e 27 个 tests 通过，lint 与 build 通过。
+- 当前最新回归信号：contract 74 个 tests 通过，e2e 32 个 tests 通过，lint 0 errors / 12 warnings，build 通过。
 
 ### 额外状态同步（2026-04-28）
 
@@ -77,6 +77,13 @@
 - `/encyclopedia` 改为左侧卡牌浏览器与右侧详情阅读器：覆度状态压缩到顶部，过滤、搜索与卡牌网格提前进入首屏，切换卡牌不再要求用户在页面上下往返滚动。
 - 本轮只改变前端布局、滚动边界与 e2e 验收，不修改 reading API、结构化输出 schema、抽牌逻辑或 safety / sober 边界。
 - 当前最新回归信号：`npm run build -w @aethertarot/web` 通过，`npm run test:e2e -w @aethertarot/web` 为 `32/32` 通过；本地 stale dev server 曾导致 hydration false negative，已通过重启标准 dev-mode Playwright 服务排除。
+
+### 额外状态同步（2026-04-29）
+
+- Web CI 已把 `npm run test:contract` 纳入 lint/build job，避免 reading graph、provider normalize、safety 边界等 contract tests 只在本地通过而不成为 PR 门槛。
+- 当前本地验证基线同步为：`npm run validate:assets` 通过，`npm run test:contract -w @aethertarot/web` 为 `74/74` 通过，`npm run lint -w @aethertarot/web` 为 `0` errors / `12` warnings，`npm run build` 通过，`npm run test:e2e -w @aethertarot/web` 为 `32/32` 通过。
+- 生产配置边界已收紧：`NODE_ENV=production` 且缺少 `AETHERTAROT_IP_HASH_SALT` 时不再回退到开发默认 salt；非 production 仍保留本地 fallback。
+- Next route transition 的 `scroll-behavior: smooth` 提示已通过 `<html data-scroll-behavior="smooth">` 对齐；Remotion license warning 不做技术静默，保留为内测发布前检查项，待确认授权/使用边界后再决定是否 acknowledgement。
 
 ### 机制化关闭
 

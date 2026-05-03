@@ -35,8 +35,10 @@
 负责：
 
 - `POST /api/reading` 的 request parsing
+- `POST /api/encyclopedia/query` 的 request parsing
 - 内测 Supabase 登录、邮箱白名单与 admin 角色校验
 - reading 调用前的邮箱/IP/每日 LLM 成本配额检查
+- encyclopedia query 调用前的邮箱/IP/每日 LLM 成本配额检查
 - 输入 schema 校验
 - `draw_source` 兼容解析
 - 错误映射
@@ -83,6 +85,21 @@ P2 memory / persistence 边界：
 8. safety review
 9. completed reading 的 `session_capsule` 生成，并通过统一 schema 校验后返回
 
+### Encyclopedia Agent Service 层
+
+负责：
+
+- 从 `knowledge/wiki` 读取牌义、概念与牌阵页面
+- 解析 wiki frontmatter、来源 ID 与二级标题内容
+- 根据用户问题与当前选中 `cardId` 做确定性检索
+- 将 top sources 注入 OpenAI-compatible LLM，生成带来源的百科回答
+- 对第三方读心、重大现实决策、健康、法律、财务与操控倾向问题加入百科边界提醒
+- 返回独立的 `EncyclopediaQueryResponse`
+
+当前落地：`apps/web/src/server/encyclopedia/` 与 `POST /api/encyclopedia/query`。
+
+边界：百科 Agent 只解释“牌 / 概念 / 牌阵是什么意思”，不抽牌、不生成 `StructuredReading`、不写入 history 或 memory，也不把 `knowledge/wiki` 直接注入 reading provider。它可以使用同一 OpenAI-compatible LLM baseline，但必须保持与 `/api/reading` 主链隔离。
+
 ### Provider 层
 
 负责：
@@ -100,6 +117,7 @@ P2 memory / persistence 边界：
 - `beta_testers` 是 tester / admin 白名单真相源
 - `usage_counters` 通过 Supabase RPC 原子消费邮箱日限、IP 分钟限、IP 日限与每日 LLM 成本预算
 - `reading_events` 记录请求量、用户数、phase、成功/失败、耗时、token 与成本
+- `encyclopedia_events` 记录百科问答请求量、来源数、成功/失败、耗时、token 与成本
 - `reading_feedback` 记录 completed reading 的轻量质量反馈
 - `/admin` 与 `/api/admin/*` 只允许 `role = admin`
 - `role = admin` 账号用于维护和压力测试，跳过 reading quota 与每日 LLM 预算预消费；它不跳过登录、白名单、admin 鉴权或 telemetry
