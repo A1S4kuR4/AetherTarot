@@ -1,0 +1,62 @@
+# Graphify extraction exclusions for AetherTarot.
+# Keep the graph focused on source, docs, prompts, schema, tests, and product contracts.
+
+# VCS / local agent metadata
+.git/
+.codex/
+.tasks/
+.obsidian/
+.vercel/
+
+# Dependencies
+node_modules/
+apps/web/node_modules/
+prototype/node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs and caches
+.next/
+apps/web/.next/
+out/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+apps/web/playwright-report/
+apps/web/test-results/
+*.tsbuildinfo
+
+# Graphify generated output
+graphify-out/
+
+# Logs and local environment
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+.env.*.local
+apps/web/.env.local
+
+# Large binary / visual assets
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+*.pdf
+
+# Runtime card image folders
+apps/web/public/cards/
+apps/web/public/cardsV2/
+
+# Lockfiles are useful for installs, but noisy for architecture navigation
+package-lock.json
