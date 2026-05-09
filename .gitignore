@@ -51,5 +51,10 @@ prototype/dist/
 memory/*-health-report-*.md
 memory/knowledge-ingest-backlog.md
 
+# Copyright-sensitive source materials
+knowledge/raw/*
+!knowledge/raw/
+!knowledge/raw/README.md
+
 # Graphify local navigation outputs
 graphify-out/
