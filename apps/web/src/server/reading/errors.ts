@@ -1,4 +1,5 @@
 import type { ReadingErrorCode } from "@aethertarot/shared-types";
+import type { ReadingRunTrace } from "@/server/reading/trace";
 
 export class ReadingServiceError extends Error {
   code: ReadingErrorCode;
@@ -6,6 +7,7 @@ export class ReadingServiceError extends Error {
   intercept_reason?: string;
   referral_links?: string[];
   details?: Record<string, unknown>;
+  diagnosticTrace?: ReadingRunTrace;
 
   constructor(
     code: ReadingErrorCode,

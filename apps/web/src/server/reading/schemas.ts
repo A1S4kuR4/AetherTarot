@@ -82,6 +82,7 @@ export const readingRequestPayloadSchema = z
     drawnCards: z
       .array(readingRequestCardInputSchema)
       .min(1, "drawnCards 至少需要包含一张牌。"),
+    thread_id: z.string().trim().min(1, "thread_id 不能为空。").optional(),
     agent_profile: agentProfileSchema.default("standard"),
     phase: readingPhaseSchema.default("initial"),
     draw_source: drawSourceSchema.default("digital_random"),

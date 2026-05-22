@@ -34,6 +34,8 @@ function buildHydratedContext(): HydratedReadingContext {
     questionType: "career",
     agentProfile: payload.agent_profile ?? "standard",
     spread,
+    priorSessionCapsule: null,
+    knowledgeGrounding: { status: "none", chunks: [] },
     drawnCards: payload.drawnCards.map((item) => {
       const card = findCardById(item.cardId);
 
