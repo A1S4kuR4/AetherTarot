@@ -34,12 +34,15 @@
 2. `docs/30-agent/output-schema.md`
 3. `docs/30-agent/reading-flow.md`
 4. `docs/30-agent/langgraph-reading-workflow.md`
-5. `docs/40-architecture/architecture.md`
-6. `docs/30-agent/provider-prompt-contract.md`
-7. `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`
-8. `docs/30-agent/memory-persistence-roadmap.md`
-9. `docs/30-agent/thread-session-rfc.md`
-10. `docs/00-overview/repo-local-skills.md`
+5. `docs/30-agent/reading-agent-core.md`
+6. `docs/30-agent/reading-tools.md`
+7. `docs/30-agent/reading-agent-tracing.md`
+8. `docs/40-architecture/architecture.md`
+9. `docs/30-agent/provider-prompt-contract.md`
+10. `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`
+11. `docs/30-agent/memory-persistence-roadmap.md`
+12. `docs/30-agent/thread-session-rfc.md`
+13. `docs/00-overview/repo-local-skills.md`
 
 ### 面向 UI / 前端 / 体验开发
 

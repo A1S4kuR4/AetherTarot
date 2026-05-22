@@ -7,6 +7,7 @@
     "build": "node ./scripts/run-next.cjs build",
     "start": "node ./scripts/run-next.cjs start",
     "lint": "eslint",
+    "eval:reading": "vite-node --config vitest.config.ts src/server/reading/evals/runner.ts",
     "test:contract": "vitest run",
     "test:llm": "vitest run --config vitest.llm.config.ts",
     "test:e2e": "playwright test"

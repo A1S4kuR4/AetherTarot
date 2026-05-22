@@ -64,26 +64,31 @@
 
 当前落地：`apps/web/src/server/reading/`
 
-当前实现：`generateStructuredReading()` 保持 service 入口不变，内部委托最小 LangGraph。图节点只承载现有流水线的阶段拆分，不改变 `/api/reading` 的单入口 contract，也不引入 checkpoint、streaming、interrupt 或外部 LLM。
+当前实现：`generateStructuredReading()` 保持 service 入口不变，内部委托最小 LangGraph。P1 起，图节点在 provider draft 生成前加入 `reading_agent_core`，用 closed action set 和条件边实现最小受控 agent loop；它不改变 `/api/reading` 的单入口 contract，也不引入 checkpoint、streaming、interrupt 或多 Agent。P2 起，`retrieve_knowledge` 不再直接调用局部函数，而是通过 Reading Tool Registry + Tool Executor 执行正式注册工具，并写入内部 `tool_calls[]` audit。P6 起，`get_session_memory` / `write_session_memory` 也通过同一 registry/executor 读写同一 `thread_id` 下的结构化短期 memory。
 
 P2 memory / persistence 边界：
 
-- Reading Service 当前只消费 request 侧显式传入的 `prior_session_capsule`，不主动读取服务端 history、thread checkpoint 或 user memory。
+- Reading Service 可在 request 提供 `thread_id` 时读写 P6 thread-level `SessionMemory`；该 memory 仅为当前 thread 的短期结构化摘要，不是 user memory。
+- Reading Service 仍只消费 request 侧显式传入的 `prior_session_capsule`，不主动读取服务端 completed history、thread checkpoint 或 user profile。
 - `prior_session_capsule` 必须先经过服务层净化，才能进入 provider context。
 - completed `session_capsule` 是输出协议字段，不是 thread/session/user identity。
-- 服务端 history persistence、thread/session persistence、长期画像与 memory merge 仍未实现；后续开启时必须先明确 identity、读写规则、清理规则与测试边界。
+- 服务端 history persistence、数据库型 thread/session persistence、长期画像与 long-term memory merge 仍未实现；后续开启时必须先明确 identity、读写规则、清理规则与测试边界。
 
-固定流水线当前由 9 个 LangGraph 业务节点承载；schema validation 是分布在组装、安全复核与 capsule 附着节点中的协议守卫，不是独立 graph 节点：
+主链当前由 LangGraph 业务节点承载；schema validation 是分布在组装、安全复核与 capsule 附着节点中的协议守卫，不是独立 graph 节点：
 
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
 3. final 阶段一致性验证（仅 `phase = final`）
-4. 意图摩擦分析（可能直接抛出 403 Hard Stop）
-5. provider.generateInitialRead 或 provider.generateFinalRead
-6. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile）
-7. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
-8. safety review
-9. completed reading 的 `session_capsule` 生成，并通过统一 schema 校验后返回
+4. 意图摩擦分析（标记 pass / sober_check / hard_stop；hard_stop 由 agent `safety_stop` 路由抛出 403）
+5. `agent_decider` 选择 `retrieve_knowledge`、`request_clarification`、`safety_stop` 或 `final_answer`
+6. `retrieve_knowledge` 通过 Tool Executor 调用 `retrieve_tarot_knowledge`，写入 observation 与 `tool_calls[]` 后回到 `agent_decider`；同一 thread 追问可走 `get_session_memory` 工具节点并回到 `agent_decider`；`request_clarification` 与 `safety_stop` early exit；`final_answer` 进入 provider
+7. provider.generateInitialRead 或 provider.generateFinalRead
+8. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile）
+9. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
+10. safety review
+11. completed reading 的 `session_capsule` 生成；若 request 带有 `thread_id`，通过 `write_session_memory` 写入本 thread 的短期结构化 memory；最后通过统一 schema 校验后返回
+
+P1 / P2 / P6 agent core 的内部 state 包含 `agent_step_count`、`max_agent_steps`、`agent_actions[]`、`observations[]`、`tool_calls[]`、`pending_clarification`、`grounding_status` 与可选 `sessionMemory`。这些字段当前用于执行态、工具审计与测试诊断，不进入公开 `StructuredReading` 成功协议。P4 起，diagnostics 会从这些既有字段组装 `ReadingRunTrace`，记录 agent steps、tool calls、retrieval sources 与 final answer grounding；P6 memory tool call 也进入 trace 的 `tool_calls[]` 与 memory action summary。trace 仍只属于内部 diagnostics，不进入公开用户响应协议，也尚未持久化入库。
 
 ### Encyclopedia Agent Service 层
 
@@ -179,17 +184,18 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 2. 前端完成线上随机抽牌，或按牌阵位置录入线下实体牌与正逆位
 3. 前端提交 `question + spreadId + drawnCards + draw_source + agent_profile + phase + prior_session_capsule?`
 4. Route 进行内测访问控制、基础 schema 校验与 quota 预消费；未登录、非白名单、普通 tester 访问 admin 或超限时直接返回结构化错误，不进入 provider
-5. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、provider draft、结构化组装、安全复核与最终 schema 校验
+5. Service 委托最小 LangGraph，图节点依次执行分类、权威上下文组装、final 验证、意图摩擦分析、受控 agent decider / tool executor loop、provider draft、结构化组装、安全复核、thread memory 写入与最终 schema 校验
    当前 graph 会在 provider draft 之后先执行一层 contract validation，防止 provider 越权改牌、乱序输出或返回不符合 phase/profile 的 follow-up 数量。
 6. 若意图摩擦遇生死危机、紧急健康或操控类请求，图节点抛出 `ReadingServiceError(403 safety_intercept)` 并直接断开生成链路
 7. 若遇重大决策依赖，记录降级状态，返回 `200` reading，并写入 `sober_check` 与 `presentation_mode = sober_anchor`
-8. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它会先在服务层移除 `用户补充` 类原始细节以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容，再作为低优先级 continuity context 注入 provider
+8. Provider 生成 initial 或 final 结构化 draft；若存在 `prior_session_capsule`，它会先在服务层移除 `用户补充` 类原始细节以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容，再作为低优先级 continuity context 注入 provider；若本轮通过 `get_session_memory` 读取到同 thread 短期 memory，也只作为低优先级追问背景注入 provider
 9. Safety review 补充常规 `safety_note`，并收窄 guidance / follow-up
 10. 只有 completed reading 会生成 `session_capsule`；`standard / sober initial` 继续固定为 `null`，且 completed capsule 会被模板化压缩为“问题 / 牌阵 / 核心主题 / 延续主轴 / 边界提醒”
-11. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
-12. Route 记录 reading event；LLM provider 返回 usage 时按 usage 估算成本，缺失 usage 时按字符粗估 token
-13. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
-14. completed reading 展示轻量反馈入口，写入 `reading_feedback` 供 `/admin` 汇总
+11. 若 request 带有 `thread_id`，成功 reading 会通过 `write_session_memory` 写入结构化 thread memory；clarification、safety_stop 与生成失败不写入完整 memory
+12. 结果通过统一 schema 校验后返回前端 (`HTTP 200`)
+13. Route 记录 reading event；LLM provider 返回 usage 时按 usage 估算成本，缺失 usage 时按字符粗估 token
+14. 前端对 `requires_followup = true` 的 initial reading 展示追问，不写入 history；final reading 或 Lite completed reading 写入 localStorage history，并可被显式选作下一轮的 continuity source
+15. completed reading 展示轻量反馈入口，写入 `reading_feedback` 供 `/admin` 汇总
 
 ---
 
@@ -206,6 +212,7 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - `reading_id` 只标识一次 reading artifact，不可复用为 `thread_id`、`session_id` 或 `user_id`
 - localStorage history 是本地 replay cache，不是 canonical memory store
 - `session_capsule` 是 completed reading 的低优先级 continuity summary，不是长期画像或 thread checkpoint
+- P6 `SessionMemory` 是同一 `thread_id` 内的短期结构化摘要；它不是长期画像、数据库存储或跨 session personalization
 - 线下塔罗模式不得新建第二套解读链路；它只能作为 `drawnCards[]` 输入来源进入同一 `POST /api/reading` contract
 - 新增 provider、扩展 LangGraph 节点或引入更复杂 graph 能力时，应复用现有 service 边界，而不是从 route 重新起一套流程
 - `/api/reading` 在第一轮内测期间必须要求 Supabase 登录与 `beta_testers` 白名单；Cloudflare Access 只能作为站点门禁，不能替代应用内 quota
@@ -220,6 +227,7 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - [x] session capsule、completed reading、future thread/session 与长期记忆边界设计（见 `docs/80-decisions/adr/0004-memory-and-persistence-boundaries.md`）
 - [x] memory persistence roadmap 与测试矩阵（见 `docs/30-agent/memory-persistence-roadmap.md`）
 - [x] P2.2 Thread / Session RFC 草案（见 `docs/30-agent/thread-session-rfc.md`）
+- [x] P6 thread-level memory（见 `docs/30-agent/reading-thread-memory.md`）
 - [ ] 服务端持久化与长期记忆实现方案
 - [x] 第一轮内测访问控制、quota 与最小观测（见 `apps/web/supabase/migrations/202604270001_beta_ops.sql` 与 `docs/70-ops/dev-setup.md`）
 - [ ] 告警设计

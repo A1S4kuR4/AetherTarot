@@ -13,10 +13,10 @@
 
 ## 2. 一句话说明
 
-AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
+AetherTarot 当前使用的是一个 **带受控 agent loop 的最小 LangGraph reading graph**：
 
 - 它不负责“创造新的业务逻辑”
-- 它负责把现有 reading pipeline 显式拆成图节点
+- 它负责把现有 reading pipeline 显式拆成图节点，并在 provider 前加入 closed action set 的最小 agent core
 - 它始终收敛回同一个 `StructuredReading` 输出协议
 
 换句话说，LangGraph 在这里的作用更像是：
@@ -24,7 +24,7 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 - 一个可维护的编排层
 - 一个把安全、上下文、生成、校验拆开的执行骨架
 
-而不是一个任意扩展的聊天代理框架。
+而不是一个任意扩展的聊天代理框架。P1 agent core 只允许 `retrieve_knowledge`、`request_clarification`、`safety_stop` 与 `final_answer` 四种动作，并用 `max_agent_steps = 3` 防止循环失控。
 
 ---
 
@@ -37,14 +37,16 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 3. 先做一次安全判断：
    - 如果问题触发生死危机、紧急健康、操控跟踪等高风险内容，系统直接停止，不生成塔罗。
    - 如果问题涉及离婚、辞职、诉讼、大额投资等重大现实决策，系统不会直接阻断，但会先加入更强的“现实校验”提醒。
-4. 只有在前面通过后，才会调用 provider 生成结构化解读草稿。
-5. 草稿不会直接返回，而是还会经过：
+4. 只有在前面通过后，reading agent core 会先判断是否需要澄清、是否需要最小知识工具、是否安全停止，或是否进入最终解读。
+5. 如果触发 `retrieve_knowledge`，当前通过 Tool Executor 调用 registry 中的 `retrieve_tarot_knowledge`，记录 observation 与 `tool_calls[]` 后再判断下一步；P3 起它会从 `knowledge/wiki` 返回真实检索 chunk，但仍不是 embedding RAG。
+6. 当 agent 选择 `final_answer` 后，才会调用 provider 生成结构化解读草稿。
+7. 草稿不会直接返回，而是还会经过：
    - 卡牌身份与顺序校验
    - 跟进问题数量校验
    - 后置安全复核
    - 最终 schema 校验
-6. 最后才返回给前端展示。
-7. 前端再根据 payload 决定是否先进入 `sober_check` 摩擦、是否展示 follow-up 输入区、以及是否把 completed reading 写入 history 或挂为 continuity source。
+8. 最后才返回给前端展示。
+9. 前端再根据 payload 决定是否先进入 `sober_check` 摩擦、是否展示 follow-up 输入区、以及是否把 completed reading 写入 history 或挂为 continuity source。
 
 这意味着：
 
@@ -66,7 +68,7 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 
 - 只有一个 reading graph，不存在第二套并行 workflow
 - 仍由 `generateStructuredReading()` 作为 service 统一入口
-- 当前不引入 checkpoint、streaming、interrupt、router graph 或 human-in-the-loop
+- 当前不引入 checkpoint、streaming、interrupt、router graph、多 Agent 或 human-in-the-loop
 - 当前不在 graph 内持久化 session，也不在服务端保存 reading memory
 - 当前已接入本地线程级 continuity：请求可显式携带 `prior_session_capsule`，completed reading 可产出 `session_capsule`
 - graph 负责返回统一 `StructuredReading`；前台如何阻断、分层展示与写入本地 history 仍属于 Web frontend 职责
@@ -91,6 +93,13 @@ AetherTarot 当前使用的是一个 **最小 LangGraph reading graph**：
 | `spread` | 权威牌阵快照 | `hydrate_context` |
 | `drawnCards` | 已按位置顺序还原的权威抽牌结果 | `hydrate_context` |
 | `frictionResult` | `pass / sober_check / hard_stop` | `analyze_intent_friction` |
+| `agentStepCount` | 当前 agent 决策步数 | `agent_decider` |
+| `maxAgentSteps` | agent loop 上限，默认 3 | graph invoke 开始时 |
+| `agentActions` | agent action trace | `agent_decider` / `retrieve_knowledge` |
+| `observations` | tool observation trace | `retrieve_knowledge` |
+| `toolCalls` | 标准化 tool call audit entries | `retrieve_knowledge` |
+| `pendingClarification` | 澄清问题与原因 | `agent_decider` |
+| `groundingStatus` | `none / retrieved` | `retrieve_knowledge` |
 | `draft` | provider 返回的 reading draft | `generate_draft` |
 | `reading` | 最终 `StructuredReading` | `build_structured_reading` 与 `apply_safety_review` |
 
@@ -109,13 +118,17 @@ flowchart TD
     B --> C["hydrate_context<br/>还原权威牌阵与抽牌上下文"]
     C --> D["validate_final_phase<br/>仅 final 阶段执行一致性校验"]
     D --> E["analyze_intent_friction<br/>安全前置判断"]
-    E -->|hard_stop| X["403 safety_intercept<br/>直接中断，不生成 reading"]
-    E -->|pass / sober_check| F["generate_draft<br/>调用 provider"]
-    F --> G["validate_draft_contract<br/>校验卡牌 identity / 顺序 / 追问数量"]
-    G --> H["build_structured_reading<br/>组装 StructuredReading"]
-    H --> I["apply_safety_review<br/>补 safety_note 并收窄 guidance"]
-    I --> J["attach_session_capsule<br/>仅 completed reading 生成 capsule"]
-    J --> K["END<br/>返回统一 reading schema"]
+    E --> F["agent_decider<br/>选择 closed action"]
+    F -->|retrieve_knowledge| T["retrieve_knowledge<br/>Tool Executor + audit"]
+    T --> F
+    F -->|request_clarification| Q["400 clarification<br/>返回澄清问题，不生成 reading"]
+    F -->|safety_stop| X["403 safety_intercept<br/>直接中断，不生成 reading"]
+    F -->|final_answer| G["generate_draft<br/>调用 provider"]
+    G --> H["validate_draft_contract<br/>校验卡牌 identity / 顺序 / 追问数量"]
+    H --> I["build_structured_reading<br/>组装 StructuredReading"]
+    I --> J["apply_safety_review<br/>补 safety_note 并收窄 guidance"]
+    J --> K["attach_session_capsule<br/>仅 completed reading 生成 capsule"]
+    K --> L["END<br/>返回统一 reading schema"]
 ```
 
 ---
@@ -128,6 +141,7 @@ sequenceDiagram
     participant FE as Web Frontend
     participant API as POST /api/reading
     participant G as LangGraph
+    participant A as Reading Agent Core
     participant P as Provider
     participant S as Safety Layer
 
@@ -139,10 +153,34 @@ sequenceDiagram
     G->>S: analyzeIntentFriction(question)
     alt Tier 1 Hard Stop
         S-->>G: hard_stop
+        G->>A: agent_decider(state)
+        A-->>G: safety_stop
         G-->>API: 403 safety_intercept
         API-->>FE: 中断生成，展示安全分流
+    else Need Clarification
+        S-->>G: pass
+        G->>A: agent_decider(state)
+        A-->>G: request_clarification
+        G-->>API: 400 invalid_request + pending_clarification
+        API-->>FE: 展示澄清问题
+    else Retrieve Knowledge
+        S-->>G: pass or sober_check
+        G->>A: agent_decider(state)
+        A->>A: retrieve_knowledge Tool Executor + audit
+        A-->>G: final_answer
+        G->>P: generateInitialRead / generateFinalRead
+        P-->>G: structured draft
+        G->>G: validate_draft_contract
+        G->>G: build_structured_reading
+        G->>S: applySafetyReview(reading)
+        S-->>G: reviewed reading
+        G->>G: attach_session_capsule (completed only)
+        G-->>API: StructuredReading
+        API-->>FE: 200 OK
     else Pass / Tier 2 Sober Check
         S-->>G: pass or sober_check
+        G->>A: agent_decider(state)
+        A-->>G: final_answer
         G->>P: generateInitialRead / generateFinalRead
         P-->>G: structured draft
         G->>G: validate_draft_contract
@@ -244,7 +282,7 @@ sequenceDiagram
 
 结果：
 
-- 直接抛出 `403 safety_intercept`
+- 由 `agent_decider` 路由到 `safety_stop`，再抛出 `403 safety_intercept`
 - 不会进入模型生成
 
 `sober_check` 当前会标记：
@@ -260,7 +298,47 @@ sequenceDiagram
 - 同时把 `presentation_mode` 设为 `sober_anchor`
 - graph 只负责把这些字段写入 payload；真正的“先写现实顾虑再看内容”交互由前端执行
 
-### 8.5 `generate_draft`
+### 8.5 `agent_decider`
+
+这是 P1 新增的最小 agent core 入口。
+
+职责：
+
+- 基于当前 question、question type、牌阵、抽牌、intent friction 与 agent state 选择下一步动作。
+- 只允许返回 `retrieve_knowledge`、`request_clarification`、`safety_stop` 或 `final_answer`。
+- 每次 action 写入 `agentActions[]`，并推进 `agentStepCount`。
+- 当 step 达到 `maxAgentSteps` 时，不再继续工具循环，优雅降级到 `final_answer`。
+
+当前默认 decider 是规则实现，并保留 `AGENT_DECIDER_PROMPT` 作为未来 LLM decider 的 prompt contract。这个取舍是为了在 P1 先稳定 graph 行为，不在同一阶段新增第二个外部 LLM 调用面。
+
+### 8.6 `retrieve_knowledge`
+
+这是 P1 新增的最小 tool node，并在 P2 改为通过统一 Tool Executor 调用。
+
+当前工具名为 `retrieve_tarot_knowledge`，在 registry 中注册为 `public / low`，返回本地知识库检索结果：
+
+- `chunks[]` 来自 `knowledge/wiki` markdown 切分后的 source-attributed chunk
+- `groundingStatus = "retrieved" | "none"`
+
+它证明 reading graph 已经能使用本地知识 grounding，但不代表 embedding RAG 已接入。若本轮没有找到可靠 chunk，最终输出必须降级，不得伪装为“根据知识库”。
+
+P2 还新增了 `draw_cards_server_side`，作为可通过 registry + executor 调用的服务端抽卡工具。它当前不替换前端抽卡流程，只作为后续 Agent tool 接入点。
+
+### 8.7 `request_clarification`
+
+当问题过于宽泛，agent 会进入澄清路径，不调用 provider 生成完整 reading。
+
+当前返回 `400 invalid_request`，并在 error details 中包含：
+
+- `agent_action = "request_clarification"`
+- `pending_clarification.question`
+- `pending_clarification.reason`
+
+### 8.8 `safety_stop`
+
+当 intent friction 标记 hard stop，或 agent action 进入 `safety_stop`，graph 会抛出既有 `403 safety_intercept`，保持“不生成普通塔罗解读”的安全边界。
+
+### 8.9 `generate_draft`
 
 这是 graph 中唯一真正调用 provider 的节点。
 
@@ -277,7 +355,7 @@ sequenceDiagram
 - provider 不直接返回最终 API payload
 - provider 也不决定前台是否先展示 `sober_check`、是否写入 history、或是否把某条 reading 当作 continuity source
 
-### 8.6 `validate_draft_contract`
+### 8.10 `validate_draft_contract`
 
 这是 provider 之后、正式组装结果之前的一道硬校验。
 
@@ -305,7 +383,7 @@ sequenceDiagram
 - 即使模型想“擅自重排卡牌”也不行
 - 即使 provider 返回了多余的追问也不行
 
-### 8.7 `build_structured_reading`
+### 8.11 `build_structured_reading`
 
 这一节点把 provider draft 组装成正式 `StructuredReading`。
 
@@ -342,7 +420,7 @@ sequenceDiagram
 - `session_capsule` 在这里仍先写为 `null`
 - continuity 相关的真正 capsule 生成延后到 graph 末端，只对 completed reading 生效
 
-### 8.8 `apply_safety_review`
+### 8.12 `apply_safety_review`
 
 这是 **生成后安全层**。
 
@@ -368,7 +446,7 @@ sequenceDiagram
 
 确保安全改写后仍然满足统一输出协议。
 
-### 8.9 `attach_session_capsule`
+### 8.13 `attach_session_capsule`
 
 这是当前本地线程 continuity 的末端节点。
 
@@ -793,7 +871,9 @@ Prompt 约束 -> provider 自行决定前台体验
 - 没有 checkpoint / resume
 - 没有服务端 session memory
 - continuity 仍是本地线程级；还没有服务端 history persistence、thread/session id 或长期画像存储
-- 当前图是线性主链，没有复杂条件分支图
+- 当前图已有 P1 conditional edge 与有限 tool loop，P2 已引入最小 Tool Registry / Executor / Permission / Audit，但还不是完整工具生态
+- 当前 `retrieve_knowledge` 是 keyword / metadata retrieval，不是 embedding RAG
+- 当前 agent tracing 只是 `agentActions[]` / `observations[]` 的内部诊断结构，不是完整 tracing 系统
 
 这不是缺陷掩盖，而是当前架构刻意保持“先把 contract 和边界做稳”。
 

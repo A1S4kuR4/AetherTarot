@@ -4,6 +4,7 @@ import type {
   FollowupAnswer,
   QuestionType,
   Spread,
+  SessionMemory,
   StructuredReading,
 } from "@aethertarot/shared-types";
 
@@ -17,6 +18,21 @@ export type ReadingDraft = Pick<
   | "confidence_note"
 >;
 
+export interface ReadingKnowledgeGroundingChunk {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  source_id: string;
+  score: number;
+  confidence: "low" | "medium" | "high";
+}
+
+export interface ReadingKnowledgeGrounding {
+  status: "retrieved" | "none";
+  chunks: ReadingKnowledgeGroundingChunk[];
+}
+
 export interface HydratedReadingContext {
   question: string;
   questionType: QuestionType;
@@ -24,6 +40,8 @@ export interface HydratedReadingContext {
   spread: Spread;
   drawnCards: DrawnCard[];
   priorSessionCapsule: string | null;
+  sessionMemory: SessionMemory | null;
+  knowledgeGrounding: ReadingKnowledgeGrounding;
 }
 
 export interface FinalReadingContext extends HydratedReadingContext {

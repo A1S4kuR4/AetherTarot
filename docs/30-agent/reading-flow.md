@@ -25,7 +25,7 @@
 
 3. `initial_read`
    - 前端调用 `POST /api/reading`，提交 `phase = initial`。
-   - 后端完成问题分类、canonical context、intent friction、provider 初读生成、安全复核与 schema validate。
+   - 后端完成问题分类、canonical context、intent friction、P1 reading agent core 决策、P2 tool executor 调用、provider 初读生成、安全复核与 schema validate。
    - 返回 `reading_phase = initial`。
    - `standard / sober` 的 initial reading 固定 `session_capsule = null`。
    - 若命中 Tier 2 决策外包摩擦，payload 会同时带回 `sober_check` 与 `presentation_mode = sober_anchor`。
@@ -64,6 +64,8 @@
 - `runReadingGraph()` 仍是 reading backend 唯一编排入口。
 - Route 只做 request parse、schema validation 与 HTTP error mapping。
 - Safety friction 必须在 provider 前执行；post-generation safety review 必须独立执行。
+- P1 reading agent core 只允许 closed action set：`retrieve_knowledge`、`request_clarification`、`safety_stop`、`final_answer`；`max_agent_steps` 默认限制为 3。
+- P2 reading tools 通过 registry + executor 执行；P3 起 `retrieve_knowledge` 调用真实 `retrieve_tarot_knowledge` 本地知识检索，并写入内部 `tool_calls[]` audit。
 - 快速解读只是前台路径缩短，不改变 `/api/reading` contract、safety layer、provider draft contract 或 completed history 规则。
 - `prior_session_capsule` 只作为低优先级 continuity context，不得覆盖当前问题、当前牌阵与当前抽牌。
 - `session_capsule` 不再固定为 `null`；它只在 completed reading 产出，未完成中间态保持 `null`。

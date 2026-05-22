@@ -27,7 +27,7 @@
 | 当前任务状态 | 服务本轮 reading | request payload + graph state | 不允许被历史或记忆覆盖 |
 | 本地 completed history | 回放用户已完成 reading | `ReadingHistoryEntry[]` in localStorage | 不允许当作 canonical user memory |
 | `session_capsule` | 把一条 completed reading 的紧凑摘要显式带入下一轮 | `StructuredReading.session_capsule: string | null` | 不允许保存原始 transcript 或高风险细节 |
-| future thread/session | 未来恢复一条 reading thread 或会话 | 暂未实现 | 不允许和 user id 混用 |
+| thread-level memory | 同一 reading thread 内的结构化短期记忆 | P6 in-memory `SessionMemoryStore`，通过 memory tools 读写 | 不允许跨用户、跨 thread 或升级为长期画像 |
 | future long-term memory | 未来保存稳定偏好与反复主题 | 暂未实现 | 不允许默认写入危机细节、短期情绪或未验证第三方信息 |
 
 当前优先级固定为：当前问题、当前牌阵、当前抽牌与安全边界高于任何历史或记忆。
@@ -68,6 +68,7 @@
 
 - 本地 history replay 继续保存完整 `ReadingHistoryEntry`
 - `/new` 的重复主题提醒只读取本地 completed history 中最近若干条记录的 `question_type`、原问题与 themes，用于前台非阻断提醒；它不把 history 注入 `POST /api/reading`，不触发 `session_capsule` merge，也不等同于长期记忆读取
+- P6 `SessionMemory` 只在同一 `thread_id` 内保存结构化短期摘要：topics、cards、constraints、open questions 与 last advice summary；它不保存完整用户原文，也不参与跨 session personalization
 - `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
 - `prior_session_capsule` 在进入 provider 前会先做安全净化：移除 `用户补充` 类原始细节，以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容
 - 若净化后只剩噪音或空壳，`prior_session_capsule` 会在服务层降为 `null`
@@ -189,6 +190,7 @@ P2 设计边界：
 - [x] P2 memory persistence roadmap 与测试矩阵（见 `docs/30-agent/memory-persistence-roadmap.md`）
 - [x] P2.1 capsule contract hardening（当前 `string | null` capsule 基线）
 - [x] P2.2 Thread / Session RFC 草案（见 `docs/30-agent/thread-session-rfc.md`）
+- [x] P6 thread-level structured short-term memory（见 `docs/30-agent/reading-thread-memory.md`）
 - [ ] 长期画像 schema
 - [ ] memory merge 冲突规则
 - [ ] 多轮追问时的上下文裁剪规则

@@ -62,12 +62,30 @@ export interface ReadingRequestPayload {
   question: string;
   spreadId: string;
   drawnCards: ReadingRequestCardInput[];
+  thread_id?: string;
   agent_profile?: AgentProfile;
   phase?: ReadingPhase;
   draw_source?: DrawSource;
   prior_session_capsule?: string | null;
   initial_reading?: StructuredReading;
   followup_answers?: FollowupAnswer[];
+}
+
+export interface SessionMemoryCard {
+  id: string;
+  name?: string;
+  orientation?: CardOrientation;
+}
+
+export interface SessionMemory {
+  thread_id: string;
+  summary?: string;
+  topics: string[];
+  cards: SessionMemoryCard[];
+  stated_constraints: string[];
+  open_questions: string[];
+  last_advice_summary?: string;
+  updated_at: string;
 }
 
 export interface ReadingCardResult {

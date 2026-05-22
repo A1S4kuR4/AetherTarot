@@ -27,6 +27,7 @@
 {
   "question": "string",
   "spreadId": "string",
+  "thread_id": "string | undefined",
   "drawnCards": [
     {
       "positionId": "string",
@@ -48,7 +49,7 @@
 }
 ```
 
-`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。`prior_session_capsule` 为显式 opt-in 的上一轮摘要，只作为低优先级 continuity context。
+`phase = initial` 时，`initial_reading` 与 `followup_answers` 不需要提交。`phase = final` 时，两者都必须提交，且 `initial_reading` 必须来自同一牌阵、同一抽牌与同一 `agent_profile`。`prior_session_capsule` 为显式 opt-in 的上一轮摘要，只作为低优先级 continuity context。`thread_id` 可选；提供时仅用于 P6 同一 reading thread 内的短期 `SessionMemory` 读写，不进入成功 response shape，也不代表 user id 或长期画像。
 
 `draw_source` 表示本轮牌面来源，当前支持：
 
@@ -300,6 +301,7 @@ P2 边界补充：
 - provider 当前需要在 `synthesis` 或 `reflective_guidance` 中保留至少一个建设性阻力观察。该观察仍写入既有字段，不新增 `counterpoint` / `tension` 等协议字段
 - `sober_check` 与 `safety_note` 都属于产品协议的一部分，不能降级为可随意忽略的视觉装饰
 - P2 memory boundary 不新增 `thread_id`、`session_id`、`user_id`、`memory_profile` 或 `memory_merge` 字段；未来若引入这些身份字段，必须先通过 ADR 或独立协议设计确定读写与删除边界
+- P6 例外引入 request-side `thread_id`，但仅作为当前 reading thread 的短期 memory key；它不进入 `StructuredReading` response，不等同于 `session_id` / `user_id`，也不启用长期 memory merge
 
 ---
 
