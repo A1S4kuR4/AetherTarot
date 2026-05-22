@@ -5,8 +5,8 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function KnowledgeSection() {
   return (
-    <section className="scroll-snap-section bg-paper-raised/50 px-6 py-24">
-      <div className="w-full max-w-5xl space-y-20">
+    <section className="flex h-full w-full items-center justify-center bg-paper-raised/50 px-6 py-10">
+      <div className="w-full max-w-5xl space-y-14">
         <header className="text-center">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">
             象征：灵魂的 78 个切面
@@ -14,7 +14,7 @@ export default function KnowledgeSection() {
           <div className="mx-auto mt-4 h-px w-24 bg-terracotta/30" />
         </header>
 
-        <div className="grid gap-12 md:grid-cols-2">
+        <div className="grid gap-8 md:grid-cols-2">
           {/* Major Arcana */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

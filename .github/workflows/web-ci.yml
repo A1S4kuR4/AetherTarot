@@ -47,6 +47,9 @@ jobs:
         run: npm run validate:assets
         working-directory: .
 
+      - name: Contract tests
+        run: npm run test:contract
+
       - name: Lint
         run: npm run lint
 

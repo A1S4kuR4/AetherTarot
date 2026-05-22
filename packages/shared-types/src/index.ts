@@ -62,12 +62,30 @@ export interface ReadingRequestPayload {
   question: string;
   spreadId: string;
   drawnCards: ReadingRequestCardInput[];
+  thread_id?: string;
   agent_profile?: AgentProfile;
   phase?: ReadingPhase;
   draw_source?: DrawSource;
   prior_session_capsule?: string | null;
   initial_reading?: StructuredReading;
   followup_answers?: FollowupAnswer[];
+}
+
+export interface SessionMemoryCard {
+  id: string;
+  name?: string;
+  orientation?: CardOrientation;
+}
+
+export interface SessionMemory {
+  thread_id: string;
+  summary?: string;
+  topics: string[];
+  cards: SessionMemoryCard[];
+  stated_constraints: string[];
+  open_questions: string[];
+  last_advice_summary?: string;
+  updated_at: string;
 }
 
 export interface ReadingCardResult {
@@ -134,4 +152,28 @@ export interface ReadingErrorPayload {
     intercept_reason?: string;
     referral_links?: string[];
   };
+}
+
+export type EncyclopediaSourceType = "card" | "concept" | "spread";
+
+export interface EncyclopediaQueryRequest {
+  query: string;
+  cardId?: string;
+}
+
+export interface EncyclopediaSource {
+  title: string;
+  path: string;
+  type: EncyclopediaSourceType;
+  source_ids: string[];
+  excerpt: string;
+}
+
+export interface EncyclopediaQueryResponse {
+  answer: string;
+  sources: EncyclopediaSource[];
+  related_cards: string[];
+  related_concepts: string[];
+  related_spreads: string[];
+  boundary_note: string | null;
 }

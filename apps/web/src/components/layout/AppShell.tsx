@@ -27,7 +27,7 @@ export default function AppShell({
         <Topbar isMidnight={isMidnight} />
         <Sidebar />
 
-        <main className="min-h-screen pt-16">
+        <main className="pt-16">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

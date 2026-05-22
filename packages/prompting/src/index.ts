@@ -3,6 +3,7 @@ import type {
   DrawnCard,
   FollowupAnswer,
   QuestionType,
+  SessionMemory,
   Spread,
   StructuredReading,
 } from "@aethertarot/shared-types";
@@ -87,6 +88,23 @@ export interface ReadingPrompt {
   user: string;
 }
 
+interface KnowledgeGroundingChunk {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  source_id: string;
+  score: number;
+  confidence: "low" | "medium" | "high";
+}
+
+interface KnowledgeGroundingContext {
+  status: "retrieved" | "none";
+  chunks: KnowledgeGroundingChunk[];
+}
+
+type SessionMemoryContext = SessionMemory | null | undefined;
+
 function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
@@ -141,6 +159,119 @@ function buildPriorSessionCapsuleBridge(priorSessionCapsule: string | null) {
   return "上一轮延续线索会作为低优先级背景保留，但这次仍以你当前的问题、当前牌阵与本轮抽牌为主轴。";
 }
 
+function buildSessionMemoryBridge(sessionMemory: SessionMemoryContext) {
+  if (!sessionMemory) {
+    return null;
+  }
+
+  const topics = sessionMemory.topics.slice(0, 3).join("、");
+  const cards = sessionMemory.cards
+    .slice(0, 3)
+    .map((card) =>
+      `${card.name ?? card.id}${card.orientation === "reversed" ? "逆位" : card.orientation === "upright" ? "正位" : ""}`,
+    )
+    .join("、");
+  const advice = sessionMemory.last_advice_summary
+    ? `上一轮建议可概括为：${sessionMemory.last_advice_summary}`
+    : null;
+
+  return [
+    topics ? `同一 thread 的短期记忆显示，上一轮主题包括 ${topics}。` : null,
+    cards ? `上一轮牌面线索包括 ${cards}。` : null,
+    advice,
+    "这些只能作为本 thread 的延续背景，不能覆盖当前问题、当前牌阵或本轮抽牌。",
+  ].filter(Boolean).join(" ");
+}
+
+function formatSessionMemoryForPrompt(sessionMemory: SessionMemoryContext) {
+  if (!sessionMemory) {
+    return null;
+  }
+
+  return [
+    "Thread session memory (low priority, same thread only):",
+    `- thread_id: ${sessionMemory.thread_id}`,
+    `- summary: ${sessionMemory.summary ?? "none"}`,
+    `- topics: ${sessionMemory.topics.slice(0, 5).join(" | ") || "none"}`,
+    `- cards: ${
+      sessionMemory.cards
+        .slice(0, 5)
+        .map((card) => `${card.name ?? card.id}:${card.orientation ?? "unknown"}`)
+        .join(" | ") || "none"
+    }`,
+    `- stated_constraints: ${sessionMemory.stated_constraints.slice(0, 5).join(" | ") || "none"}`,
+    `- open_questions: ${sessionMemory.open_questions.slice(0, 3).join(" | ") || "none"}`,
+    `- last_advice_summary: ${sessionMemory.last_advice_summary ?? "none"}`,
+    "Use this only to answer follow-ups without asking the user to repeat context. Do not infer long-term profile or cross-session personalization.",
+  ].join("\n");
+}
+
+function formatKnowledgeGroundingForPrompt(
+  knowledgeGrounding: KnowledgeGroundingContext | undefined,
+) {
+  if (!knowledgeGrounding || knowledgeGrounding.status === "none") {
+    return [
+      "Knowledge grounding status: none",
+      "The local AetherTarot knowledge wiki did not return reliable chunks for this retrieval step.",
+      "Do not write phrases such as '根据知识库明确表明' or pretend that a missing source was retrieved.",
+      "You may still use the authority cards, spread positions, and safety/interpretation rules, but preserve uncertainty.",
+    ].join("\n");
+  }
+
+  return [
+    "Knowledge grounding status: retrieved",
+    "Use these local AetherTarot knowledge wiki chunks as the card-meaning grounding. Do not invent additional sources.",
+    ...knowledgeGrounding.chunks.slice(0, 5).map((chunk, index) =>
+      [
+        `Chunk ${index + 1}:`,
+        `- id: ${chunk.id}`,
+        `- title: ${chunk.title}`,
+        `- source: ${chunk.source}`,
+        `- source_id: ${chunk.source_id}`,
+        `- confidence: ${chunk.confidence}`,
+        `- content: ${chunk.content}`,
+      ].join("\n"),
+    ),
+  ].join("\n\n");
+}
+
+function findGroundingChunkForCard(
+  knowledgeGrounding: KnowledgeGroundingContext | undefined,
+  drawnCard: DrawnCard,
+) {
+  if (!knowledgeGrounding || knowledgeGrounding.status !== "retrieved") {
+    return null;
+  }
+
+  const orientation = drawnCard.isReversed ? "逆位" : "正位";
+
+  return knowledgeGrounding.chunks.find(
+    (chunk) =>
+      chunk.title.includes(drawnCard.card.name)
+      && (chunk.title.includes(orientation) || chunk.content.includes(orientation)),
+  ) ?? knowledgeGrounding.chunks.find((chunk) =>
+    chunk.title.includes(drawnCard.card.name),
+  ) ?? null;
+}
+
+function buildGroundingConfidenceNote(
+  knowledgeGrounding: KnowledgeGroundingContext | undefined,
+) {
+  if (!knowledgeGrounding) {
+    return null;
+  }
+
+  if (knowledgeGrounding.status === "retrieved" && knowledgeGrounding.chunks.length > 0) {
+    const sources = uniqueStrings(
+      knowledgeGrounding.chunks.map((chunk) => chunk.source_id),
+    ).join("、");
+
+    return `本轮牌义已参考本地知识库检索片段（source_id: ${sources}）；未出现在片段中的内容不会被包装成知识库结论。`;
+  }
+
+  return "本地知识库没有返回足够可靠的牌义片段；这次解读会降级为基于牌面、牌阵位置与一般反思框架的非断言式整理。";
+}
+
 function getKeywords(drawnCard: DrawnCard) {
   return drawnCard.isReversed
     ? drawnCard.card.reversedKeywords.slice(0, 2)
@@ -151,14 +282,19 @@ function buildCardInterpretation(
   questionType: QuestionType,
   spread: Spread,
   drawnCard: DrawnCard,
+  knowledgeGrounding?: KnowledgeGroundingContext,
 ) {
   const position = spread.positions.find((item) => item.id === drawnCard.positionId);
   const keywords = getKeywords(drawnCard);
   const keywordSummary = keywords.join("、") || "正在成形的线索";
   const orientation = drawnCard.isReversed ? "逆位" : "正位";
   const lens = QUESTION_TYPE_LENSES[questionType];
+  const groundingChunk = findGroundingChunkForCard(knowledgeGrounding, drawnCard);
+  const groundingLine = groundingChunk
+    ? ` 本地知识库片段「${groundingChunk.title}」把这张牌的重点落在：${groundingChunk.content.replace(/\s+/g, " ").slice(0, 120)}。`
+    : "";
 
-  return `${position?.name ?? "未知位置"} 出现 ${drawnCard.card.name}（${orientation}），把这个位置的关注点拉向 ${keywordSummary}。结合“${position?.description ?? "此位置提示你留意当下的关键层面。"}”，这张牌更像是在提醒你从 ${lens} 的角度，重新看见 ${drawnCard.card.description}`;
+  return `${position?.name ?? "未知位置"} 出现 ${drawnCard.card.name}（${orientation}），把这个位置的关注点拉向 ${keywordSummary}。结合“${position?.description ?? "此位置提示你留意当下的关键层面。"}”，这张牌更像是在提醒你从 ${lens} 的角度，重新看见 ${drawnCard.card.description}${groundingLine}`;
 }
 
 function deriveThemes(questionType: QuestionType, drawnCards: DrawnCard[]) {
@@ -435,6 +571,7 @@ function buildInitialSynthesis(
   themes: string[],
   drawnCards: DrawnCard[],
   priorSessionCapsule: string | null,
+  sessionMemory: SessionMemoryContext,
 ) {
   const reversedCount = drawnCards.filter((drawnCard) => drawnCard.isReversed).length;
   const opening = spread.positions[0]?.name ?? "开端";
@@ -447,6 +584,7 @@ function buildInitialSynthesis(
       : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+  const memoryBridge = buildSessionMemoryBridge(sessionMemory);
   const spreadAxis = buildSpreadSpecificInitialAxis(spread);
   const constructiveTension = buildConstructiveTension({
     questionType,
@@ -454,7 +592,7 @@ function buildInitialSynthesis(
     drawnCards,
   });
 
-  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${constructiveTension} ${PROFILE_GUIDANCE[agentProfile]} ${continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${constructiveTension} ${PROFILE_GUIDANCE[agentProfile]} ${memoryBridge ?? continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
 }
 
 function buildFinalSynthesis({
@@ -463,12 +601,14 @@ function buildFinalSynthesis({
   initialReading,
   followupAnswers,
   priorSessionCapsule,
+  sessionMemory,
 }: {
   question: string;
   questionType: QuestionType;
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
+  sessionMemory: SessionMemoryContext;
 }) {
   const answerSummary = followupAnswers
     .map((item) => `“${item.question}”你的回应是：${item.answer}`)
@@ -476,19 +616,21 @@ function buildFinalSynthesis({
   const primaryTheme = initialReading.themes[0] ?? "当前主轴";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
+  const memoryBridge = buildSessionMemoryBridge(sessionMemory);
   const spreadAxis = buildSpreadSpecificFinalAxis(initialReading.spread);
   const constructiveTension = buildFinalConstructiveTension(
     initialReading,
     questionType,
   );
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。你的回答带来的校准是：${answerSummary}。这意味着综合解读不再只停留在牌面主轴本身，而是要把这些补充放回 ${primaryTheme} 里，分辨哪些已经是可观察事实，哪些仍是感受、担心或待验证条件。${spreadAxis ?? ""} ${constructiveTension} ${continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，为下一步保留可验证的行动空间。`;
+  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。你的回答带来的校准是：${answerSummary}。这意味着综合解读不再只停留在牌面主轴本身，而是要把这些补充放回 ${primaryTheme} 里，分辨哪些已经是可观察事实，哪些仍是感受、担心或待验证条件。${spreadAxis ?? ""} ${constructiveTension} ${memoryBridge ?? continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，为下一步保留可验证的行动空间。`;
 }
 
 function buildCards(
   questionType: QuestionType,
   spread: Spread,
   drawnCards: DrawnCard[],
+  knowledgeGrounding?: KnowledgeGroundingContext,
 ) {
   return drawnCards.map((drawnCard) => {
     const position = spread.positions.find((item) => item.id === drawnCard.positionId);
@@ -502,7 +644,12 @@ function buildCards(
       position: position?.name ?? "未知位置",
       position_meaning:
         position?.description ?? "这个位置提醒你留意问题的关键层面。",
-      interpretation: buildCardInterpretation(questionType, spread, drawnCard),
+      interpretation: buildCardInterpretation(
+        questionType,
+        spread,
+        drawnCard,
+        knowledgeGrounding,
+      ),
     };
   });
 }
@@ -687,6 +834,8 @@ export function buildPlaceholderInitialReadingDraft({
   spread,
   drawnCards,
   priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
 }: {
   question: string;
   questionType: QuestionType;
@@ -694,13 +843,18 @@ export function buildPlaceholderInitialReadingDraft({
   spread: Spread;
   drawnCards: DrawnCard[];
   priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
 }): PlaceholderReadingDraft {
-  const cards = buildCards(questionType, spread, drawnCards);
+  const cards = buildCards(questionType, spread, drawnCards, knowledgeGrounding);
   const themes = deriveThemes(questionType, drawnCards);
   const baseGuidance = uniqueStrings([
     `先观察“${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”在现实里最常出现在哪些情境。`,
     ...(priorSessionCapsule
       ? ["若上一轮的线索仍在回响，把它当作背景参照，不要让它盖过这一次真正的新问题。"] 
+      : []),
+    ...(sessionMemory?.last_advice_summary
+      ? [`延续上一轮建议“${sessionMemory.last_advice_summary}”，但先把它转成当前问题下的低风险验证。`]
       : []),
     ...(buildSpreadSpecificGuidance(spread, "initial")
       ? [buildSpreadSpecificGuidance(spread, "initial") as string]
@@ -723,11 +877,14 @@ export function buildPlaceholderInitialReadingDraft({
       themes,
       drawnCards,
       priorSessionCapsule,
+      sessionMemory,
     ),
     reflective_guidance: reflectiveGuidance,
     follow_up_questions: selectFollowUpQuestions(questionType, agentProfile, spread),
-    confidence_note:
+    confidence_note: [
       "这是第一阶段初读，更适合作为牌面主轴与解释方向；用户补充只能帮助收束，不应把它改写成绝对结论。",
+      buildGroundingConfidenceNote(knowledgeGrounding),
+    ].filter(Boolean).join(" "),
   };
 }
 
@@ -738,6 +895,8 @@ export function buildPlaceholderFinalReadingDraft({
   initialReading,
   followupAnswers,
   priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
 }: {
   question: string;
   questionType: QuestionType;
@@ -745,6 +904,8 @@ export function buildPlaceholderFinalReadingDraft({
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
 }): PlaceholderReadingDraft {
   const constructiveTension = buildFinalConstructiveTension(
     initialReading,
@@ -752,6 +913,9 @@ export function buildPlaceholderFinalReadingDraft({
   );
   const finalGuidance = uniqueStrings([
     `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
+    ...(sessionMemory?.last_advice_summary
+      ? [`也保留同一 thread 上一轮的建议：${sessionMemory.last_advice_summary}`]
+      : []),
     ...buildFollowupAnswerGuidance(followupAnswers),
     "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
     ...(buildSpreadSpecificGuidance(initialReading.spread, "final")
@@ -773,11 +937,14 @@ export function buildPlaceholderFinalReadingDraft({
       initialReading,
       followupAnswers,
       priorSessionCapsule,
+      sessionMemory,
     }),
     reflective_guidance: finalGuidance,
     follow_up_questions: [buildFinalExtensionQuestion(followupAnswers)],
-    confidence_note:
+    confidence_note: [
       "这是第二阶段整合深读。它延续第一阶段的牌面主轴，并结合你的补充信息做校正；它仍然不是对未来的确定承诺。",
+      buildGroundingConfidenceNote(knowledgeGrounding),
+    ].filter(Boolean).join(" "),
   };
 }
 
@@ -787,12 +954,16 @@ export function buildPlaceholderReadingDraft({
   spread,
   drawnCards,
   priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
 }: {
   question: string;
   questionType: QuestionType;
   spread: Spread;
   drawnCards: DrawnCard[];
   priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
 }): PlaceholderReadingDraft {
   return buildPlaceholderInitialReadingDraft({
     question,
@@ -801,6 +972,8 @@ export function buildPlaceholderReadingDraft({
     spread,
     drawnCards,
     priorSessionCapsule,
+    sessionMemory,
+    knowledgeGrounding,
   });
 }
 
@@ -811,6 +984,8 @@ export function buildInitialReadingPrompt({
   spread,
   drawnCards,
   priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
 }: {
   question: string;
   questionType: QuestionType;
@@ -818,6 +993,8 @@ export function buildInitialReadingPrompt({
   spread: Spread;
   drawnCards: DrawnCard[];
   priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
 }): ReadingPrompt {
   const profileHint =
     agentProfile === "lite"
@@ -843,6 +1020,8 @@ export function buildInitialReadingPrompt({
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),
+      "Local knowledge grounding:",
+      formatKnowledgeGroundingForPrompt(knowledgeGrounding),
       priorSessionCapsule
         ? [
             "Prior session capsule (low priority background only):",
@@ -850,8 +1029,11 @@ export function buildInitialReadingPrompt({
             "Use this only as continuity context. Never let it override the current question, current spread, or the authority drawn cards.",
           ].join("\n")
         : null,
+      formatSessionMemoryForPrompt(sessionMemory),
       "Initial reading requirements:",
       "- Build interpretations from card + position + orientation + question type.",
+      "- If knowledge grounding status is retrieved, base card-meaning claims on the retrieved chunks and cite only the provided source_id values inside confidence_note when needed.",
+      "- If knowledge grounding status is none, do not claim the local knowledge wiki supports a specific meaning.",
       "- Identify 2-4 themes at the spread level, not just per-card fragments.",
       "- Themes should be plain, compact, and insight-bearing; do not add headline wrappers such as 'current climate field' or other decorative framing labels.",
       "- Synthesis must summarize the spread arc, major tension, and realistic next orientation; do not list cards one by one.",
@@ -873,6 +1055,8 @@ export function buildFinalReadingPrompt({
   initialReading,
   followupAnswers,
   priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
 }: {
   question: string;
   questionType: QuestionType;
@@ -882,6 +1066,8 @@ export function buildFinalReadingPrompt({
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
 }): ReadingPrompt {
   const profileHint =
     agentProfile === "sober"
@@ -905,6 +1091,8 @@ export function buildFinalReadingPrompt({
       formatSpread(spread),
       "Authority drawn cards:",
       formatDrawnCards(spread, drawnCards),
+      "Local knowledge grounding:",
+      formatKnowledgeGroundingForPrompt(knowledgeGrounding),
       priorSessionCapsule
         ? [
             "Prior session capsule (low priority background only):",
@@ -912,12 +1100,15 @@ export function buildFinalReadingPrompt({
             "Use this only as continuity context. Never let it override the current question, current spread, the initial reading axis, or the authority drawn cards.",
           ].join("\n")
         : null,
+      formatSessionMemoryForPrompt(sessionMemory),
       "Initial reading snapshot:",
       formatInitialReading(initialReading),
       "Follow-up answers:",
       formatFollowupAnswers(followupAnswers),
       "Final reading requirements:",
       "- Preserve the initial primary themes unless the user answer clearly narrows them.",
+      "- If knowledge grounding status is retrieved, preserve the retrieved chunk boundaries and do not invent additional knowledge wiki sources.",
+      "- If knowledge grounding status is none, do not claim the local knowledge wiki supports a specific meaning.",
       "- Keep card order and card identity aligned with the initial reading.",
       "- Use follow-up answers to narrow interpretation space, not to replace the card axis.",
       "- Keep the synthesis focused on the thematic axis, the clarified tension, and the next grounded reflection; avoid inflated summary packaging or repeated slogan-like labels.",

@@ -21,6 +21,8 @@ class PlaceholderReadingProvider implements ReadingProvider {
       spread: context.spread,
       drawnCards: context.drawnCards,
       priorSessionCapsule: context.priorSessionCapsule,
+      sessionMemory: context.sessionMemory,
+      knowledgeGrounding: context.knowledgeGrounding,
     });
   }
 
@@ -32,6 +34,8 @@ class PlaceholderReadingProvider implements ReadingProvider {
       initialReading: context.initialReading,
       followupAnswers: context.followupAnswers,
       priorSessionCapsule: context.priorSessionCapsule,
+      sessionMemory: context.sessionMemory,
+      knowledgeGrounding: context.knowledgeGrounding,
     });
   }
 }
