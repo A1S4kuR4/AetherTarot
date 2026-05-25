@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveSafeLocalRedirect } from "@/lib/navigation/safe-local-redirect";
+import {
+  resolvePublicRequestOrigin,
+  resolveSafeLocalRedirect,
+} from "@/lib/navigation/safe-local-redirect";
 
 describe("resolveSafeLocalRedirect", () => {
   const origin = "https://app.example.com";
@@ -20,5 +23,36 @@ describe("resolveSafeLocalRedirect", () => {
     expect(
       resolveSafeLocalRedirect("/\\outside.example", origin).toString(),
     ).toBe("https://app.example.com/");
+  });
+});
+
+describe("resolvePublicRequestOrigin", () => {
+  const internalUrl = new URL("https://localhost:3000/auth/callback?next=%2F");
+
+  it("uses the configured public site URL for production callbacks", () => {
+    expect(
+      resolvePublicRequestOrigin({
+        requestUrl: internalUrl,
+        configuredSiteUrl: "https://aethertarot.cn/login",
+        forwardedHost: "unexpected.example",
+        forwardedProto: "https",
+      }),
+    ).toBe("https://aethertarot.cn");
+  });
+
+  it("uses reverse proxy forwarding headers when the request URL is internal", () => {
+    expect(
+      resolvePublicRequestOrigin({
+        requestUrl: internalUrl,
+        forwardedHost: "aethertarot.cn",
+        forwardedProto: "https",
+      }),
+    ).toBe("https://aethertarot.cn");
+  });
+
+  it("falls back to the request URL origin outside a configured proxy", () => {
+    expect(resolvePublicRequestOrigin({ requestUrl: internalUrl })).toBe(
+      "https://localhost:3000",
+    );
   });
 });
