@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
@@ -178,17 +179,20 @@ export default function EncyclopediaView({
                 type="button"
                 onClick={() => setSelectedCard(card)}
                 className={cn(
-                  "aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
+                  "relative aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
                   activeCard.id === card.id
                     ? "scale-[1.04] border-terracotta shadow-sm"
                     : "border-transparent opacity-60 hover:opacity-100",
                 )}
               >
-                <img
+                <Image
                   src={card.imageUrl}
                   alt={card.name}
+                  fill
+                  sizes="(min-width: 1024px) 86px, (min-width: 768px) 12vw, 23vw"
+                  quality={50}
+                  loading="lazy"
                   className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
                 />
               </button>
             ))
@@ -208,11 +212,14 @@ export default function EncyclopediaView({
         <div className="flex flex-col gap-10 md:flex-row">
           <div className="w-full md:w-5/12">
             <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
-              <img
+              <Image
                 src={activeCard.imageUrl}
                 alt={activeCard.name}
+                fill
+                sizes="(min-width: 768px) 34vw, 100vw"
+                quality={80}
+                priority
                 className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
               />
             </div>
           </div>
