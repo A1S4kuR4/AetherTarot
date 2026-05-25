@@ -303,6 +303,9 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
             ...(this.config.thinkingMode
               ? { thinking: { type: this.config.thinkingMode } }
               : {}),
+            ...(this.config.responseFormat
+              ? { response_format: { type: this.config.responseFormat } }
+              : {}),
             temperature: this.config.temperature,
             max_tokens: maxOutputTokens,
             stream: false,

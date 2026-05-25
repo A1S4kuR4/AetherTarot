@@ -137,8 +137,17 @@ describe("llm provider baseline", () => {
         AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
         AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
         AETHERTAROT_LLM_THINKING_MODE: "disabled",
+        AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
       }).thinkingMode,
     ).toBe("disabled");
+
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      }).responseFormat,
+    ).toBe("json_object");
 
     expect(() =>
       resolveLlmProviderConfig({
@@ -349,6 +358,7 @@ describe("llm provider baseline", () => {
         baseUrl: "http://127.0.0.1:11434/v1",
         model: "test-model",
         thinkingMode: "disabled",
+        responseFormat: "json_object",
         temperature: 0.2,
         timeoutMs: 5_000,
         maxOutputTokens: 1800,
@@ -367,6 +377,7 @@ describe("llm provider baseline", () => {
       JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)),
     ).toMatchObject({
       thinking: { type: "disabled" },
+      response_format: { type: "json_object" },
       max_tokens: 1800,
     });
     expect(draft.themes).toEqual(context.initialReading.themes);
