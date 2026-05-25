@@ -31,6 +31,7 @@ export interface LlmProviderConfig {
   baseUrl: string;
   model: string;
   thinkingMode?: "enabled" | "disabled";
+  responseFormat?: "json_object";
   temperature: number;
   timeoutMs: number;
   maxOutputTokens: number;
@@ -177,6 +178,22 @@ function parseThinkingMode(value: string | undefined) {
   );
 }
 
+function parseResponseFormat(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === "json_object") {
+    return value;
+  }
+
+  throw new ReadingServiceError(
+    "provider_unavailable",
+    "AETHERTAROT_LLM_RESPONSE_FORMAT 必须是 json_object。",
+    503,
+  );
+}
+
 export function resolveLlmProviderConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): LlmProviderConfig {
@@ -200,6 +217,7 @@ export function resolveLlmProviderConfig(
     baseUrl: baseUrl.replace(/\/+$/, ""),
     model,
     thinkingMode: parseThinkingMode(env.AETHERTAROT_LLM_THINKING_MODE),
+    responseFormat: parseResponseFormat(env.AETHERTAROT_LLM_RESPONSE_FORMAT),
     temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),
     timeoutMs: parseTimeoutMs(env.AETHERTAROT_LLM_TIMEOUT_MS),
     maxOutputTokens: parseMaxOutputTokens(env.AETHERTAROT_LLM_MAX_OUTPUT_TOKENS),
@@ -651,6 +669,9 @@ export class LlmReadingProvider implements ReadingProvider {
             model: this.config.model,
             ...(this.config.thinkingMode
               ? { thinking: { type: this.config.thinkingMode } }
+              : {}),
+            ...(this.config.responseFormat
+              ? { response_format: { type: this.config.responseFormat } }
               : {}),
             temperature: this.config.temperature,
             max_tokens: this.config.maxOutputTokens,
