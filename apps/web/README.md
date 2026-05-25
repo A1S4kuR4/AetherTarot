@@ -8,7 +8,7 @@
 - `/reveal` 展示抽到的牌
 - `/reading` 展示结构化解读结果、核心速读、三层可信路径、`sober_check` 摩擦与安全阻断状态
 - `/history` 查看本地历史记录，并支持“回看这次解读”与“延续这条线”两个分离动作
-- `/encyclopedia` 浏览静态塔罗百科
+- `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
 - `/api/reading-feedback` 记录 completed reading 的轻量质量反馈
 - `/login` Supabase magic-link 内测登录
@@ -27,6 +27,7 @@
 - Tier 2 决策外包场景返回 `200`，payload 中包含 `sober_check` 与 `presentation_mode = "sober_anchor"`
 - 快速解读使用 `lite` profile 自动抽牌并直达 `/reading`，但仍复用同一 `/api/reading`、hard stop、sober check 与 completed history 规则
 - 当前已接入最小 LangGraph reading 编排，并支持 `placeholder` 与 OpenAI-compatible `llm` provider；当前第一轮内测 baseline 为 DashScope `qwen3.6-flash`
+- 真实模型预算保护验收前，reading 使用 `placeholder`，百科问答 provider 保持 `disabled`；两者分别启用
 
 ## Supabase Skeleton
 
@@ -34,10 +35,10 @@
 
 - 运行期入口使用 `src/proxy.ts`
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
-- 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，页面仍可启动，但 `/api/reading` 会拒绝内测调用
-- `/api/reading` 还需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 `consume_reading_quota` RPC；未登录、非白名单、邮箱/IP/全局 LLM 成本超限会在 provider 调用前返回结构化错误
-- `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过 reading quota；admin 请求仍写入 reading events
-- schema 位于 `supabase/migrations/202604270001_beta_ops.sql`
+- 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，页面仍可启动，但 `/api/reading` 和任何真实 LLM provider 调用会拒绝内测执行
+- `/api/reading` 还需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 quota RPC；未登录、非白名单、用户日限/IP 突发限流或全站每日 token 超限会在外部 provider 请求前返回结构化错误
+- `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
+- schema 位于 `supabase/migrations/`；生产配额与保留规则见 `docs/70-ops/production-deployment.md`
 - 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth
 - 本地 magic-link 邮件进入 Mailpit：`http://127.0.0.1:55424`
 - Playwright e2e 有测试专用 beta access bypass：仅在非 production 且明确测试标记存在时生效，不属于产品访问能力

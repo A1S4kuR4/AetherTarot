@@ -59,7 +59,7 @@ function LoginForm() {
         </p>
         <h1 className="mt-2 font-serif text-3xl text-ink">内测登录</h1>
         <p className="mt-4 text-sm leading-relaxed text-text-body">
-          第一轮内测需要使用白名单邮箱登录。系统会按邮箱和网络限额控制 reading 调用。
+          第一轮内测需要使用白名单邮箱登录。系统会按登录账号控制每日体验次数，并设置全站每日体验额度。
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block space-y-2">

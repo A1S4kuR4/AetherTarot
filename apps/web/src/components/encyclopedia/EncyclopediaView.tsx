@@ -57,8 +57,10 @@ function getFilterCount(filterId: RuntimeFilter) {
 
 export default function EncyclopediaView({
   coverage,
+  isQuestionEnabled,
 }: {
   coverage: EncyclopediaCoverageSummary;
+  isQuestionEnabled: boolean;
 }) {
   const [selectedCard, setSelectedCard] = useState<TarotCard>(tarotCards[0]);
   const [runtimeFilter, setRuntimeFilter] = useState<RuntimeFilter>("all");
@@ -216,7 +218,9 @@ export default function EncyclopediaView({
           </div>
 
           <div className="flex-1 space-y-7">
-            <EncyclopediaQuestionPanel activeCard={activeCard} />
+            {isQuestionEnabled ? (
+              <EncyclopediaQuestionPanel activeCard={activeCard} />
+            ) : null}
 
             <div>
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">

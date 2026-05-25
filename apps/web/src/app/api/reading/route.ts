@@ -12,6 +12,7 @@ import {
   type AuthenticatedTester,
 } from "@/server/beta/access";
 import { consumeReadingQuota } from "@/server/beta/quota";
+import { readBoundedJsonBody } from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { readingRequestPayloadSchema } from "@/server/reading/schemas";
 import { generateStructuredReading } from "@/server/reading/service";
@@ -27,6 +28,7 @@ import {
 } from "@/server/observability/reading-events";
 
 export const runtime = "nodejs";
+const MAX_READING_REQUEST_BYTES = 64 * 1024;
 
 interface ReadingRouteDependencies {
   getIpHash: (request: Request) => string;
@@ -122,8 +124,12 @@ export async function handleReadingPost(
   };
 
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readBoundedJsonBody(
+      request,
+      MAX_READING_REQUEST_BYTES,
+      "Reading",
+    );
+  } catch (error) {
     await recordEvent({
       ...getEventBase({
         parsedPayload,
@@ -143,11 +149,11 @@ export async function handleReadingPost(
       completedInitial: false,
       completedFinal: false,
     });
-    return buildErrorResponse(
-      "invalid_request",
-      "请求体不是有效的 JSON。",
-      400,
-    );
+    if (isReadingServiceError(error)) {
+      return buildErrorResponse(error.code, error.message, error.status);
+    }
+
+    return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
   }
 
   try {

@@ -1,8 +1,13 @@
 import "server-only";
 
 import type { EncyclopediaQueryResponse } from "@aethertarot/shared-types";
+import { isEncyclopediaQueryEnabled } from "@/server/beta/config";
 import { ReadingServiceError } from "@/server/reading/errors";
 import { resolveLlmProviderConfig } from "@/server/reading/llm-provider";
+import {
+  databaseLlmTokenGate,
+  type LlmTokenGate,
+} from "@/server/beta/token-budget";
 import {
   calculateLlmCostUsd,
   estimateTokenCount,
@@ -211,6 +216,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
   constructor(
     private readonly config = resolveLlmProviderConfig(),
     private readonly fetchImplementation: FetchImplementation = fetch,
+    private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
   ) {}
 
   async generateAnswer(input: {
@@ -220,12 +226,28 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
   }) {
     const prompt = buildPrompt(input);
     const promptText = `${prompt.system}\n${prompt.user}`;
+    const maxOutputTokens = Math.min(this.config.maxOutputTokens, 900);
+    const reservation = await this.tokenGate.reserve({
+      source: "encyclopedia",
+      promptText,
+      maxOutputTokens,
+    });
     const startedAt = Date.now();
     const abortController = new AbortController();
     const timeoutHandle = setTimeout(
       () => abortController.abort(),
       this.config.timeoutMs,
     );
+    let reservationSettled = false;
+
+    const settleReservation = async (actualTokens?: number) => {
+      if (reservationSettled) {
+        return;
+      }
+
+      reservationSettled = true;
+      await this.tokenGate.settle({ reservation, actualTokens });
+    };
 
     const recordCall = ({
       success,
@@ -259,6 +281,8 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
         }),
         errorCode,
       });
+
+      return totalTokens;
     };
 
     let response: Response;
@@ -277,7 +301,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
           body: JSON.stringify({
             model: this.config.model,
             temperature: this.config.temperature,
-            max_tokens: Math.min(this.config.maxOutputTokens, 900),
+            max_tokens: maxOutputTokens,
             stream: false,
             messages: [
               { role: "system", content: prompt.system },
@@ -296,6 +320,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
             ? "timeout"
             : "fetch_failed",
       });
+      await settleReservation();
       throw new ReadingServiceError(
         "provider_unavailable",
         "百科 provider 当前不可用，请稍后再试。",
@@ -311,6 +336,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
         httpStatus: response.status,
         errorCode: `http_${response.status}`,
       });
+      await settleReservation();
       throw new ReadingServiceError(
         "provider_unavailable",
         `百科 provider 请求失败（HTTP ${response.status}）。`,
@@ -328,6 +354,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
         httpStatus: response.status,
         errorCode: "invalid_json",
       });
+      await settleReservation();
       throw new ReadingServiceError(
         "generation_failed",
         "百科 provider 返回的响应不是合法 JSON。",
@@ -341,26 +368,36 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
     try {
       messageText = extractMessageText(payload);
       const draft = normalizeDraft(parseJsonRecord(messageText));
-      recordCall({
+      const totalTokens = recordCall({
         success: true,
         httpStatus: response.status,
         outputText: messageText,
         usage,
       });
+      await settleReservation(totalTokens);
       return draft;
     } catch (error) {
-      recordCall({
+      const totalTokens = recordCall({
         success: false,
         httpStatus: response.status,
         outputText: messageText,
         errorCode: "invalid_provider_payload",
         usage,
       });
+      await settleReservation(usage || messageText ? totalTokens : undefined);
       throw error;
     }
   }
 }
 
 export function getEncyclopediaProvider() {
+  if (!isEncyclopediaQueryEnabled()) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "百科问答暂未开放。",
+      503,
+    );
+  }
+
   return new LlmEncyclopediaProvider();
 }

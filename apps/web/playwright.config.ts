@@ -33,6 +33,7 @@ export default defineConfig({
       ...process.env,
       AETHERTAROT_E2E_BYPASS_BETA_ACCESS: "1",
       AETHERTAROT_READING_PROVIDER: "placeholder",
+      AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "llm",
     },
     url: baseURL,
     reuseExistingServer: !process.env.CI,

@@ -7,7 +7,6 @@ export interface EncyclopediaEventInput {
   email: string | null;
   ipHash: string;
   provider: string;
-  query: string | null;
   cardId: string | null;
   sourceCount: number;
   status: "success" | "failure";
@@ -32,7 +31,6 @@ export async function recordEncyclopediaEvent(input: EncyclopediaEventInput) {
     email: input.email,
     ip_hash: input.ipHash,
     provider: input.provider,
-    query_text: input.query,
     card_id: input.cardId,
     source_count: input.sourceCount,
     status: input.status,

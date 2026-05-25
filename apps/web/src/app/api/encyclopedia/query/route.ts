@@ -9,11 +9,16 @@ import {
   requireBetaTesterAccess,
   type AuthenticatedTester,
 } from "@/server/beta/access";
+import { isEncyclopediaQueryEnabled } from "@/server/beta/config";
 import { getClientIpHash } from "@/server/beta/ip";
 import { consumeEncyclopediaQuota } from "@/server/beta/quota";
+import { readBoundedJsonBody } from "@/server/http/json-body";
 import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 import { encyclopediaQueryRequestSchema } from "@/server/encyclopedia/schemas";
-import { isReadingServiceError } from "@/server/reading/errors";
+import {
+  isReadingServiceError,
+  ReadingServiceError,
+} from "@/server/reading/errors";
 import {
   collectLlmUsage,
   summarizeLlmCalls,
@@ -26,8 +31,10 @@ import {
 } from "@/server/observability/encyclopedia-events";
 
 export const runtime = "nodejs";
+const MAX_ENCYCLOPEDIA_REQUEST_BYTES = 8 * 1024;
 
 interface EncyclopediaRouteDependencies {
+  isQueryEnabled: () => boolean;
   getIpHash: (request: Request) => string;
   requireAccess: () => Promise<AuthenticatedTester>;
   consumeQuota: (input: {
@@ -40,6 +47,7 @@ interface EncyclopediaRouteDependencies {
 }
 
 const DEFAULT_DEPENDENCIES: EncyclopediaRouteDependencies = {
+  isQueryEnabled: isEncyclopediaQueryEnabled,
   getIpHash: getClientIpHash,
   requireAccess: () => requireBetaTesterAccess(),
   consumeQuota: consumeEncyclopediaQuota,
@@ -81,7 +89,6 @@ function getEventBase({
     email: tester?.email ?? null,
     ipHash,
     provider: "encyclopedia-llm",
-    query: parsedPayload?.query ?? null,
     cardId: parsedPayload?.cardId ?? null,
     durationMs: Date.now() - startedAt,
   };
@@ -110,8 +117,12 @@ export async function handleEncyclopediaQueryPost(
   };
 
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readBoundedJsonBody(
+      request,
+      MAX_ENCYCLOPEDIA_REQUEST_BYTES,
+      "百科问答",
+    );
+  } catch (error) {
     await recordEvent({
       ...getEventBase({ parsedPayload, tester, ipHash, startedAt }),
       sourceCount: 0,
@@ -123,11 +134,22 @@ export async function handleEncyclopediaQueryPost(
       totalTokens: 0,
       estimatedCostUsd: 0,
     });
+    if (isReadingServiceError(error)) {
+      return buildErrorResponse(error.code, error.message, error.status);
+    }
+
     return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
   }
 
   try {
     parsedPayload = encyclopediaQueryRequestSchema.parse(payload);
+    if (!deps.isQueryEnabled()) {
+      throw new ReadingServiceError(
+        "provider_unavailable",
+        "百科问答暂未开放。",
+        503,
+      );
+    }
     tester = await deps.requireAccess();
     await deps.consumeQuota({ tester, ipHash });
     const { result, calls } = await deps.collectUsage(() =>

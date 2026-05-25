@@ -76,11 +76,11 @@ describe("reading route beta access and quota", () => {
       consumeQuota: vi.fn(async () => {
         throw new ReadingServiceError(
           "rate_limited",
-          "当前邮箱今日 reading 次数已达上限，请明天再试。",
+          "你今日的 reading 次数已达上限，请明天再试。",
           429,
           undefined,
           undefined,
-          { reason: "email_daily" },
+          { reason: "user_daily" },
         );
       }),
     });
@@ -91,6 +91,68 @@ describe("reading route beta access and quota", () => {
     expect(response.status).toBe(429);
     expect(payload.error?.code).toBe("rate_limited");
     expect(deps.generateReading).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized reading input before access and provider work", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(
+      buildRequest(buildSinglePayload("问".repeat(70_000))),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(413);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
+    expect(deps.generateReading).not.toHaveBeenCalled();
+  });
+
+  it("rejects questions over the configured character boundary", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(
+      buildRequest(buildSinglePayload("问".repeat(1001))),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(400);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
+    expect(deps.generateReading).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized continuity identifiers and capsule text", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(
+      buildRequest({
+        ...buildSinglePayload(),
+        thread_id: "t".repeat(129),
+        prior_session_capsule: "c".repeat(281),
+      }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(400);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
+  });
+
+  it("returns token-limit errors without changing the error envelope", async () => {
+    const deps = buildDependencies({
+      generateReading: vi.fn(async () => {
+        throw new ReadingServiceError(
+          "token_limit_exceeded",
+          "今日体验额度已用完，请于明日再试。",
+          429,
+        );
+      }),
+    });
+    const response = await handleReadingPost(buildRequest(buildSinglePayload()), deps);
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(429);
+    expect(payload.error?.code).toBe("token_limit_exceeded");
   });
 
   it("keeps successful StructuredReading payloads unchanged", async () => {
