@@ -300,6 +300,9 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
           },
           body: JSON.stringify({
             model: this.config.model,
+            ...(this.config.thinkingMode
+              ? { thinking: { type: this.config.thinkingMode } }
+              : {}),
             temperature: this.config.temperature,
             max_tokens: maxOutputTokens,
             stream: false,

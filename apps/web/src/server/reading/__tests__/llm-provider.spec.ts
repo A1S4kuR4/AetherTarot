@@ -131,6 +131,24 @@ describe("llm provider baseline", () => {
     ).toBe("sk-test-braced");
   });
 
+  it("configures provider thinking mode explicitly for models that default to thinking", () => {
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_THINKING_MODE: "disabled",
+      }).thinkingMode,
+    ).toBe("disabled");
+
+    expect(() =>
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_THINKING_MODE: "sometimes",
+      }),
+    ).toThrow(/AETHERTAROT_LLM_THINKING_MODE/);
+  });
+
   it("normalizes initial llm draft output and trims oversized arrays", () => {
     const context = buildHydratedContext();
     const normalized = normalizeReadingDraft({
@@ -330,6 +348,7 @@ describe("llm provider baseline", () => {
       {
         baseUrl: "http://127.0.0.1:11434/v1",
         model: "test-model",
+        thinkingMode: "disabled",
         temperature: 0.2,
         timeoutMs: 5_000,
         maxOutputTokens: 1800,
@@ -347,6 +366,7 @@ describe("llm provider baseline", () => {
     expect(
       JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)),
     ).toMatchObject({
+      thinking: { type: "disabled" },
       max_tokens: 1800,
     });
     expect(draft.themes).toEqual(context.initialReading.themes);

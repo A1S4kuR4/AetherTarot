@@ -30,6 +30,7 @@ export interface LlmProviderConfig {
   apiKey?: string;
   baseUrl: string;
   model: string;
+  thinkingMode?: "enabled" | "disabled";
   temperature: number;
   timeoutMs: number;
   maxOutputTokens: number;
@@ -160,6 +161,22 @@ function parseMaxOutputTokens(value: string | undefined) {
   return parsed;
 }
 
+function parseThinkingMode(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === "enabled" || value === "disabled") {
+    return value;
+  }
+
+  throw new ReadingServiceError(
+    "provider_unavailable",
+    "AETHERTAROT_LLM_THINKING_MODE 必须是 enabled 或 disabled。",
+    503,
+  );
+}
+
 export function resolveLlmProviderConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): LlmProviderConfig {
@@ -182,6 +199,7 @@ export function resolveLlmProviderConfig(
       ) ?? undefined,
     baseUrl: baseUrl.replace(/\/+$/, ""),
     model,
+    thinkingMode: parseThinkingMode(env.AETHERTAROT_LLM_THINKING_MODE),
     temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),
     timeoutMs: parseTimeoutMs(env.AETHERTAROT_LLM_TIMEOUT_MS),
     maxOutputTokens: parseMaxOutputTokens(env.AETHERTAROT_LLM_MAX_OUTPUT_TOKENS),
@@ -631,6 +649,9 @@ export class LlmReadingProvider implements ReadingProvider {
           },
           body: JSON.stringify({
             model: this.config.model,
+            ...(this.config.thinkingMode
+              ? { thinking: { type: this.config.thinkingMode } }
+              : {}),
             temperature: this.config.temperature,
             max_tokens: this.config.maxOutputTokens,
             stream: false,
