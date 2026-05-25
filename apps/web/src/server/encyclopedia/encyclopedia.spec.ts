@@ -6,6 +6,7 @@ import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 import { loadEncyclopediaWikiPages } from "@/server/encyclopedia/wiki";
 import { LlmEncyclopediaProvider } from "@/server/encyclopedia/provider";
 import type { AuthenticatedTester } from "@/server/beta/access";
+import type { LlmTokenGate } from "@/server/beta/token-budget";
 
 const TESTER: AuthenticatedTester = {
   userId: "00000000-0000-0000-0000-000000000001",
@@ -14,6 +15,13 @@ const TESTER: AuthenticatedTester = {
 };
 
 type RouteDependencies = NonNullable<Parameters<typeof handleEncyclopediaQueryPost>[1]>;
+
+function buildTokenGate(): LlmTokenGate {
+  return {
+    reserve: vi.fn(async () => ({ id: "reservation-id", reservedTokens: 2000 })),
+    settle: vi.fn(async () => undefined),
+  };
+}
 
 function buildRequest(body: unknown) {
   return new Request("http://localhost/api/encyclopedia/query", {
@@ -27,6 +35,7 @@ function buildRequest(body: unknown) {
 
 function buildDependencies(overrides: RouteDependencies = {}) {
   return {
+    isQueryEnabled: () => true,
     getIpHash: () => "ip-hash",
     requireAccess: vi.fn(async () => TESTER),
     consumeQuota: vi.fn(async () => undefined),
@@ -168,6 +177,7 @@ describe("encyclopedia LLM provider", () => {
           ],
         })),
       ) as typeof fetch,
+      buildTokenGate(),
     );
 
     await expect(
@@ -190,6 +200,7 @@ describe("encyclopedia LLM provider", () => {
           choices: [{ message: { content: "不是 JSON" } }],
         })),
       ) as typeof fetch,
+      buildTokenGate(),
     );
 
     await expect(
@@ -209,6 +220,7 @@ describe("encyclopedia LLM provider", () => {
       vi.fn(async () => {
         throw new Error("network down");
       }) as typeof fetch,
+      buildTokenGate(),
     );
 
     await expect(
@@ -221,9 +233,55 @@ describe("encyclopedia LLM provider", () => {
       code: "provider_unavailable",
     });
   });
+
+  it("does not call the model when the shared token budget is exhausted", async () => {
+    const fetchMock = vi.fn();
+    const provider = new LlmEncyclopediaProvider(
+      providerConfig,
+      fetchMock as typeof fetch,
+      {
+        reserve: vi.fn(async () => {
+          throw new ReadingServiceError(
+            "token_limit_exceeded",
+            "今日体验额度已用完，请于明日再试。",
+            429,
+          );
+        }),
+        settle: vi.fn(async () => undefined),
+      },
+    );
+
+    await expect(
+      provider.generateAnswer({
+        query: "愚者是什么意思？",
+        sources: [source],
+        boundaryNote: null,
+      }),
+    ).rejects.toMatchObject({
+      code: "token_limit_exceeded",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("encyclopedia query route", () => {
+  it("rejects disabled encyclopedia queries before access or quota work", async () => {
+    const deps = buildDependencies({
+      isQueryEnabled: () => false,
+    });
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "愚者是什么意思？" }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(503);
+    expect(payload.error?.code).toBe("provider_unavailable");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
+    expect(deps.consumeQuota).not.toHaveBeenCalled();
+    expect(deps.generateAnswer).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid payloads before access and provider work", async () => {
     const deps = buildDependencies();
     const response = await handleEncyclopediaQueryPost(buildRequest({ query: "" }), deps);
@@ -261,7 +319,7 @@ describe("encyclopedia query route", () => {
       consumeQuota: vi.fn(async () => {
         throw new ReadingServiceError(
           "rate_limited",
-          "当前邮箱今日百科问答次数已达上限，请明天再试。",
+          "你今日的百科问答次数已达上限，请明天再试。",
           429,
         );
       }),
@@ -274,6 +332,20 @@ describe("encyclopedia query route", () => {
 
     expect(response.status).toBe(429);
     expect(payload.error?.code).toBe("rate_limited");
+    expect(deps.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized query bodies before access and provider work", async () => {
+    const deps = buildDependencies();
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "问".repeat(9000) }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(413);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
     expect(deps.generateAnswer).not.toHaveBeenCalled();
   });
 

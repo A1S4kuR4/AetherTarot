@@ -60,6 +60,60 @@ export interface Database {
         };
         Relationships: [];
       };
+      llm_daily_token_usage: {
+        Row: {
+          usage_day: string;
+          consumed_tokens: number;
+          outstanding_reserved_tokens: number;
+          updated_at: string;
+        };
+        Insert: {
+          usage_day: string;
+          consumed_tokens?: number;
+          outstanding_reserved_tokens?: number;
+          updated_at?: string;
+        };
+        Update: {
+          usage_day?: string;
+          consumed_tokens?: number;
+          outstanding_reserved_tokens?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      llm_token_reservations: {
+        Row: {
+          id: string;
+          usage_day: string;
+          source: "reading" | "encyclopedia";
+          reserved_tokens: number;
+          settled_tokens: number | null;
+          status: "reserved" | "settled";
+          created_at: string;
+          settled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          usage_day: string;
+          source: "reading" | "encyclopedia";
+          reserved_tokens: number;
+          settled_tokens?: number | null;
+          status?: "reserved" | "settled";
+          created_at?: string;
+          settled_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          usage_day?: string;
+          source?: "reading" | "encyclopedia";
+          reserved_tokens?: number;
+          settled_tokens?: number | null;
+          status?: "reserved" | "settled";
+          created_at?: string;
+          settled_at?: string | null;
+        };
+        Relationships: [];
+      };
       reading_events: {
         Row: {
           id: string;
@@ -137,7 +191,6 @@ export interface Database {
           email: string | null;
           ip_hash: string;
           provider: string;
-          query_text: string | null;
           card_id: string | null;
           source_count: number;
           status: "success" | "failure";
@@ -156,7 +209,6 @@ export interface Database {
           email?: string | null;
           ip_hash: string;
           provider: string;
-          query_text?: string | null;
           card_id?: string | null;
           source_count?: number;
           status: "success" | "failure";
@@ -175,7 +227,6 @@ export interface Database {
           email?: string | null;
           ip_hash?: string;
           provider?: string;
-          query_text?: string | null;
           card_id?: string | null;
           source_count?: number;
           status?: "success" | "failure";
@@ -227,27 +278,34 @@ export interface Database {
     Functions: {
       consume_reading_quota: {
         Args: {
-          p_email: string;
           p_user_id: string;
           p_ip_hash: string;
-          p_email_daily_limit: number;
+          p_user_daily_limit: number;
           p_ip_minute_limit: number;
-          p_ip_daily_limit: number;
-          p_daily_cost_limit_usd: number;
-          p_cost_reservation_usd: number;
         };
         Returns: Json;
       };
       consume_encyclopedia_quota: {
         Args: {
-          p_email: string;
           p_user_id: string;
           p_ip_hash: string;
-          p_email_daily_limit: number;
+          p_user_daily_limit: number;
           p_ip_minute_limit: number;
-          p_ip_daily_limit: number;
-          p_daily_cost_limit_usd: number;
-          p_cost_reservation_usd: number;
+        };
+        Returns: Json;
+      };
+      reserve_daily_llm_tokens: {
+        Args: {
+          p_source: "reading" | "encyclopedia";
+          p_requested_tokens: number;
+          p_daily_limit: number;
+        };
+        Returns: Json;
+      };
+      settle_daily_llm_tokens: {
+        Args: {
+          p_reservation_id: string;
+          p_actual_tokens: number;
         };
         Returns: Json;
       };

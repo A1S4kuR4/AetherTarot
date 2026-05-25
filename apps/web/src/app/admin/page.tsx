@@ -67,15 +67,16 @@ function AdminSummaryView({ summary }: { summary: AdminSummary }) {
         </p>
         <h1 className="mt-2 font-serif text-4xl text-ink">内测观测台</h1>
         <p className="mt-3 text-sm text-text-muted">
-          统计窗口从 {new Date(summary.since).toLocaleString("zh-CN")} 开始。
+          统计窗口从 {new Date(summary.since).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })} 开始（北京时间）。
         </p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-5">
         <SummaryCard label="Reading 请求" value={summary.readingRequests} />
+        <SummaryCard label="百科请求" value={summary.encyclopediaRequests} />
         <SummaryCard label="用户数" value={summary.activeUsers} />
         <SummaryCard label="估算成本" value={formatUsd(summary.estimatedCostUsd)} />
-        <SummaryCard label="Token" value={summary.totalTokens} />
+        <SummaryCard label="Token" value={`${summary.totalTokens} / ${summary.tokenLimit}`} />
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-3">

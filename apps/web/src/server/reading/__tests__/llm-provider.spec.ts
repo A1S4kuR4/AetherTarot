@@ -20,6 +20,14 @@ import type {
   FinalReadingContext,
   HydratedReadingContext,
 } from "@/server/reading/types";
+import type { LlmTokenGate } from "@/server/beta/token-budget";
+
+function buildTokenGate(): LlmTokenGate {
+  return {
+    reserve: vi.fn(async () => ({ id: "reservation-id", reservedTokens: 4000 })),
+    settle: vi.fn(async () => undefined),
+  };
+}
 
 function buildHydratedContext(): HydratedReadingContext {
   const payload = buildHolyTrianglePayload();
@@ -327,6 +335,7 @@ describe("llm provider baseline", () => {
         maxOutputTokens: 1800,
       },
       fetchMock as typeof fetch,
+      buildTokenGate(),
     );
 
     const draft = await provider.generateFinalRead(context);
@@ -343,5 +352,61 @@ describe("llm provider baseline", () => {
     expect(draft.themes).toEqual(context.initialReading.themes);
     expect(draft.follow_up_questions).toHaveLength(1);
     expect(draft.reflective_guidance).toHaveLength(3);
+  });
+
+  it("does not call the model when the daily token reservation is rejected", async () => {
+    const context = await buildFinalContext();
+    const fetchMock = vi.fn();
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 1800,
+      },
+      fetchMock as typeof fetch,
+      {
+        reserve: vi.fn(async () => {
+          throw new ReadingServiceError(
+            "token_limit_exceeded",
+            "今日体验额度已用完，请于明日再试。",
+            429,
+          );
+        }),
+        settle: vi.fn(async () => undefined),
+      },
+    );
+
+    await expect(provider.generateFinalRead(context)).rejects.toMatchObject({
+      code: "token_limit_exceeded",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("settles the full reservation after a failed external request", async () => {
+    const context = await buildFinalContext();
+    const tokenGate = buildTokenGate();
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 1800,
+      },
+      vi.fn(async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+      tokenGate,
+    );
+
+    await expect(provider.generateFinalRead(context)).rejects.toMatchObject({
+      code: "provider_unavailable",
+    });
+    expect(tokenGate.settle).toHaveBeenCalledWith({
+      reservation: { id: "reservation-id", reservedTokens: 4000 },
+      actualTokens: undefined,
+    });
   });
 });

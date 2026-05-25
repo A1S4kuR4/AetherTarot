@@ -38,12 +38,10 @@ function asQuotaResult(value: unknown): QuotaRpcResult {
 
 function getLimitMessage(reason: string) {
   switch (reason) {
-    case "email_daily":
-      return "当前邮箱今日 reading 次数已达上限，请明天再试。";
+    case "user_daily":
+      return "你今日的 reading 次数已达上限，请明天再试。";
     case "ip_minute":
       return "当前网络请求过于频繁，请稍后再试。";
-    case "ip_daily":
-      return "当前网络今日 reading 次数已达上限，请明天再试。";
     default:
       return "当前 reading 请求已达内测限额，请稍后再试。";
   }
@@ -51,18 +49,16 @@ function getLimitMessage(reason: string) {
 
 function getEncyclopediaLimitMessage(reason: string) {
   switch (reason) {
-    case "email_daily":
-      return "当前邮箱今日百科问答次数已达上限，请明天再试。";
+    case "user_daily":
+      return "你今日的百科问答次数已达上限，请明天再试。";
     case "ip_minute":
       return "当前网络百科问答请求过于频繁，请稍后再试。";
-    case "ip_daily":
-      return "当前网络今日百科问答次数已达上限，请明天再试。";
     default:
       return "当前百科问答请求已达内测限额，请稍后再试。";
   }
 }
 
-export function shouldBypassReadingQuota(tester: AuthenticatedTester) {
+export function shouldBypassRequestQuota(tester: AuthenticatedTester) {
   return tester.role === "admin";
 }
 
@@ -71,7 +67,7 @@ export async function consumeReadingQuota({
   ipHash,
   config = getBetaOpsConfig(),
 }: ConsumeReadingQuotaInput) {
-  if (shouldBypassReadingQuota(tester)) {
+  if (shouldBypassRequestQuota(tester)) {
     return;
   }
 
@@ -86,14 +82,10 @@ export async function consumeReadingQuota({
   }
 
   const { data, error } = await adminClient.rpc("consume_reading_quota", {
-    p_email: tester.email,
     p_user_id: tester.userId,
     p_ip_hash: ipHash,
-    p_email_daily_limit: config.emailDailyLimit,
+    p_user_daily_limit: config.userDailyLimit,
     p_ip_minute_limit: config.ipMinuteLimit,
-    p_ip_daily_limit: config.ipDailyLimit,
-    p_daily_cost_limit_usd: config.dailyLlmCostLimitUsd,
-    p_cost_reservation_usd: config.llmCostReservationUsd,
   });
 
   if (error) {
@@ -116,17 +108,6 @@ export async function consumeReadingQuota({
       ? result.retry_after_seconds
       : undefined;
 
-  if (reason === "llm_daily_cost") {
-    throw new ReadingServiceError(
-      "cost_limit_exceeded",
-      "今日 LLM 预算已达上限，内测 reading 暂停到明天恢复。",
-      429,
-      undefined,
-      undefined,
-      { reason, retry_after_seconds: retryAfterSeconds },
-    );
-  }
-
   throw new ReadingServiceError(
     "rate_limited",
     getLimitMessage(reason),
@@ -142,7 +123,7 @@ export async function consumeEncyclopediaQuota({
   ipHash,
   config = getEncyclopediaQuotaConfig(),
 }: ConsumeEncyclopediaQuotaInput) {
-  if (shouldBypassReadingQuota(tester)) {
+  if (shouldBypassRequestQuota(tester)) {
     return;
   }
 
@@ -157,14 +138,10 @@ export async function consumeEncyclopediaQuota({
   }
 
   const { data, error } = await adminClient.rpc("consume_encyclopedia_quota", {
-    p_email: tester.email,
     p_user_id: tester.userId,
     p_ip_hash: ipHash,
-    p_email_daily_limit: config.emailDailyLimit,
+    p_user_daily_limit: config.userDailyLimit,
     p_ip_minute_limit: config.ipMinuteLimit,
-    p_ip_daily_limit: config.ipDailyLimit,
-    p_daily_cost_limit_usd: config.dailyLlmCostLimitUsd,
-    p_cost_reservation_usd: config.llmCostReservationUsd,
   });
 
   if (error) {
@@ -186,17 +163,6 @@ export async function consumeEncyclopediaQuota({
     typeof result.retry_after_seconds === "number"
       ? result.retry_after_seconds
       : undefined;
-
-  if (reason === "llm_daily_cost") {
-    throw new ReadingServiceError(
-      "cost_limit_exceeded",
-      "今日 LLM 预算已达上限，百科问答暂时暂停到明天恢复。",
-      429,
-      undefined,
-      undefined,
-      { reason, retry_after_seconds: retryAfterSeconds },
-    );
-  }
 
   throw new ReadingServiceError(
     "rate_limited",

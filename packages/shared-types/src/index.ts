@@ -139,6 +139,7 @@ export type ReadingErrorCode =
   | "unauthorized"
   | "forbidden"
   | "rate_limited"
+  | "token_limit_exceeded"
   | "cost_limit_exceeded"
   | "provider_unavailable"
   | "generation_failed"
