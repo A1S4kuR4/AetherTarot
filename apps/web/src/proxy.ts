@@ -6,5 +6,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/reading/:path*",
+    "/api/reading-feedback/:path*",
+    "/api/encyclopedia/query/:path*",
+  ],
 };
