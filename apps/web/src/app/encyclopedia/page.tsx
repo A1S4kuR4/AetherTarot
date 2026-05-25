@@ -2,6 +2,8 @@ import EncyclopediaView from "@/components/encyclopedia/EncyclopediaView";
 import { isEncyclopediaQueryEnabled } from "@/server/beta/config";
 import { getEncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
 
+export const dynamic = "force-dynamic";
+
 export default async function EncyclopediaPage() {
   const coverage = await getEncyclopediaCoverageSummary();
 
