@@ -114,6 +114,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      auth_email_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          email: string | null;
+          ip_hash: string;
+          status: "success" | "failure";
+          error_code: string | null;
+          duration_ms: number;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          email?: string | null;
+          ip_hash: string;
+          status: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          email?: string | null;
+          ip_hash?: string;
+          status?: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
+        };
+        Relationships: [];
+      };
       reading_events: {
         Row: {
           id: string;
@@ -306,6 +336,17 @@ export interface Database {
         Args: {
           p_reservation_id: string;
           p_actual_tokens: number;
+        };
+        Returns: Json;
+      };
+      consume_auth_email_quota: {
+        Args: {
+          p_email: string;
+          p_ip_hash: string;
+          p_email_hourly_limit: number;
+          p_email_daily_limit: number;
+          p_ip_hourly_limit: number;
+          p_global_hourly_limit: number;
         };
         Returns: Json;
       };

@@ -11,7 +11,7 @@
 - `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
 - `/api/reading-feedback` 记录 completed reading 的轻量质量反馈
-- `/login` Supabase magic-link 内测登录
+- `/login` 通过服务端发信闸门触发 Supabase magic-link 内测登录
 - `/admin` 第一轮内测最小观测台，仅 `beta_testers.role = admin` 可访问
 
 ## State Flow
@@ -36,6 +36,7 @@
 - 运行期入口使用 `src/proxy.ts`
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
 - 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，页面仍可启动，但 `/api/reading` 和任何真实 LLM provider 调用会拒绝内测执行
+- `/api/auth/login-link` 需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 auth email quota RPC；服务端会在调用 Supabase 发信前执行邮箱/IP/全站限流，并记录 `auth_email_events`
 - `/api/reading` 还需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 quota RPC；未登录、非白名单、用户日限/IP 突发限流或全站每日 token 超限会在外部 provider 请求前返回结构化错误
 - `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
 - schema 位于 `supabase/migrations/`；生产配额与保留规则见 `docs/70-ops/production-deployment.md`
