@@ -1,6 +1,10 @@
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { config } from "@/proxy";
+
+vi.mock("@/auth", () => ({
+  auth: () => undefined,
+}));
 
 function matches(pathname: string) {
   return unstable_doesMiddlewareMatch({
