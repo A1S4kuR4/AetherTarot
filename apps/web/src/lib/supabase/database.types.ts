@@ -9,6 +9,33 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      app_users: {
+        Row: {
+          id: string;
+          auth_provider: "keycloak";
+          auth_subject: string;
+          email: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auth_provider: "keycloak";
+          auth_subject: string;
+          email: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          auth_provider?: "keycloak";
+          auth_subject?: string;
+          email?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       beta_testers: {
         Row: {
           email: string;
