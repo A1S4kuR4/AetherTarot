@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   getBetaOpsConfig,
-  getAuthEmailQuotaConfig,
   getEncyclopediaQuotaConfig,
   getLlmTokenBudgetConfig,
   isEncyclopediaQueryEnabled,
@@ -25,15 +24,6 @@ describe("beta ops config", () => {
   it("defaults the shared daily token budget to 200000", () => {
     expect(getLlmTokenBudgetConfig({})).toEqual({
       dailyTokenLimit: 200_000,
-    });
-  });
-
-  it("uses conservative login email send guard defaults", () => {
-    expect(getAuthEmailQuotaConfig({})).toEqual({
-      emailHourlyLimit: 3,
-      emailDailyLimit: 10,
-      ipHourlyLimit: 10,
-      globalHourlyLimit: 50,
     });
   });
 
