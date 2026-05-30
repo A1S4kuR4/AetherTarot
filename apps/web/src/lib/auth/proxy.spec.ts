@@ -13,7 +13,7 @@ function matches(pathname: string) {
   });
 }
 
-describe("Supabase session-refresh proxy matching", () => {
+describe("Auth.js session proxy matching", () => {
   it.each(["/", "/login", "/new", "/ritual", "/reveal", "/reading", "/encyclopedia"])(
     "does not block public page navigation for %s",
     (pathname) => {
@@ -27,7 +27,7 @@ describe("Supabase session-refresh proxy matching", () => {
     "/api/reading",
     "/api/reading-feedback",
     "/api/encyclopedia/query",
-  ])("continues refreshing sessions for protected entrypoint %s", (pathname) => {
+  ])("keeps sessions fresh for protected entrypoint %s", (pathname) => {
     expect(matches(pathname)).toBe(true);
   });
 });
