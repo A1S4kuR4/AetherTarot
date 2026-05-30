@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseEnv } from "@/lib/supabase/env";
+import { getSupabaseDatabaseEnv } from "@/lib/supabase/database-env";
 import type { Database } from "@/lib/supabase/database.types";
 
 type SupabaseAdminClient = ReturnType<typeof createSupabaseClient<Database>>;
@@ -14,7 +14,7 @@ function normalizeEnvValue(value: string | undefined) {
 }
 
 export function createAdminClient() {
-  const env = getSupabaseEnv();
+  const env = getSupabaseDatabaseEnv();
   const serviceRoleKey = normalizeEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   if (!env || !serviceRoleKey) {
