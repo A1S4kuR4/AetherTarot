@@ -2,7 +2,6 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { ReadingServiceError } from "@/server/reading/errors";
 
 export type BetaTesterRole = "tester" | "admin";
@@ -17,6 +16,20 @@ interface TesterRow {
   email?: unknown;
   role?: unknown;
   is_active?: unknown;
+}
+
+interface AppUserRow {
+  id?: unknown;
+}
+
+interface KeycloakSessionUser {
+  id?: unknown;
+  sub?: unknown;
+  email?: unknown;
+}
+
+interface KeycloakSession {
+  user?: KeycloakSessionUser | null;
 }
 
 export const E2E_ACCESS_BYPASS_HEADER = "x-aethertarot-e2e-access";
@@ -55,6 +68,11 @@ async function getE2eAccessBypassHeader() {
   }
 }
 
+async function getKeycloakSession() {
+  const { auth } = await import("@/auth");
+  return auth();
+}
+
 export function normalizeTesterRow(
   row: TesterRow | null,
 ): { email: string; role: BetaTesterRole } | null {
@@ -71,6 +89,77 @@ export function normalizeTesterRow(
   }
 
   return { email, role };
+}
+
+export function normalizeKeycloakSession(
+  session: KeycloakSession | null,
+): { subject: string; email: string } | null {
+  const user = session?.user;
+  const subject =
+    typeof user?.id === "string"
+      ? user.id.trim()
+      : typeof user?.sub === "string"
+        ? user.sub.trim()
+        : "";
+  const email = typeof user?.email === "string" ? normalizeEmail(user.email) : "";
+
+  if (!subject || !email) {
+    return null;
+  }
+
+  return { subject, email };
+}
+
+async function resolveAppUserId({
+  authSubject,
+  email,
+}: {
+  authSubject: string;
+  email: string;
+}) {
+  const adminClient = createAdminClient();
+
+  if (!adminClient) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "内测访问控制未配置服务端 Supabase service role key。",
+      503,
+    );
+  }
+
+  const { data, error } = await adminClient
+    .from("app_users")
+    .upsert(
+      {
+        auth_provider: "keycloak",
+        auth_subject: authSubject,
+        email,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "auth_provider,auth_subject" },
+    )
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "内测账号映射失败，请稍后再试。",
+      503,
+    );
+  }
+
+  const id = (data as AppUserRow | null)?.id;
+
+  if (typeof id !== "string" || !id) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "内测账号映射返回无效，请稍后再试。",
+      503,
+    );
+  }
+
+  return id;
 }
 
 export function assertRequiredRole({
@@ -101,22 +190,9 @@ export async function requireBetaTesterAccess(
     return bypassTester;
   }
 
-  const supabase = await createClient();
+  const identity = normalizeKeycloakSession(await getKeycloakSession());
 
-  if (!supabase) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "内测访问控制未配置 Supabase。请先配置 Supabase URL 与 anon key。",
-      503,
-    );
-  }
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user?.email) {
+  if (!identity) {
     throw new ReadingServiceError(
       "unauthorized",
       "请先登录后再使用内测 reading 服务。",
@@ -134,11 +210,10 @@ export async function requireBetaTesterAccess(
     );
   }
 
-  const email = normalizeEmail(user.email);
   const { data, error: testerError } = await adminClient
     .from("beta_testers")
     .select("email, role, is_active")
-    .eq("email", email)
+    .eq("email", identity.email)
     .eq("is_active", true)
     .maybeSingle();
 
@@ -161,7 +236,10 @@ export async function requireBetaTesterAccess(
   }
 
   const tester = {
-    userId: user.id,
+    userId: await resolveAppUserId({
+      authSubject: identity.subject,
+      email: testerRow.email,
+    }),
     email: testerRow.email,
     role: testerRow.role,
   } satisfies AuthenticatedTester;
