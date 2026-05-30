@@ -16,6 +16,13 @@ export interface LlmTokenBudgetConfig {
   dailyTokenLimit: number;
 }
 
+export interface AuthEmailQuotaConfig {
+  emailHourlyLimit: number;
+  emailDailyLimit: number;
+  ipHourlyLimit: number;
+  globalHourlyLimit: number;
+}
+
 function parsePositiveInteger({
   env,
   name,
@@ -96,6 +103,33 @@ export function getLlmTokenBudgetConfig(
       env,
       name: "AETHERTAROT_LLM_DAILY_TOKEN_LIMIT",
       fallback: 200_000,
+    }),
+  };
+}
+
+export function getAuthEmailQuotaConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): AuthEmailQuotaConfig {
+  return {
+    emailHourlyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_EMAIL",
+      fallback: 3,
+    }),
+    emailDailyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_AUTH_EMAIL_DAILY_LIMIT_PER_EMAIL",
+      fallback: 10,
+    }),
+    ipHourlyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_IP",
+      fallback: 10,
+    }),
+    globalHourlyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_GLOBAL",
+      fallback: 50,
     }),
   };
 }

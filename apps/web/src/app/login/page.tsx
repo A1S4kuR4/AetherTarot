@@ -1,9 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -12,43 +11,65 @@ function LoginForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCooldownSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cooldownSeconds]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
     setErrorMessage(null);
 
-    const supabase = createClient();
-
-    if (!supabase) {
-      setErrorMessage("Supabase 尚未配置，暂时无法登录。");
+    if (cooldownSeconds > 0) {
       return;
     }
 
     setIsSubmitting(true);
 
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          emailRedirectTo: redirectTo,
+      const response = await fetch("/api/auth/login-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          email: email.trim(),
+          next,
+        }),
       });
+      const payload = (await response.json().catch(() => null)) as {
+        error?: { message?: string };
+      } | null;
 
-      if (error) {
-        setErrorMessage("登录邮件发送失败，请检查本地 Supabase Auth 是否可用。");
+      if (!response.ok) {
+        if (response.status === 429) {
+          setCooldownSeconds(60);
+        }
+        setErrorMessage(
+          payload?.error?.message
+            ?? "无法发送登录链接。请确认你使用的是已邀请账号，或稍后重试。",
+        );
         return;
       }
     } catch {
-      setErrorMessage("无法连接登录服务，请确认本地 Supabase stack 已启动。");
+      setErrorMessage("登录服务暂时不可用，请稍后重试。");
       return;
     } finally {
       setIsSubmitting(false);
     }
 
-    setMessage("登录链接已经发送到你的邮箱。");
+    setCooldownSeconds(60);
+    setMessage("如果该邮箱已被邀请，登录链接会发送到你的邮箱。");
   };
 
   return (
@@ -59,7 +80,7 @@ function LoginForm() {
         </p>
         <h1 className="mt-2 font-serif text-3xl text-ink">内测登录</h1>
         <p className="mt-4 text-sm leading-relaxed text-text-body">
-          第一轮内测需要使用白名单邮箱登录。系统会按登录账号控制每日体验次数，并设置全站每日体验额度。
+          当前仅向已邀请并激活的内测账号发送登录链接，不开放新邮箱注册。系统会按登录账号控制每日体验次数，并设置全站每日体验额度。
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block space-y-2">
@@ -77,10 +98,14 @@ function LoginForm() {
           </label>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || cooldownSeconds > 0}
             className="btn-primary w-full"
           >
-            {isSubmitting ? "发送中..." : "发送登录链接"}
+            {isSubmitting
+              ? "发送中..."
+              : cooldownSeconds > 0
+                ? `${cooldownSeconds} 秒后可重发`
+                : "发送登录链接"}
           </button>
         </form>
         {message ? (
