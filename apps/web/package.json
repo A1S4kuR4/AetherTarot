@@ -16,11 +16,9 @@
     "@aethertarot/domain-tarot": "0.1.0",
     "@aethertarot/prompting": "0.1.0",
     "@aethertarot/shared-types": "0.1.0",
-    "@esbuild/linux-x64": "^0.28.0",
     "@langchain/core": "^1.1.39",
     "@langchain/langgraph": "^1.2.8",
     "@remotion/player": "^4.0.451",
-    "@rollup/rollup-linux-x64-gnu": "^4.61.1",
     "@supabase/supabase-js": "^2.101.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
@@ -47,6 +45,8 @@
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {
+    "@esbuild/linux-x64": "^0.28.0",
+    "@rollup/rollup-linux-x64-gnu": "^4.61.1",
     "@tailwindcss/oxide-linux-x64-gnu": "4.2.2"
   }
 }
