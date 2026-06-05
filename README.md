@@ -22,9 +22,25 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 ---
 
+## 🤖 Agent 架构（P1-P7.5）
+
+AetherTarot 已从早期 deterministic reading pipeline 演进为 **controlled agent workflow**：
+
+- **P1 Controlled Agent Loop**：在 provider draft 前插入 `agent_decider`，通过 conditional edge 路由到 `retrieve_knowledge`、`get_session_memory`、`request_clarification`、`safety_stop` 或 `final_answer`，并以 `max_agent_steps = 3` 防止循环失控。
+- **P2 Tool Registry / Executor / Audit**：工具调用统一走 registry → input schema → permission check → execution + timeout → output schema → audit entry，不散落为局部函数。
+- **P3 Knowledge Grounding**：`retrieve_tarot_knowledge` 接入本地 `knowledge/wiki`，keyword/metadata retrieval 返回 source-attributed chunks + `groundingStatus`，找不到时诚实降级为 `none`。
+- **P4 Agent Tracing**：`ReadingRunTrace` 汇总 agent steps、tool calls、retrieval sources、final answer grounding，回答”为什么走这条路径”。
+- **P5 Eval Replay**：7 个 deterministic replay cases，用 action path / tool calls / grounding / forbidden phrase 做本地回归，无需 LLM judge。
+- **P6 Thread-Level Memory**：`get_session_memory` / `write_session_memory` 通过 tool registry 读写同一 `thread_id` 的短期摘要，不是长期用户画像。
+- **P7 Advice Extraction**：`last_advice_summary` 从本轮 `StructuredReading` 提取（优先 `reflective_guidance`，其次 `synthesis`），不是固定牌义模板。
+
+详见 `docs/90-interview/` 证据包。
+
+---
+
 ## 📍 当前主线状态（2026-04-29）
 
-项目已经进入“主链已成、运行时牌池完整、第一轮内测风控已接入、UX 信任风险继续收口”的阶段。
+项目已经进入”主链已成、运行时牌池完整、第一轮内测风控已接入、UX 信任风险继续收口”的阶段。
 
 知识层现状：
 
@@ -43,7 +59,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 
 1. Reading 主链：`M1` Real Reading API、`M2` Structured Reading Schema、`M3` Minimal LangGraph 与 Dual-Tier Safety 已完成，并保持单一 `/api/reading` contract。
 2. Runtime / UX 主线：5 个运行时牌阵已进入差异化前台机制与 provider / prompt spread-specific axis；快速解读、核心速读与三层可信路径已接入。
-3. Beta Ops 主线：Supabase 登录、邮箱白名单、admin 权限、reading quota、LLM 成本预算、reading events 与 reading feedback 已接入第一轮内测闭环。
+3. Beta Ops 主线：Supabase 登录、邮箱白名单、admin 权限、按用户 quota、全站每日 LLM token 上限、reading events 与 reading feedback 已接入第一轮内测闭环。
 4. Memory / Persistence 主线：`session_capsule`、本地 history、future thread/session 与 long-term memory 边界已由 ADR-0004 和 P2 roadmap 收紧；服务端 persistence 与 memory merge 继续暂缓。
 
 `2026-04-09` 至 `2026-04-29` 同步确认的关键收口包括：
@@ -60,7 +76,7 @@ AetherTarot 的目标不是生成“像塔罗的话”，而是构建一个**可
 - 已把 hard-stop 示例资源替换为中国大陆固定的真实危机 / 心理支持入口，并把 incoming `prior_session_capsule` 的高风险细节净化接入回归
 - `/new` 已新增快速解读入口：未选牌阵时默认单牌启示，已选牌阵时尊重当前牌阵，使用 `lite` profile 自动抽牌并直达 `/reading`
 - `/reading` 已新增核心速读与三层可信路径：从既有字段派生首屏摘要，并区分“用户输入 / 牌面线索 / 解释连接”
-- `/api/reading` 已接入 Supabase session、`beta_testers` 白名单、邮箱/IP/全局 LLM 成本 quota、admin quota bypass 与 reading event 观测
+- `/api/reading` 已接入 Supabase session、`beta_testers` 白名单、按用户日限、共享 IP 分钟防刷与全站每日 LLM token 上限；admin 只豁免次数/突发防刷，真实模型 token 仍受总上限约束
 - `/encyclopedia` 已新增第一版塔罗百科 Agent：从 `knowledge/wiki` 检索牌义 / 概念 / 牌阵来源，经独立 `/api/encyclopedia/query` 返回带来源的百科问答，不改变 `/api/reading` 与 `StructuredReading`
 - `/admin` 与 `/api/admin/*` 当前只允许 `role = admin`
 - OpenAI-compatible `llm` baseline 当前第一轮内测默认使用 DashScope `qwen3.6-flash`，真实 key 通过服务端环境变量引用
@@ -123,7 +139,7 @@ reading request / response、history 与塔罗基础实体的共享类型。
 - 生成前危机转介、incoming capsule 安全净化、生成后安全检查与 `safety_note`
 - 默认 `placeholder` provider 与可选 OpenAI-compatible `llm` baseline
 - 快速解读路径、完整仪式路径、核心速读与三层可信路径
-- 第一轮内测访问控制、quota、LLM 成本预算、reading events 与 feedback
+- 第一轮内测访问控制、quota、全站每日 LLM token 上限、reading events 与 feedback
 - 第一版塔罗百科 Agent：`knowledge/wiki` 检索 + OpenAI-compatible LLM 生成带来源回答，独立于 reading 主链
 - 78 张运行时牌与 79 个 `cardsV2` 本地卡牌文件，均按竖版规范接入
 
