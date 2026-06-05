@@ -8,6 +8,7 @@ import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 import RadarChart from "./RadarChart";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -709,14 +710,12 @@ export default function InterpretationView() {
                           </div>
                           {drawnCard ? (
                             <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-card-sm border border-paper-border md:ml-4">
-                              <img
+                              <CardImage
                                 src={drawnCard.card.imageUrl}
                                 alt={drawnCard.card.name}
-                                className={cn(
-                                  "aspect-[1/1.7] w-full object-cover",
-                                  drawnCard.isReversed && "rotate-180",
-                                )}
-                                referrerPolicy="no-referrer"
+                                sizes="130px"
+                                quality={50}
+                                isReversed={drawnCard.isReversed}
                               />
                             </div>
                           ) : null}
@@ -999,14 +998,13 @@ export default function InterpretationView() {
                 key={drawnCard.positionId}
                 className="group aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border transition-shadow hover:shadow-sm"
               >
-                <img
+                <CardImage
                   src={drawnCard.card.imageUrl}
                   alt={drawnCard.card.name}
-                  className={cn(
-                    "h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.02]",
-                    drawnCard.isReversed && "rotate-180",
-                  )}
-                  referrerPolicy="no-referrer"
+                  sizes="(min-width: 1024px) 132px, 45vw"
+                  quality={50}
+                  isReversed={drawnCard.isReversed}
+                  className="transition-all duration-500 group-hover:scale-[1.02]"
                 />
               </div>
             ))}

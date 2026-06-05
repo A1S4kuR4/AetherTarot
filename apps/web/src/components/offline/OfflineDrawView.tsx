@@ -7,6 +7,7 @@ import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 type OfflineCardInput = {
   cardId: string;
@@ -211,14 +212,12 @@ export default function OfflineDrawView() {
             <div className="flex flex-col items-center gap-4">
               <div className="aspect-[1/1.7] w-[150px] overflow-hidden rounded-2xl border border-midnight-border bg-midnight-elevated shadow-[0_12px_32px_rgba(0,0,0,0.28)]">
                 {activeCard ? (
-                  <img
+                  <CardImage
                     src={activeCard.imageUrl}
                     alt={activeCard.name}
-                    className={cn(
-                      "h-full w-full object-cover",
-                      activeInput.isReversed && "rotate-180",
-                    )}
-                    referrerPolicy="no-referrer"
+                    sizes="150px"
+                    quality={50}
+                    isReversed={activeInput.isReversed}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center px-5 text-center font-sans text-xs leading-relaxed text-text-inverse-muted/60">
