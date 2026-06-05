@@ -28,7 +28,7 @@ describe("resolveSafeLocalRedirect", () => {
 
 describe("resolvePublicRequestOrigin", () => {
   const internalUrl = new URL(
-    "https://localhost:3000/api/auth/callback/keycloak?next=%2F",
+    "https://localhost:3000/api/auth/callback/credentials?next=%2F",
   );
 
   it("uses the configured public site URL for production callbacks", () => {

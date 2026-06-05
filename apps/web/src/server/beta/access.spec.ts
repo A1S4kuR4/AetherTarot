@@ -3,7 +3,7 @@ import {
   assertRequiredRole,
   getE2eAccessBypassTester,
   isE2eAccessBypassEnabled,
-  normalizeKeycloakSession,
+  normalizeAuthSession,
   normalizeTesterRow,
   type AuthenticatedTester,
 } from "@/server/beta/access";
@@ -43,30 +43,30 @@ describe("beta access helpers", () => {
     ).toBeNull();
   });
 
-  it("normalizes Keycloak sessions by subject and email", () => {
+  it("normalizes auth sessions by subject and email", () => {
     expect(
-      normalizeKeycloakSession({
+      normalizeAuthSession({
         user: {
-          id: " keycloak-subject ",
+          id: " user-subject ",
           email: " Tester@Example.COM ",
         },
       }),
     ).toEqual({
-      subject: "keycloak-subject",
+      subject: "user-subject",
       email: "tester@example.com",
     });
   });
 
-  it("rejects Keycloak sessions without a subject or email", () => {
+  it("rejects auth sessions without a subject or email", () => {
     expect(
-      normalizeKeycloakSession({
+      normalizeAuthSession({
         user: {
-          id: "keycloak-subject",
+          id: "user-subject",
         },
       }),
     ).toBeNull();
     expect(
-      normalizeKeycloakSession({
+      normalizeAuthSession({
         user: {
           email: "tester@example.com",
         },

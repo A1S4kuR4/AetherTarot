@@ -12,7 +12,7 @@ export interface Database {
       app_users: {
         Row: {
           id: string;
-          auth_provider: "keycloak";
+          auth_provider: "credentials";
           auth_subject: string;
           email: string;
           created_at: string;
@@ -20,7 +20,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          auth_provider: "keycloak";
+          auth_provider: "credentials";
           auth_subject: string;
           email: string;
           created_at?: string;
@@ -41,6 +41,7 @@ export interface Database {
           email: string;
           role: "tester" | "admin";
           is_active: boolean;
+          password_hash: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -48,6 +49,7 @@ export interface Database {
           email: string;
           role?: "tester" | "admin";
           is_active?: boolean;
+          password_hash?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -55,6 +57,7 @@ export interface Database {
           email?: string;
           role?: "tester" | "admin";
           is_active?: boolean;
+          password_hash?: string | null;
           created_at?: string;
           updated_at?: string;
         };
