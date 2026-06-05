@@ -22,14 +22,14 @@ interface AppUserRow {
   id?: unknown;
 }
 
-interface KeycloakSessionUser {
+interface SessionUser {
   id?: unknown;
   sub?: unknown;
   email?: unknown;
 }
 
-interface KeycloakSession {
-  user?: KeycloakSessionUser | null;
+interface AuthSession {
+  user?: SessionUser | null;
 }
 
 export const E2E_ACCESS_BYPASS_HEADER = "x-aethertarot-e2e-access";
@@ -68,7 +68,7 @@ async function getE2eAccessBypassHeader() {
   }
 }
 
-async function getKeycloakSession() {
+async function getAuthSession() {
   const { auth } = await import("@/auth");
   return auth();
 }
@@ -91,8 +91,8 @@ export function normalizeTesterRow(
   return { email, role };
 }
 
-export function normalizeKeycloakSession(
-  session: KeycloakSession | null,
+export function normalizeAuthSession(
+  session: AuthSession | null,
 ): { subject: string; email: string } | null {
   const user = session?.user;
   const subject =
@@ -131,7 +131,7 @@ async function resolveAppUserId({
     .from("app_users")
     .upsert(
       {
-        auth_provider: "keycloak",
+        auth_provider: "credentials",
         auth_subject: authSubject,
         email,
         updated_at: new Date().toISOString(),
@@ -190,7 +190,7 @@ export async function requireBetaTesterAccess(
     return bypassTester;
   }
 
-  const identity = normalizeKeycloakSession(await getKeycloakSession());
+  const identity = normalizeAuthSession(await getAuthSession());
 
   if (!identity) {
     throw new ReadingServiceError(
