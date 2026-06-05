@@ -67,6 +67,19 @@ function buildReading(
 }
 
 describe("memory advice extraction", () => {
+  it("keeps extractLastAdviceSummary narrowed to reading-derived input", () => {
+    const reading = buildReading();
+
+    expect(extractLastAdviceSummary({ reading })).toBe(
+      "先和可靠同事确认岗位信息，再决定是否投递。 把冲动行动换成一周内可验证的小动作。",
+    );
+
+    if (false) {
+      // @ts-expect-error P7.5 intentionally removed topic/cards metadata.
+      extractLastAdviceSummary({ reading, topic: "career", cards: [] });
+    }
+  });
+
   it("extracts last_advice_summary from structured reflective guidance first", () => {
     const reading = buildReading();
 
@@ -102,6 +115,20 @@ describe("memory advice extraction", () => {
     });
 
     expect(buildLastAdviceSummary(reading)).toBe(GENERIC_LAST_ADVICE_FALLBACK);
+  });
+
+  it("truncates long reading-derived advice instead of storing full text", () => {
+    const longAdvice = `建议先整理事实，再${"非常谨慎地".repeat(40)}推进。`;
+    const reading = buildReading({
+      synthesis: "",
+      reflective_guidance: [longAdvice],
+    });
+    const summary = extractLastAdviceSummary({ reading });
+
+    expect(summary).toBeTruthy();
+    expect(summary?.length).toBeLessThanOrEqual(72);
+    expect(summary).toMatch(/…$/);
+    expect(summary).not.toBe(longAdvice);
   });
 
   it("memory_advice_extraction_prefers_reading_output", async () => {

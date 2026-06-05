@@ -32,7 +32,7 @@ describe("reading tool system", () => {
     expect(await store.get("thread-1")).toBeNull();
 
     const first = await store.upsert("thread-1", {
-      topics: ["career"],
+      topics: ["career", "行动节奏"],
       cards: [{ id: "hanged-man", name: "倒吊人", orientation: "reversed" }],
       stated_constraints: [],
       open_questions: ["先确认卡点在哪里？"],
@@ -40,16 +40,27 @@ describe("reading tool system", () => {
       updated_at: "2026-05-21T00:00:00.000Z",
     });
     const second = await store.upsert("thread-1", {
-      topics: ["career", "行动节奏"],
-      cards: [{ id: "star", name: "星星", orientation: "upright" }],
-      stated_constraints: ["reality_check_required"],
-      open_questions: [],
+      topics: ["career", "行动节奏", " 离职 "],
+      cards: [
+        { id: "hanged-man", name: "倒吊人更新", orientation: "reversed" },
+        { id: "hanged-man", name: "倒吊人正位", orientation: "upright" },
+        { id: "star", name: "星星", orientation: "upright" },
+      ],
+      stated_constraints: ["reality_check_required", "reality_check_required"],
+      open_questions: ["先确认卡点在哪里？"],
       updated_at: "2026-05-21T00:01:00.000Z",
     });
 
     expect(first.thread_id).toBe("thread-1");
-    expect(second.topics).toEqual(["career", "行动节奏"]);
-    expect(second.cards.map((card) => card.id)).toEqual(["hanged-man", "star"]);
+    expect(second.topics).toEqual(["career", "行动节奏", "离职"]);
+    expect(second.cards).toHaveLength(3);
+    expect(second.cards).toEqual([
+      { id: "hanged-man", name: "倒吊人更新", orientation: "reversed" },
+      { id: "hanged-man", name: "倒吊人正位", orientation: "upright" },
+      { id: "star", name: "星星", orientation: "upright" },
+    ]);
+    expect(second.stated_constraints).toEqual(["reality_check_required"]);
+    expect(second.open_questions).toEqual(["先确认卡点在哪里？"]);
     expect(second.last_advice_summary).toBe("先识别卡点，不要冲动行动。");
 
     await store.clear?.("thread-1");
@@ -137,6 +148,25 @@ describe("reading tool system", () => {
       tool_name: "get_session_memory",
       permission: "session",
       risk_level: "medium",
+      ok: true,
+    });
+  });
+
+  it("returns null for get_session_memory when a thread has no prior memory", async () => {
+    const execution = await executeReadingTool({
+      toolName: "get_session_memory",
+      input: { threadId: "thread-memory-empty" },
+      registry: createReadingToolRegistry([getSessionMemoryTool]),
+      context: {
+        permissions: ["public", "session"],
+        sessionMemoryStore: createInMemorySessionMemoryStore(),
+      },
+    });
+
+    expect(execution.result.ok).toBe(true);
+    expect(execution.result.output).toEqual({ memory: null });
+    expect(execution.auditEntry).toMatchObject({
+      tool_name: "get_session_memory",
       ok: true,
     });
   });
