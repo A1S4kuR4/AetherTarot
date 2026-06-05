@@ -46,6 +46,7 @@ prototype/dist/
 
 # Personal workspace metadata
 .obsidian/
+.claude/settings.local.json
 
 # Local operator notes
 memory/*-health-report-*.md
