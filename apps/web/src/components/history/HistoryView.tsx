@@ -7,6 +7,7 @@ import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { HISTORY_THUMBNAIL } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 const spreads = getAllSpreads();
 
@@ -110,11 +111,12 @@ export default function HistoryView() {
               >
                 <div className="flex items-start gap-5">
                   <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-xl border border-paper-border">
-                    <img
+                    <CardImage
                       src={HISTORY_THUMBNAIL}
                       alt="Reading"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
+                      sizes="68px"
+                      quality={50}
+                      className="transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import NextLink from "next/link";
 
 import IntroSection from "./sections/IntroSection";
@@ -148,10 +149,13 @@ export default function HomeView() {
                     <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-paper-muted">
                       {/* Symbolic representation of history */}
                       <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                        <img 
-                          src="/home/journey_cover.png" 
+                        <Image
+                          src="/home/journey_cover.png"
                           alt="Journey Cover"
-                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
+                          fill
+                          sizes="(min-width: 768px) 480px, 90vw"
+                          quality={75}
+                          className="object-cover opacity-80 transition-all duration-700 group-hover:opacity-100"
                         />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/20 to-transparent p-6">
@@ -183,10 +187,13 @@ export default function HomeView() {
                     <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-midnight-panel">
                       {/* Symbolic representation of new ritual */}
                       <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                        <img 
-                          src="/home/ritual_cover.png" 
+                        <Image
+                          src="/home/ritual_cover.png"
                           alt="Ritual Cover"
-                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
+                          fill
+                          sizes="(min-width: 768px) 480px, 90vw"
+                          quality={75}
+                          className="object-cover opacity-80 transition-all duration-700 group-hover:opacity-100"
                         />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-6">

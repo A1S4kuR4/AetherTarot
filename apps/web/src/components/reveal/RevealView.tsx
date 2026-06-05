@@ -7,6 +7,7 @@ import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 export default function RevealView() {
   const router = useRouter();
@@ -126,14 +127,18 @@ export default function RevealView() {
                       )}
                       style={{ transformStyle: "preserve-3d" }}
                     >
-                      <img
+                      <CardImage
                         src={drawn.card.imageUrl}
                         alt={drawn.card.name}
-                        className={cn(
-                          "h-full w-full object-cover",
-                          drawn.isReversed && "rotate-180",
-                        )}
-                        referrerPolicy="no-referrer"
+                        sizes={
+                          selectedSpread.positions.length === 1
+                            ? "(min-width: 768px) 384px, 80vw"
+                            : "(min-width: 1280px) 220px, (min-width: 768px) 28vw, 72vw"
+                        }
+                        quality={75}
+                        priority={index === 0}
+                        isReversed={drawn.isReversed}
+                        className="transition-transform duration-500"
                       />
                     </motion.div>
                   </div>

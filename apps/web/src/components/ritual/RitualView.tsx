@@ -12,6 +12,7 @@ import {
   shuffleTarotDeck,
 } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 const DRAW_ANIMATION_MS = 1050;
 
@@ -236,11 +237,12 @@ export default function RitualView() {
               drawOverlay.isMajorArcana ? "border-terracotta/80" : "border-indigo/40",
             )}
           >
-            <img
+            <CardImage
               src={CARD_BACK_IMAGE}
               alt={`${drawOverlay.positionName} card back`}
-              className="h-full w-full object-cover"
-              referrerPolicy="no-referrer"
+              sizes={`${Math.ceil(drawOverlay.to.width)}px`}
+              quality={50}
+              priority
             />
           </div>
         </motion.div>
@@ -284,11 +286,11 @@ export default function RitualView() {
                 )}
               >
                 {drawn ? (
-                  <img
+                  <CardImage
                     src={CARD_BACK_IMAGE}
                     alt="Tarot Back"
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
+                    sizes="(min-width: 768px) 120px, 90px"
+                    quality={50}
                   />
                 ) : (
                   <span className="font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
@@ -392,14 +394,15 @@ export default function RitualView() {
               disabled={!canDraw}
             >
               <div className="h-full w-full overflow-hidden rounded-[12px] border border-midnight-border-subtle bg-midnight-elevated">
-                <img
+                <CardImage
                   src={CARD_BACK_IMAGE}
                   alt="Tarot Back"
+                  sizes="(min-width: 768px) 120px, 90px"
+                  quality={50}
                   className={cn(
-                    "h-full w-full object-cover opacity-70 transition-opacity duration-300",
+                    "opacity-70 transition-opacity duration-300",
                     isShuffling ? "opacity-90" : "hover:opacity-100",
                   )}
-                  referrerPolicy="no-referrer"
                 />
               </div>
             </motion.button>
