@@ -313,12 +313,6 @@ function normalizeMemoryText(value: string, maxLength = 120) {
 export function buildLastAdviceSummary(reading: StructuredReading) {
   return extractLastAdviceSummary({
     reading,
-    topic: reading.question_type,
-    cards: reading.cards.map((card) => ({
-      id: card.card_id,
-      name: card.name,
-      orientation: card.orientation,
-    })),
   }) ?? GENERIC_LAST_ADVICE_FALLBACK;
 }
 
