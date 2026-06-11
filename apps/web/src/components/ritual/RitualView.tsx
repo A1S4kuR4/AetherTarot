@@ -268,47 +268,52 @@ export default function RitualView() {
         </p>
       </div>
 
-      <div className="relative z-10 mb-4 flex flex-wrap items-end justify-center gap-6 md:gap-10">
-        {selectedSpread.positions.map((position) => {
-          const drawn = drawnCards.find((card) => card.positionId === position.id);
+      <div
+        data-testid="ritual-position-track"
+        className="relative z-10 mb-4 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-2 hide-scrollbar md:snap-none md:overflow-visible"
+      >
+        <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-4 md:w-full md:flex-wrap md:justify-center md:gap-10">
+          {selectedSpread.positions.map((position) => {
+            const drawn = drawnCards.find((card) => card.positionId === position.id);
 
-          return (
-            <div key={position.id} className="flex flex-col items-center gap-3">
-              <div
-                ref={(node) => {
-                  slotRefs.current[position.id] = node;
-                }}
-                className={cn(
-                  "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300 md:w-[120px]",
-                  drawn
-                    ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
-                    : "border-dashed border-midnight-border",
-                )}
-              >
-                {drawn ? (
-                  <CardImage
-                    src={CARD_BACK_IMAGE}
-                    alt="Tarot Back"
-                    sizes="(min-width: 768px) 120px, 90px"
-                    quality={50}
-                  />
-                ) : (
-                  <span className="font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
-                    {position.name}
-                  </span>
-                )}
+            return (
+              <div key={position.id} className="flex w-[86px] shrink-0 scroll-mx-4 snap-center flex-col items-center gap-3 md:w-[120px]">
+                <div
+                  ref={(node) => {
+                    slotRefs.current[position.id] = node;
+                  }}
+                  className={cn(
+                    "relative flex w-full aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300",
+                    drawn
+                      ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
+                      : "border-dashed border-midnight-border",
+                  )}
+                >
+                  {drawn ? (
+                    <CardImage
+                      src={CARD_BACK_IMAGE}
+                      alt="Tarot Back"
+                      sizes="(min-width: 768px) 120px, 86px"
+                      quality={50}
+                    />
+                  ) : (
+                    <span className="px-2 text-center font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
+                      {position.name}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "max-w-full truncate font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
+                    drawn ? "text-indigo" : "text-text-inverse-muted/50",
+                  )}
+                >
+                  {position.name}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
-                  drawn ? "text-indigo" : "text-text-inverse-muted/50",
-                )}
-              >
-                {position.name}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       <div className="relative z-50 mb-2 flex flex-wrap justify-center gap-4">

@@ -90,8 +90,22 @@ export default function EncyclopediaView({
     detailRef.current?.scrollTo({ top: 0 });
   }, [activeCard.id]);
 
+  const handleSelectCard = (card: TarotCard) => {
+    setSelectedCard(card);
+
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      window.requestAnimationFrame(() => {
+        const title = detailRef.current?.querySelector("[data-card-detail-title]");
+        (title ?? detailRef.current)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  };
+
   return (
-    <section className="viewport-workspace mx-auto grid w-full max-w-7xl gap-5 px-6 py-4 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:px-8">
+    <section className="viewport-workspace mx-auto grid w-full max-w-7xl gap-5 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:px-8">
       <aside className="flex min-h-0 flex-col gap-4">
         <header className="shrink-0">
           <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
@@ -142,7 +156,7 @@ export default function EncyclopediaView({
               placeholder="搜索卡牌名称"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full rounded-2xl border border-paper-border bg-paper-raised py-2.5 pl-10 pr-4 text-sm text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
+              className="min-h-11 w-full rounded-2xl border border-paper-border bg-paper-raised py-2.5 pl-10 pr-4 text-sm text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
             />
           </label>
 
@@ -156,7 +170,7 @@ export default function EncyclopediaView({
                 type="button"
                 onClick={() => setRuntimeFilter(filter.id)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs transition-all",
+                  "min-h-10 rounded-full border px-3 py-1.5 text-xs transition-all",
                   runtimeFilter === filter.id
                     ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
                     : "border-paper-border bg-paper-raised text-text-muted hover:text-ink",
@@ -177,7 +191,7 @@ export default function EncyclopediaView({
               <button
                 key={card.id}
                 type="button"
-                onClick={() => setSelectedCard(card)}
+                onClick={() => handleSelectCard(card)}
                 className={cn(
                   "relative aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
                   activeCard.id === card.id
@@ -207,10 +221,10 @@ export default function EncyclopediaView({
       <article
         ref={detailRef}
         data-testid="encyclopedia-card-detail"
-        className="min-h-0 overflow-y-auto rounded-3xl border border-paper-border bg-paper-raised p-8 md:p-10"
+        className="scroll-mt-20 min-h-0 overflow-y-auto rounded-3xl border border-paper-border bg-paper-raised p-4 sm:p-6 md:p-10"
       >
-        <div className="flex flex-col gap-10 md:flex-row">
-          <div className="w-full md:w-5/12">
+        <div className="flex flex-col gap-7 md:flex-row md:gap-10">
+          <div className="mx-auto w-full max-w-[260px] md:max-w-none md:w-5/12">
             <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
               <Image
                 src={activeCard.imageUrl}
@@ -233,8 +247,10 @@ export default function EncyclopediaView({
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
                 {activeCard.arcana} · {activeCard.element}
               </span>
-              <h2 className="mt-1.5 font-serif text-4xl text-ink">
+              <h2 className="mt-1.5 font-serif text-3xl text-ink md:text-4xl">
+                <span data-card-detail-title>
                 {activeCard.name}
+                </span>
               </h2>
               <p className="font-serif text-lg text-text-accent">
                 {activeCard.englishName}
@@ -250,7 +266,7 @@ export default function EncyclopediaView({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2.5">
                 <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-terracotta">
                   正位关键词

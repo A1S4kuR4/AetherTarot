@@ -16,7 +16,13 @@ const navItems = [
  * Mobile-only slide-out drawer navigation.
  * Hidden on desktop; toggled via Topbar hamburger button.
  */
-export default function Sidebar() {
+export default function Sidebar({
+  isOpen = false,
+  onClose,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -24,26 +30,27 @@ export default function Sidebar() {
       {/* Backdrop */}
       <div
         id="mobile-sidebar-backdrop"
-        className="fixed inset-0 z-[60] hidden bg-ink/40 backdrop-blur-sm md:hidden"
-        onClick={() => {
-          document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-          document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-        }}
+        className={cn(
+          "fixed inset-0 z-[60] bg-ink/40 backdrop-blur-sm transition-opacity md:hidden",
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={onClose}
       />
 
       {/* Drawer */}
       <aside
         id="mobile-sidebar"
-        className="fixed top-0 right-0 z-[70] flex h-full w-72 translate-x-full flex-col bg-paper-raised border-l border-paper-border p-8 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden"
+        className={cn(
+          "fixed top-0 right-0 z-[70] flex h-full w-[min(18rem,86vw)] flex-col border-l border-paper-border bg-paper-raised p-6 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden",
+          isOpen ? "translate-x-0" : "translate-x-full",
+        )}
+        aria-hidden={!isOpen}
       >
         <button
           type="button"
-          className="absolute top-5 right-5 rounded-xl p-2 text-text-muted hover:bg-paper-muted"
+          className="absolute top-5 right-5 min-h-11 min-w-11 rounded-xl p-2 text-text-muted hover:bg-paper-muted"
           aria-label="关闭菜单"
-          onClick={() => {
-            document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-            document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-          }}
+          onClick={onClose}
         >
           <LegacyIcon name="close" className="text-xl" />
         </button>
@@ -58,12 +65,9 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => {
-                  document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-                  document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-                }}
+                onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
+                  "flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
                   isActive
                     ? "bg-terracotta/10 text-terracotta"
                     : "text-text-body hover:bg-paper-muted",

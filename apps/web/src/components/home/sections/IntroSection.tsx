@@ -5,7 +5,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function IntroSection() {
   return (
-    <section className="flex h-full w-full items-center justify-center px-6 text-center">
+    <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-0">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
