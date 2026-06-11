@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
@@ -15,7 +16,12 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMidnight = MIDNIGHT_ROUTES.includes(pathname);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <ReadingProvider>
@@ -24,8 +30,15 @@ export default function AppShell({
           isMidnight ? "midnight-surface min-h-screen" : "paper-surface min-h-screen"
         }
       >
-        <Topbar isMidnight={isMidnight} />
-        <Sidebar />
+        <Topbar
+          isMidnight={isMidnight}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onMobileMenuToggle={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+        />
+        <Sidebar
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+        />
 
         <main className="pt-16">
           <AnimatePresence mode="wait">

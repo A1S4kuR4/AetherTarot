@@ -5,7 +5,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function MindsetSection() {
   return (
-    <section className="flex h-full w-full items-center justify-center px-6 py-10 text-center">
+    <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-10">
       <div className="w-full max-w-3xl space-y-10">
         <header className="space-y-4">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">

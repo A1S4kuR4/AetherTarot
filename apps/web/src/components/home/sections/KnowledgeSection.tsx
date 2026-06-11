@@ -5,7 +5,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function KnowledgeSection() {
   return (
-    <section className="flex h-full w-full items-center justify-center bg-paper-raised/50 px-6 py-10">
+    <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-paper-raised/50 px-6 py-12 lg:h-full lg:min-h-0 lg:py-10">
       <div className="w-full max-w-5xl space-y-14">
         <header className="text-center">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">

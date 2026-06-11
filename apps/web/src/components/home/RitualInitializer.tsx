@@ -713,7 +713,7 @@ export default function RitualInitializer() {
       </div>
 
       {showDecisionBoundaryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6 mobile-safe-bottom sm:px-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -723,12 +723,12 @@ export default function RitualInitializer() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-paper-border bg-paper p-8 shadow-2xl"
+            className="relative z-10 my-auto max-h-[calc(100dvh-3rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-paper-border bg-paper p-5 shadow-2xl sm:p-8"
           >
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500 sm:h-14 sm:w-14">
               <LegacyIcon name="warning" className="text-3xl" />
             </div>
-            <h3 className="mb-3 text-center font-serif text-2xl text-ink">
+            <h3 className="mb-3 text-center font-serif text-xl text-ink sm:text-2xl">
               重大现实决定前的校准
             </h3>
             <p className="text-center text-sm leading-relaxed text-text-body">
@@ -753,14 +753,14 @@ export default function RitualInitializer() {
                 type="button"
                 onClick={handleDecisionBoundaryConfirm}
                 disabled={!decisionBoundaryAcknowledged}
-                className="w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-12 w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 确认现实边界并继续
               </button>
               <button
                 type="button"
                 onClick={closeDecisionBoundaryModal}
-                className="w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
+                className="min-h-12 w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
               >
                 返回修改问题
               </button>

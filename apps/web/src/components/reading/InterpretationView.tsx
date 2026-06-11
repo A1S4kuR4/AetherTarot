@@ -28,6 +28,15 @@ const FEEDBACK_OPTIONS = [
 
 type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
 
+const MOBILE_READING_NAV_ITEMS = [
+  { id: "reading-quick", label: "速读" },
+  { id: "reading-trust", label: "可信" },
+  { id: "reading-cards", label: "逐牌" },
+  { id: "reading-synthesis", label: "综合" },
+  { id: "reading-guidance", label: "指引" },
+  { id: "reading-feedback", label: "反馈" },
+] as const;
+
 function getLeadSentence(value: string, fallbackKeywords: string[]) {
   const normalized = value.replace(/\s+/g, " ").trim();
 
@@ -370,10 +379,10 @@ export default function InterpretationView() {
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-20 pt-24 lg:flex-row lg:px-16">
+    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-20 pt-20 sm:px-6 lg:flex-row lg:gap-12 lg:px-16 lg:pt-24">
       <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
         <header className="space-y-5">
-          <h1 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
+          <h1 className="font-serif text-3xl font-semibold text-ink md:text-5xl">
             {reading?.reading_phase === "initial" ? "初步解读" : "解读结果"}
           </h1>
           <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
@@ -497,16 +506,68 @@ export default function InterpretationView() {
                 reading.presentation_mode === "sober_anchor" && "opacity-90 grayscale-[20%]",
               )}
             >
+              <nav
+                data-testid="mobile-reading-nav"
+                className="sticky top-16 z-30 -mx-4 border-y border-paper-border bg-paper/95 px-4 py-2 backdrop-blur lg:hidden"
+                aria-label="解读分段导航"
+              >
+                <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+                  {MOBILE_READING_NAV_ITEMS.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-paper-border bg-paper-raised px-3.5 text-xs font-medium text-text-muted"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </nav>
+
+              <div
+                data-testid="mobile-reading-card-strip"
+                className="lg:hidden"
+              >
+                <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                  {drawnCards.map((drawnCard, index) => {
+                    const position = selectedSpread.positions[index]?.name ?? `位置 ${index + 1}`;
+
+                    return (
+                      <div
+                        key={`mobile-strip-${drawnCard.positionId}`}
+                        className="w-20 shrink-0"
+                        title={position}
+                        aria-label={`${position}：${drawnCard.card.name}`}
+                      >
+                        <div className="aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border bg-paper-raised shadow-sm">
+                          <CardImage
+                            src={drawnCard.card.imageUrl}
+                            alt={drawnCard.card.name}
+                            sizes="80px"
+                            quality={50}
+                            isReversed={drawnCard.isReversed}
+                          />
+                        </div>
+                        <p className="mt-1 truncate text-center text-[10px] text-text-muted">
+                          第 {index + 1} 位
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {coreQuickRead ? (
                 <section
+                  id="reading-quick"
                   className={cn(
-                    "relative my-16 rounded-3xl border p-8 shadow-sm",
+                    "relative scroll-mt-32 rounded-3xl border p-5 shadow-sm md:my-16 md:p-8",
                     reading.presentation_mode === "sober_anchor"
                       ? "border-paper-border bg-paper"
                       : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper",
                   )}
                 >
-                  <div className="absolute left-8 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm">
+                  <div className="absolute left-5 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm md:left-8">
                     <LegacyIcon
                       name="auto_awesome"
                       className="text-[14px] text-terracotta/70"
@@ -521,7 +582,7 @@ export default function InterpretationView() {
                         一句话先看重点
                       </p>
                       <div className="max-w-[34rem]">
-                        <h2 className="font-serif text-[28px] leading-[1.45] text-ink">
+                        <h2 className="font-serif text-2xl leading-[1.45] text-ink md:text-[28px]">
                           {coreQuickRead.core}
                         </h2>
                       </div>
@@ -565,7 +626,7 @@ export default function InterpretationView() {
                 </section>
               ) : null}
 
-              <section className="reading-card border-terracotta/20 bg-paper-raised/70">
+              <section id="reading-trust" className="reading-card scroll-mt-32 border-terracotta/20 bg-paper-raised/70">
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                   可信路径
                 </p>
@@ -628,7 +689,7 @@ export default function InterpretationView() {
                 </div>
               </section>
 
-              <section className="reading-card space-y-5">
+              <section id="reading-cards" className="reading-card scroll-mt-32 space-y-5">
                 <div>
                   <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                     逐牌
@@ -727,8 +788,9 @@ export default function InterpretationView() {
               </section>
 
               <section
+                id="reading-synthesis"
                 className={cn(
-                  "reading-card",
+                  "reading-card scroll-mt-32",
                   reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
                 )}
               >
@@ -745,8 +807,9 @@ export default function InterpretationView() {
               </section>
 
               <section
+                id="reading-guidance"
                 className={cn(
-                  "reading-card",
+                  "reading-card scroll-mt-32",
                   reading.presentation_mode === "void_narrative" && "border-none bg-transparent px-0 shadow-none",
                   reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
                 )}
@@ -776,8 +839,9 @@ export default function InterpretationView() {
               </section>
 
               <section
+                id="reading-followup"
                 className={cn(
-                  "reading-card",
+                  "reading-card scroll-mt-32",
                   reading.presentation_mode === "void_narrative" && "border-none bg-transparent px-0 shadow-none",
                   reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
                 )}
@@ -800,7 +864,7 @@ export default function InterpretationView() {
 
 
               {isInitialAwaitingFollowup ? (
-                <section className="reading-card border-terracotta/30 bg-terracotta/5">
+                <section className="reading-card scroll-mt-32 border-terracotta/30 bg-terracotta/5">
                   <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                     校准
                   </p>
@@ -834,7 +898,7 @@ export default function InterpretationView() {
                 </section>
               ) : null}
               {reading.safety_note ? (
-                <section className="rounded-2xl border border-red-900/40 bg-red-950/20 p-6 shadow-inner ring-1 ring-inset ring-red-900/20">
+                <section className="scroll-mt-32 rounded-2xl border border-red-900/40 bg-red-950/20 p-5 shadow-inner ring-1 ring-inset ring-red-900/20 md:p-6">
                   <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">
                     <LegacyIcon name="warning" className="text-red-500/80" />
                     <div>
@@ -851,7 +915,7 @@ export default function InterpretationView() {
               ) : null}
 
               {reading.confidence_note ? (
-                <section className="reading-card">
+                <section className="reading-card scroll-mt-32">
                   <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                     说明
                   </p>
@@ -863,7 +927,7 @@ export default function InterpretationView() {
               ) : null}
 
               {isCompletedReading ? (
-                <section className="reading-card bg-paper-raised">
+                <section id="reading-feedback" className="reading-card scroll-mt-32 bg-paper-raised">
                   <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                     反馈
                   </p>
@@ -898,7 +962,7 @@ export default function InterpretationView() {
                     placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
                     className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 disabled:opacity-70"
                   />
-                  <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-text-muted">
                       {hasSubmittedFeedback ? "反馈已记录，谢谢。" : feedbackError}
                     </p>
@@ -915,8 +979,8 @@ export default function InterpretationView() {
               ) : null}
 
               {currentHistoryEntry ? (
-                <section className="reading-card bg-paper-raised">
-                  <div className="mb-4 flex items-center justify-between">
+                <section id="reading-notes" className="reading-card scroll-mt-32 bg-paper-raised">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                         反思手记
@@ -953,7 +1017,7 @@ export default function InterpretationView() {
         ) : null}
       </div>
 
-      <aside className="sticky top-24 w-full space-y-6 self-start lg:w-72">
+      <aside className="sticky top-24 hidden w-full space-y-6 self-start lg:block lg:w-72">
         <div className="reading-card">
           <h4 className="mb-4 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
             解读流程

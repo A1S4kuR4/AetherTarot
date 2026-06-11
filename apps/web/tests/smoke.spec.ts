@@ -124,6 +124,43 @@ async function expectDocumentFitsViewport(
     .toBeLessThanOrEqual(tolerance);
 }
 
+async function expectNoHorizontalOverflow(
+  page: Parameters<typeof test>[0]["page"],
+  tolerance = 2,
+) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() =>
+          Math.max(
+            document.body.scrollWidth - document.documentElement.clientWidth,
+            document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          ),
+        ),
+      { timeout: 3000 },
+    )
+    .toBeLessThanOrEqual(tolerance);
+}
+
+async function expectHomeSectionsDoNotClipContent(
+  page: Parameters<typeof test>[0]["page"],
+) {
+  const clippedSections = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-index]")]
+      .map((section) => {
+        const rect = section.getBoundingClientRect();
+        return {
+          index: section.dataset.index,
+          height: Math.ceil(rect.height),
+          scrollHeight: section.scrollHeight,
+        };
+      })
+      .filter((section) => section.scrollHeight - section.height > 2),
+  );
+
+  expect(clippedSections).toEqual([]);
+}
+
 async function expectRitualInitializerControlsInViewport(
   page: Parameters<typeof test>[0]["page"],
 ) {
@@ -921,6 +958,29 @@ test.describe("AetherTarot smoke flow", () => {
     await expectDocumentFitsViewport(page);
   });
 
+  test("keeps mobile home sections from clipping into each other", async ({
+    page,
+  }) => {
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 375, height: 667 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await gotoAppRoute(page, "/");
+
+      await expectNoHorizontalOverflow(page);
+      await expect(page.getByTestId("home-scroll-cue")).toBeVisible();
+      await page.getByTestId("home-scroll-cue").click();
+      await expect(page.getByRole("heading", { name: "象征：灵魂的 78 个切面" })).toBeInViewport();
+      await expectHomeSectionsDoNotClipContent(page);
+      await expect(page.getByRole("heading", { name: "如何发问：从预言到反思" })).toBeVisible();
+
+      await page.getByRole("heading", { name: "通往深处" }).scrollIntoViewIfNeeded();
+      await expect(page.getByRole("heading", { name: "通往深处" })).toBeInViewport();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   test("keeps the ritual initializer visible without body scrolling on desktop", async ({
     page,
   }) => {
@@ -970,6 +1030,64 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(startButton).toBeInViewport();
     await expect(quickButton).toBeEnabled();
     await expect(quickButton).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("opens and closes the mobile drawer and keeps the home entry usable", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoAppRoute(page, "/");
+
+    const menuButton = page.getByRole("button", { name: "打开菜单" });
+    const backdrop = page.locator("#mobile-sidebar-backdrop");
+
+    await expectNoHorizontalOverflow(page);
+    await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    await menuButton.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+    await expect(backdrop).toHaveClass(/opacity-100/);
+    await expect(page.getByRole("link", { name: "旅程", exact: true })).toBeVisible();
+
+    await backdrop.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    await expect(backdrop).toHaveClass(/opacity-0/);
+
+    await page.getByRole("link", { name: /开启崭新仪式/i }).click();
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(page.getByPlaceholder("今天，你想向内心询问什么？")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("keeps a seven-card mobile reveal and reading navigable", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await startReading(page, "这段变化接下来会怎样展开？", /七张牌/i);
+    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page.getByTestId("ritual-position-track")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await drawCards(page, 7);
+    await revealSpread(page);
+
+    const revealTrack = page.getByTestId("reveal-card-track");
+    await expect(revealTrack).toBeVisible();
+    await expect(revealTrack.locator(".reveal-card-container")).toHaveCount(7);
+    await expect(page.getByRole("button", { name: /带着整组气候进入深读/i })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await enterReading(page);
+    await expect(page.getByTestId("mobile-reading-nav")).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByTestId("mobile-reading-card-strip")).toBeVisible();
+    await expect(page.locator("#reading-quick")).toBeVisible();
+    await page.getByRole("link", { name: "逐牌" }).click();
+    await expect(page.locator("#reading-cards")).toBeInViewport();
+    await page.getByRole("link", { name: "综合" }).click();
+    await expect(page.locator("#reading-synthesis")).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
   });
 
   test("keeps the ritual draw stage inside the desktop viewport", async ({
@@ -1017,6 +1135,21 @@ test.describe("AetherTarot smoke flow", () => {
       .toBe(0);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expectDocumentFitsViewport(page);
+  });
+
+  test("keeps encyclopedia browsing usable on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoAppRoute(page, "/encyclopedia");
+
+    const runtimeCardGrid = page.getByTestId("runtime-card-grid");
+
+    await expect(page.getByRole("heading", { name: "塔罗百科" })).toBeVisible();
+    await expect(page.getByLabel("搜索卡牌")).toBeVisible();
+    await page.getByRole("button", { name: /宝剑 \(14\)/ }).click();
+    await expect(runtimeCardGrid.getByRole("button")).toHaveCount(14);
+    await runtimeCardGrid.getByRole("button", { name: "宝剑二" }).click();
+    await expect(page.getByRole("heading", { name: "宝剑二" })).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
   });
 
   test("redirects protected pages back to the start when state is missing", async ({

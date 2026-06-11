@@ -9,6 +9,7 @@ import IntroSection from "./sections/IntroSection";
 import KnowledgeSection from "./sections/KnowledgeSection";
 import MindsetSection from "./sections/MindsetSection";
 import PaginationDots from "./PaginationDots";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function HomeView() {
   const [activeSection, setActiveSection] = useState(0);
@@ -49,10 +50,20 @@ export default function HomeView() {
         return;
       }
 
-      container.scrollTo({
-        top: sections[index].offsetTop,
-        behavior: "smooth",
-      });
+      const targetTop = sections[index].offsetTop;
+
+      if (window.matchMedia("(min-width: 1024px) and (min-height: 860px)").matches) {
+        container.scrollTo({
+          top: targetTop,
+          behavior: "smooth",
+        });
+      } else {
+        window.scrollTo({
+          top: container.offsetTop + targetTop,
+          behavior: "smooth",
+        });
+      }
+
       setActiveSection(index);
     },
     [getSections],
@@ -88,13 +99,30 @@ export default function HomeView() {
   };
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-paper">
+    <main className="relative min-h-[calc(100dvh-4rem)] bg-paper lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
       {/* Pagination Dots */}
       <PaginationDots 
         total={4} 
         active={activeSection} 
         onChange={scrollToSection} 
       />
+
+      {activeSection < 3 ? (
+        <motion.button
+          type="button"
+          data-testid="home-scroll-cue"
+          aria-label="继续下探"
+          onClick={() => scrollToSection(activeSection + 1)}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed inset-x-0 bottom-5 z-40 mx-auto flex min-h-12 w-max items-center gap-2 rounded-full border border-terracotta/25 bg-paper-raised/95 px-4 py-2 text-xs font-medium text-terracotta shadow-[0_10px_28px_rgba(24,23,19,0.14)] backdrop-blur md:hidden"
+        >
+          <span>继续下探</span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-paper shadow-sm">
+            <LegacyIcon name="keyboard_arrow_down" className="animate-float-slow text-[18px]" />
+          </span>
+        </motion.button>
+      ) : null}
 
       {/* Snap Scroll Container */}
       <div 
@@ -120,7 +148,7 @@ export default function HomeView() {
 
         {/* Section 3: The Fork / Final Gate */}
         <div data-index="3" className="scroll-snap-section">
-          <section className="flex w-full max-w-5xl flex-col items-center justify-center px-6 text-center">
+          <section className="flex w-full max-w-5xl flex-col items-center justify-center px-6 py-12 text-center lg:py-0">
             <motion.header
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

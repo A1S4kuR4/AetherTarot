@@ -12,7 +12,15 @@ const navItems = [
   { href: "/login", label: "登录", englishLabel: "Login" },
 ] as const;
 
-export default function Topbar({ isMidnight = false }: { isMidnight?: boolean }) {
+export default function Topbar({
+  isMidnight = false,
+  isMobileMenuOpen = false,
+  onMobileMenuToggle,
+}: {
+  isMidnight?: boolean;
+  isMobileMenuOpen?: boolean;
+  onMobileMenuToggle?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -67,16 +75,15 @@ export default function Topbar({ isMidnight = false }: { isMidnight?: boolean })
       <button
         type="button"
         className={cn(
-          "rounded-xl p-2 transition-colors md:hidden",
+          "min-h-11 min-w-11 rounded-xl p-2 transition-colors md:hidden",
           isMidnight
             ? "text-text-inverse hover:bg-midnight-elevated"
             : "text-text-muted hover:bg-paper-muted",
         )}
         aria-label="打开菜单"
-        onClick={() => {
-          const sidebar = document.getElementById("mobile-sidebar");
-          sidebar?.classList.toggle("translate-x-full");
-        }}
+        aria-controls="mobile-sidebar"
+        aria-expanded={isMobileMenuOpen}
+        onClick={onMobileMenuToggle}
       >
         <LegacyIcon name="menu" className="text-xl" />
       </button>
