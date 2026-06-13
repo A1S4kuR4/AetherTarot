@@ -14,7 +14,7 @@ import {
 export const runtime = "nodejs";
 const MAX_READINGS_REQUEST_BYTES = 256 * 1024;
 
-interface ReadingsRouteDependencies {
+export interface ReadingsRouteDependencies {
   requireAccess: () => Promise<AuthenticatedTester>;
   save: typeof saveStoredReading;
   list: typeof listStoredReadings;
@@ -28,8 +28,7 @@ const DEFAULT_DEPS: ReadingsRouteDependencies = {
   updateNotes: updateStoredReadingNotes,
 };
 
-export async function GET(
-  _request: Request,
+export async function handleReadingsGet(
   deps: ReadingsRouteDependencies = DEFAULT_DEPS,
 ) {
   try {
@@ -58,7 +57,7 @@ export async function GET(
   }
 }
 
-export async function POST(
+export async function handleReadingsPost(
   request: Request,
   deps: ReadingsRouteDependencies = DEFAULT_DEPS,
 ) {
@@ -101,7 +100,7 @@ export async function POST(
   }
 }
 
-export async function PATCH(
+export async function handleReadingsPatch(
   request: Request,
   deps: ReadingsRouteDependencies = DEFAULT_DEPS,
 ) {
@@ -146,4 +145,16 @@ export async function PATCH(
       { status: 500 },
     );
   }
+}
+
+export async function GET() {
+  return handleReadingsGet();
+}
+
+export async function POST(request: Request) {
+  return handleReadingsPost(request);
+}
+
+export async function PATCH(request: Request) {
+  return handleReadingsPatch(request);
 }
