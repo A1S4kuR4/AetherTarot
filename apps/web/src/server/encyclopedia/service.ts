@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { EncyclopediaQueryResponse } from "@aethertarot/shared-types";
+import { findCardById } from "@aethertarot/domain-tarot";
 import {
   deriveRelatedItems,
   retrieveEncyclopediaSources,
@@ -105,10 +106,17 @@ export async function generateEncyclopediaAnswer({
 
   const boundaryNote = detectBoundaryNote(query);
   const provider = options.provider ?? getEncyclopediaProvider();
+  const cardName = cardId
+    ? (() => {
+        const card = findCardById(cardId);
+        return card ? `${card.name} (${card.englishName})` : null;
+      })()
+    : null;
   const draft = await provider.generateAnswer({
     query,
     sources,
     boundaryNote,
+    cardName,
   });
   const related = deriveRelatedItems(sources);
 

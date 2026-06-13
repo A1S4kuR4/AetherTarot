@@ -22,8 +22,8 @@ import type {
   StructuredReading,
 } from "@aethertarot/shared-types";
 
-const HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
-const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
+const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
+const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
 const EMPTY_SOBER_GATE: SoberGateState = {
@@ -82,10 +82,6 @@ type HydrationAwareWindow = Window & {
   __AETHERTAROT_READING_HYDRATED__?: boolean;
 };
 
-function serializeHistory(history: ReadingHistoryEntry[]) {
-  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-}
-
 function toRequestDrawnCards(drawnCards: DrawnCard[]): ReadingRequestCardInput[] {
   return drawnCards.map((drawnCard) => ({
     positionId: drawnCard.positionId,
@@ -130,6 +126,21 @@ function buildContinuitySource(reading: StructuredReading): ContinuitySource | n
   };
 }
 
+function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
+  try {
+    const saved =
+      localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY)
+      ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+
+    if (saved) {
+      return JSON.parse(saved) as ReadingHistoryEntry[];
+    }
+  } catch {
+    // Ignore parse errors.
+  }
+  return null;
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
@@ -148,24 +159,72 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    try {
-      const savedHistory =
-        localStorage.getItem(HISTORY_STORAGE_KEY)
-        ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY);
+    let cancelled = false;
 
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
-      }
-    } catch {
+    async function hydrate() {
       try {
-        localStorage.removeItem(HISTORY_STORAGE_KEY);
+        const response = await fetch("/api/readings");
+
+        if (cancelled) return;
+
+        if (response.ok) {
+          const payload = await response.json() as { readings?: ReadingHistoryEntry[] };
+          const serverReadings = payload.readings ?? [];
+
+          if (serverReadings.length > 0) {
+            setHistory(serverReadings);
+          } else {
+            const legacy = readLegacyLocalStorage();
+            if (legacy && legacy.length > 0) {
+              try {
+                const migrateResponse = await fetch("/api/readings/migrate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(legacy),
+                });
+
+                if (!cancelled && migrateResponse.ok) {
+                  setHistory(legacy);
+                  try {
+                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY);
+                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+                  } catch {
+                    // Storage can be unavailable.
+                  }
+                } else if (!cancelled) {
+                  setHistory(legacy);
+                }
+              } catch {
+                if (!cancelled) {
+                  setHistory(legacy);
+                }
+              }
+            }
+          }
+        } else {
+          const legacy = readLegacyLocalStorage();
+          if (!cancelled && legacy) {
+            setHistory(legacy);
+          }
+        }
       } catch {
-        // Storage can be unavailable in restricted browser contexts.
+        const legacy = readLegacyLocalStorage();
+        if (!cancelled && legacy) {
+          setHistory(legacy);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsHydrated(true);
+          (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
+        }
       }
-    } finally {
-      setIsHydrated(true);
-      (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
     }
+
+    hydrate();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -178,22 +237,23 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const newEntry: ReadingHistoryEntry = {
+      id: nextReading.reading_id,
+      createdAt: new Date().toISOString(),
+      spreadId: selectedSpread.id,
+      drawSource,
+      drawnCards: requestDrawnCards,
+      reading: nextReading,
+    };
 
-    setHistory((currentHistory) => {
-      const nextHistory = [
-        {
-          id: nextReading.reading_id,
-          createdAt: new Date().toISOString(),
-          spreadId: selectedSpread.id,
-          drawSource,
-          drawnCards: requestDrawnCards,
-          reading: nextReading,
-        },
-        ...currentHistory,
-      ];
+    setHistory((current) => [newEntry, ...current]);
 
-      serializeHistory(nextHistory);
-      return nextHistory;
+    fetch("/api/readings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEntry),
+    }).catch(() => {
+      // Fire-and-forget; entry is already in local state.
     });
   }, [drawSource, drawnCards, selectedSpread]);
 
@@ -506,12 +566,18 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   };
 
   const updateHistoryNotes = (id: string, notes: string) => {
-    setHistory((currentHistory) => {
-      const nextHistory = currentHistory.map((entry) =>
+    setHistory((currentHistory) =>
+      currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
-      );
-      serializeHistory(nextHistory);
-      return nextHistory;
+      )
+    );
+
+    fetch("/api/readings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reading_id: id, user_notes: notes }),
+    }).catch(() => {
+      // Fire-and-forget; note is already in local state.
     });
   };
 
