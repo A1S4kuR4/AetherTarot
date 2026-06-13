@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { motion } from "motion/react";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
@@ -95,6 +96,13 @@ export default function EncyclopediaView({
   const detailRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const columnsPerRow = useColumnsPerRow(gridRef);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    const y = e.currentTarget.scrollTop;
+    if (y > 120 && !isCollapsed) setIsCollapsed(true);
+    if (y <= 80 && isCollapsed) setIsCollapsed(false);
+  }, [isCollapsed]);
 
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
@@ -125,10 +133,12 @@ export default function EncyclopediaView({
 
   useEffect(() => {
     detailRef.current?.scrollTo({ top: 0 });
+    setIsCollapsed(false);
   }, [activeCard.id]);
 
   const handleSelectCard = useCallback((card: TarotCard) => {
     setSelectedCard(card);
+    setIsCollapsed(false);
 
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       window.requestAnimationFrame(() => {
@@ -222,7 +232,7 @@ export default function EncyclopediaView({
         <div
           ref={gridRef}
           data-testid="runtime-card-grid"
-          className="min-h-[280px] overflow-y-auto pr-2 lg:min-h-0 lg:flex-1"
+          className="min-h-[280px] overflow-y-auto custom-scrollbar pr-2 lg:min-h-0 lg:flex-1"
         >
           {visibleCards.length > 0 ? (
             <div
@@ -286,25 +296,41 @@ export default function EncyclopediaView({
 
       <article
         ref={detailRef}
+        onScroll={handleScroll}
         data-testid="encyclopedia-card-detail"
-        className="scroll-mt-20 min-h-0 overflow-y-auto rounded-3xl border border-paper-border bg-paper-raised p-4 sm:p-6 md:p-10"
+        className="scroll-mt-20 min-h-0 overflow-y-auto custom-scrollbar rounded-3xl border border-paper-border bg-paper-raised p-4 sm:p-6 md:p-10"
       >
         <div className="flex flex-col gap-7 md:flex-row md:gap-10">
-          <div className="mx-auto w-full max-w-[260px] md:max-w-none md:w-5/12">
-            <div className="relative aspect-[1/1.7] overflow-hidden rounded-card-md border border-paper-border shadow-sm">
+          <motion.div 
+            layout
+            initial={false}
+            className={cn(
+              "shrink-0 sticky z-10",
+              isCollapsed 
+                ? "top-0 w-24 md:w-28" 
+                : "top-0 mx-auto w-full max-w-[260px] md:max-w-none md:w-5/12"
+            )}
+          >
+            <motion.div 
+              layout
+              className={cn(
+                "relative aspect-[1/1.7] overflow-hidden border border-paper-border shadow-sm transition-all",
+                isCollapsed ? "rounded-card-sm" : "rounded-card-md"
+              )}
+            >
               <Image
                 src={activeCard.imageUrl}
                 alt={activeCard.name}
                 fill
-                sizes="(min-width: 768px) 34vw, 100vw"
+                sizes={isCollapsed ? "112px" : "(min-width: 768px) 34vw, 100vw"}
                 quality={80}
                 priority
                 className="h-full w-full object-cover"
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="flex-1 space-y-7">
+          <motion.div layout className="flex-1 space-y-7">
             {isQuestionEnabled ? (
               <EncyclopediaQuestionPanel activeCard={activeCard} />
             ) : null}
@@ -382,7 +408,7 @@ export default function EncyclopediaView({
                 ))}
               </ul>
             </div>
-          </div>
+          </motion.div>
         </div>
       </article>
     </section>
