@@ -333,6 +333,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      stored_readings: {
+        Row: {
+          id: string;
+          user_id: string;
+          reading_id: string;
+          created_at: string;
+          spread_id: string;
+          draw_source: string | null;
+          drawn_cards: Json;
+          reading: Json;
+          user_notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          reading_id: string;
+          created_at?: string;
+          spread_id: string;
+          draw_source?: string | null;
+          drawn_cards?: Json;
+          reading: Json;
+          user_notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          reading_id?: string;
+          created_at?: string;
+          spread_id?: string;
+          draw_source?: string | null;
+          drawn_cards?: Json;
+          reading?: Json;
+          user_notes?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

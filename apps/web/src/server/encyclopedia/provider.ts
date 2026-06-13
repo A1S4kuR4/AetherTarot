@@ -28,6 +28,7 @@ export interface EncyclopediaProvider {
     query: string;
     sources: EncyclopediaRetrievedSource[];
     boundaryNote: string | null;
+    cardName?: string | null;
   }): Promise<EncyclopediaDraft>;
 }
 
@@ -177,10 +178,12 @@ function buildPrompt({
   query,
   sources,
   boundaryNote,
+  cardName,
 }: {
   query: string;
   sources: EncyclopediaRetrievedSource[];
   boundaryNote: string | null;
+  cardName?: string | null;
 }) {
   return {
     system: [
@@ -191,6 +194,7 @@ function buildPrompt({
       "All user-visible prose must be natural Simplified Chinese.",
     ].join("\n"),
     user: [
+      cardName ? `用户当前正在查看的牌：${cardName}` : null,
       `用户问题：${query}`,
       boundaryNote ? `边界提示：${boundaryNote}` : null,
       "可用百科来源：",
@@ -223,6 +227,7 @@ export class LlmEncyclopediaProvider implements EncyclopediaProvider {
     query: string;
     sources: EncyclopediaRetrievedSource[];
     boundaryNote: string | null;
+    cardName?: string | null;
   }) {
     const prompt = buildPrompt(input);
     const promptText = `${prompt.system}\n${prompt.user}`;

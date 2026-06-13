@@ -1,15 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const navItems = [
   { href: "/", label: "首页", icon: "home" },
   { href: "/journey", label: "旅程", icon: "history" },
   { href: "/encyclopedia", label: "百科", icon: "auto_stories" },
-  { href: "/login", label: "登录", icon: "login" },
 ] as const;
 
 /**
@@ -24,6 +26,8 @@ export default function Sidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
     <>
@@ -78,6 +82,31 @@ export default function Sidebar({
               </Link>
             );
           })}
+
+          {status === "authenticated" ? (
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium text-text-body transition-colors hover:bg-paper-muted"
+            >
+              <LegacyIcon name="logout" className="text-lg" />
+              登出
+            </button>
+          ) : status === "unauthenticated" ? (
+            <Link
+              href="/login"
+              onClick={onClose}
+              className={cn(
+                "flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
+                pathname === "/login"
+                  ? "bg-terracotta/10 text-terracotta"
+                  : "text-text-body hover:bg-paper-muted",
+              )}
+            >
+              <LegacyIcon name="login" className="text-lg" />
+              登录
+            </Link>
+          ) : null}
         </nav>
 
         <div className="mt-auto pt-8 border-t border-paper-border">
@@ -86,6 +115,19 @@ export default function Sidebar({
           </p>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="退出登录"
+        description="确定要退出登录吗？退出后需要重新输入账号密码。"
+        confirmLabel="退出登录"
+        cancelLabel="取消"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          signOut({ callbackUrl: "/login" });
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </>
   );
 }
