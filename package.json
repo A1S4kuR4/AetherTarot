@@ -10,6 +10,7 @@
     "build": "npm run build -w @aethertarot/web",
     "eval:reading": "npm run eval:reading -w @aethertarot/web",
     "generate:assets": "node scripts/generate-card-assets.mjs",
+    "generate:thumbs": "node scripts/generate-thumbnails.mjs",
     "validate:assets": "node scripts/validate-card-assets.mjs",
     "test:e2e": "npm run test:e2e -w @aethertarot/web"
   },

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
@@ -56,6 +57,31 @@ function getFilterCount(filterId: RuntimeFilter) {
   ).length;
 }
 
+function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) {
+  const [columns, setColumns] = useState(4);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const width = el.clientWidth;
+      if (width >= 768 && width < 1024) {
+        setColumns(6);
+      } else {
+        setColumns(4);
+      }
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
+  return columns;
+}
+
 export default function EncyclopediaView({
   coverage,
   isQuestionEnabled,
@@ -67,6 +93,8 @@ export default function EncyclopediaView({
   const [runtimeFilter, setRuntimeFilter] = useState<RuntimeFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const detailRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const columnsPerRow = useColumnsPerRow(gridRef);
 
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
@@ -83,6 +111,15 @@ export default function EncyclopediaView({
     });
   }, [runtimeFilter, searchTerm]);
 
+  const totalRows = Math.ceil(visibleCards.length / columnsPerRow);
+
+  const virtualizer = useVirtualizer({
+    count: totalRows,
+    getScrollElement: () => gridRef.current,
+    estimateSize: () => 170,
+    overscan: 2,
+  });
+
   const isSelectedCardVisible = visibleCards.some((card) => card.id === selectedCard.id);
   const activeCard = isSelectedCardVisible ? selectedCard : visibleCards[0] ?? selectedCard;
 
@@ -90,7 +127,7 @@ export default function EncyclopediaView({
     detailRef.current?.scrollTo({ top: 0 });
   }, [activeCard.id]);
 
-  const handleSelectCard = (card: TarotCard) => {
+  const handleSelectCard = useCallback((card: TarotCard) => {
     setSelectedCard(card);
 
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -102,7 +139,7 @@ export default function EncyclopediaView({
         });
       });
     }
-  };
+  }, []);
 
   return (
     <section className="viewport-workspace mx-auto grid w-full max-w-7xl gap-5 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:px-8">
@@ -183,35 +220,64 @@ export default function EncyclopediaView({
         </div>
 
         <div
+          ref={gridRef}
           data-testid="runtime-card-grid"
-          className="grid min-h-[280px] grid-cols-4 gap-2.5 overflow-y-auto pr-2 md:grid-cols-6 lg:min-h-0 lg:flex-1 lg:grid-cols-4"
+          className="min-h-[280px] overflow-y-auto pr-2 lg:min-h-0 lg:flex-1"
         >
           {visibleCards.length > 0 ? (
-            visibleCards.map((card) => (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => handleSelectCard(card)}
-                className={cn(
-                  "relative aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
-                  activeCard.id === card.id
-                    ? "scale-[1.04] border-terracotta shadow-sm"
-                    : "border-transparent opacity-60 hover:opacity-100",
-                )}
-              >
-                <Image
-                  src={card.imageUrl}
-                  alt={card.name}
-                  fill
-                  sizes="(min-width: 1024px) 86px, (min-width: 768px) 12vw, 23vw"
-                  quality={50}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            ))
+            <div
+              style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const startIndex = virtualRow.index * columnsPerRow;
+                const rowCards = visibleCards.slice(startIndex, startIndex + columnsPerRow);
+
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className={cn(
+                      "grid gap-2.5",
+                      columnsPerRow === 6 ? "grid-cols-6" : "grid-cols-4",
+                    )}
+                  >
+                    {rowCards.map((card) => (
+                      <button
+                        key={card.id}
+                        type="button"
+                        onClick={() => handleSelectCard(card)}
+                        className={cn(
+                          "relative aspect-[1/1.7] cursor-pointer overflow-hidden rounded-card-sm border-2 transition-all duration-200",
+                          activeCard.id === card.id
+                            ? "scale-[1.04] border-terracotta shadow-sm"
+                            : "border-transparent opacity-60 hover:opacity-100",
+                        )}
+                      >
+                        <Image
+                          src={card.thumbnailUrl ?? card.imageUrl}
+                          alt={card.name}
+                          fill
+                          sizes="86px"
+                          quality={40}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <div className="col-span-full rounded-2xl border border-paper-border bg-paper-raised p-6 text-sm text-text-muted">
+            <div className="rounded-2xl border border-paper-border bg-paper-raised p-6 text-sm text-text-muted">
               没有找到匹配的牌。
             </div>
           )}

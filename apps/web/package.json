@@ -20,6 +20,7 @@
     "@langchain/langgraph": "^1.2.8",
     "@remotion/player": "^4.0.451",
     "@supabase/supabase-js": "^2.101.1",
+    "@tanstack/react-virtual": "^3.14.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "motion": "^12.38.0",
