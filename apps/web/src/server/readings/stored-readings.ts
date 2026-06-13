@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/database.types";
 
 export async function saveStoredReading(
   userId: string,
@@ -13,15 +14,17 @@ export async function saveStoredReading(
     return { error: "database_unavailable" as const };
   }
 
-  const { error } = await adminClient.from("stored_readings").insert({
+  const row = {
     user_id: userId,
     reading_id: entry.id,
     spread_id: entry.spreadId,
     draw_source: entry.drawSource ?? null,
-    drawn_cards: entry.drawnCards,
-    reading: entry.reading,
+    drawn_cards: entry.drawnCards as unknown as Json,
+    reading: entry.reading as unknown as Json,
     user_notes: entry.user_notes ?? null,
-  });
+  };
+
+  const { error } = await adminClient.from("stored_readings").insert([row]);
 
   if (error) {
     console.warn("[stored-readings] failed to save reading", {
@@ -60,8 +63,8 @@ export async function listStoredReadings(userId: string) {
     createdAt: row.created_at,
     spreadId: row.spread_id,
     drawSource: row.draw_source as ReadingHistoryEntry["drawSource"],
-    drawnCards: row.drawn_cards as ReadingHistoryEntry["drawnCards"],
-    reading: row.reading as ReadingHistoryEntry["reading"],
+    drawnCards: row.drawn_cards as unknown as ReadingHistoryEntry["drawnCards"],
+    reading: row.reading as unknown as ReadingHistoryEntry["reading"],
     user_notes: row.user_notes ?? undefined,
   }));
 
@@ -111,8 +114,8 @@ export async function migrateStoredReadings(
     reading_id: entry.id,
     spread_id: entry.spreadId,
     draw_source: entry.drawSource ?? null,
-    drawn_cards: entry.drawnCards,
-    reading: entry.reading,
+    drawn_cards: entry.drawnCards as unknown as Json,
+    reading: entry.reading as unknown as Json,
     user_notes: entry.user_notes ?? null,
   }));
 
