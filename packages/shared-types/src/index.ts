@@ -9,6 +9,7 @@ export interface TarotCard {
   reversedKeywords: string[];
   symbolism: string[];
   imageUrl: string;
+  thumbnailUrl?: string;
 }
 
 export interface SpreadPosition {
