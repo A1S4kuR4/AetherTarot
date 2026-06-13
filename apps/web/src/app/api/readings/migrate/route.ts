@@ -10,7 +10,7 @@ import { migrateStoredReadings } from "@/server/readings/stored-readings";
 export const runtime = "nodejs";
 const MAX_MIGRATE_REQUEST_BYTES = 2 * 1024 * 1024;
 
-interface MigrateRouteDependencies {
+export interface MigrateRouteDependencies {
   requireAccess: () => Promise<AuthenticatedTester>;
   migrate: typeof migrateStoredReadings;
 }
@@ -20,7 +20,7 @@ const DEFAULT_DEPS: MigrateRouteDependencies = {
   migrate: migrateStoredReadings,
 };
 
-export async function POST(
+export async function handleMigratePost(
   request: Request,
   deps: MigrateRouteDependencies = DEFAULT_DEPS,
 ) {
@@ -65,4 +65,8 @@ export async function POST(
       { status: 500 },
     );
   }
+}
+
+export async function POST(request: Request) {
+  return handleMigratePost(request);
 }
