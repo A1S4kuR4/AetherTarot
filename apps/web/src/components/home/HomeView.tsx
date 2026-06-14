@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
 import { m } from "motion/react";
-import dynamic from "next/dynamic";
 
 import IntroSection from "./sections/IntroSection";
-
-const KnowledgeSection = dynamic(() => import("./sections/KnowledgeSection"));
-const MindsetSection = dynamic(() => import("./sections/MindsetSection"));
-const FinalGateSection = dynamic(() => import("./sections/FinalGateSection"));
+import KnowledgeSection from "./sections/KnowledgeSection";
+import MindsetSection from "./sections/MindsetSection";
+import FinalGateSection from "./sections/FinalGateSection";
 import PaginationDots from "./PaginationDots";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
