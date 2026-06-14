@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m, LazyMotion, domAnimation } from "motion/react";
 import { usePathname } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -40,19 +40,21 @@ export default function AppShell({
           onClose={() => setIsMobileMenuOpen(false)}
         />
 
-        <main className="pt-16">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+        <LazyMotion features={domAnimation}>
+          <main className="pt-16">
+            <AnimatePresence mode="wait">
+              <m.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                {children}
+              </m.div>
+            </AnimatePresence>
+          </main>
+        </LazyMotion>
       </div>
     </ReadingProvider>
   );

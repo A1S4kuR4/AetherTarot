@@ -1,12 +1,12 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function IntroSection() {
   return (
     <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-0">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -25,7 +25,7 @@ export default function IntroSection() {
             正通过 78 张古老的象征图景，寻找着与你的共鸣。
           </p>
         </div>
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 1 }}
@@ -35,8 +35,8 @@ export default function IntroSection() {
             name="keyboard_double_arrow_down"
             className="animate-float-slow text-text-placeholder"
           />
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     </section>
   );
 }
