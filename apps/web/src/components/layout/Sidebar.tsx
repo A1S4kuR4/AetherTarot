@@ -84,14 +84,22 @@ export default function Sidebar({
           })}
 
           {status === "authenticated" ? (
-            <button
-              type="button"
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium text-text-body transition-colors hover:bg-paper-muted"
-            >
-              <LegacyIcon name="logout" className="text-lg" />
-              登出
-            </button>
+            <>
+              {session?.user?.email && (
+                <div className="flex min-h-11 items-center gap-3 px-4 py-3 font-sans text-sm font-medium text-text-muted opacity-80">
+                  <LegacyIcon name="person" className="text-lg" />
+                  <span className="truncate">{session.user.email}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(true)}
+                className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium text-text-body transition-colors hover:bg-paper-muted"
+              >
+                <LegacyIcon name="logout" className="text-lg" />
+                登出
+              </button>
+            </>
           ) : status === "unauthenticated" ? (
             <Link
               href="/login"
