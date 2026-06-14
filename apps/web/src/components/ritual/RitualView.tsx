@@ -270,7 +270,7 @@ export default function RitualView() {
 
       <div
         data-testid="ritual-position-track"
-        className="relative z-10 mb-4 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-2 hide-scrollbar md:snap-none md:overflow-visible"
+        className="relative z-60 mb-4 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-2 hide-scrollbar md:snap-none md:overflow-visible"
       >
         <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-4 md:w-full md:flex-wrap md:justify-center md:gap-10">
           {selectedSpread.positions.map((position) => {
@@ -350,7 +350,7 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div className="ritual-deck-field relative flex w-full max-w-4xl items-center justify-center">
+      <div className="ritual-deck-field relative z-30 flex w-full max-w-4xl items-center justify-center">
         <div
           ref={deckOriginRef}
           className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
@@ -415,7 +415,7 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-10 mx-auto mt-2 w-full max-w-md">
+      <div className="relative z-40 mx-auto mt-2 w-full max-w-md">
         <div className="midnight-panel text-center">
           <p className="text-sm leading-relaxed text-text-inverse-muted">
             你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。
