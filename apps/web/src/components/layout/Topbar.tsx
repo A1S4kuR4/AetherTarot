@@ -81,18 +81,30 @@ export default function Topbar({
           })}
 
           {status === "authenticated" ? (
-            <button
-              type="button"
-              onClick={() => setShowLogoutConfirm(true)}
-              className={cn(
-                "font-sans text-[13px] font-medium tracking-wide transition-colors duration-200",
-                isMidnight
-                  ? "text-text-inverse-muted hover:text-text-inverse"
-                  : "text-text-muted hover:text-text-strong",
+            <div className="flex items-center gap-4">
+              {session?.user?.email && (
+                <span
+                  className={cn(
+                    "font-sans text-[13px] font-medium tracking-wide opacity-80",
+                    isMidnight ? "text-text-inverse-muted" : "text-text-muted",
+                  )}
+                >
+                  {session.user.email}
+                </span>
               )}
-            >
-              登出
-            </button>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(true)}
+                className={cn(
+                  "font-sans text-[13px] font-medium tracking-wide transition-colors duration-200",
+                  isMidnight
+                    ? "text-text-inverse-muted hover:text-text-inverse"
+                    : "text-text-muted hover:text-text-strong",
+                )}
+              >
+                登出
+              </button>
+            </div>
           ) : status === "unauthenticated" ? (
             <Link
               href="/login"
