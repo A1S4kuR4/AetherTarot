@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface PaginationDotsProps {
@@ -20,7 +20,7 @@ export default function PaginationDots({ total, active, onChange }: PaginationDo
           className="group relative flex items-center justify-center p-2"
           aria-label={`跳转到第 ${i + 1} 节`}
         >
-          <motion.div
+          <m.div
             animate={{
               scale: active === i ? 1.5 : 1,
               backgroundColor: active === i ? "var(--color-terracotta)" : "var(--color-paper-border)",

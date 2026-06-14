@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function KnowledgeSection() {
@@ -16,7 +16,7 @@ export default function KnowledgeSection() {
 
         <div className="grid gap-8 md:grid-cols-2">
           {/* Major Arcana */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -34,10 +34,10 @@ export default function KnowledgeSection() {
                 <span key={tag} className="chip-muted text-[11px]">{tag}</span>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Minor Arcana */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -55,10 +55,10 @@ export default function KnowledgeSection() {
                 <span key={tag} className="chip-muted text-[11px]">{tag}</span>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         </div>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
@@ -66,7 +66,7 @@ export default function KnowledgeSection() {
           className="text-center font-serif text-lg italic text-text-muted"
         >
           “理解了象征，便理解了生命在这个时刻向你呈现的姿态。”
-        </motion.p>
+        </m.p>
       </div>
     </section>
   );
