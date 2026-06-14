@@ -98,7 +98,7 @@ export default function HomeView() {
   };
 
   return (
-    <main className="relative min-h-[calc(100dvh-4rem)] bg-paper lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
+    <main className="relative bg-paper viewport-workspace">
       {/* Pagination Dots */}
       <PaginationDots 
         total={4} 
