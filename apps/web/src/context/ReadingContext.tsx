@@ -21,6 +21,11 @@ import type {
   Spread,
   StructuredReading,
 } from "@aethertarot/shared-types";
+import {
+  buildReadingDraftSnapshot,
+  parseReadingDraftSnapshot,
+  READING_DRAFT_STORAGE_KEY,
+} from "@/lib/reading-draft-storage";
 
 const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
 const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
@@ -141,6 +146,28 @@ function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
   return null;
 }
 
+function readActiveReadingDraft() {
+  try {
+    return parseReadingDraftSnapshot(
+      sessionStorage.getItem(READING_DRAFT_STORAGE_KEY),
+      {
+        findSpreadById,
+        findCardById,
+      },
+    );
+  } catch {
+    return null;
+  }
+}
+
+function clearActiveReadingDraft() {
+  try {
+    sessionStorage.removeItem(READING_DRAFT_STORAGE_KEY);
+  } catch {
+    // Storage can be unavailable.
+  }
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
@@ -214,6 +241,21 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         }
       } finally {
         if (!cancelled) {
+          const restoredDraft = readActiveReadingDraft();
+
+          if (restoredDraft) {
+            setQuestionState(restoredDraft.question);
+            setSelectedSpreadState(restoredDraft.selectedSpread);
+            setAgentProfileState(restoredDraft.agentProfile);
+            setDrawSourceState(restoredDraft.drawSource);
+            setDrawnCards(restoredDraft.drawnCards);
+            setReading(null);
+            setErrorMessage(null);
+            setSafetyIntercept(null);
+            setSoberGate(EMPTY_SOBER_GATE);
+            interpretSignatureRef.current = null;
+          }
+
           setIsHydrated(true);
           (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
         }
@@ -230,6 +272,32 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = isHydrated;
   }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    if (!question.trim() || !selectedSpread || drawnCards.length === 0 || reading) {
+      clearActiveReadingDraft();
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        READING_DRAFT_STORAGE_KEY,
+        JSON.stringify(buildReadingDraftSnapshot({
+          question,
+          selectedSpread,
+          agentProfile,
+          drawSource,
+          drawnCards,
+        })),
+      );
+    } catch {
+      // Storage can be unavailable.
+    }
+  }, [agentProfile, drawSource, drawnCards, isHydrated, question, reading, selectedSpread]);
 
   const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
     if (!selectedSpread) {
@@ -373,6 +441,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const nextReading = payload as StructuredReading;
 
       setReading(nextReading);
+      clearActiveReadingDraft();
 
       if (!nextReading.requires_followup) {
         persistCompletedReading(nextReading);
@@ -468,6 +537,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const wasSoberUnlocked = soberGate.readingId === reading.reading_id && soberGate.isPassed;
 
       setReading(nextReading);
+      clearActiveReadingDraft();
 
       if (nextReading.sober_check && wasSoberUnlocked) {
         setSoberGate({

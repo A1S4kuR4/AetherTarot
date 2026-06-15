@@ -11,7 +11,7 @@ import CardImage from "@/components/ui/CardImage";
 
 export default function RevealView() {
   const router = useRouter();
-  const { selectedSpread, drawSource, drawnCards } = useReading();
+  const { selectedSpread, drawSource, drawnCards, isHydrated } = useReading();
   const [scope, animate] = useAnimate();
 
   useEffect(() => {
@@ -30,6 +30,10 @@ export default function RevealView() {
   }, [animate, drawnCards.length, selectedSpread]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!selectedSpread) {
       router.replace("/");
       return;
@@ -38,9 +42,9 @@ export default function RevealView() {
     if (drawnCards.length === 0) {
       router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
     }
-  }, [drawSource, drawnCards.length, router, selectedSpread]);
+  }, [drawSource, drawnCards.length, isHydrated, router, selectedSpread]);
 
-  if (!selectedSpread || drawnCards.length === 0) {
+  if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
 

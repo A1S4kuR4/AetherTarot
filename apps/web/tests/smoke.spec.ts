@@ -552,6 +552,37 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(historyEntry(page, "我现在最该注意什么？")).toBeVisible();
   });
 
+  test("restores an active quick reading draft after reload during generation", async ({
+    page,
+  }) => {
+    let readingRequestCount = 0;
+
+    await page.route("**/api/reading", async (route) => {
+      readingRequestCount += 1;
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1500);
+      });
+      await route.continue();
+    });
+
+    await gotoAppRoute(page, "/new");
+
+    const question = "刷新后这次抽牌还应该继续吗？";
+    await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
+    await page.getByRole("button", { name: "快速解读" }).click();
+
+    await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
+    await expect(page.getByText("正在生成解读...")).toBeVisible();
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForReadingHydration(page);
+
+    await expect(page).toHaveURL(/\/reading$/);
+    await expect(page.getByText(`"${question}"`)).toBeVisible();
+    await expect(page.getByText("核心速读")).toBeVisible({ timeout: 15000 });
+    expect(readingRequestCount).toBeGreaterThanOrEqual(2);
+  });
+
   test("quick reading respects the selected spread", async ({ page }) => {
     await gotoAppRoute(page, "/new");
 
