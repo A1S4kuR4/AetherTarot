@@ -68,6 +68,7 @@ export default function InterpretationView() {
     reading,
     errorMessage,
     isLoading,
+    isHydrated,
     safetyIntercept,
     soberGate,
     setSoberGate,
@@ -341,6 +342,10 @@ export default function InterpretationView() {
   };
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!selectedSpread) {
       router.replace("/");
       return;
@@ -359,6 +364,7 @@ export default function InterpretationView() {
     drawSource,
     errorMessage,
     interpretReading,
+    isHydrated,
     isLoading,
     reading,
     router,
@@ -374,7 +380,7 @@ export default function InterpretationView() {
   }, []);
 
 
-  if (!selectedSpread || drawnCards.length === 0) {
+  if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
 

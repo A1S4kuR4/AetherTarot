@@ -35,7 +35,7 @@ interface DrawOverlayState {
 
 export default function RitualView() {
   const router = useRouter();
-  const { question, selectedSpread, completeRitual } = useReading();
+  const { question, selectedSpread, completeRitual, isHydrated } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
@@ -74,12 +74,16 @@ export default function RitualView() {
   }, [completeRitual, drawnCards, selectedSpread]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!question.trim() || !selectedSpread) {
       router.replace("/");
     }
-  }, [question, router, selectedSpread]);
+  }, [isHydrated, question, router, selectedSpread]);
 
-  if (!selectedSpread || !question.trim()) {
+  if (!isHydrated || !selectedSpread || !question.trim()) {
     return null;
   }
 
