@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
@@ -9,7 +10,15 @@ import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import CardImage from "@/components/ui/CardImage";
-import RadarChart from "./RadarChart";
+
+const RadarChart = dynamic(() => import("./RadarChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[210px] w-[210px] items-center justify-center rounded-full border border-paper-border bg-paper-raised text-center font-sans text-xs leading-relaxed text-text-muted">
+      正在整理能量分布...
+    </div>
+  ),
+});
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   relationship: "关系议题",
@@ -424,6 +433,9 @@ export default function InterpretationView() {
           <div className="flex flex-col items-center justify-center space-y-5 py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-paper-border border-t-terracotta" />
             <p className="font-serif text-lg text-text-muted">正在生成解读...</p>
+            <p className="max-w-sm text-center text-sm leading-relaxed text-text-muted/80">
+              通常需要 10-20 秒，弱网下可能更久。你可以先停留在这一页，系统会自动显示结果。
+            </p>
           </div>
         ) : safetyIntercept ? (
           <div className="reading-card border-red-900/30 bg-red-950/10 ring-1 ring-inset ring-red-900/20">
@@ -547,7 +559,7 @@ export default function InterpretationView() {
                       >
                         <div className="aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border bg-paper-raised shadow-sm">
                           <CardImage
-                            src={drawnCard.card.imageUrl}
+                            src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                             alt={drawnCard.card.name}
                             sizes="80px"
                             quality={50}
@@ -778,7 +790,7 @@ export default function InterpretationView() {
                           {drawnCard ? (
                             <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-card-sm border border-paper-border md:ml-4">
                               <CardImage
-                                src={drawnCard.card.imageUrl}
+                                src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                                 alt={drawnCard.card.name}
                                 sizes="130px"
                                 quality={50}
@@ -1069,7 +1081,7 @@ export default function InterpretationView() {
                 className="group aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border transition-shadow hover:shadow-sm"
               >
                 <CardImage
-                  src={drawnCard.card.imageUrl}
+                  src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                   alt={drawnCard.card.name}
                   sizes="(min-width: 1024px) 132px, 45vw"
                   quality={50}

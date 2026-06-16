@@ -40,6 +40,7 @@ export default function RitualView() {
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
   const [isRevealing, setIsRevealing] = useState(false);
+  const [isNavigatingToReveal, setIsNavigatingToReveal] = useState(false);
   const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
@@ -190,6 +191,15 @@ export default function RitualView() {
     if (nextDrawnCards.length === selectedSpread.positions.length) {
       setIsRevealing(true);
     }
+  };
+
+  const handleReveal = () => {
+    if (isNavigatingToReveal) {
+      return;
+    }
+
+    setIsNavigatingToReveal(true);
+    router.push("/reveal");
   };
 
   return (
@@ -345,11 +355,12 @@ export default function RitualView() {
         {isComplete ? (
           <button
             type="button"
-            onClick={() => router.push("/reveal")}
-            className="btn-primary"
+            onClick={handleReveal}
+            disabled={isNavigatingToReveal}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LegacyIcon name="visibility" className="text-lg" />
-            <span>揭示牌阵</span>
+            <span>{isNavigatingToReveal ? "正在揭示..." : "揭示牌阵"}</span>
           </button>
         ) : null}
       </div>

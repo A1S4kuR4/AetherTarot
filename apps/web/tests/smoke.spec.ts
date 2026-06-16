@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 
 async function waitForReadingHydration(
   page: Parameters<typeof test>[0]["page"],
@@ -32,6 +32,47 @@ async function gotoAppRoute(
   }
 
   throw lastError;
+}
+
+async function delayAppRouteOnce(
+  page: Page,
+  pathname: string,
+  delayMs = 700,
+) {
+  let wasDelayed = false;
+  const predicate = (url: URL) => url.pathname === pathname;
+  const handler = async (route: Route) => {
+    if (wasDelayed) {
+      await route.fallback();
+      return;
+    }
+
+    wasDelayed = true;
+    await page.waitForTimeout(delayMs);
+    await page.unroute(predicate, handler);
+    await route.fallback();
+  };
+
+  await page.route(predicate, handler);
+}
+
+function getNextImageWidth(src: string) {
+  try {
+    const width = new URL(src).searchParams.get("w");
+    return width ? Number(width) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getNextImageSourcePath(src: string) {
+  try {
+    const optimizedUrl = new URL(src);
+    const sourcePath = optimizedUrl.searchParams.get("url");
+    return sourcePath ? decodeURIComponent(sourcePath) : src;
+  } catch {
+    return src;
+  }
 }
 
 function historyEntry(page: Parameters<typeof test>[0]["page"], question: string) {
@@ -539,7 +580,11 @@ test.describe("AetherTarot smoke flow", () => {
 
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
     await input.fill("我现在最该注意什么？");
+    await delayAppRouteOnce(page, "/reading");
     await page.getByRole("button", { name: "快速解读" }).click();
+    await expect(
+      page.getByRole("button", { name: "正在生成轻量解读..." }),
+    ).toBeDisabled();
 
     await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
     await expect(page.getByText("核心速读")).toBeVisible({ timeout: 10000 });
@@ -1100,19 +1145,71 @@ test.describe("AetherTarot smoke flow", () => {
     await expectNoHorizontalOverflow(page);
 
     await drawCards(page, 7);
-    await revealSpread(page);
+    await delayAppRouteOnce(page, "/reveal");
+    await page.getByRole("button", { name: /揭示牌阵/i }).click();
+    await expect(page.getByRole("button", { name: /正在揭示/i })).toBeDisabled();
+    await expect(page).toHaveURL(/\/reveal$/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "本轮观察重点" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
 
     const revealTrack = page.getByTestId("reveal-card-track");
     await expect(revealTrack).toBeVisible();
     await expect(revealTrack.locator(".reveal-card-container")).toHaveCount(7);
     await expect(page.getByRole("button", { name: /带着整组气候进入深读/i })).toBeVisible();
+    await expect
+      .poll(
+        async () => {
+          const src = await revealTrack.locator("img").first().evaluate((image) =>
+            (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
+          );
+          return getNextImageWidth(src) ?? 0;
+        },
+        { timeout: 10000 },
+      )
+      .toBeGreaterThan(0);
+
+    const revealImageWidths = (
+      await revealTrack.locator("img").evaluateAll((images) =>
+        images.map((image) =>
+          (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
+        ),
+      )
+    )
+      .map(getNextImageWidth)
+      .filter((width): width is number => width !== null);
+    expect(revealImageWidths.length).toBeGreaterThan(0);
+    expect(Math.max(...revealImageWidths)).toBeLessThanOrEqual(828);
     await expectNoHorizontalOverflow(page);
 
-    await enterReading(page);
+    await delayAppRouteOnce(page, "/reading");
+    await page.getByRole("button", { name: /带着整组气候进入深读/i }).click();
+    await expect(
+      page.getByRole("button", { name: /正在进入深读/i }),
+    ).toBeDisabled();
+    await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
     await expect(page.getByTestId("mobile-reading-nav")).toBeVisible({
       timeout: 10000,
     });
     await expect(page.getByTestId("mobile-reading-card-strip")).toBeVisible();
+    await expect
+      .poll(
+        async () => {
+          const stripSources = await page
+            .getByTestId("mobile-reading-card-strip")
+            .locator("img")
+            .evaluateAll((images) =>
+              images.map((image) =>
+                (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
+              ),
+            );
+
+          return stripSources
+            .map(getNextImageSourcePath)
+            .some((sourcePath) => sourcePath.includes("/thumbs/"));
+        },
+        { timeout: 10000 },
+      )
+      .toBe(true);
     await expect(page.locator("#reading-quick")).toBeVisible();
     await page.getByRole("link", { name: "逐牌" }).click();
     await expect(page.locator("#reading-cards")).toBeInViewport();

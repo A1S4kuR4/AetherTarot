@@ -166,7 +166,9 @@ export default function RitualInitializer() {
   const [showDecisionBoundaryModal, setShowDecisionBoundaryModal] = useState(false);
   const [decisionBoundaryAcknowledged, setDecisionBoundaryAcknowledged] = useState(false);
   const [pendingStartMode, setPendingStartMode] = useState<"ritual" | "quick" | null>(null);
+  const [navigationMode, setNavigationMode] = useState<"ritual" | "quick" | null>(null);
   const trimmedQuestion = question.trim();
+  const isNavigationPending = navigationMode !== null;
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
   const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
@@ -176,7 +178,7 @@ export default function RitualInitializer() {
       : "先选择一个牌阵，让阅读容器决定我们从哪些角度观看你的问题。";
 
   const startPress = () => {
-    if (!question.trim() || !selectedSpread) return;
+    if (!question.trim() || !selectedSpread || isNavigationPending) return;
     setIsPressing(true);
     setProgress(0);
 
@@ -240,6 +242,7 @@ export default function RitualInitializer() {
       return;
     }
 
+    setNavigationMode("ritual");
     router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
   };
 
@@ -256,6 +259,7 @@ export default function RitualInitializer() {
       return;
     }
 
+    setNavigationMode("quick");
     setAgentProfile("lite");
     setDrawSource("digital_random");
     setSelectedSpread(targetSpread);
@@ -264,6 +268,10 @@ export default function RitualInitializer() {
   };
 
   const requestStart = (mode: "ritual" | "quick") => {
+    if (isNavigationPending) {
+      return;
+    }
+
     if (isMajorDecisionQuestion) {
       setPendingStartMode(mode);
       setShowDecisionBoundaryModal(true);
@@ -283,12 +291,19 @@ export default function RitualInitializer() {
 
   const selectedSpreadPositionCount =
     selectedSpread?.positions.length ?? QUICK_DEFAULT_SPREAD?.positions.length ?? 1;
-  const startButtonDisabled = !trimmedQuestion || !selectedSpread;
-  const startButtonLabel = isPressing
+  const startButtonDisabled = !trimmedQuestion || !selectedSpread || isNavigationPending;
+  const quickButtonDisabled = !trimmedQuestion || isNavigationPending;
+  const startButtonLabel = navigationMode === "ritual"
+    ? drawSource === "offline_manual"
+      ? "正在进入录入..."
+      : "正在进入仪式..."
+    : isPressing
     ? "正在收束意图..."
     : drawSource === "offline_manual"
       ? "长按开始录入"
       : "长按开始仪式";
+  const quickButtonLabel =
+    navigationMode === "quick" ? "正在生成轻量解读..." : "快速解读";
   const ctaDescription = `跳过仪式会使用${selectedSpread?.name ?? QUICK_DEFAULT_SPREAD?.name ?? "单牌启示"}生成轻量初读；安全边界与完整流程一致。`;
 
   return (
@@ -443,10 +458,10 @@ export default function RitualInitializer() {
               <button
                 type="button"
                 onClick={() => requestStart("quick")}
-                disabled={!trimmedQuestion}
+                disabled={quickButtonDisabled}
                 className="min-h-12 rounded-xl border border-midnight-border bg-midnight-panel px-5 py-3 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
               >
-                快速解读
+                {quickButtonLabel}
               </button>
             </div>
             <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-text-inverse-muted/70">
@@ -705,10 +720,10 @@ export default function RitualInitializer() {
         <button
           type="button"
           onClick={() => requestStart("quick")}
-          disabled={!trimmedQuestion}
+          disabled={quickButtonDisabled}
           className="min-h-12 flex-1 rounded-xl border border-midnight-border bg-midnight-panel px-4 py-3 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
         >
-          快速解读
+          {quickButtonLabel}
         </button>
       </div>
 

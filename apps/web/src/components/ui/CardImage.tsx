@@ -7,8 +7,9 @@ const CARD_IMAGE_HEIGHT = 1700;
 type CardImageProps = {
   src: string;
   alt: string;
-  sizes: string;
+  sizes?: string;
   isReversed?: boolean;
+  intrinsicWidth?: number;
   quality?: 50 | 75 | 80;
   priority?: boolean;
   className?: string;
@@ -19,16 +20,20 @@ export default function CardImage({
   alt,
   sizes,
   isReversed = false,
+  intrinsicWidth,
   quality = 75,
   priority = false,
   className,
 }: CardImageProps) {
+  const imageWidth = intrinsicWidth ?? CARD_IMAGE_WIDTH;
+  const imageHeight = Math.round(imageWidth * (CARD_IMAGE_HEIGHT / CARD_IMAGE_WIDTH));
+
   return (
     <Image
       src={src}
       alt={alt}
-      width={CARD_IMAGE_WIDTH}
-      height={CARD_IMAGE_HEIGHT}
+      width={imageWidth}
+      height={imageHeight}
       sizes={sizes}
       quality={quality}
       priority={priority}

@@ -2,7 +2,7 @@
 
 import { motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
@@ -13,6 +13,7 @@ export default function RevealView() {
   const router = useRouter();
   const { selectedSpread, drawSource, drawnCards, isHydrated } = useReading();
   const [scope, animate] = useAnimate();
+  const [isEnteringReading, setIsEnteringReading] = useState(false);
 
   useEffect(() => {
     if (drawnCards.length > 0 && selectedSpread) {
@@ -63,6 +64,14 @@ export default function RevealView() {
     selectedSpread.name,
     selectedSpread.positions.map((position) => position.name),
   );
+  const handleEnterReading = () => {
+    if (isEnteringReading) {
+      return;
+    }
+
+    setIsEnteringReading(true);
+    router.push("/reading");
+  };
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6 lg:pt-12">
@@ -143,11 +152,7 @@ export default function RevealView() {
                       <CardImage
                         src={drawn.card.imageUrl}
                         alt={drawn.card.name}
-                        sizes={
-                          selectedSpread.positions.length === 1
-                            ? "(min-width: 768px) 384px, 80vw"
-                            : "(min-width: 1280px) 220px, (min-width: 768px) 28vw, 72vw"
-                        }
+                        intrinsicWidth={selectedSpread.positions.length === 1 ? 384 : 260}
                         quality={75}
                         priority={index === 0}
                         isReversed={drawn.isReversed}
@@ -190,10 +195,13 @@ export default function RevealView() {
           {/* CTA */}
           <button
             type="button"
-            onClick={() => router.push("/reading")}
-            className="btn-primary mt-8 min-h-12 w-full sm:mt-14 sm:w-auto"
+            onClick={handleEnterReading}
+            disabled={isEnteringReading}
+            className="btn-primary mt-8 min-h-12 w-full disabled:cursor-not-allowed disabled:opacity-70 sm:mt-14 sm:w-auto"
           >
-            <span className="text-sm font-medium">带着整组气候进入深读</span>
+            <span className="text-sm font-medium">
+              {isEnteringReading ? "正在进入深读..." : "带着整组气候进入深读"}
+            </span>
             <LegacyIcon name="arrow_right_alt" className="text-lg" />
           </button>
         </div>
