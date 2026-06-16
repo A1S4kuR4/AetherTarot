@@ -26,7 +26,7 @@ test("buildPrewarmUrls creates route, static chunk, and image optimizer URLs", (
       { imageUrl: "/cardsV2/major_0_fool.png" },
       { imageUrl: "/cardsV2/major_1_magician.png" },
     ],
-    imageWidths: [260, 384],
+    imageWidths: [384, 640],
     imageQuality: 75,
     imageLimit: 1,
   });
@@ -37,8 +37,8 @@ test("buildPrewarmUrls creates route, static chunk, and image optimizer URLs", (
     "https://aethertarot.example/_next/static/chunks/shared.js",
     "https://aethertarot.example/_next/static/chunks/home.js",
     "https://aethertarot.example/_next/static/chunks/reading.js",
-    "https://aethertarot.example/_next/image?url=%2FcardsV2%2Freveal%2Fmajor_0_fool.webp&w=260&q=75",
     "https://aethertarot.example/_next/image?url=%2FcardsV2%2Freveal%2Fmajor_0_fool.webp&w=384&q=75",
+    "https://aethertarot.example/_next/image?url=%2FcardsV2%2Freveal%2Fmajor_0_fool.webp&w=640&q=75",
   ]);
 });
 
