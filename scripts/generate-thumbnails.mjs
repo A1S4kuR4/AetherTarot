@@ -11,10 +11,14 @@ const repoRoot = path.join(import.meta.dirname, "..");
 const deckPath = path.join(repoRoot, "data/decks/rider-waite-smith.json");
 const publicDir = path.join(repoRoot, "apps/web/public");
 const thumbsDir = path.join(publicDir, "cardsV2/thumbs");
+const revealDir = path.join(publicDir, "cardsV2/reveal");
 
 const THUMB_WIDTH = 120;
 const THUMB_HEIGHT = 204;
 const THUMB_QUALITY = 70;
+const REVEAL_WIDTH = 384;
+const REVEAL_HEIGHT = 653;
+const REVEAL_QUALITY = 76;
 
 const deck = JSON.parse(readFileSync(deckPath, "utf-8"));
 
@@ -25,6 +29,10 @@ if (!Array.isArray(deck) || deck.length !== 78) {
 
 if (!existsSync(thumbsDir)) {
   mkdirSync(thumbsDir, { recursive: true });
+}
+
+if (!existsSync(revealDir)) {
+  mkdirSync(revealDir, { recursive: true });
 }
 
 let generated = 0;
@@ -39,7 +47,8 @@ for (const card of deck) {
 
   const srcPath = path.join(publicDir, card.imageUrl.replace(/^\//, ""));
   const baseName = path.basename(card.imageUrl, path.extname(card.imageUrl));
-  const outPath = path.join(thumbsDir, `${baseName}.webp`);
+  const thumbOutPath = path.join(thumbsDir, `${baseName}.webp`);
+  const revealOutPath = path.join(revealDir, `${baseName}.webp`);
 
   if (!existsSync(srcPath)) {
     console.warn(`[skip] ${card.id}: source not found at ${srcPath}`);
@@ -50,10 +59,16 @@ for (const card of deck) {
   await sharp(srcPath)
     .resize(THUMB_WIDTH, THUMB_HEIGHT, { fit: "cover" })
     .webp({ quality: THUMB_QUALITY })
-    .toFile(outPath);
+    .toFile(thumbOutPath);
+
+  await sharp(srcPath)
+    .resize(REVEAL_WIDTH, REVEAL_HEIGHT, { fit: "cover" })
+    .webp({ quality: REVEAL_QUALITY })
+    .toFile(revealOutPath);
 
   generated++;
 }
 
-console.log(`\nDone: ${generated} thumbnails generated, ${skipped} skipped`);
-console.log(`Output: ${thumbsDir}`);
+console.log(`\nDone: ${generated} thumbnail/reveal asset pairs generated, ${skipped} skipped`);
+console.log(`Thumbnails: ${thumbsDir}`);
+console.log(`Reveal: ${revealDir}`);

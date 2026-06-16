@@ -8,7 +8,6 @@ import { createInMemorySessionMemoryStore } from "@/server/reading/memory";
 import { executeReadingTool } from "@/server/reading/tools/executor";
 import {
   createReadingToolRegistry,
-  drawCardsServerSideTool,
   getSessionMemoryTool,
   readingToolRegistry,
   retrieveTarotKnowledgeTool,

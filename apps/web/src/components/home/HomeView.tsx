@@ -12,6 +12,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function HomeView() {
   const [activeSection, setActiveSection] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelLockRef = useRef(false);
 
@@ -19,6 +20,16 @@ export default function HomeView() {
     return containerRef.current?.querySelectorAll<HTMLElement>(
       ":scope > .scroll-snap-section",
     );
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -54,18 +65,18 @@ export default function HomeView() {
       if (window.matchMedia("(min-width: 1024px) and (min-height: 860px)").matches) {
         container.scrollTo({
           top: targetTop,
-          behavior: "smooth",
+          behavior: prefersReducedMotion ? "auto" : "smooth",
         });
       } else {
         window.scrollTo({
           top: container.offsetTop + targetTop,
-          behavior: "smooth",
+          behavior: prefersReducedMotion ? "auto" : "smooth",
         });
       }
 
       setActiveSection(index);
     },
-    [getSections],
+    [getSections, prefersReducedMotion],
   );
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -94,7 +105,7 @@ export default function HomeView() {
     scrollToSection(nextIndex);
     window.setTimeout(() => {
       wheelLockRef.current = false;
-    }, 700);
+    }, prefersReducedMotion ? 100 : 700);
   };
 
   return (

@@ -121,6 +121,7 @@ export default function EncyclopediaView({
 
   const totalRows = Math.ceil(visibleCards.length / columnsPerRow);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual exposes imperative measurement APIs; this component keeps the virtualizer local.
   const virtualizer = useVirtualizer({
     count: totalRows,
     getScrollElement: () => gridRef.current,
@@ -300,8 +301,8 @@ export default function EncyclopediaView({
                           alt={card.name}
                           fill
                           sizes="86px"
-                          quality={40}
-                          loading="lazy"
+                          quality={50}
+                          loading={activeCard.id === card.id ? "eager" : "lazy"}
                           className="h-full w-full object-cover"
                         />
                       </button>
