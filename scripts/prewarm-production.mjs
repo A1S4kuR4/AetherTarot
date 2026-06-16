@@ -10,7 +10,7 @@ const defaultStatsPath = path.join(
 );
 const defaultDeckPath = path.join(repoRoot, "data/decks/rider-waite-smith.json");
 const defaultRoutes = ["/", "/new", "/ritual", "/reveal", "/reading", "/encyclopedia"];
-const defaultImageWidths = [260, 384];
+const defaultImageWidths = [384, 640];
 
 function unique(values) {
   return [...new Set(values)];
