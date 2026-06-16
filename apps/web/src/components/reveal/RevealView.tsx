@@ -4,6 +4,7 @@ import { motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useReading } from "@/context/ReadingContext";
+import { getRevealCardImageUrl } from "@/lib/card-assets";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
@@ -150,9 +151,10 @@ export default function RevealView() {
                       style={{ transformStyle: "preserve-3d" }}
                     >
                       <CardImage
-                        src={drawn.card.imageUrl}
+                        src={getRevealCardImageUrl(drawn.card.imageUrl)}
                         alt={drawn.card.name}
                         intrinsicWidth={selectedSpread.positions.length === 1 ? 384 : 260}
+                        sizes={selectedSpread.positions.length === 1 ? "384px" : "(max-width: 767px) 72vw, 260px"}
                         quality={75}
                         priority={index === 0}
                         isReversed={drawn.isReversed}

@@ -617,7 +617,7 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("button", { name: "快速解读" }).click();
 
     await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
-    await expect(page.getByText("正在生成解读...")).toBeVisible();
+    await expect(page.getByText("正在确认访问与本次牌阵...")).toBeVisible();
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await waitForReadingHydration(page);
@@ -1057,6 +1057,21 @@ test.describe("AetherTarot smoke flow", () => {
     }
   });
 
+  test("keeps key routes navigable with reduced route motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoAppRoute(page, "/");
+
+    await expect(page.locator("[data-route-motion='reduced']")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole("link", { name: /开启崭新仪式/i }).click();
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(page.locator("[data-route-motion='reduced']")).toBeVisible();
+    await expect(page.getByPlaceholder("今天，你想向内心询问什么？")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("keeps the ritual initializer visible without body scrolling on desktop", async ({
     page,
   }) => {
@@ -1177,8 +1192,16 @@ test.describe("AetherTarot smoke flow", () => {
     )
       .map(getNextImageWidth)
       .filter((width): width is number => width !== null);
+    const revealSourcePaths = (
+      await revealTrack.locator("img").evaluateAll((images) =>
+        images.map((image) =>
+          (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
+        ),
+      )
+    ).map(getNextImageSourcePath);
     expect(revealImageWidths.length).toBeGreaterThan(0);
-    expect(Math.max(...revealImageWidths)).toBeLessThanOrEqual(828);
+    expect(Math.max(...revealImageWidths)).toBeLessThanOrEqual(640);
+    expect(revealSourcePaths.every((sourcePath) => sourcePath.includes("/cardsV2/reveal/"))).toBe(true);
     await expectNoHorizontalOverflow(page);
 
     await delayAppRouteOnce(page, "/reading");

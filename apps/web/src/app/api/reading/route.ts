@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { createHash } from "node:crypto";
 import type { ReadingErrorPayload, ReadingRequestPayload } from "@aethertarot/shared-types";
 import { getClientIpHash } from "@/server/beta/ip";
 import {
@@ -53,6 +54,9 @@ const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   collectUsage: collectLlmUsage,
   recordEvent: recordReadingEvent,
 };
+type ReadingGenerationResult = Awaited<ReturnType<typeof collectLlmUsage<Awaited<ReturnType<typeof generateStructuredReading>>>>>;
+
+const inFlightReadingGenerations = new Map<string, Promise<ReadingGenerationResult>>();
 
 function buildErrorResponse(
   code: ReadingErrorPayload["error"]["code"],
@@ -98,6 +102,41 @@ function getEventBase({
     initialReadingId: parsedPayload?.initial_reading?.reading_id ?? null,
     durationMs: Date.now() - startedAt,
   };
+}
+
+function buildGenerationKey({
+  payload,
+  tester,
+  ipHash,
+}: {
+  payload: ReadingRequestPayload;
+  tester: AuthenticatedTester;
+  ipHash: string;
+}) {
+  const subject = tester.userId || tester.email || ipHash;
+  const hash = createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex");
+
+  return `${subject}:${hash}`;
+}
+
+async function runSingleFlightGeneration(
+  key: string,
+  generate: () => Promise<ReadingGenerationResult>,
+) {
+  const existing = inFlightReadingGenerations.get(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const promise = generate().finally(() => {
+    inFlightReadingGenerations.delete(key);
+  });
+
+  inFlightReadingGenerations.set(key, promise);
+  return promise;
 }
 
 export async function handleReadingPost(
@@ -160,8 +199,14 @@ export async function handleReadingPost(
     parsedPayload = readingRequestPayloadSchema.parse(payload);
     tester = await deps.requireAccess();
     await deps.consumeQuota({ tester, ipHash });
-    const { result: reading, calls } = await deps.collectUsage(() =>
-      deps.generateReading(parsedPayload as ReadingRequestPayload)
+    const generationKey = buildGenerationKey({
+      payload: parsedPayload,
+      tester,
+      ipHash,
+    });
+    const { result: reading, calls } = await runSingleFlightGeneration(
+      generationKey,
+      () => deps.collectUsage(() => deps.generateReading(parsedPayload as ReadingRequestPayload)),
     );
     const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
 

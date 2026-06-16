@@ -46,6 +46,24 @@ const MOBILE_READING_NAV_ITEMS = [
   { id: "reading-feedback", label: "反馈" },
 ] as const;
 
+const LOADING_STAGES = [
+  {
+    delayMs: 0,
+    title: "正在确认访问与本次牌阵...",
+    detail: "系统会先校验内测访问、额度和抽到的牌位，避免无效请求浪费等待时间。",
+  },
+  {
+    delayMs: 4500,
+    title: "正在组织牌面线索...",
+    detail: "正在把你的问题、牌阵位置和正逆位整理成可检查的解读上下文。",
+  },
+  {
+    delayMs: 12000,
+    title: "正在生成并复核边界...",
+    detail: "弱网或模型响应较慢时可能需要更久；如果超时，当前牌阵会保留并允许重试。",
+  },
+] as const;
+
 function getLeadSentence(value: string, fallbackKeywords: string[]) {
   const normalized = value.replace(/\s+/g, " ").trim();
 
@@ -96,6 +114,7 @@ export default function InterpretationView() {
   const [feedbackNotesByReadingId, setFeedbackNotesByReadingId] = useState<Record<string, string>>({});
   const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [loadingStageIndex, setLoadingStageIndex] = useState(0);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -388,6 +407,24 @@ export default function InterpretationView() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStageIndex(0);
+      return;
+    }
+
+    setLoadingStageIndex(0);
+    const timers = LOADING_STAGES.slice(1).map((stage, index) =>
+      window.setTimeout(() => {
+        setLoadingStageIndex(index + 1);
+      }, stage.delayMs)
+    );
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [isLoading]);
+
 
   if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
@@ -432,9 +469,11 @@ export default function InterpretationView() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center space-y-5 py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-paper-border border-t-terracotta" />
-            <p className="font-serif text-lg text-text-muted">正在生成解读...</p>
+            <p className="font-serif text-lg text-text-muted">
+              {LOADING_STAGES[loadingStageIndex]?.title ?? LOADING_STAGES[0].title}
+            </p>
             <p className="max-w-sm text-center text-sm leading-relaxed text-text-muted/80">
-              通常需要 10-20 秒，弱网下可能更久。你可以先停留在这一页，系统会自动显示结果。
+              {LOADING_STAGES[loadingStageIndex]?.detail ?? LOADING_STAGES[0].detail}
             </p>
           </div>
         ) : safetyIntercept ? (

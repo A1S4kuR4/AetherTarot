@@ -2,12 +2,10 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginForm({ safeNextPath }: { safeNextPath: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +29,7 @@ export default function LoginForm({ safeNextPath }: { safeNextPath: string }) {
         // Force a hard reload to ensure the new session propagates perfectly
         window.location.assign(safeNextPath);
       }
-    } catch (err) {
+    } catch {
       setError("登录失败，请稍后再试。");
     } finally {
       setIsLoading(false);

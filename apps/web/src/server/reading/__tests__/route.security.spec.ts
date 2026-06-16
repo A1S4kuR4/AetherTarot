@@ -184,4 +184,42 @@ describe("reading route beta access and quota", () => {
       }),
     );
   });
+
+  it("shares one provider generation for concurrent duplicate requests", async () => {
+    const payload = {
+      ...buildSinglePayload("我现在最需要看清什么？"),
+      agent_profile: "lite",
+    };
+    let releaseGeneration: () => void = () => undefined;
+    const generationGate = new Promise<void>((resolve) => {
+      releaseGeneration = resolve;
+    });
+    const deps = buildDependencies({
+      generateReading: vi.fn(async (readingPayload) => {
+        await generationGate;
+        return runReadingGraph(readingPayload);
+      }),
+    });
+
+    const firstResponse = handleReadingPost(buildRequest(payload), deps);
+    await vi.waitFor(() => {
+      expect(deps.generateReading).toHaveBeenCalledTimes(1);
+    });
+
+    const secondResponse = handleReadingPost(buildRequest(payload), deps);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    try {
+      expect(deps.generateReading).toHaveBeenCalledTimes(1);
+    } finally {
+      releaseGeneration();
+    }
+
+    const responses = await Promise.all([firstResponse, secondResponse]);
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    const readings = await Promise.all(responses.map((response) => response.json()));
+
+    expect(readings[0]).toMatchObject({ question: payload.question });
+    expect(readings[1]).toMatchObject({ question: payload.question });
+  });
 });
