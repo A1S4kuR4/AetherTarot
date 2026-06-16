@@ -26,11 +26,15 @@ import {
   parseReadingDraftSnapshot,
   READING_DRAFT_STORAGE_KEY,
 } from "@/lib/reading-draft-storage";
+import { fetchJsonWithTimeout } from "@/lib/fetch-json-with-timeout";
 
 const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
 const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
+const READING_REQUEST_TIMEOUT_MS = 45_000;
+const READING_REQUEST_TIMEOUT_MESSAGE =
+  "解读生成等待超时。请检查网络后重新尝试；刚才的牌阵还在，可以直接重试。";
 const EMPTY_SOBER_GATE: SoberGateState = {
   readingId: null,
   input: "",
@@ -144,6 +148,15 @@ function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
     // Ignore parse errors.
   }
   return null;
+}
+
+function writeLegacyLocalStorage(entries: ReadingHistoryEntry[]) {
+  try {
+    localStorage.setItem(LEGACY_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+  } catch {
+    // Storage can be unavailable.
+  }
 }
 
 function readActiveReadingDraft() {
@@ -314,7 +327,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       reading: nextReading,
     };
 
-    setHistory((current) => [newEntry, ...current]);
+    setHistory((current) => {
+      const nextHistory = [newEntry, ...current];
+      writeLegacyLocalStorage(nextHistory);
+      return nextHistory;
+    });
 
     fetch("/api/readings", {
       method: "POST",
@@ -406,7 +423,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = requestSignature;
 
     try {
-      const response = await fetch("/api/reading", {
+      const { response, payload } = await fetchJsonWithTimeout<
+        StructuredReading | ReadingErrorPayload
+      >("/api/reading", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -420,9 +439,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           draw_source: drawSource,
           prior_session_capsule: continuitySource?.capsule ?? null,
         }),
+        timeoutMs: READING_REQUEST_TIMEOUT_MS,
+        timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
       });
-
-      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -499,7 +518,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = requestSignature;
 
     try {
-      const response = await fetch("/api/reading", {
+      const { response, payload } = await fetchJsonWithTimeout<
+        StructuredReading | ReadingErrorPayload
+      >("/api/reading", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -515,9 +536,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           initial_reading: reading,
           followup_answers: answers,
         }),
+        timeoutMs: READING_REQUEST_TIMEOUT_MS,
+        timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
       });
-
-      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -636,11 +657,13 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   };
 
   const updateHistoryNotes = (id: string, notes: string) => {
-    setHistory((currentHistory) =>
-      currentHistory.map((entry) =>
+    setHistory((currentHistory) => {
+      const nextHistory = currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
-      )
-    );
+      );
+      writeLegacyLocalStorage(nextHistory);
+      return nextHistory;
+    });
 
     fetch("/api/readings", {
       method: "PATCH",
