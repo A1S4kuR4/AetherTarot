@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -28,6 +28,14 @@ export default function Sidebar({
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const handleClose = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+      onClose?.();
+    },
+    [onClose],
+  );
 
   return (
     <>
@@ -38,7 +46,7 @@ export default function Sidebar({
           "fixed inset-0 z-[60] bg-ink/40 backdrop-blur-sm transition-opacity md:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0",
         )}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Drawer */}
@@ -46,15 +54,16 @@ export default function Sidebar({
         id="mobile-sidebar"
         className={cn(
           "fixed top-0 right-0 z-[70] flex h-full w-[min(18rem,86vw)] flex-col border-l border-paper-border bg-paper-raised p-6 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden",
-          isOpen ? "translate-x-0" : "translate-x-full",
+          isOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none translate-x-full",
         )}
         aria-hidden={!isOpen}
+        onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
-          className="absolute top-5 right-5 min-h-11 min-w-11 rounded-xl p-2 text-text-muted hover:bg-paper-muted"
+          className="absolute top-5 right-5 z-[80] flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-xl p-2 text-text-muted hover:bg-paper-muted"
           aria-label="关闭菜单"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <LegacyIcon name="close" className="text-xl" />
         </button>

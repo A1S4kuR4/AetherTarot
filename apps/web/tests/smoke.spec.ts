@@ -1140,7 +1140,15 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(backdrop).toHaveClass(/opacity-100/);
     await expect(page.getByRole("link", { name: "旅程", exact: true })).toBeVisible();
 
-    await backdrop.click();
+    await page.getByRole("button", { name: "关闭菜单" }).click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    await expect(backdrop).toHaveClass(/opacity-0/);
+
+    await menuButton.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+    await expect(backdrop).toHaveClass(/opacity-100/);
+
+    await backdrop.click({ position: { x: 24, y: 96 } });
     await expect(menuButton).toHaveAttribute("aria-expanded", "false");
     await expect(backdrop).toHaveClass(/opacity-0/);
 
