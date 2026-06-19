@@ -12,6 +12,7 @@ type CardImageProps = {
   intrinsicWidth?: number;
   quality?: 50 | 75 | 80;
   priority?: boolean;
+  loading?: "eager" | "lazy";
   className?: string;
 };
 
@@ -23,6 +24,7 @@ export default function CardImage({
   intrinsicWidth,
   quality = 75,
   priority = false,
+  loading,
   className,
 }: CardImageProps) {
   const imageWidth = intrinsicWidth ?? CARD_IMAGE_WIDTH;
@@ -37,6 +39,7 @@ export default function CardImage({
       sizes={sizes}
       quality={quality}
       priority={priority}
+      loading={priority ? undefined : loading}
       className={cn(
         "block aspect-[1/1.7] w-full object-cover",
         isReversed && "rotate-180",
