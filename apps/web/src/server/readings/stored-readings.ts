@@ -4,6 +4,54 @@ import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 
+export const DEFAULT_STORED_READINGS_LIMIT = 50;
+export const MAX_STORED_READINGS_LIMIT = 100;
+export const MAX_STORED_READING_NOTES_LENGTH = 2000;
+
+export type ListStoredReadingsOptions = {
+  limit?: number;
+};
+
+export function normalizeStoredReadingsLimit(limit: unknown) {
+  if (typeof limit !== "number" || !Number.isFinite(limit)) {
+    return DEFAULT_STORED_READINGS_LIMIT;
+  }
+
+  return Math.min(
+    MAX_STORED_READINGS_LIMIT,
+    Math.max(1, Math.trunc(limit)),
+  );
+}
+
+function buildStoredReadingRow(userId: string, entry: ReadingHistoryEntry) {
+  return {
+    user_id: userId,
+    reading_id: entry.id,
+    created_at: entry.createdAt,
+    spread_id: entry.spreadId,
+    draw_source: entry.drawSource ?? null,
+    drawn_cards: entry.drawnCards as unknown as Json,
+    reading: entry.reading as unknown as Json,
+    user_notes: entry.user_notes ?? null,
+  };
+}
+
+function dedupeEntriesByReadingId(entries: ReadingHistoryEntry[]) {
+  const seen = new Set<string>();
+  const deduped: ReadingHistoryEntry[] = [];
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) {
+      continue;
+    }
+
+    seen.add(entry.id);
+    deduped.push(entry);
+  }
+
+  return deduped;
+}
+
 export async function saveStoredReading(
   userId: string,
   entry: ReadingHistoryEntry,
@@ -14,17 +62,11 @@ export async function saveStoredReading(
     return { error: "database_unavailable" as const };
   }
 
-  const row = {
-    user_id: userId,
-    reading_id: entry.id,
-    spread_id: entry.spreadId,
-    draw_source: entry.drawSource ?? null,
-    drawn_cards: entry.drawnCards as unknown as Json,
-    reading: entry.reading as unknown as Json,
-    user_notes: entry.user_notes ?? null,
-  };
+  const row = buildStoredReadingRow(userId, entry);
 
-  const { error } = await adminClient.from("stored_readings").insert([row]);
+  const { error } = await adminClient
+    .from("stored_readings")
+    .upsert(row, { onConflict: "user_id,reading_id" });
 
   if (error) {
     console.warn("[stored-readings] failed to save reading", {
@@ -37,7 +79,10 @@ export async function saveStoredReading(
   return { error: null as null };
 }
 
-export async function listStoredReadings(userId: string) {
+export async function listStoredReadings(
+  userId: string,
+  options: ListStoredReadingsOptions = {},
+) {
   const adminClient = createAdminClient();
 
   if (!adminClient) {
@@ -48,7 +93,8 @@ export async function listStoredReadings(userId: string) {
     .from("stored_readings")
     .select("id, reading_id, created_at, spread_id, draw_source, drawn_cards, reading, user_notes")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(normalizeStoredReadingsLimit(options.limit));
 
   if (error) {
     console.warn("[stored-readings] failed to list readings", {
@@ -76,6 +122,10 @@ export async function updateStoredReadingNotes(
   readingId: string,
   notes: string,
 ) {
+  if (notes.length > MAX_STORED_READING_NOTES_LENGTH) {
+    return { error: "invalid_notes" as const };
+  }
+
   const adminClient = createAdminClient();
 
   if (!adminClient) {
@@ -109,17 +159,17 @@ export async function migrateStoredReadings(
     return { migrated: 0, error: "database_unavailable" as const };
   }
 
-  const rows = entries.map((entry) => ({
-    user_id: userId,
-    reading_id: entry.id,
-    spread_id: entry.spreadId,
-    draw_source: entry.drawSource ?? null,
-    drawn_cards: entry.drawnCards as unknown as Json,
-    reading: entry.reading as unknown as Json,
-    user_notes: entry.user_notes ?? null,
-  }));
+  const dedupedEntries = dedupeEntriesByReadingId(entries);
 
-  const { error } = await adminClient.from("stored_readings").insert(rows);
+  if (dedupedEntries.length === 0) {
+    return { migrated: 0, error: null as null };
+  }
+
+  const rows = dedupedEntries.map((entry) => buildStoredReadingRow(userId, entry));
+
+  const { error } = await adminClient
+    .from("stored_readings")
+    .upsert(rows, { onConflict: "user_id,reading_id" });
 
   if (error) {
     console.warn("[stored-readings] failed to migrate readings", {

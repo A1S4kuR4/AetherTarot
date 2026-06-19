@@ -14,6 +14,7 @@ import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { drawCardsForSpread } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { useQuickDraw } from "@/hooks/useQuickDraw";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
 const MAJOR_DECISION_TERM_REGEX =
@@ -21,6 +22,15 @@ const MAJOR_DECISION_TERM_REGEX =
 
 const spreads = getAllSpreads();
 const QUICK_DEFAULT_SPREAD = spreads.find((spread) => spread.id === "single") ?? spreads[0];
+
+const SUGGESTED_PROMPTS = [
+  "我最近在潜意识中抵触什么？",
+  "我现在真正需要看清的情绪是什么？",
+  "这段关系里，我忽略了什么真实张力？",
+  "面对这个选择，我最需要补齐哪类现实信息？",
+  "接下来的工作重心，我适合先聚焦在哪里？",
+  "我最近反复卡住的模式是什么？",
+];
 
 const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: string }> = [
   {
@@ -142,6 +152,7 @@ function getFocusCalibrationCopy(question: string) {
 
 export default function RitualInitializer() {
   const router = useRouter();
+  const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
   const {
     question,
     selectedSpread,
@@ -168,7 +179,7 @@ export default function RitualInitializer() {
   const [pendingStartMode, setPendingStartMode] = useState<"ritual" | "quick" | null>(null);
   const [navigationMode, setNavigationMode] = useState<"ritual" | "quick" | null>(null);
   const trimmedQuestion = question.trim();
-  const isNavigationPending = navigationMode !== null;
+  const isNavigationPending = navigationMode !== null || isQuickDrawing;
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
   const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
@@ -247,24 +258,7 @@ export default function RitualInitializer() {
   };
 
   const handleQuickStart = () => {
-    const targetSpread = selectedSpread ?? QUICK_DEFAULT_SPREAD;
-
-    if (!trimmedQuestion || !targetSpread) {
-      return;
-    }
-
-    const quickDrawnCards = drawCardsForSpread(targetSpread.positions);
-
-    if (quickDrawnCards.length !== targetSpread.positions.length) {
-      return;
-    }
-
-    setNavigationMode("quick");
-    setAgentProfile("lite");
-    setDrawSource("digital_random");
-    setSelectedSpread(targetSpread);
-    completeRitual(quickDrawnCards);
-    router.push("/reading");
+    performQuickDraw();
   };
 
   const requestStart = (mode: "ritual" | "quick") => {
@@ -398,6 +392,19 @@ export default function RitualInitializer() {
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
+
+          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 hide-scrollbar">
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => setQuestion(prompt)}
+                className="shrink-0 rounded-full border border-midnight-border bg-night/35 px-3 py-1.5 text-xs text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
 
           <div className="rounded-2xl border border-midnight-border-subtle bg-black/10 p-3">
             <div className="mb-2 flex items-center gap-2 text-text-inverse">

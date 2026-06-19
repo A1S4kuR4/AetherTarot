@@ -2,8 +2,11 @@
 
 import { m } from "motion/react";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { useQuickDraw } from "@/hooks/useQuickDraw";
 
 export default function IntroSection() {
+  const { performQuickDraw, isNavigating } = useQuickDraw();
+
   return (
     <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-0">
       <m.div
@@ -29,8 +32,16 @@ export default function IntroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 1 }}
-          className="pt-12"
+          className="flex flex-col items-center gap-8 pt-8"
         >
+          <button
+            type="button"
+            disabled={isNavigating}
+            onClick={() => performQuickDraw("我还不知道具体要问什么，请抽取我当下最需要看见的状态。")}
+            className="text-sm font-medium text-terracotta/80 underline underline-offset-4 transition-colors hover:text-terracotta disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            抽一张当下之镜
+          </button>
           <LegacyIcon
             name="keyboard_double_arrow_down"
             className="animate-float-slow text-text-placeholder"
