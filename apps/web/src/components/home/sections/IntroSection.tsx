@@ -103,7 +103,7 @@ export default function IntroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
-            className="flex justify-center pt-8"
+            className="flex justify-center pt-16"
           >
             <m.button
               type="button"
@@ -129,7 +129,7 @@ export default function IntroSection() {
                 className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
               />
 
-              <span className="relative z-10 text-base tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
+              <span className="relative z-10 text-lg font-semibold tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
                 抽一张当下之镜
               </span>
               <LegacyIcon
