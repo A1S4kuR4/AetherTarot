@@ -12,7 +12,6 @@ import type {
 } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
-import { drawCardsForSpread } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import { useQuickDraw } from "@/hooks/useQuickDraw";
 
@@ -165,7 +164,6 @@ export default function RitualInitializer() {
     setAgentProfile,
     setDrawSource,
     clearContinuitySource,
-    completeRitual,
     startRitual,
   } = useReading();
 
@@ -258,6 +256,7 @@ export default function RitualInitializer() {
   };
 
   const handleQuickStart = () => {
+    setNavigationMode("quick");
     performQuickDraw();
   };
 
@@ -297,7 +296,7 @@ export default function RitualInitializer() {
       ? "长按开始录入"
       : "长按开始仪式";
   const quickButtonLabel =
-    navigationMode === "quick" ? "正在生成轻量解读..." : "快速解读";
+    navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "快速解读";
   const ctaDescription = `跳过仪式会使用${selectedSpread?.name ?? QUICK_DEFAULT_SPREAD?.name ?? "单牌启示"}生成轻量初读；安全边界与完整流程一致。`;
 
   return (
@@ -363,13 +362,13 @@ export default function RitualInitializer() {
         </div>
       ) : null}
 
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
+      <div className="grid min-w-0 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/80 p-3.5 shadow-sm lg:p-4"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/80 p-3.5 shadow-sm lg:p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -393,7 +392,7 @@ export default function RitualInitializer() {
             onChange={(event) => setQuestion(event.target.value)}
           />
 
-          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 hide-scrollbar">
+          <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 hide-scrollbar">
             {SUGGESTED_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
@@ -482,7 +481,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/70 p-3.5 shadow-sm lg:p-4"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/70 p-3.5 shadow-sm lg:p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -587,7 +586,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/60 p-3.5 shadow-sm lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/60 p-3.5 shadow-sm lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
         >
           <div>
             <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">

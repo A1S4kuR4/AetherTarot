@@ -154,9 +154,10 @@ export default function RevealView() {
                         src={getRevealCardImageUrl(drawn.card.imageUrl)}
                         alt={drawn.card.name}
                         intrinsicWidth={selectedSpread.positions.length === 1 ? 384 : 260}
-                        sizes={selectedSpread.positions.length === 1 ? "384px" : "(max-width: 767px) 72vw, 260px"}
+                        sizes={selectedSpread.positions.length === 1 ? "384px" : "260px"}
                         quality={75}
                         priority={index === 0}
+                        loading="eager"
                         isReversed={drawn.isReversed}
                         className="transition-transform duration-500"
                       />

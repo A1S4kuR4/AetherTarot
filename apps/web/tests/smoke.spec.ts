@@ -1182,20 +1182,23 @@ test.describe("AetherTarot smoke flow", () => {
     await expect
       .poll(
         async () => {
-          const src = await revealTrack.locator("img").first().evaluate((image) =>
-            (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
-          );
-          return getNextImageWidth(src) ?? 0;
+          const widths = (
+            await revealTrack.locator("img").evaluateAll((images) =>
+              images.map((image) => (image as HTMLImageElement).currentSrc),
+            )
+          )
+            .map(getNextImageWidth)
+            .filter((width): width is number => width !== null);
+
+          return widths.length === 7 ? Math.max(...widths) : Number.POSITIVE_INFINITY;
         },
         { timeout: 10000 },
       )
-      .toBeGreaterThan(0);
+      .toBeLessThanOrEqual(640);
 
     const revealImageWidths = (
       await revealTrack.locator("img").evaluateAll((images) =>
-        images.map((image) =>
-          (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
-        ),
+        images.map((image) => (image as HTMLImageElement).currentSrc),
       )
     )
       .map(getNextImageWidth)
