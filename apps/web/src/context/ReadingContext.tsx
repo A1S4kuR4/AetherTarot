@@ -159,6 +159,22 @@ function writeLegacyLocalStorage(entries: ReadingHistoryEntry[]) {
   }
 }
 
+function dedupeHistoryEntries(entries: ReadingHistoryEntry[]) {
+  const seen = new Set<string>();
+  const deduped: ReadingHistoryEntry[] = [];
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) {
+      continue;
+    }
+
+    seen.add(entry.id);
+    deduped.push(entry);
+  }
+
+  return deduped;
+}
+
 function readActiveReadingDraft() {
   try {
     return parseReadingDraftSnapshot(
@@ -216,15 +232,16 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           } else {
             const legacy = readLegacyLocalStorage();
             if (legacy && legacy.length > 0) {
+              const dedupedLegacy = dedupeHistoryEntries(legacy);
               try {
                 const migrateResponse = await fetch("/api/readings/migrate", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(legacy),
+                  body: JSON.stringify(dedupedLegacy),
                 });
 
                 if (!cancelled && migrateResponse.ok) {
-                  setHistory(legacy);
+                  setHistory(dedupedLegacy);
                   try {
                     localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY);
                     localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
@@ -236,7 +253,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
                 }
               } catch {
                 if (!cancelled) {
-                  setHistory(legacy);
+                  setHistory(dedupedLegacy);
                 }
               }
             }
@@ -244,13 +261,13 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         } else {
           const legacy = readLegacyLocalStorage();
           if (!cancelled && legacy) {
-            setHistory(legacy);
+            setHistory(dedupeHistoryEntries(legacy));
           }
         }
       } catch {
         const legacy = readLegacyLocalStorage();
         if (!cancelled && legacy) {
-          setHistory(legacy);
+          setHistory(dedupeHistoryEntries(legacy));
         }
       } finally {
         if (!cancelled) {
@@ -328,7 +345,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     };
 
     setHistory((current) => {
-      const nextHistory = [newEntry, ...current];
+      const nextHistory = [newEntry, ...current.filter((entry) => entry.id !== newEntry.id)];
       writeLegacyLocalStorage(nextHistory);
       return nextHistory;
     });
