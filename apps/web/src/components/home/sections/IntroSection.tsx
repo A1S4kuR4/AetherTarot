@@ -117,7 +117,7 @@ export default function IntroSection() {
                 hover: { y: -4 }
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="group relative z-0 flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className="group relative flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {/* Focus Halo / 背景光晕 */}
               <m.div
@@ -126,15 +126,15 @@ export default function IntroSection() {
                   hover: { opacity: 1, scale: 1 }
                 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
-                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
+                className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
               />
 
-              <span className="text-base tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
+              <span className="relative z-10 text-base tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
                 抽一张当下之镜
               </span>
               <LegacyIcon
                 name="keyboard_double_arrow_down"
-                className="animate-float-slow text-text-placeholder transition-colors group-hover:text-terracotta/70"
+                className="relative z-10 animate-float-slow text-text-placeholder transition-colors group-hover:text-terracotta/70"
               />
             </m.button>
           </m.div>
