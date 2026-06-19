@@ -113,13 +113,23 @@ export default function IntroSection() {
               initial="rest"
               animate="rest"
               variants={{
-                rest: { y: 0, filter: "drop-shadow(0px 0px 0px rgba(201,100,66,0))" },
-                hover: { y: -4, filter: "drop-shadow(0px 6px 12px rgba(201,100,66,0.3))" }
+                rest: { y: 0 },
+                hover: { y: -4 }
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="group flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className="group relative z-0 flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="text-sm font-medium text-terracotta/80 transition-colors group-hover:text-terracotta">
+              {/* Focus Halo / 背景光晕 */}
+              <m.div
+                variants={{
+                  rest: { opacity: 0, scale: 0.9 },
+                  hover: { opacity: 1, scale: 1 }
+                }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
+              />
+
+              <span className="text-base tracking-widest font-medium text-terracotta/80 transition-colors group-hover:text-terracotta">
                 抽一张当下之镜
               </span>
               <LegacyIcon
