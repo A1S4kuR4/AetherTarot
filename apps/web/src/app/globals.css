@@ -95,6 +95,36 @@
     animation: float-slow 3s ease-in-out infinite;
   }
 
+  /* ---- Hint pulse (breathing glow for "tap to flip") ---- */
+  @keyframes hint-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .animate-hint-pulse {
+    animation: hint-pulse 2s ease-in-out infinite;
+  }
+
+  /* ---- 3D Card Flip Utilities ---- */
+  .perspective-card {
+    perspective: 1500px;
+  }
+
+  .card-flip-inner {
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-flip-face {
+    backface-visibility: hidden;
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-flip-front {
+    transform: rotateY(180deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;

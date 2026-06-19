@@ -182,7 +182,7 @@ AetherTarot/
 └─ memory/
 ```
 
-仓库内的 repo-local skills 统一放在 `.agents/skills/`；这是当前唯一的 canonical skill root。
+仓库内的 repo-local skills 统一放在 `.agents/skills/`；这是当前唯一的 canonical skill root。部署大陆节点时优先使用 `.agents/skills/aethertarot-server-deploy/`，并以 `docs/70-ops/production-deployment.md` 的入口与敏感信息边界为准。
 
 如需新增、迁移或维护 repo-local skills，先读 `docs/00-overview/repo-local-skills.md`。
 
