@@ -116,6 +116,7 @@
   }
 
   .card-flip-face {
+    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     position: absolute;
     inset: 0;

@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence, m } from "motion/react";
+import { m, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import type { DrawnCard } from "@aethertarot/shared-types";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { getRevealCardImageUrl } from "@/lib/card-assets";
 
 type Phase = "entering" | "card-back" | "flipping" | "revealed";
 
@@ -141,35 +142,35 @@ function QuickDrawOverlayContent({
                 }
               >
                 <div
-                  className={`card-flip-inner relative aspect-[1/1.7] w-[200px] overflow-hidden rounded-[12px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:w-[240px] md:w-[260px] ${
+                  className={`card-flip-inner relative aspect-[1/1.7] w-[200px] rounded-[12px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:w-[240px] md:w-[260px] ${
                     isFlipped ? "[transform:rotateY(180deg)]" : ""
                   }`}
                 >
                   {/* Back face */}
-                  <div className="card-flip-face overflow-hidden rounded-[12px]">
+                  <div className="card-flip-face">
                     <Image
-                      src="/cards/back.png"
+                      src="/cardsV2/back.png"
                       alt="塔罗牌背面"
                       width={500}
                       height={850}
                       sizes="260px"
                       quality={75}
                       priority
-                      className="h-full w-full object-cover"
+                      className="h-full w-full rounded-[12px] object-cover"
                     />
                   </div>
 
                   {/* Front face */}
-                  <div className="card-flip-face card-flip-front overflow-hidden rounded-[12px]">
+                  <div className="card-flip-face card-flip-front">
                     {card && (
                       <Image
-                        src={card.imageUrl}
+                        src={getRevealCardImageUrl(card.imageUrl)}
                         alt={card.name}
                         width={500}
                         height={850}
                         sizes="260px"
                         quality={75}
-                        className={`h-full w-full object-cover ${
+                        className={`h-full w-full rounded-[12px] object-cover ${
                           isReversed ? "rotate-180" : ""
                         }`}
                       />
