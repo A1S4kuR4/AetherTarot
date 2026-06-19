@@ -103,20 +103,30 @@ export default function IntroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
-            className="flex flex-col items-center gap-8 pt-8"
+            className="flex justify-center pt-8"
           >
-            <button
+            <m.button
               type="button"
               disabled={isNavigating}
               onClick={handleDrawClick}
-              className="text-sm font-medium text-terracotta/80 underline underline-offset-4 transition-colors hover:text-terracotta disabled:cursor-not-allowed disabled:opacity-50"
+              whileHover={!isNavigating ? "hover" : undefined}
+              initial="rest"
+              animate="rest"
+              variants={{
+                rest: { y: 0, filter: "drop-shadow(0px 0px 0px rgba(201,100,66,0))" },
+                hover: { y: -4, filter: "drop-shadow(0px 6px 12px rgba(201,100,66,0.3))" }
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="group flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
-              抽一张当下之镜
-            </button>
-            <LegacyIcon
-              name="keyboard_double_arrow_down"
-              className="animate-float-slow text-text-placeholder"
-            />
+              <span className="text-sm font-medium text-terracotta/80 transition-colors group-hover:text-terracotta">
+                抽一张当下之镜
+              </span>
+              <LegacyIcon
+                name="keyboard_double_arrow_down"
+                className="animate-float-slow text-text-placeholder transition-colors group-hover:text-terracotta/70"
+              />
+            </m.button>
           </m.div>
         </m.div>
       </section>
