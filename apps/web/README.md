@@ -6,7 +6,7 @@
 - `/new` 提问与牌阵选择，并在存在 continuity source 时显示“延续中的线索”提示；同时提供快速解读入口，未选牌阵时默认单牌，已选牌阵时尊重当前牌阵
 - `/ritual` 洗牌与抽牌
 - `/reveal` 展示抽到的牌
-- `/reading` 展示结构化解读结果、核心速读、三层可信路径、`sober_check` 摩擦与安全阻断状态
+- `/reading` 展示结构化解读结果、牌阵英雄区、此刻核心讯息、可折叠解读依据、`sober_check` 摩擦与安全阻断状态
 - `/history` 查看本地历史记录，并支持“回看这次解读”与“延续这条线”两个分离动作
 - `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload

@@ -1,6 +1,7 @@
 "use client";
 
 import { Player } from "@remotion/player";
+import { useState } from "react";
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
 
 type RadarAxisKey = "spirit" | "fire" | "water" | "earth" | "air" | "chaos";
@@ -247,6 +248,7 @@ export default function RadarChart({
   className,
   layout = "inline",
 }: RadarChartProps) {
+  const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
   const orderedAxes = AXES.map((axis) => ({
     ...axis,
     value: values[axis.key],
@@ -294,7 +296,12 @@ export default function RadarChart({
           </div>
           <div className="grid gap-2">
             {orderedAxes.map((axis) => (
-              <div key={axis.key} className="grid grid-cols-[52px_1fr_42px] items-center gap-2">
+              <div
+                key={axis.key}
+                className="group relative grid grid-cols-[52px_1fr_42px] items-center gap-2 cursor-help"
+                onMouseEnter={() => setHoveredAxis(axis.key)}
+                onMouseLeave={() => setHoveredAxis(null)}
+              >
                 <span className="font-sans text-xs font-medium text-text-muted">
                   {axis.label}
                 </span>
@@ -310,6 +317,11 @@ export default function RadarChart({
                 <span className="text-right font-sans text-xs text-text-muted">
                   {axis.value.count}/{axis.value.total}
                 </span>
+                {hoveredAxis === axis.key && (
+                  <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-paper-border bg-paper-raised px-3 py-1.5 font-sans text-xs text-text-body shadow-md">
+                    {axis.shorthand} · {axis.description}
+                  </div>
+                )}
               </div>
             ))}
           </div>
