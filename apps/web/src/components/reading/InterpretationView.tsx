@@ -38,11 +38,11 @@ const FEEDBACK_OPTIONS = [
 type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
 
 const MOBILE_READING_NAV_ITEMS = [
-  { id: "reading-quick", label: "速读" },
-  { id: "reading-trust", label: "可信" },
+  { id: "reading-quick", label: "核心" },
+  { id: "reading-evidence", label: "依据" },
   { id: "reading-cards", label: "逐牌" },
-  { id: "reading-synthesis", label: "综合" },
-  { id: "reading-guidance", label: "指引" },
+  { id: "reading-synthesis", label: "故事" },
+  { id: "reading-guidance", label: "思考" },
   { id: "reading-feedback", label: "反馈" },
 ] as const;
 
@@ -115,6 +115,7 @@ export default function InterpretationView() {
   const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
+  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -146,9 +147,9 @@ export default function InterpretationView() {
     )
     : null;
   const followupSectionTitle =
-    reading?.reading_phase === "final" ? "延伸自省" : "延伸追问";
+    reading?.reading_phase === "final" ? "回望与觉察" : "继续探索";
   const followupSectionKicker =
-    reading?.reading_phase === "final" ? "自省" : "延伸";
+    reading?.reading_phase === "final" ? "觉察" : "探索";
   const isCompletedReading = Boolean(reading && !reading.requires_followup);
   const activeFeedbackLabels = activeReadingId
     ? feedbackLabelsByReadingId[activeReadingId] ?? []
@@ -438,7 +439,7 @@ export default function InterpretationView() {
             {reading?.reading_phase === "initial" ? "初步解读" : "解读结果"}
           </h1>
           <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
-            这次解读不是替你宣布结果，而是帮助你更清楚地看见正在成形的主题、张力与可选择的动作。
+            这些牌面映射的是你当下的状态与可能性——不是定论，而是一面帮你看清方向的镜子。
           </blockquote>
 
           <div className="reading-card">
@@ -581,44 +582,51 @@ export default function InterpretationView() {
                 </div>
               </nav>
 
-              <div
-                data-testid="mobile-reading-card-strip"
-                className="lg:hidden"
+              <section
+                data-testid="hero-spread-display"
+                className="my-2 md:my-6"
               >
-                <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                <div className="flex flex-wrap items-end justify-center gap-4 md:gap-5 lg:gap-6">
                   {drawnCards.map((drawnCard, index) => {
                     const position = selectedSpread.positions[index]?.name ?? `位置 ${index + 1}`;
 
                     return (
-                      <div
-                        key={`mobile-strip-${drawnCard.positionId}`}
-                        className="w-20 shrink-0"
-                        title={position}
-                        aria-label={`${position}：${drawnCard.card.name}`}
+                      <motion.div
+                        key={`hero-${drawnCard.positionId}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
+                        className="flex w-[100px] flex-col items-center sm:w-[120px] md:w-[140px] lg:w-[150px]"
                       >
-                        <div className="aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border bg-paper-raised shadow-sm">
+                        <div className="card-hero-glow aspect-[1/1.7] w-full overflow-hidden rounded-card-md border border-paper-border bg-paper-raised">
                           <CardImage
                             src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                             alt={drawnCard.card.name}
-                            sizes="80px"
-                            quality={50}
+                            sizes="(min-width: 1024px) 150px, (min-width: 768px) 140px, (min-width: 640px) 120px, 100px"
+                            quality={75}
                             isReversed={drawnCard.isReversed}
                           />
                         </div>
-                        <p className="mt-1 truncate text-center text-[10px] text-text-muted">
-                          第 {index + 1} 位
+                        <p className="mt-2 text-center font-sans text-[11px] font-medium text-text-muted">
+                          {position}
                         </p>
-                      </div>
+                        <p className="mt-0.5 text-center font-serif text-[13px] text-ink">
+                          {drawnCard.card.name}
+                        </p>
+                        <span className="mt-0.5 font-sans text-[10px] text-text-muted">
+                          {drawnCard.isReversed ? "逆位" : "正位"}
+                        </span>
+                      </motion.div>
                     );
                   })}
                 </div>
-              </div>
+              </section>
 
               {coreQuickRead ? (
                 <section
                   id="reading-quick"
                   className={cn(
-                    "relative scroll-mt-32 rounded-3xl border p-5 shadow-sm md:my-16 md:p-8",
+                    "relative scroll-mt-32 rounded-3xl border p-5 shadow-sm md:my-8 md:p-8",
                     reading.presentation_mode === "sober_anchor"
                       ? "border-paper-border bg-paper"
                       : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper",
@@ -630,120 +638,122 @@ export default function InterpretationView() {
                       className="text-[14px] text-terracotta/70"
                     />
                     <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
-                      核心速读
+                      此刻的核心讯息
                     </span>
                   </div>
-                  <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
-                    <div className="min-w-0 space-y-6">
+                  <div className="space-y-6">
+                    <div>
                       <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                        一句话先看重点
+                        一句话看核心
                       </p>
-                      <div className="max-w-[34rem]">
-                        <h2 className="font-serif text-2xl leading-[1.45] text-ink md:text-[28px]">
+                      <div className="max-w-[38rem]">
+                        <h2 className="mt-2 font-serif text-2xl leading-[1.45] text-ink md:text-[28px]">
                           {coreQuickRead.core}
                         </h2>
                       </div>
-                      <div className="flex max-w-[34rem] flex-wrap gap-2.5">
-                        {coreQuickRead.keywords.map((keyword) => (
-                          <span
-                            key={`quick-keyword-${keyword}`}
-                            className="chip-accent border-terracotta/20 bg-terracotta/5 px-3.5 py-1.5 text-xs shadow-sm"
-                          >
-                            {keyword}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
-                            现在可以怎么做
-                          </p>
-                          <p className="mt-2 text-sm leading-relaxed text-text-body">
-                            {coreQuickRead.action}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                            不要过度相信
-                          </p>
-                          <p className="mt-2 text-sm leading-relaxed text-text-body">
-                            {coreQuickRead.boundary}
-                          </p>
-                        </div>
-                      </div>
                     </div>
-                    <div className="min-w-0 justify-self-center lg:w-[260px] lg:justify-self-end">
-                      <RadarChart
-                        values={radarValues}
-                        size={210}
-                        layout="stacked"
-                      />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
+                          下一步可以
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-text-body">
+                          {coreQuickRead.action}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+                          请记住
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-text-body">
+                          {coreQuickRead.boundary}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </section>
               ) : null}
 
-              <section id="reading-trust" className="reading-card scroll-mt-32 border-terracotta/20 bg-paper-raised/70">
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  可信路径
-                </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">
-                  这不是神谕，是可检查的解释路径
-                </h2>
-                <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                    <div className="mb-3 flex items-center gap-2 text-terracotta">
-                      <LegacyIcon name="edit_note" className="text-[18px]" />
-                      <h3 className="font-serif text-lg text-ink">你说了什么</h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-text-body">
-                      {question}
+              <section id="reading-evidence" className="reading-card scroll-mt-32 border-terracotta/20 bg-paper-raised/70">
+                <button
+                  type="button"
+                  onClick={() => setIsEvidenceOpen(!isEvidenceOpen)}
+                  className="flex w-full items-center justify-between text-left"
+                >
+                  <div>
+                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                      解读依据
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="chip-accent text-[10px]">
-                        {QUESTION_TYPE_LABELS[reading.question_type]}
-                      </span>
-                      <span className="chip-warm text-[10px]">
-                        {continuitySource ? "带延续线索" : "无延续线索"}
-                      </span>
-                    </div>
+                    <h2 className="mt-1 font-serif text-2xl text-ink">
+                      这个解读是怎么来的
+                    </h2>
                   </div>
-                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                    <div className="mb-3 flex items-center gap-2 text-terracotta">
-                      <LegacyIcon name="style" className="text-[18px]" />
-                      <h3 className="font-serif text-lg text-ink">牌本身说了什么</h3>
+                  <LegacyIcon
+                    name={isEvidenceOpen ? "keyboard_double_arrow_down" : "arrow_forward"}
+                    className={cn(
+                      "text-lg text-text-muted transition-transform duration-300",
+                      isEvidenceOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+                {!isEvidenceOpen && (
+                  <p className="mt-3 text-sm leading-relaxed text-text-muted">
+                    基于你的提问、{drawnCards.length} 张牌面与牌阵位置综合分析得出。点击展开查看详细依据。
+                  </p>
+                )}
+                {isEvidenceOpen && (
+                  <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                      <div className="mb-3 flex items-center gap-2 text-terracotta">
+                        <LegacyIcon name="edit_note" className="text-[18px]" />
+                        <h3 className="font-serif text-lg text-ink">你的问题</h3>
+                      </div>
+                      <p className="text-sm leading-relaxed text-text-body">
+                        {question}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="chip-accent text-[10px]">
+                          {QUESTION_TYPE_LABELS[reading.question_type]}
+                        </span>
+                        <span className="chip-warm text-[10px]">
+                          {continuitySource ? "带延续线索" : "无延续线索"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      {trustPathCards.map((card) => (
-                        <div key={`trust-${card.position_id}`} className="border-l-2 border-paper-border pl-3">
-                          <p className="text-sm font-medium text-ink">
-                            {card.position}：{card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
-                          </p>
-                          {card.keywords.length > 0 ? (
-                            <p className="mt-1 text-xs leading-relaxed text-text-muted">
-                              {card.keywords.join(" / ")}
+                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                      <div className="mb-3 flex items-center gap-2 text-terracotta">
+                        <LegacyIcon name="style" className="text-[18px]" />
+                        <h3 className="font-serif text-lg text-ink">牌面线索</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {trustPathCards.map((card) => (
+                          <div key={`trust-${card.position_id}`} className="border-l-2 border-paper-border pl-3">
+                            <p className="text-sm font-medium text-ink">
+                              {card.position}：{card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
                             </p>
-                          ) : null}
-                        </div>
-                      ))}
+                            {card.keywords.length > 0 ? (
+                              <p className="mt-1 text-xs leading-relaxed text-text-muted">
+                                {card.keywords.join(" / ")}
+                              </p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
+                      <div className="mb-3 flex items-center gap-2 text-terracotta">
+                        <LegacyIcon name="account_tree" className="text-[18px]" />
+                        <h3 className="font-serif text-lg text-ink">解读逻辑</h3>
+                      </div>
+                      <p className="text-sm leading-relaxed text-text-body">
+                        {spreadExperience?.readingMechanism}
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                        {spreadExperience?.evidencePath}
+                      </p>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                    <div className="mb-3 flex items-center gap-2 text-terracotta">
-                      <LegacyIcon name="account_tree" className="text-[18px]" />
-                      <h3 className="font-serif text-lg text-ink">如何连接二者</h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-text-body">
-                      {spreadExperience?.readingMechanism}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-text-muted">
-                      {spreadExperience?.evidencePath}
-                    </p>
-                    <p className="mt-3 text-xs leading-relaxed text-text-muted">
-                      逐牌顺序来自权威位置；牌面线索和位置语义先行，综合推断后置。
-                    </p>
-                  </div>
-                </div>
+                )}
               </section>
 
               <section id="reading-cards" className="reading-card scroll-mt-32 space-y-5">
@@ -775,7 +785,18 @@ export default function InterpretationView() {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className="rounded-2xl border border-paper-border bg-paper p-5"
                       >
-                        <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                        <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                          {drawnCard ? (
+                            <div className="mx-auto w-[140px] shrink-0 overflow-hidden rounded-card-md border border-paper-border shadow-sm md:mx-0 md:w-[180px]">
+                              <CardImage
+                                src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
+                                alt={drawnCard.card.name}
+                                sizes="(min-width: 768px) 180px, 140px"
+                                quality={75}
+                                isReversed={drawnCard.isReversed}
+                              />
+                            </div>
+                          ) : null}
                           <div className="min-w-0 flex-1 space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="chip-warm text-[10px]">{card.position}</span>
@@ -790,7 +811,7 @@ export default function InterpretationView() {
                             <div className="grid gap-4 md:grid-cols-2">
                               <div className="border-l-2 border-paper-border pl-4">
                                 <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                                  牌面线索
+                                  看到什么
                                 </h4>
                                 <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
                                   {card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
@@ -810,7 +831,7 @@ export default function InterpretationView() {
                               </div>
                               <div className="border-l-2 border-terracotta/20 pl-4">
                                 <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                                  位置语义
+                                  在这个位置
                                 </h4>
                                 <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
                                   {card.position_meaning}
@@ -826,17 +847,6 @@ export default function InterpretationView() {
                               </p>
                             </div>
                           </div>
-                          {drawnCard ? (
-                            <div className="w-full max-w-[130px] shrink-0 overflow-hidden rounded-card-sm border border-paper-border md:ml-4">
-                              <CardImage
-                                src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                                alt={drawnCard.card.name}
-                                sizes="130px"
-                                quality={50}
-                                isReversed={drawnCard.isReversed}
-                              />
-                            </div>
-                          ) : null}
                         </div>
                       </motion.article>
                     );
@@ -852,12 +862,9 @@ export default function InterpretationView() {
                 )}
               >
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  综合
+                  故事
                 </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">综合解读</h2>
-                <p className="mt-3 font-sans text-xs leading-relaxed text-text-muted">
-                  综合推断层会把牌面线索与位置语义收束成整体判断，但它仍然不是替你宣布唯一答案。
-                </p>
+                <h2 className="mt-1 font-serif text-2xl text-ink">串联在一起的故事</h2>
                 <p className="mt-4 text-base leading-[1.85] text-text-body">
                   {reading.synthesis}
                 </p>
@@ -872,9 +879,9 @@ export default function InterpretationView() {
                 )}
               >
                 <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  指引
+                  思考
                 </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">反思指引</h2>
+                <h2 className="mt-1 font-serif text-2xl text-ink">可以带走的思考</h2>
                 <ul className="mt-4 space-y-3">
                   {reading.reflective_guidance.map((guidance) => (
                     <li
@@ -955,17 +962,17 @@ export default function InterpretationView() {
                 </section>
               ) : null}
               {reading.safety_note ? (
-                <section className="scroll-mt-32 rounded-2xl border border-red-900/40 bg-red-950/20 p-5 shadow-inner ring-1 ring-inset ring-red-900/20 md:p-6">
-                  <div className="flex items-center gap-3 border-b border-red-900/30 pb-3">
-                    <LegacyIcon name="warning" className="text-red-500/80" />
+                <section className="scroll-mt-32 rounded-2xl border border-terracotta/20 bg-[#F4F1EE] p-5 shadow-inner ring-1 ring-inset ring-terracotta/10 md:p-6">
+                  <div className="flex items-center gap-3 border-b border-terracotta/20 pb-3">
+                    <LegacyIcon name="info" className="text-terracotta/80" />
                     <div>
-                      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500/80">
-                        边界强制声明
+                      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-terracotta/80">
+                        安全与边界说明
                       </p>
-                      <h2 className="mt-0.5 font-serif text-lg text-red-300">必读提示</h2>
+                      <h2 className="mt-0.5 font-serif text-lg text-terracotta">温柔的提醒</h2>
                     </div>
                   </div>
-                  <p className="mt-4 font-medium text-base leading-[1.85] text-red-200/90">
+                  <p className="mt-4 font-medium text-base leading-[1.85] text-terracotta/90">
                     {reading.safety_note}
                   </p>
                 </section>
@@ -976,10 +983,26 @@ export default function InterpretationView() {
                   <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
                     说明
                   </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">解读说明</h2>
+                  <h2 className="mt-1 font-serif text-2xl text-ink">一些额外的话</h2>
                   <p className="mt-4 text-base leading-[1.85] text-text-body">
                     {reading.confidence_note}
                   </p>
+                </section>
+              ) : null}
+
+              {drawnCards.length > 0 ? (
+                <section className="reading-card scroll-mt-32 border-terracotta/10 bg-paper-raised">
+                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                    能量分布
+                  </p>
+                  <h2 className="mt-1 font-serif text-2xl text-ink">牌面呈现了哪些特质</h2>
+                  <div className="mt-6">
+                    <RadarChart
+                      values={radarValues}
+                      size={240}
+                      layout="stacked"
+                    />
+                  </div>
                 </section>
               ) : null}
 
@@ -1111,25 +1134,11 @@ export default function InterpretationView() {
 
         <div className="reading-card">
           <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-            {selectedSpread.name}
+            使用牌阵：{selectedSpread.name}
           </h4>
-          <div className="grid grid-cols-2 gap-2">
-            {drawnCards.map((drawnCard) => (
-              <div
-                key={drawnCard.positionId}
-                className="group aspect-[1/1.7] overflow-hidden rounded-card-sm border border-paper-border transition-shadow hover:shadow-sm"
-              >
-                <CardImage
-                  src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                  alt={drawnCard.card.name}
-                  sizes="(min-width: 1024px) 132px, 45vw"
-                  quality={50}
-                  isReversed={drawnCard.isReversed}
-                  className="transition-all duration-500 group-hover:scale-[1.02]"
-                />
-              </div>
-            ))}
-          </div>
+          <p className="mt-2 font-serif text-sm italic leading-relaxed text-text-muted">
+            {selectedSpread.description}
+          </p>
         </div>
 
         <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">
