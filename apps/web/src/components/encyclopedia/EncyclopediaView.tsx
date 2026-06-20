@@ -67,7 +67,9 @@ function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) 
 
     const update = () => {
       const width = el.clientWidth;
-      if (width >= 768 && width < 1024) {
+      if (width < 400) {
+        setColumns(3);
+      } else if (width >= 768 && width < 1024) {
         setColumns(6);
       } else {
         setColumns(4);
@@ -153,16 +155,16 @@ export default function EncyclopediaView({
   }, []);
 
   return (
-    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden px-4 sm:px-6 lg:px-8 pt-4 gap-4 lg:gap-10">
+    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col lg:flex-row h-[calc(100dvh-4rem)] overflow-hidden px-4 sm:px-6 lg:px-8 pt-4 gap-4 lg:gap-10">
       {/* Left Gallery Pane */}
       <motion.div
         layout
         initial={false}
         className={cn(
-          "shrink-0 z-10 flex flex-col justify-center",
+          "shrink-0 z-10 flex flex-col justify-center transition-all duration-300",
           isCollapsed
-            ? "w-full max-w-[260px] mx-auto lg:mx-0 lg:w-32 lg:h-auto lg:mt-4"
-            : "w-full max-w-[260px] mx-auto lg:w-5/12 h-auto lg:h-full pb-4 lg:pb-8"
+            ? "w-24 mx-auto lg:mx-0 lg:w-32 lg:h-auto lg:mt-4"
+            : "w-44 sm:w-52 max-w-[260px] mx-auto lg:w-5/12 h-auto lg:h-full pb-2 lg:pb-8"
         )}
       >
         <motion.div
@@ -281,7 +283,7 @@ export default function EncyclopediaView({
                     }}
                     className={cn(
                       "grid gap-2.5 mb-2.5",
-                      columnsPerRow === 6 ? "grid-cols-6" : "grid-cols-4"
+                      columnsPerRow === 6 ? "grid-cols-6" : columnsPerRow === 4 ? "grid-cols-4" : "grid-cols-3"
                     )}
                   >
                     {rowCards.map((card) => (
