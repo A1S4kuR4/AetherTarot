@@ -188,6 +188,23 @@ async function expectReadingQuickReady(page: Page, timeout = 90000) {
     .toBe(true);
 }
 
+async function expectReadingQuality(page: Page) {
+  // Validate content quality: non-empty, correct format, no obvious errors
+  const quickSection = page.locator("#reading-quick").first();
+  const text = await quickSection.innerText();
+  
+  // 1. Non-empty / Substantial Length
+  expect(text.trim().length).toBeGreaterThan(20);
+  
+  // 2. No obvious JS artifacts or data mapping errors
+  expect(text).not.toContain("undefined");
+  expect(text).not.toContain("[object Object]");
+  expect(text).not.toContain("null");
+  
+  // 3. Proper formatting (contains Chinese punctuation, meaning it generated real sentences)
+  expect(text).toMatch(/[。！？]/);
+}
+
 test("Production Interaction and Flow E2E Test", async ({ page }) => {
   // Set explicit window size to ensure consistency in screenshots
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -271,6 +288,7 @@ test("Production Interaction and Flow E2E Test", async ({ page }) => {
   // 9. Wait for deep reading completion (up to 90s)
   console.log("Waiting for LLM analysis report...");
   await expectReadingQuickReady(page, 90000);
+  await expectReadingQuality(page);
   await page.waitForTimeout(1000);
   await takeScreenshot(page, "9-reading-outcome.png");
 
@@ -371,6 +389,7 @@ test("Production Mobile Interaction and Flow E2E Test", async ({ page }) => {
   // 9. Wait for deep reading completion (up to 90s)
   console.log("[Mobile] Waiting for LLM analysis report...");
   await expectReadingQuickReady(page, 90000);
+  await expectReadingQuality(page);
   await page.waitForTimeout(1000);
   await takeScreenshot(page, "mobile-9-reading-outcome.png");
 
