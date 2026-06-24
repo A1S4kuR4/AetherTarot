@@ -91,7 +91,7 @@ function QuickDrawOverlayContent({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden"
           style={{ background: "rgba(11, 13, 18, 0.96)" }}
         >
           {/* Close button */}
@@ -101,20 +101,22 @@ function QuickDrawOverlayContent({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-text-inverse-muted transition-colors hover:bg-white/10 hover:text-text-inverse md:right-8 md:top-8"
+            className="fixed right-4 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-full text-text-inverse-muted transition-colors hover:bg-white/10 hover:text-text-inverse md:right-8 md:top-8"
             aria-label="关闭"
           >
             <LegacyIcon name="close" className="text-xl" />
           </m.button>
 
-          {/* Main card display area */}
-          <div
-            className={`flex w-full max-w-4xl items-center justify-center gap-0 px-6 transition-all duration-700 ease-out ${
-              isRevealed
-                ? "flex-col gap-8 md:flex-row md:gap-16"
-                : "flex-col"
-            }`}
-          >
+          {/* Inner wrapper for centering and padding */}
+          <div className="flex min-h-full w-full flex-col items-center justify-center py-20 md:py-24">
+            {/* Main card display area */}
+            <div
+              className={`flex w-full max-w-4xl items-center justify-center gap-0 px-6 transition-all duration-700 ease-out ${
+                isRevealed
+                  ? "flex-col gap-8 md:flex-row md:gap-16"
+                  : "flex-col"
+              }`}
+            >
             {/* 3D Card */}
             <m.div
               initial={{ scale: 0.8, opacity: 0, y: 30 }}
@@ -253,7 +255,8 @@ function QuickDrawOverlayContent({
                 </m.div>
               )}
             </AnimatePresence>
-          </div>
+          </div> {/* Close Main card display area */}
+          </div> {/* Close Inner wrapper */}
 
           {/* Pulse hint — only during card-back phase */}
           <AnimatePresence>
@@ -264,7 +267,7 @@ function QuickDrawOverlayContent({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 }}
-                className="animate-hint-pulse absolute bottom-12 font-serif text-sm tracking-[0.2em] text-text-inverse-muted md:bottom-16 md:text-base"
+                className="animate-hint-pulse fixed bottom-12 left-1/2 -translate-x-1/2 font-serif text-sm tracking-[0.2em] text-text-inverse-muted md:bottom-16 md:text-base z-10"
               >
                 轻触翻开牌面
               </m.p>
