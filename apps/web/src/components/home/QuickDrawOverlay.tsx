@@ -108,12 +108,12 @@ function QuickDrawOverlayContent({
           </m.button>
 
           {/* Inner wrapper for centering and padding */}
-          <div className="flex min-h-full w-full flex-col items-center justify-center py-20 md:py-24">
+          <div className="flex min-h-full w-full flex-col items-center justify-center py-6 sm:py-20 md:py-24">
             {/* Main card display area */}
             <div
               className={`flex w-full max-w-4xl items-center justify-center gap-0 px-6 transition-all duration-700 ease-out ${
                 isRevealed
-                  ? "flex-col gap-8 md:flex-row md:gap-16"
+                  ? "flex-col gap-4 sm:gap-8 md:flex-row md:gap-16"
                   : "flex-col"
               }`}
             >
@@ -144,7 +144,7 @@ function QuickDrawOverlayContent({
                 }
               >
                 <div
-                  className={`card-flip-inner relative aspect-[1/1.7] w-[200px] rounded-[12px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:w-[240px] md:w-[260px] ${
+                  className={`card-flip-inner relative aspect-[1/1.7] h-[38vh] max-h-[340px] w-auto rounded-[12px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:h-auto sm:w-[240px] md:w-[260px] ${
                     isFlipped ? "[transform:rotateY(180deg)]" : ""
                   }`}
                 >
@@ -203,7 +203,7 @@ function QuickDrawOverlayContent({
 
                   {/* Orientation badge */}
                   <span
-                    className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium tracking-wide ${
+                    className={`mt-2 sm:mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium tracking-wide ${
                       isReversed
                         ? "bg-indigo-muted text-indigo"
                         : "bg-terracotta/15 text-terracotta"
@@ -213,7 +213,7 @@ function QuickDrawOverlayContent({
                   </span>
 
                   {/* Divider */}
-                  <div className="my-5 flex w-48 items-center justify-center md:justify-start">
+                  <div className="my-3 sm:my-5 flex w-48 items-center justify-center md:justify-start">
                     <span className="h-px flex-1 bg-gradient-to-r from-transparent via-text-inverse-muted/30 to-transparent" />
                     <span className="mx-3 h-1.5 w-1.5 rotate-45 bg-text-inverse-muted/40" />
                     <span className="h-px flex-1 bg-gradient-to-r from-transparent via-text-inverse-muted/30 to-transparent" />
@@ -234,7 +234,7 @@ function QuickDrawOverlayContent({
                   )}
 
                   {/* Description excerpt */}
-                  <p className="mt-5 text-sm leading-relaxed text-text-inverse-muted">
+                  <p className="mt-3 sm:mt-5 text-sm leading-relaxed text-text-inverse-muted">
                     {card.description.length > 120
                       ? card.description.slice(0, 120) + "……"
                       : card.description}
@@ -247,7 +247,7 @@ function QuickDrawOverlayContent({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.4 }}
-                    className="mt-8 inline-flex items-center gap-2 rounded-xl bg-terracotta px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-terracotta-hover hover:shadow-xl active:scale-[0.98]"
+                    className="mt-4 sm:mt-8 inline-flex items-center gap-2 rounded-xl bg-terracotta px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-terracotta-hover hover:shadow-xl active:scale-[0.98]"
                   >
                     <span>进入解读</span>
                     <LegacyIcon name="arrow_forward" className="text-base" />
