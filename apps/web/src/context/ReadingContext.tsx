@@ -82,7 +82,7 @@ type ReadingContextValue = {
   continueFromHistoryReading: (reading: ReadingHistoryEntry) => boolean;
   clearContinuitySource: () => void;
   resetReading: () => void;
-  updateHistoryNotes: (id: string, notes: string) => void;
+  updateHistoryNotes: (id: string, notes: string) => Promise<void>;
 };
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
@@ -673,7 +673,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
-  const updateHistoryNotes = (id: string, notes: string) => {
+  const updateHistoryNotes = async (id: string, notes: string): Promise<void> => {
     setHistory((currentHistory) => {
       const nextHistory = currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
@@ -682,13 +682,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return nextHistory;
     });
 
-    fetch("/api/readings", {
+    const response = await fetch("/api/readings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reading_id: id, user_notes: notes }),
-    }).catch(() => {
-      // Fire-and-forget; note is already in local state.
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to save notes");
+    }
   };
 
   return (

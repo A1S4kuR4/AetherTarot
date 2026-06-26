@@ -2,67 +2,37 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "motion/react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import type { FollowupAnswer, QuestionType } from "@aethertarot/shared-types";
+import type { FollowupAnswer, ReadingCardResult } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
-import LegacyIcon from "@/components/ui/LegacyIcon";
-import CardImage from "@/components/ui/CardImage";
-
-const RadarChart = dynamic(() => import("./RadarChart"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[210px] w-[210px] items-center justify-center rounded-full border border-paper-border bg-paper-raised text-center font-sans text-xs leading-relaxed text-text-muted">
-      正在整理能量分布...
-    </div>
-  ),
-});
-
-const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  relationship: "关系议题",
-  career: "职业议题",
-  self_growth: "自我成长",
-  decision: "行动选择",
-  other: "综合议题",
-};
-
-const FEEDBACK_OPTIONS = [
-  { label: "准确", value: "accurate" },
-  { label: "有帮助", value: "helpful" },
-  { label: "像模板", value: "template_like" },
-  { label: "有点迎合", value: "too_agreeable" },
-] as const;
-
-type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
-
-const MOBILE_READING_NAV_ITEMS = [
-  { id: "reading-quick", label: "核心" },
-  { id: "reading-evidence", label: "依据" },
-  { id: "reading-cards", label: "逐牌" },
-  { id: "reading-synthesis", label: "故事" },
-  { id: "reading-guidance", label: "思考" },
-  { id: "reading-feedback", label: "反馈" },
-] as const;
-
-const LOADING_STAGES = [
-  {
-    delayMs: 0,
-    title: "正在确认访问与本次牌阵...",
-    detail: "系统会先校验内测访问、额度和抽到的牌位，避免无效请求浪费等待时间。",
-  },
-  {
-    delayMs: 4500,
-    title: "正在组织牌面线索...",
-    detail: "正在把你的问题、牌阵位置和正逆位整理成可检查的解读上下文。",
-  },
-  {
-    delayMs: 12000,
-    title: "正在生成并复核边界...",
-    detail: "弱网或模型响应较慢时可能需要更久；如果超时，当前牌阵会保留并允许重试。",
-  },
-] as const;
+import { ReadingLayout } from "./interpretation/ReadingLayout";
+import { ReadingHero } from "./interpretation/ReadingHero";
+import { MobileReadingNav } from "./interpretation/MobileReadingNav";
+import { SpreadHeroGrid } from "./interpretation/SpreadHeroGrid";
+import { CoreMessageCard } from "./interpretation/CoreMessageCard";
+import { EvidencePanel } from "./interpretation/EvidencePanel";
+import { CardByCardSection } from "./interpretation/CardByCardSection";
+import { SynthesisSection } from "./interpretation/SynthesisSection";
+import { GuidanceSection } from "./interpretation/GuidanceSection";
+import {
+  FollowupSection,
+  FollowupAnswerFormSection,
+} from "./interpretation/FollowupSection";
+import { BoundaryNote } from "./interpretation/BoundaryNote";
+import { EnergyRadarSection } from "./interpretation/EnergyRadarSection";
+import { FeedbackSection } from "./interpretation/FeedbackSection";
+import { NotesSection } from "./interpretation/NotesSection";
+import { ReadingSidebar } from "./interpretation/ReadingSidebar";
+import { ReadingFooter } from "./interpretation/ReadingFooter";
+import { LoadingState } from "./interpretation/LoadingState";
+import { ErrorState } from "./interpretation/ErrorState";
+import { SafetyIntercept } from "./interpretation/SafetyIntercept";
+import { SoberCheckGate } from "./interpretation/SoberCheckGate";
+import type { FeedbackLabel } from "./interpretation/constants";
+import { LOADING_STAGES } from "./interpretation/constants";
+import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
 
 function getLeadSentence(value: string, fallbackKeywords: string[]) {
   const normalized = value.replace(/\s+/g, " ").trim();
@@ -85,6 +55,10 @@ function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
 
+interface TrustPathCard extends ReadingCardResult {
+  keywords: string[];
+}
+
 export default function InterpretationView() {
   const router = useRouter();
   const {
@@ -104,18 +78,26 @@ export default function InterpretationView() {
     history,
     continuitySource,
     updateHistoryNotes,
+    resetReading,
   } = useReading();
 
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isSavingNote, setIsSavingNote] = useState(false);
-  const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<Record<string, Record<number, string>>>({});
-  const [feedbackLabelsByReadingId, setFeedbackLabelsByReadingId] = useState<Record<string, FeedbackLabel[]>>({});
-  const [feedbackNotesByReadingId, setFeedbackNotesByReadingId] = useState<Record<string, string>>({});
-  const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<Record<string, boolean>>({});
+  const [noteSaveStatus, setNoteSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<
+    Record<string, Record<number, string>>
+  >({});
+  const [feedbackLabelsByReadingId, setFeedbackLabelsByReadingId] = useState<
+    Record<string, FeedbackLabel[]>
+  >({});
+  const [feedbackNotesByReadingId, setFeedbackNotesByReadingId] = useState<
+    Record<string, string>
+  >({});
+  const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<
+    Record<string, boolean>
+  >({});
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
-  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -131,25 +113,24 @@ export default function InterpretationView() {
     ? noteDrafts[currentHistoryEntryId] ?? savedNotes
     : "";
   const isSoberInputValid = soberInput.trim().length >= 5;
-  const isInitialAwaitingFollowup = reading?.reading_phase === "initial" && reading.requires_followup;
+  const isInitialAwaitingFollowup =
+    reading?.reading_phase === "initial" && reading.requires_followup;
   const followupQuestions = reading?.follow_up_questions ?? [];
   const activeFollowupDrafts = activeReadingId
     ? followupDraftsByReadingId[activeReadingId] ?? {}
     : {};
   const areFollowupAnswersValid =
     followupQuestions.length > 0 &&
-    followupQuestions.every((_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2);
+    followupQuestions.every(
+      (_, index) => (activeFollowupDrafts[index] ?? "").trim().length >= 2,
+    );
   const spreadExperience = selectedSpread
     ? getSpreadExperience(
-      selectedSpread.id,
-      selectedSpread.name,
-      selectedSpread.positions.map((position) => position.name),
-    )
+        selectedSpread.id,
+        selectedSpread.name,
+        selectedSpread.positions.map((position) => position.name),
+      )
     : null;
-  const followupSectionTitle =
-    reading?.reading_phase === "final" ? "回望与觉察" : "继续探索";
-  const followupSectionKicker =
-    reading?.reading_phase === "final" ? "觉察" : "探索";
   const isCompletedReading = Boolean(reading && !reading.requires_followup);
   const activeFeedbackLabels = activeReadingId
     ? feedbackLabelsByReadingId[activeReadingId] ?? []
@@ -162,7 +143,12 @@ export default function InterpretationView() {
     : false;
 
   const radarValues = useMemo(() => {
-    let fire = 0, water = 0, air = 0, earth = 0, spirit = 0, chaos = 0;
+    let fire = 0,
+      water = 0,
+      air = 0,
+      earth = 0,
+      spirit = 0,
+      chaos = 0;
     const total = drawnCards.length || 1;
     drawnCards.forEach(({ card, isReversed }) => {
       const arcana = card.arcana?.toLowerCase() || "";
@@ -172,7 +158,8 @@ export default function InterpretationView() {
         if (element.includes("fire") || element.includes("wands")) fire += 1;
         if (element.includes("water") || element.includes("cups")) water += 1;
         if (element.includes("air") || element.includes("swords")) air += 1;
-        if (element.includes("earth") || element.includes("pentacles")) earth += 1;
+        if (element.includes("earth") || element.includes("pentacles"))
+          earth += 1;
       }
       if (isReversed) chaos += 1;
     });
@@ -189,7 +176,7 @@ export default function InterpretationView() {
     };
   }, [drawnCards]);
 
-  const trustPathCards = useMemo(() => {
+  const trustPathCards = useMemo<TrustPathCard[]>(() => {
     if (!reading) {
       return [];
     }
@@ -200,10 +187,10 @@ export default function InterpretationView() {
       );
       const keywords = drawnCard
         ? (
-          drawnCard.isReversed
-            ? drawnCard.card.reversedKeywords
-            : drawnCard.card.uprightKeywords
-        ).slice(0, 3)
+            drawnCard.isReversed
+              ? drawnCard.card.reversedKeywords
+              : drawnCard.card.uprightKeywords
+          ).slice(0, 3)
         : [];
 
       return {
@@ -250,22 +237,38 @@ export default function InterpretationView() {
     };
   }, [reading, selectedSpread?.name, trustPathCards]);
 
-  const handleSaveNotes = () => {
+  const handleResetReading = () => {
+    resetReading();
+    router.push("/");
+  };
+
+  const handleSaveNotes = async () => {
     if (!currentHistoryEntryId) {
       return;
     }
 
-    setIsSavingNote(true);
-    updateHistoryNotes(currentHistoryEntryId, notes);
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
+    const trimmedNotes = notes.trim();
+    if (!trimmedNotes || trimmedNotes === savedNotes.trim()) {
+      return;
     }
 
-    saveTimerRef.current = setTimeout(() => {
-      setIsSavingNote(false);
-      saveTimerRef.current = null;
-    }, 1200);
+    setNoteSaveStatus('saving');
+
+    try {
+      await updateHistoryNotes(currentHistoryEntryId, trimmedNotes);
+      setNoteSaveStatus('saved');
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+
+      saveTimerRef.current = setTimeout(() => {
+        setNoteSaveStatus('idle');
+        saveTimerRef.current = null;
+      }, 2000);
+    } catch {
+      setNoteSaveStatus('error');
+    }
   };
 
   const handleFollowupChange = (index: number, value: string) => {
@@ -294,6 +297,7 @@ export default function InterpretationView() {
 
     void submitFollowupAnswers(answers);
   };
+
   const handleNotesChange = (value: string) => {
     if (!currentHistoryEntryId) {
       return;
@@ -381,7 +385,9 @@ export default function InterpretationView() {
     }
 
     if (drawnCards.length === 0) {
-      router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
+      router.replace(
+        drawSource === "offline_manual" ? "/offline-draw" : "/ritual",
+      );
       return;
     }
 
@@ -400,6 +406,7 @@ export default function InterpretationView() {
     safetyIntercept,
     selectedSpread,
   ]);
+
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
@@ -418,7 +425,7 @@ export default function InterpretationView() {
     const timers = LOADING_STAGES.slice(1).map((stage, index) =>
       window.setTimeout(() => {
         setLoadingStageIndex(index + 1);
-      }, stage.delayMs)
+      }, stage.delayMs),
     );
 
     return () => {
@@ -426,727 +433,160 @@ export default function InterpretationView() {
     };
   }, [isLoading]);
 
-
   if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-20 pt-20 sm:px-6 lg:flex-row lg:gap-12 lg:px-16 lg:pt-24">
-      <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
-        <header className="space-y-5">
-          <h1 className="font-serif text-3xl font-semibold text-ink md:text-5xl">
-            {reading?.reading_phase === "initial" ? "初步解读" : "解读结果"}
-          </h1>
-          <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
-            这些牌面映射的是你当下的状态与可能性——不是定论，而是一面帮你看清方向的镜子。
-          </blockquote>
+    <ReadingLayout
+      sidebar={
+        <ReadingSidebar spread={selectedSpread} drawSource={drawSource} />
+      }
+    >
+      <ReadingHero
+        phase={reading?.reading_phase ?? null}
+        question={question}
+        questionType={reading?.question_type ?? null}
+        spreadName={selectedSpread.name}
+        isOffline={drawSource === "offline_manual"}
+      />
 
-          <div className="reading-card">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  你的提问
-                </p>
-                <p className="mt-1.5 text-base leading-relaxed text-ink">
-                  {`"${question}"`}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {reading ? (
-                  <span className="chip-accent text-[11px]">
-                    {QUESTION_TYPE_LABELS[reading.question_type]}
-                  </span>
-                ) : null}
-                <span className="chip-warm text-[11px]">{selectedSpread.name}</span>
-                {drawSource === "offline_manual" ? (
-                  <span className="chip-accent text-[11px]">线下录入</span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center space-y-5 py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-paper-border border-t-terracotta" />
-            <p className="font-serif text-lg text-text-muted">
-              {LOADING_STAGES[loadingStageIndex]?.title ?? LOADING_STAGES[0].title}
-            </p>
-            <p className="max-w-sm text-center text-sm leading-relaxed text-text-muted/80">
-              {LOADING_STAGES[loadingStageIndex]?.detail ?? LOADING_STAGES[0].detail}
-            </p>
-          </div>
-        ) : safetyIntercept ? (
-          <div className="reading-card border-red-900/30 bg-red-950/10 ring-1 ring-inset ring-red-900/20">
-            <div className="flex items-center gap-3 border-b border-red-900/20 pb-4">
-              <LegacyIcon name="gavel" className="text-3xl text-red-500" />
-              <h2 className="font-serif text-2xl text-red-400">界限阻断</h2>
-            </div>
-            <p className="mt-5 text-base leading-relaxed text-red-200">
-              {safetyIntercept.reason}
-            </p>
-            {safetyIntercept.referral_links && safetyIntercept.referral_links.length > 0 && (
-              <div className="mt-6 space-y-2">
-                <p className="font-sans text-xs uppercase tracking-wider text-red-400/80">
-                  现实支持资源：
-                </p>
-                <div className="flex flex-col gap-2">
-                  {safetyIntercept.referral_links.map((link) => (
-                    <a
-                      key={link}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-red-300 underline hover:text-red-200"
-                    >
-                      {link}
-                    </a>
-                  ))}
-                </div>
-              </div>
+      {isLoading ? (
+        <LoadingState stageIndex={loadingStageIndex} />
+      ) : safetyIntercept ? (
+        <SafetyIntercept
+          reason={safetyIntercept.reason}
+          referralLinks={safetyIntercept.referral_links}
+        />
+      ) : errorMessage ? (
+        <ErrorState message={errorMessage} onRetry={() => void interpretReading()} />
+      ) : reading ? (
+        reading.sober_check && !isSoberCheckPassed ? (
+          <SoberCheckGate
+            prompt={reading.sober_check}
+            input={soberInput}
+            isValid={isSoberInputValid}
+            onInputChange={(value) =>
+              setSoberGate({
+                readingId: activeReadingId,
+                input: value,
+                isPassed: false,
+              })
+            }
+            onConfirm={() =>
+              setSoberGate({
+                readingId: activeReadingId,
+                input: soberInput,
+                isPassed: true,
+              })
+            }
+          />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className={cn(
+              "space-y-8",
+              reading.presentation_mode === "void_narrative" &&
+                "space-y-16 lg:px-4",
+              reading.presentation_mode === "sober_anchor" &&
+                "opacity-90 grayscale-[20%]",
             )}
-            <div className="mt-8">
-              <button
-                type="button"
-                onClick={() => router.replace("/")}
-                className="rounded-full border border-paper-border bg-paper px-6 py-2.5 text-sm font-medium text-ink transition hover:bg-paper-raised"
-              >
-                离开并返回首页
-              </button>
-            </div>
-          </div>
-        ) : errorMessage ? (
-          <div className="reading-card">
-            <h2 className="font-serif text-2xl text-ink">连接受阻</h2>
-            <p className="mt-3 leading-relaxed text-text-body">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={() => void interpretReading()}
-              className="btn-primary mt-5"
-            >
-              重新尝试
-            </button>
-          </div>
-        ) : reading ? (
-          reading.sober_check && !isSoberCheckPassed ? (
-            <div className="reading-card my-16 flex flex-col items-center justify-center border-terracotta/40 bg-paper-raised/80 px-8 py-12 text-center shadow-sm">
-              <LegacyIcon name="psychiatry" className="mb-6 text-4xl text-terracotta" />
-              <h2 className="mb-4 font-serif text-2xl text-ink">
-                降温与检视 (Sober Check)
-              </h2>
-              <p className="mb-8 max-w-lg text-base leading-[1.8] text-text-body">
-                {reading.sober_check}
-              </p>
-              <textarea
-                value={soberInput}
-                onChange={(e) => setSoberGate({ readingId: activeReadingId, input: e.target.value, isPassed: false })}
-                placeholder="我的真实顾虑 / 底线计划是..."
-                className="h-32 w-full max-w-xl resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
-              />
-              <button
-                type="button"
-                disabled={!isSoberInputValid}
-                onClick={() => setSoberGate({ readingId: activeReadingId, input: soberInput, isPassed: true })}
-                className="btn-primary mt-8 w-full max-w-xs transition-all disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                确认并解开牌面
-              </button>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className={cn(
-                "space-y-8",
-                reading.presentation_mode === "void_narrative" && "space-y-16 lg:px-4",
-                reading.presentation_mode === "sober_anchor" && "opacity-90 grayscale-[20%]",
+          >
+            <MobileReadingNav />
+
+            <SpreadHeroGrid
+              drawnCards={drawnCards}
+              positionNames={selectedSpread.positions.map(
+                (position) => position.name,
               )}
-            >
-              <nav
-                data-testid="mobile-reading-nav"
-                className="sticky top-16 z-30 -mx-4 border-y border-paper-border bg-paper/95 px-4 py-2 backdrop-blur lg:hidden"
-                aria-label="解读分段导航"
-              >
-                <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-                  {MOBILE_READING_NAV_ITEMS.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`#${item.id}`}
-                      className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-paper-border bg-paper-raised px-3.5 text-xs font-medium text-text-muted"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </nav>
+            />
 
-              <section
-                data-testid="hero-spread-display"
-                className="my-2 md:my-6"
-              >
-                <div className="flex flex-wrap items-end justify-center gap-4 md:gap-5 lg:gap-6">
-                  {drawnCards.map((drawnCard, index) => {
-                    const position = selectedSpread.positions[index]?.name ?? `位置 ${index + 1}`;
+            {coreQuickRead ? (
+              <CoreMessageCard
+                quickRead={coreQuickRead}
+                presentationMode={reading.presentation_mode}
+              />
+            ) : null}
 
-                    return (
-                      <motion.div
-                        key={`hero-${drawnCard.positionId}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
-                        className="flex w-[100px] flex-col items-center sm:w-[120px] md:w-[140px] lg:w-[150px]"
-                      >
-                        <div className="card-hero-glow aspect-[1/1.7] w-full overflow-hidden rounded-card-md border border-paper-border bg-paper-raised">
-                          <CardImage
-                            src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                            alt={drawnCard.card.name}
-                            sizes="(min-width: 1024px) 150px, (min-width: 768px) 140px, (min-width: 640px) 120px, 100px"
-                            quality={75}
-                            isReversed={drawnCard.isReversed}
-                          />
-                        </div>
-                        <p className="mt-2 text-center font-sans text-[11px] font-medium text-text-muted">
-                          {position}
-                        </p>
-                        <p className="mt-0.5 text-center font-serif text-[13px] text-ink">
-                          {drawnCard.card.name}
-                        </p>
-                        <span className="mt-0.5 font-sans text-[10px] text-text-muted">
-                          {drawnCard.isReversed ? "逆位" : "正位"}
-                        </span>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </section>
+            <EvidencePanel
+              question={question}
+              reading={reading}
+              drawnCards={drawnCards}
+              trustPathCards={trustPathCards}
+              spreadExperience={spreadExperience}
+              continuitySource={continuitySource}
+            />
 
-              {coreQuickRead ? (
-                <section
-                  id="reading-quick"
-                  className={cn(
-                    "relative scroll-mt-32 rounded-3xl border p-5 shadow-sm md:my-8 md:p-8",
-                    reading.presentation_mode === "sober_anchor"
-                      ? "border-paper-border bg-paper"
-                      : "border-terracotta/15 bg-gradient-to-b from-paper-raised to-paper",
-                  )}
-                >
-                  <div className="absolute left-5 top-0 flex -translate-y-1/2 items-center gap-2 rounded-full border border-paper-border bg-paper px-3 py-1 shadow-sm md:left-8">
-                    <LegacyIcon
-                      name="auto_awesome"
-                      className="text-[14px] text-terracotta/70"
-                    />
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
-                      此刻的核心讯息
-                    </span>
-                  </div>
-                  <div className="space-y-6">
-                    <div>
-                      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                        一句话看核心
-                      </p>
-                      <div className="max-w-[38rem]">
-                        <h2 className="mt-2 font-serif text-2xl leading-[1.45] text-ink md:text-[28px]">
-                          {coreQuickRead.core}
-                        </h2>
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
-                          下一步可以
-                        </p>
-                        <p className="mt-2 text-sm leading-relaxed text-text-body">
-                          {coreQuickRead.action}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                          请记住
-                        </p>
-                        <p className="mt-2 text-sm leading-relaxed text-text-body">
-                          {coreQuickRead.boundary}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              ) : null}
+            <CardByCardSection
+              readingCards={reading.cards}
+              drawnCards={drawnCards}
+            />
 
-              <section id="reading-evidence" className="reading-card scroll-mt-32 border-terracotta/20 bg-paper-raised/70">
-                <button
-                  type="button"
-                  onClick={() => setIsEvidenceOpen(!isEvidenceOpen)}
-                  className="flex w-full items-center justify-between text-left"
-                >
-                  <div>
-                    <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                      解读依据
-                    </p>
-                    <h2 className="mt-1 font-serif text-2xl text-ink">
-                      这个解读是怎么来的
-                    </h2>
-                  </div>
-                  <LegacyIcon
-                    name={isEvidenceOpen ? "keyboard_double_arrow_down" : "arrow_forward"}
-                    className={cn(
-                      "text-lg text-text-muted transition-transform duration-300",
-                      isEvidenceOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-                {!isEvidenceOpen && (
-                  <p className="mt-3 text-sm leading-relaxed text-text-muted">
-                    基于你的提问、{drawnCards.length} 张牌面与牌阵位置综合分析得出。点击展开查看详细依据。
-                  </p>
-                )}
-                {isEvidenceOpen && (
-                  <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                      <div className="mb-3 flex items-center gap-2 text-terracotta">
-                        <LegacyIcon name="edit_note" className="text-[18px]" />
-                        <h3 className="font-serif text-lg text-ink">你的问题</h3>
-                      </div>
-                      <p className="text-sm leading-relaxed text-text-body">
-                        {question}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="chip-accent text-[10px]">
-                          {QUESTION_TYPE_LABELS[reading.question_type]}
-                        </span>
-                        <span className="chip-warm text-[10px]">
-                          {continuitySource ? "带延续线索" : "无延续线索"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                      <div className="mb-3 flex items-center gap-2 text-terracotta">
-                        <LegacyIcon name="style" className="text-[18px]" />
-                        <h3 className="font-serif text-lg text-ink">牌面线索</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {trustPathCards.map((card) => (
-                          <div key={`trust-${card.position_id}`} className="border-l-2 border-paper-border pl-3">
-                            <p className="text-sm font-medium text-ink">
-                              {card.position}：{card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
-                            </p>
-                            {card.keywords.length > 0 ? (
-                              <p className="mt-1 text-xs leading-relaxed text-text-muted">
-                                {card.keywords.join(" / ")}
-                              </p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-                      <div className="mb-3 flex items-center gap-2 text-terracotta">
-                        <LegacyIcon name="account_tree" className="text-[18px]" />
-                        <h3 className="font-serif text-lg text-ink">解读逻辑</h3>
-                      </div>
-                      <p className="text-sm leading-relaxed text-text-body">
-                        {spreadExperience?.readingMechanism}
-                      </p>
-                      <p className="mt-2 text-sm leading-relaxed text-text-muted">
-                        {spreadExperience?.evidencePath}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </section>
+            <SynthesisSection
+              synthesis={reading.synthesis}
+              presentationMode={reading.presentation_mode}
+            />
 
-              <section id="reading-cards" className="reading-card scroll-mt-32 space-y-5">
-                <div>
-                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                    逐牌
-                  </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">逐牌展开</h2>
-                </div>
-                <div className="space-y-5">
-                  {reading.cards.map((card) => {
-                    const drawnCard = drawnCards.find(
-                      (item) => item.positionId === card.position_id,
-                    );
-                    const evidenceKeywords = drawnCard
-                      ? (
-                        drawnCard.isReversed
-                          ? drawnCard.card.reversedKeywords
-                          : drawnCard.card.uprightKeywords
-                      ).slice(0, 3)
-                      : [];
+            <GuidanceSection
+              guidance={reading.reflective_guidance}
+              presentationMode={reading.presentation_mode}
+            />
 
-                    return (
-                      <motion.article
-                        key={`${card.position_id}-${card.card_id}`}
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-50px" }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="rounded-2xl border border-paper-border bg-paper p-5"
-                      >
-                        <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                          {drawnCard ? (
-                            <div className="mx-auto w-[140px] shrink-0 overflow-hidden rounded-card-md border border-paper-border shadow-sm md:mx-0 md:w-[180px]">
-                              <CardImage
-                                src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                                alt={drawnCard.card.name}
-                                sizes="(min-width: 768px) 180px, 140px"
-                                quality={75}
-                                isReversed={drawnCard.isReversed}
-                              />
-                            </div>
-                          ) : null}
-                          <div className="min-w-0 flex-1 space-y-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="chip-warm text-[10px]">{card.position}</span>
-                              <span className="font-sans text-[11px] font-medium text-text-muted">
-                                {card.orientation === "reversed" ? "逆位" : "正位"}
-                              </span>
-                            </div>
-                            <div>
-                              <h3 className="font-serif text-xl text-ink">{card.name}</h3>
-                              <p className="text-sm text-text-muted">{card.english_name}</p>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <div className="border-l-2 border-paper-border pl-4">
-                                <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                                  看到什么
-                                </h4>
-                                <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
-                                  {card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
-                                </p>
-                                {evidenceKeywords.length > 0 ? (
-                                  <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {evidenceKeywords.map((keyword) => (
-                                      <span
-                                        key={`${card.position_id}-${keyword}`}
-                                        className="rounded-full border border-paper-border bg-paper px-2 py-1 font-sans text-[11px] text-text-muted"
-                                      >
-                                        {keyword}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="border-l-2 border-terracotta/20 pl-4">
-                                <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                                  在这个位置
-                                </h4>
-                                <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
-                                  {card.position_meaning}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="border-l-2 border-terracotta/40 bg-terracotta/5 py-3 pl-4 pr-3">
-                              <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta opacity-80">
-                                综合推断
-                              </h4>
-                              <p className="font-serif text-base italic leading-[1.8] text-ink">
-                                {card.interpretation}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.article>
-                    );
-                  })}
-                </div>
-              </section>
+            <FollowupSection
+              readingId={reading.reading_id}
+              readingPhase={reading.reading_phase}
+              questions={reading.follow_up_questions}
+              presentationMode={reading.presentation_mode}
+            />
 
-              <section
-                id="reading-synthesis"
-                className={cn(
-                  "reading-card scroll-mt-32",
-                  reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
-                )}
-              >
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  故事
-                </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">串联在一起的故事</h2>
-                <p className="mt-4 text-base leading-[1.85] text-text-body">
-                  {reading.synthesis}
-                </p>
-              </section>
+            {isInitialAwaitingFollowup ? (
+              <FollowupAnswerFormSection
+                readingId={reading.reading_id}
+                questions={followupQuestions}
+                drafts={activeFollowupDrafts}
+                isValid={areFollowupAnswersValid}
+                isLoading={isLoading}
+                onDraftChange={handleFollowupChange}
+                onSubmit={handleSubmitFollowup}
+              />
+            ) : null}
 
-              <section
-                id="reading-guidance"
-                className={cn(
-                  "reading-card scroll-mt-32",
-                  reading.presentation_mode === "void_narrative" && "border-none bg-transparent px-0 shadow-none",
-                  reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
-                )}
-              >
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  思考
-                </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">可以带走的思考</h2>
-                <ul className="mt-4 space-y-3">
-                  {reading.reflective_guidance.map((guidance) => (
-                    <li
-                      key={guidance}
-                      className={cn(
-                        "flex gap-3 text-base leading-relaxed text-text-body",
-                        reading.presentation_mode === "void_narrative"
-                          ? "border-l-0 pl-0"
-                          : "border-l-2 border-terracotta/20 pl-4",
-                      )}
-                    >
-                      {!reading.presentation_mode || reading.presentation_mode !== "void_narrative" ? (
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta/50" />
-                      ) : null}
-                      <span>{guidance}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+            <BoundaryNote
+              safetyNote={reading.safety_note}
+              confidenceNote={reading.confidence_note}
+            />
 
-              <section
-                id="reading-followup"
-                className={cn(
-                  "reading-card scroll-mt-32",
-                  reading.presentation_mode === "void_narrative" && "border-none bg-transparent px-0 shadow-none",
-                  reading.presentation_mode === "sober_anchor" && "border-paper-border bg-paper",
-                )}
-              >
-                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                  {followupSectionKicker}
-                </p>
-                <h2 className="mt-1 font-serif text-2xl text-ink">{followupSectionTitle}</h2>
-                <ul className="mt-4 space-y-3">
-                  {reading.follow_up_questions.map((prompt, index) => (
-                    <li
-                      key={`${reading.reading_id}-followup-${index}`}
-                      className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body"
-                    >
-                      {prompt}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+            {drawnCards.length > 0 ? (
+              <EnergyRadarSection values={radarValues} />
+            ) : null}
 
+            {isCompletedReading ? (
+              <FeedbackSection
+                labels={activeFeedbackLabels}
+                note={activeFeedbackNote}
+                isSubmitted={hasSubmittedFeedback}
+                error={feedbackError}
+                onToggleLabel={toggleFeedbackLabel}
+                onNoteChange={handleFeedbackNoteChange}
+                onSubmit={() => void handleSubmitFeedback()}
+              />
+            ) : null}
 
-              {isInitialAwaitingFollowup ? (
-                <section className="reading-card scroll-mt-32 border-terracotta/30 bg-terracotta/5">
-                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                    校准
-                  </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">回答后进入整合深读</h2>
-                  <p className="mt-3 text-sm leading-relaxed text-text-body">
-                    这些问题来自牌面里的矛盾点。你的回答不会推翻初读，只会帮助系统把解释空间收束得更贴近现实。
-                  </p>
-                  <div className="mt-5 space-y-4">
-                    {followupQuestions.map((prompt, index) => (
-                      <label key={`${reading.reading_id}-answer-${index}`} className="block space-y-2">
-                        <span className="block font-serif text-sm text-ink">
-                          {index + 1}. {prompt}
-                        </span>
-                        <textarea
-                          value={activeFollowupDrafts[index] ?? ""}
-                          onChange={(event) => handleFollowupChange(index, event.target.value)}
-                          placeholder="写下你的现实补充..."
-                          className="h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!areFollowupAnswersValid || isLoading}
-                    onClick={handleSubmitFollowup}
-                    className="btn-primary mt-6 transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    生成整合深读
-                  </button>
-                </section>
-              ) : null}
-              {reading.safety_note ? (
-                <section className="scroll-mt-32 rounded-2xl border border-terracotta/20 bg-[#F4F1EE] p-5 shadow-inner ring-1 ring-inset ring-terracotta/10 md:p-6">
-                  <div className="flex items-center gap-3 border-b border-terracotta/20 pb-3">
-                    <LegacyIcon name="info" className="text-terracotta/80" />
-                    <div>
-                      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-terracotta/80">
-                        安全与边界说明
-                      </p>
-                      <h2 className="mt-0.5 font-serif text-lg text-terracotta">温柔的提醒</h2>
-                    </div>
-                  </div>
-                  <p className="mt-4 font-medium text-base leading-[1.85] text-terracotta/90">
-                    {reading.safety_note}
-                  </p>
-                </section>
-              ) : null}
+            {currentHistoryEntry ? (
+              <NotesSection
+                value={notes}
+                status={noteSaveStatus}
+                onChange={handleNotesChange}
+                onSave={handleSaveNotes}
+              />
+            ) : null}
 
-              {reading.confidence_note ? (
-                <section className="reading-card scroll-mt-32">
-                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                    说明
-                  </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">一些额外的话</h2>
-                  <p className="mt-4 text-base leading-[1.85] text-text-body">
-                    {reading.confidence_note}
-                  </p>
-                </section>
-              ) : null}
-
-              {drawnCards.length > 0 ? (
-                <section className="reading-card scroll-mt-32 border-terracotta/10 bg-paper-raised">
-                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                    能量分布
-                  </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">牌面呈现了哪些特质</h2>
-                  <div className="mt-6">
-                    <RadarChart
-                      values={radarValues}
-                      size={240}
-                      layout="stacked"
-                    />
-                  </div>
-                </section>
-              ) : null}
-
-              {isCompletedReading ? (
-                <section id="reading-feedback" className="reading-card scroll-mt-32 bg-paper-raised">
-                  <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                    反馈
-                  </p>
-                  <h2 className="mt-1 font-serif text-2xl text-ink">这次解读给你的感觉</h2>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {FEEDBACK_OPTIONS.map((option) => {
-                      const isSelected = activeFeedbackLabels.includes(option.value);
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          disabled={hasSubmittedFeedback}
-                          onClick={() => toggleFeedbackLabel(option.value)}
-                          className={cn(
-                            "rounded-full border px-4 py-2 text-sm font-medium transition",
-                            isSelected
-                              ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
-                              : "border-paper-border bg-paper text-text-body hover:bg-paper-muted",
-                            hasSubmittedFeedback && "cursor-not-allowed opacity-70",
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <textarea
-                    value={activeFeedbackNote}
-                    onChange={(event) => handleFeedbackNoteChange(event.target.value)}
-                    disabled={hasSubmittedFeedback}
-                    placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
-                    className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 disabled:opacity-70"
-                  />
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-text-muted">
-                      {hasSubmittedFeedback ? "反馈已记录，谢谢。" : feedbackError}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={hasSubmittedFeedback || activeFeedbackLabels.length === 0}
-                      onClick={() => void handleSubmitFeedback()}
-                      className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      提交反馈
-                    </button>
-                  </div>
-                </section>
-              ) : null}
-
-              {currentHistoryEntry ? (
-                <section id="reading-notes" className="reading-card scroll-mt-32 bg-paper-raised">
-                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-                        反思手记
-                      </p>
-                      <h2 className="mt-1 font-serif text-2xl text-ink">你的回望与觉察</h2>
-                    </div>
-                    {isSavingNote && (
-                      <span className="flex items-center gap-1 font-sans text-xs text-terracotta opacity-80">
-                        <LegacyIcon name="check_circle" className="text-[14px]" />
-                        已保存
-                      </span>
-                    )}
-                  </div>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => handleNotesChange(e.target.value)}
-                    placeholder="随着时间推移，牌意在现实中是如何展开的？写下你的感悟..."
-                    className="h-32 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base leading-relaxed text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50"
-                  />
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleSaveNotes}
-                      disabled={isSavingNote || !notes.trim()}
-                      className="rounded-full border border-paper-border bg-paper px-5 py-2 text-sm font-medium text-ink transition-all hover:bg-paper-raised disabled:opacity-50"
-                    >
-                      更新手记
-                    </button>
-                  </div>
-                </section>
-              ) : null}
-            </motion.div>
-          )
-        ) : null}
-      </div>
-
-      <aside className="sticky top-24 hidden w-full space-y-6 self-start lg:block lg:w-72">
-        <div className="reading-card">
-          <h4 className="mb-4 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-            解读流程
-          </h4>
-          <div className="space-y-3">
-            {[
-              "提问",
-              drawSource === "offline_manual" ? "录入" : "仪式",
-              "揭示",
-              "解读",
-            ].map((step, index) => (
-              <div
-                key={step}
-                className={cn("flex items-center gap-2.5", index < 3 && "opacity-40")}
-              >
-                <div
-                  className={cn(
-                    "h-2 w-2 rounded-full",
-                    index === 3 ? "bg-terracotta" : "bg-paper-border",
-                  )}
-                />
-                <span
-                  className={cn(
-                    "font-sans text-xs",
-                    index === 3 && "font-medium text-terracotta",
-                  )}
-                >
-                  {step}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="reading-card">
-          <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-            使用牌阵：{selectedSpread.name}
-          </h4>
-          <p className="mt-2 font-serif text-sm italic leading-relaxed text-text-muted">
-            {selectedSpread.description}
-          </p>
-        </div>
-
-        <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">
-          <p className="font-serif text-sm italic leading-relaxed text-text-muted">
-            真理并不是被强行规定的结论，而是从你的处境中慢慢浮现的方向感。
-          </p>
-        </div>
-      </aside>
-    </main>
+            <ReadingFooter onReset={handleResetReading} />
+          </motion.div>
+        )
+      ) : null}
+    </ReadingLayout>
   );
 }
