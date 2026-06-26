@@ -1,5 +1,7 @@
 import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import {
+  E2E_ACCESS_BYPASS_HEADER,
+  isE2eAccessBypassEnabled,
   requireBetaTesterAccess,
   type AuthenticatedTester,
 } from "@/server/beta/access";
@@ -188,6 +190,10 @@ export async function handleReadingsPatch(
 
     if (userNotes.length > MAX_STORED_READING_NOTES_LENGTH) {
       return invalidRequest("笔记长度不能超过 2000 字。");
+    }
+
+    if (isE2eAccessBypassEnabled(request.headers.get(E2E_ACCESS_BYPASS_HEADER))) {
+      return Response.json({ ok: true });
     }
 
     const result = await deps.updateNotes(

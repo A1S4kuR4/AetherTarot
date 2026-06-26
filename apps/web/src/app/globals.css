@@ -105,6 +105,53 @@
     animation: hint-pulse 2s ease-in-out infinite;
   }
 
+  /* ---- Radar Chart Animations ---- */
+  @keyframes radar-grow {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes radar-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes radar-pulse {
+    0% {
+      fill-opacity: 0.53;
+      stroke-opacity: 0.83;
+    }
+    100% {
+      fill-opacity: 0.44;
+      stroke-opacity: 0.48;
+    }
+  }
+
+  .radar-chart-data {
+    animation: radar-grow 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .radar-chart-data-fill {
+    animation: radar-pulse 2.5s ease-out forwards;
+  }
+
+  .radar-chart-data-stroke {
+    animation: radar-pulse 2.5s ease-out forwards;
+  }
+
+  .radar-chart-label {
+    opacity: 0;
+    animation: radar-fade-in 0.9s ease-out 0.5s forwards;
+  }
+
   /* ---- 3D Card Flip Utilities ---- */
   .perspective-card {
     perspective: 1500px;
