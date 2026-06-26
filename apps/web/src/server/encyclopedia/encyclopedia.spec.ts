@@ -5,13 +5,18 @@ import { retrieveEncyclopediaSources } from "@/server/encyclopedia/retrieval";
 import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 import { loadEncyclopediaWikiPages } from "@/server/encyclopedia/wiki";
 import { LlmEncyclopediaProvider } from "@/server/encyclopedia/provider";
-import type { AuthenticatedTester } from "@/server/beta/access";
+import type { AuthenticatedTester, PublicFeatureActor } from "@/server/beta/access";
 import type { LlmTokenGate } from "@/server/beta/token-budget";
 
 const TESTER: AuthenticatedTester = {
   userId: "00000000-0000-0000-0000-000000000001",
   email: "tester@example.com",
   role: "tester",
+};
+const ANONYMOUS: PublicFeatureActor = {
+  userId: null,
+  email: null,
+  role: "anonymous",
 };
 
 type RouteDependencies = NonNullable<Parameters<typeof handleEncyclopediaQueryPost>[1]>;
@@ -293,13 +298,13 @@ describe("encyclopedia query route", () => {
     expect(deps.generateAnswer).not.toHaveBeenCalled();
   });
 
-  it("rejects unauthenticated requests before generating an answer", async () => {
+  it("rejects invalid authenticated sessions before generating an answer", async () => {
     const deps = buildDependencies({
       requireAccess: vi.fn(async () => {
         throw new ReadingServiceError(
-          "unauthorized",
-          "请先登录后再使用内测服务。",
-          401,
+          "forbidden",
+          "当前登录状态不完整，请重新登录。",
+          403,
         );
       }),
     });
@@ -309,9 +314,34 @@ describe("encyclopedia query route", () => {
     );
     const payload = await readJson(response);
 
-    expect(response.status).toBe(401);
-    expect(payload.error?.code).toBe("unauthorized");
+    expect(response.status).toBe(403);
+    expect(payload.error?.code).toBe("forbidden");
     expect(deps.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("allows anonymous guests with null event identity", async () => {
+    const deps = buildDependencies({
+      requireAccess: vi.fn(async () => ANONYMOUS),
+    });
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "愚者是什么意思？", cardId: "fool" }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(200);
+    expect(payload.answer).toMatch(/愚者/);
+    expect(deps.consumeQuota).toHaveBeenCalledWith({
+      actor: ANONYMOUS,
+      ipHash: "ip-hash",
+    });
+    expect(deps.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: null,
+        email: null,
+        status: "success",
+      }),
+    );
   });
 
   it("rejects quota-limited requests before generating an answer", async () => {
@@ -332,6 +362,32 @@ describe("encyclopedia query route", () => {
 
     expect(response.status).toBe(429);
     expect(payload.error?.code).toBe("rate_limited");
+    expect(deps.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("rejects anonymous daily quota before generating an answer", async () => {
+    const deps = buildDependencies({
+      requireAccess: vi.fn(async () => ANONYMOUS),
+      consumeQuota: vi.fn(async () => {
+        throw new ReadingServiceError(
+          "rate_limited",
+          "今日访客百科问答体验次数已用完。登录内测账号可使用更多次数。",
+          429,
+        );
+      }),
+    });
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "愚者是什么意思？" }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(429);
+    expect(payload.error?.message).toContain("访客");
+    expect(deps.consumeQuota).toHaveBeenCalledWith({
+      actor: ANONYMOUS,
+      ipHash: "ip-hash",
+    });
     expect(deps.generateAnswer).not.toHaveBeenCalled();
   });
 
@@ -361,7 +417,7 @@ describe("encyclopedia query route", () => {
     expect(payload.answer).toMatch(/愚者/);
     expect(payload.sources).toHaveLength(1);
     expect(deps.consumeQuota).toHaveBeenCalledWith({
-      tester: TESTER,
+      actor: TESTER,
       ipHash: "ip-hash",
     });
   });

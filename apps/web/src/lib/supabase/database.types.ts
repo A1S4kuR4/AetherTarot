@@ -372,6 +372,22 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      consume_anonymous_reading_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_anonymous_daily_limit: number;
+          p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
+      consume_anonymous_encyclopedia_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_anonymous_daily_limit: number;
+          p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
       consume_reading_quota: {
         Args: {
           p_user_id: string;

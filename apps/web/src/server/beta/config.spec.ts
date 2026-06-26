@@ -10,6 +10,7 @@ describe("beta ops config", () => {
   it("uses production beta defaults for reading limits", () => {
     expect(getBetaOpsConfig({})).toEqual({
       userDailyLimit: 10,
+      anonymousDailyLimit: 1,
       ipMinuteLimit: 6,
     });
   });
@@ -17,6 +18,7 @@ describe("beta ops config", () => {
   it("uses separate encyclopedia limits with the shared burst guard", () => {
     expect(getEncyclopediaQuotaConfig({})).toEqual({
       userDailyLimit: 20,
+      anonymousDailyLimit: 1,
       ipMinuteLimit: 6,
     });
   });

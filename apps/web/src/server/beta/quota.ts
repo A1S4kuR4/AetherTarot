@@ -7,7 +7,11 @@ import {
   type BetaOpsConfig,
   type EncyclopediaQuotaConfig,
 } from "@/server/beta/config";
-import type { AuthenticatedTester } from "@/server/beta/access";
+import {
+  isAuthenticatedTester,
+  type AuthenticatedTester,
+  type PublicFeatureActor,
+} from "@/server/beta/access";
 import { ReadingServiceError } from "@/server/reading/errors";
 
 interface QuotaRpcResult {
@@ -17,13 +21,13 @@ interface QuotaRpcResult {
 }
 
 interface ConsumeReadingQuotaInput {
-  tester: AuthenticatedTester;
+  actor: PublicFeatureActor;
   ipHash: string;
   config?: BetaOpsConfig;
 }
 
 interface ConsumeEncyclopediaQuotaInput {
-  tester: AuthenticatedTester;
+  actor: PublicFeatureActor;
   ipHash: string;
   config?: EncyclopediaQuotaConfig;
 }
@@ -36,9 +40,12 @@ function asQuotaResult(value: unknown): QuotaRpcResult {
   return {};
 }
 
-function getLimitMessage(reason: string) {
+function getLimitMessage(reason: string, actor: PublicFeatureActor) {
   switch (reason) {
     case "user_daily":
+      if (!isAuthenticatedTester(actor)) {
+        return "今日访客 reading 体验次数已用完。登录内测账号可使用更多次数。";
+      }
       return "你今日的 reading 次数已达上限，请明天再试。";
     case "ip_minute":
       return "当前网络请求过于频繁，请稍后再试。";
@@ -47,9 +54,12 @@ function getLimitMessage(reason: string) {
   }
 }
 
-function getEncyclopediaLimitMessage(reason: string) {
+function getEncyclopediaLimitMessage(reason: string, actor: PublicFeatureActor) {
   switch (reason) {
     case "user_daily":
+      if (!isAuthenticatedTester(actor)) {
+        return "今日访客百科问答体验次数已用完。登录内测账号可使用更多次数。";
+      }
       return "你今日的百科问答次数已达上限，请明天再试。";
     case "ip_minute":
       return "当前网络百科问答请求过于频繁，请稍后再试。";
@@ -63,11 +73,11 @@ export function shouldBypassRequestQuota(tester: AuthenticatedTester) {
 }
 
 export async function consumeReadingQuota({
-  tester,
+  actor,
   ipHash,
   config = getBetaOpsConfig(),
 }: ConsumeReadingQuotaInput) {
-  if (shouldBypassRequestQuota(tester)) {
+  if (isAuthenticatedTester(actor) && shouldBypassRequestQuota(actor)) {
     return;
   }
 
@@ -81,12 +91,18 @@ export async function consumeReadingQuota({
     );
   }
 
-  const { data, error } = await adminClient.rpc("consume_reading_quota", {
-    p_user_id: tester.userId,
-    p_ip_hash: ipHash,
-    p_user_daily_limit: config.userDailyLimit,
-    p_ip_minute_limit: config.ipMinuteLimit,
-  });
+  const { data, error } = isAuthenticatedTester(actor)
+    ? await adminClient.rpc("consume_reading_quota", {
+      p_user_id: actor.userId,
+      p_ip_hash: ipHash,
+      p_user_daily_limit: config.userDailyLimit,
+      p_ip_minute_limit: config.ipMinuteLimit,
+    })
+    : await adminClient.rpc("consume_anonymous_reading_quota", {
+      p_ip_hash: ipHash,
+      p_anonymous_daily_limit: config.anonymousDailyLimit,
+      p_ip_minute_limit: config.ipMinuteLimit,
+    });
 
   if (error) {
     throw new ReadingServiceError(
@@ -110,7 +126,7 @@ export async function consumeReadingQuota({
 
   throw new ReadingServiceError(
     "rate_limited",
-    getLimitMessage(reason),
+    getLimitMessage(reason, actor),
     429,
     undefined,
     undefined,
@@ -119,11 +135,11 @@ export async function consumeReadingQuota({
 }
 
 export async function consumeEncyclopediaQuota({
-  tester,
+  actor,
   ipHash,
   config = getEncyclopediaQuotaConfig(),
 }: ConsumeEncyclopediaQuotaInput) {
-  if (shouldBypassRequestQuota(tester)) {
+  if (isAuthenticatedTester(actor) && shouldBypassRequestQuota(actor)) {
     return;
   }
 
@@ -137,12 +153,18 @@ export async function consumeEncyclopediaQuota({
     );
   }
 
-  const { data, error } = await adminClient.rpc("consume_encyclopedia_quota", {
-    p_user_id: tester.userId,
-    p_ip_hash: ipHash,
-    p_user_daily_limit: config.userDailyLimit,
-    p_ip_minute_limit: config.ipMinuteLimit,
-  });
+  const { data, error } = isAuthenticatedTester(actor)
+    ? await adminClient.rpc("consume_encyclopedia_quota", {
+      p_user_id: actor.userId,
+      p_ip_hash: ipHash,
+      p_user_daily_limit: config.userDailyLimit,
+      p_ip_minute_limit: config.ipMinuteLimit,
+    })
+    : await adminClient.rpc("consume_anonymous_encyclopedia_quota", {
+      p_ip_hash: ipHash,
+      p_anonymous_daily_limit: config.anonymousDailyLimit,
+      p_ip_minute_limit: config.ipMinuteLimit,
+    });
 
   if (error) {
     throw new ReadingServiceError(
@@ -166,7 +188,7 @@ export async function consumeEncyclopediaQuota({
 
   throw new ReadingServiceError(
     "rate_limited",
-    getEncyclopediaLimitMessage(reason),
+    getEncyclopediaLimitMessage(reason, actor),
     429,
     undefined,
     undefined,

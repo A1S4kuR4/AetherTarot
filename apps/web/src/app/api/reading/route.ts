@@ -9,8 +9,8 @@ import {
 import {
   E2E_ACCESS_BYPASS_HEADER,
   isE2eAccessBypassEnabled,
-  requireBetaTesterAccess,
-  type AuthenticatedTester,
+  resolvePublicFeatureActor,
+  type PublicFeatureActor,
 } from "@/server/beta/access";
 import { consumeReadingQuota } from "@/server/beta/quota";
 import { readBoundedJsonBody } from "@/server/http/json-body";
@@ -34,9 +34,9 @@ const MAX_READING_REQUEST_BYTES = 64 * 1024;
 interface ReadingRouteDependencies {
   getIpHash: (request: Request) => string;
   getProviderName: () => string;
-  requireAccess: () => Promise<AuthenticatedTester>;
+  requireAccess: () => Promise<PublicFeatureActor>;
   consumeQuota: (input: {
-    tester: AuthenticatedTester;
+    actor: PublicFeatureActor;
     ipHash: string;
     config?: BetaOpsConfig;
   }) => Promise<void>;
@@ -48,7 +48,7 @@ interface ReadingRouteDependencies {
 const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   getIpHash: getClientIpHash,
   getProviderName: getReadingProviderName,
-  requireAccess: () => requireBetaTesterAccess(),
+  requireAccess: () => resolvePublicFeatureActor(),
   consumeQuota: consumeReadingQuota,
   generateReading: generateStructuredReading,
   collectUsage: collectLlmUsage,
@@ -81,20 +81,20 @@ function buildErrorResponse(
 
 function getEventBase({
   parsedPayload,
-  tester,
+  actor,
   ipHash,
   provider,
   startedAt,
 }: {
   parsedPayload: ReadingRequestPayload | null;
-  tester: AuthenticatedTester | null;
+  actor: PublicFeatureActor | null;
   ipHash: string;
   provider: string;
   startedAt: number;
 }) {
   return {
-    userId: tester?.userId ?? null,
-    email: tester?.email ?? null,
+    userId: actor?.userId ?? null,
+    email: actor?.email ?? null,
     ipHash,
     provider,
     phase: parsedPayload?.phase ?? "initial",
@@ -106,14 +106,14 @@ function getEventBase({
 
 function buildGenerationKey({
   payload,
-  tester,
+  actor,
   ipHash,
 }: {
   payload: ReadingRequestPayload;
-  tester: AuthenticatedTester;
+  actor: PublicFeatureActor;
   ipHash: string;
 }) {
-  const subject = tester.userId || tester.email || ipHash;
+  const subject = actor.userId ?? actor.email ?? `anonymous:${ipHash}`;
   const hash = createHash("sha256")
     .update(JSON.stringify(payload))
     .digest("hex");
@@ -152,7 +152,7 @@ export async function handleReadingPost(
   );
   let payload: unknown;
   let parsedPayload: ReadingRequestPayload | null = null;
-  let tester: AuthenticatedTester | null = null;
+  let actor: PublicFeatureActor | null = null;
 
   const recordEvent = async (input: ReadingEventInput) => {
     if (shouldSkipBetaOps) {
@@ -172,7 +172,7 @@ export async function handleReadingPost(
     await recordEvent({
       ...getEventBase({
         parsedPayload,
-        tester,
+        actor,
         ipHash,
         provider,
         startedAt,
@@ -197,11 +197,11 @@ export async function handleReadingPost(
 
   try {
     parsedPayload = readingRequestPayloadSchema.parse(payload);
-    tester = await deps.requireAccess();
-    await deps.consumeQuota({ tester, ipHash });
+    actor = await deps.requireAccess();
+    await deps.consumeQuota({ actor, ipHash });
     const generationKey = buildGenerationKey({
       payload: parsedPayload,
-      tester,
+      actor,
       ipHash,
     });
     const { result: reading, calls } = await runSingleFlightGeneration(
@@ -213,7 +213,7 @@ export async function handleReadingPost(
     await recordEvent({
       ...getEventBase({
         parsedPayload,
-        tester,
+        actor,
         ipHash,
         provider,
         startedAt,
@@ -242,7 +242,7 @@ export async function handleReadingPost(
       await recordEvent({
         ...getEventBase({
           parsedPayload,
-          tester,
+          actor,
           ipHash,
           provider,
           startedAt,

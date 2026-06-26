@@ -6,8 +6,8 @@ import type {
 import {
   E2E_ACCESS_BYPASS_HEADER,
   isE2eAccessBypassEnabled,
-  requireBetaTesterAccess,
-  type AuthenticatedTester,
+  resolvePublicFeatureActor,
+  type PublicFeatureActor,
 } from "@/server/beta/access";
 import { isEncyclopediaQueryEnabled } from "@/server/beta/config";
 import { getClientIpHash } from "@/server/beta/ip";
@@ -36,9 +36,9 @@ const MAX_ENCYCLOPEDIA_REQUEST_BYTES = 8 * 1024;
 interface EncyclopediaRouteDependencies {
   isQueryEnabled: () => boolean;
   getIpHash: (request: Request) => string;
-  requireAccess: () => Promise<AuthenticatedTester>;
+  requireAccess: () => Promise<PublicFeatureActor>;
   consumeQuota: (input: {
-    tester: AuthenticatedTester;
+    actor: PublicFeatureActor;
     ipHash: string;
   }) => Promise<void>;
   generateAnswer: typeof generateEncyclopediaAnswer;
@@ -49,7 +49,7 @@ interface EncyclopediaRouteDependencies {
 const DEFAULT_DEPENDENCIES: EncyclopediaRouteDependencies = {
   isQueryEnabled: isEncyclopediaQueryEnabled,
   getIpHash: getClientIpHash,
-  requireAccess: () => requireBetaTesterAccess(),
+  requireAccess: () => resolvePublicFeatureActor(),
   consumeQuota: consumeEncyclopediaQuota,
   generateAnswer: generateEncyclopediaAnswer,
   collectUsage: collectLlmUsage,
@@ -75,18 +75,18 @@ function buildErrorResponse(
 
 function getEventBase({
   parsedPayload,
-  tester,
+  actor,
   ipHash,
   startedAt,
 }: {
   parsedPayload: EncyclopediaQueryRequest | null;
-  tester: AuthenticatedTester | null;
+  actor: PublicFeatureActor | null;
   ipHash: string;
   startedAt: number;
 }) {
   return {
-    userId: tester?.userId ?? null,
-    email: tester?.email ?? null,
+    userId: actor?.userId ?? null,
+    email: actor?.email ?? null,
     ipHash,
     provider: "encyclopedia-llm",
     cardId: parsedPayload?.cardId ?? null,
@@ -106,7 +106,7 @@ export async function handleEncyclopediaQueryPost(
   );
   let payload: unknown;
   let parsedPayload: EncyclopediaQueryRequest | null = null;
-  let tester: AuthenticatedTester | null = null;
+  let actor: PublicFeatureActor | null = null;
 
   const recordEvent = async (input: EncyclopediaEventInput) => {
     if (shouldSkipBetaOps) {
@@ -124,7 +124,7 @@ export async function handleEncyclopediaQueryPost(
     );
   } catch (error) {
     await recordEvent({
-      ...getEventBase({ parsedPayload, tester, ipHash, startedAt }),
+      ...getEventBase({ parsedPayload, actor, ipHash, startedAt }),
       sourceCount: 0,
       status: "failure",
       errorCode: "invalid_request",
@@ -150,15 +150,15 @@ export async function handleEncyclopediaQueryPost(
         503,
       );
     }
-    tester = await deps.requireAccess();
-    await deps.consumeQuota({ tester, ipHash });
+    actor = await deps.requireAccess();
+    await deps.consumeQuota({ actor, ipHash });
     const { result, calls } = await deps.collectUsage(() =>
       deps.generateAnswer(parsedPayload as EncyclopediaQueryRequest)
     );
     const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
 
     await recordEvent({
-      ...getEventBase({ parsedPayload, tester, ipHash, startedAt }),
+      ...getEventBase({ parsedPayload, actor, ipHash, startedAt }),
       sourceCount: result.sources.length,
       status: "success",
       errorCode: null,
@@ -179,7 +179,7 @@ export async function handleEncyclopediaQueryPost(
       code: ReadingErrorPayload["error"]["code"],
     ) => {
       await recordEvent({
-        ...getEventBase({ parsedPayload, tester, ipHash, startedAt }),
+        ...getEventBase({ parsedPayload, actor, ipHash, startedAt }),
         sourceCount: 0,
         status: "failure",
         errorCode: code,

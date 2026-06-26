@@ -12,6 +12,14 @@ export interface AuthenticatedTester {
   role: BetaTesterRole;
 }
 
+export interface AnonymousFeatureActor {
+  userId: null;
+  email: null;
+  role: "anonymous";
+}
+
+export type PublicFeatureActor = AuthenticatedTester | AnonymousFeatureActor;
+
 interface TesterRow {
   email?: unknown;
   role?: unknown;
@@ -71,6 +79,12 @@ async function getE2eAccessBypassHeader() {
 async function getAuthSession() {
   const { auth } = await import("@/auth");
   return auth();
+}
+
+export function isAuthenticatedTester(
+  actor: PublicFeatureActor,
+): actor is AuthenticatedTester {
+  return actor.role !== "anonymous";
 }
 
 export function normalizeTesterRow(
@@ -178,28 +192,13 @@ export function assertRequiredRole({
   }
 }
 
-export async function requireBetaTesterAccess(
-  requiredRole?: BetaTesterRole,
-): Promise<AuthenticatedTester> {
-  const bypassTester =
-    getE2eAccessBypassTester() ??
-    getE2eAccessBypassTester(await getE2eAccessBypassHeader());
-
-  if (bypassTester) {
-    assertRequiredRole({ tester: bypassTester, requiredRole });
-    return bypassTester;
-  }
-
-  const identity = normalizeAuthSession(await getAuthSession());
-
-  if (!identity) {
-    throw new ReadingServiceError(
-      "unauthorized",
-      "请先登录后再使用内测 reading 服务。",
-      401,
-    );
-  }
-
+async function resolveAuthenticatedTester({
+  identity,
+  requiredRole,
+}: {
+  identity: { subject: string; email: string };
+  requiredRole?: BetaTesterRole;
+}) {
   const adminClient = createAdminClient();
 
   if (!adminClient) {
@@ -247,4 +246,61 @@ export async function requireBetaTesterAccess(
   assertRequiredRole({ tester, requiredRole });
 
   return tester;
+}
+
+async function getBypassTester() {
+  const bypassTester =
+    getE2eAccessBypassTester() ??
+    getE2eAccessBypassTester(await getE2eAccessBypassHeader());
+
+  return bypassTester;
+}
+
+export async function requireBetaTesterAccess(
+  requiredRole?: BetaTesterRole,
+): Promise<AuthenticatedTester> {
+  const bypassTester = await getBypassTester();
+
+  if (bypassTester) {
+    assertRequiredRole({ tester: bypassTester, requiredRole });
+    return bypassTester;
+  }
+
+  const identity = normalizeAuthSession(await getAuthSession());
+
+  if (!identity) {
+    throw new ReadingServiceError(
+      "unauthorized",
+      "请先登录后再使用内测 reading 服务。",
+      401,
+    );
+  }
+
+  return resolveAuthenticatedTester({ identity, requiredRole });
+}
+
+export async function resolvePublicFeatureActor(): Promise<PublicFeatureActor> {
+  const bypassTester = await getBypassTester();
+
+  if (bypassTester) {
+    return bypassTester;
+  }
+
+  const session = await getAuthSession();
+
+  if (!session?.user) {
+    return { userId: null, email: null, role: "anonymous" };
+  }
+
+  const identity = normalizeAuthSession(session);
+
+  if (!identity) {
+    throw new ReadingServiceError(
+      "forbidden",
+      "当前登录状态不完整，请重新登录。",
+      403,
+    );
+  }
+
+  return resolveAuthenticatedTester({ identity });
 }

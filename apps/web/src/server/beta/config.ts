@@ -4,11 +4,13 @@ import { ReadingServiceError } from "@/server/reading/errors";
 
 export interface BetaOpsConfig {
   userDailyLimit: number;
+  anonymousDailyLimit: number;
   ipMinuteLimit: number;
 }
 
 export interface EncyclopediaQuotaConfig {
   userDailyLimit: number;
+  anonymousDailyLimit: number;
   ipMinuteLimit: number;
 }
 
@@ -63,6 +65,11 @@ export function getBetaOpsConfig(
       name: "AETHERTAROT_READING_DAILY_LIMIT_PER_USER",
       fallback: 10,
     }),
+    anonymousDailyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP",
+      fallback: 1,
+    }),
     ipMinuteLimit: parsePositiveInteger({
       env,
       name: "AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE",
@@ -79,6 +86,11 @@ export function getEncyclopediaQuotaConfig(
       env,
       name: "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_USER",
       fallback: 20,
+    }),
+    anonymousDailyLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP",
+      fallback: 1,
     }),
     ipMinuteLimit: parsePositiveInteger({
       env,

@@ -11,7 +11,7 @@
 - `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
 - `/api/reading-feedback` 记录 completed reading 的轻量质量反馈
-- `/login` 进入 Keycloak 托管登录页；内测账号由管理员预先创建，不开放注册或邮件流程
+- `/login` 进入 Credentials 登录页；内测账号由管理员预先创建，不开放注册或邮件流程
 - `/admin` 第一轮内测最小观测台，仅 `beta_testers.role = admin` 可访问
 
 ## State Flow
@@ -31,15 +31,16 @@
 
 ## Auth And Supabase
 
-仓库使用 Keycloak 作为唯一认证系统，Supabase 只承载第一轮内测的数据库、白名单、quota、reading events 与 feedback 观测数据。
+仓库使用 Auth.js Credentials 作为当前认证系统，Supabase 只承载第一轮内测的数据库、白名单、quota、reading events 与 feedback 观测数据。
 
 - 运行期入口使用 `src/proxy.ts`
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
-- Keycloak 通过 Auth.js OIDC 接入；需要 `AUTH_SECRET`、`AUTH_KEYCLOAK_ID`、`AUTH_KEYCLOAK_SECRET` 与 `AUTH_KEYCLOAK_ISSUER`
+- Auth.js Credentials provider 需要 `AUTH_SECRET`；生产还必须设置正确的 `AUTH_URL`
 - Supabase DB-only 访问需要服务端 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`；不要配置或依赖 `NEXT_PUBLIC_SUPABASE_*`
-- `/api/reading`、`/api/encyclopedia/query`、`/api/reading-feedback` 与 `/admin` 都要求 Keycloak session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
+- `/api/reading` 与 `/api/encyclopedia/query` 允许未登录访客按 IP hash 每日各体验一次；已登录用户仍要求 Credentials session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
+- `/api/reading-feedback`、账号级历史接口与 `/admin` 继续要求 Credentials session 与 `beta_testers` 白名单
 - `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
 - schema 位于 `supabase/migrations/`；生产配额与保留规则见 `docs/70-ops/production-deployment.md`
 - 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth
-- Keycloak realm 必须关闭 self registration、forgot password 与 verify email 邮件能力；内测账号由管理员创建并分发
+- 内测账号由管理员创建并分发，当前不开放自助注册、找回密码或邮件登录流程
 - Playwright e2e 有测试专用 beta access bypass：仅在非 production 且明确测试标记存在时生效，不属于产品访问能力
