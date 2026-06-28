@@ -123,7 +123,9 @@ async function expectTrustPath(page: Parameters<typeof test>[0]["page"]) {
   await expect(
     evidenceSection.getByRole("heading", { name: "这个解读是怎么来的" }),
   ).toBeVisible();
-  await expect(evidenceSection.getByText(/基于你的提问/)).toBeVisible(); // This is in collapsedHint
+  const evidenceSummary = evidenceSection.getByTestId("reading-evidence-summary");
+  await expect(evidenceSummary.locator("p")).toHaveCount(2);
+  await expect(evidenceSummary.getByText(/关键牌：/)).toBeVisible();
   await expect(evidenceSection.getByRole("heading", { name: "你的问题" })).not.toBeVisible();
 
   await evidenceSection
@@ -133,6 +135,35 @@ async function expectTrustPath(page: Parameters<typeof test>[0]["page"]) {
   await expect(evidenceSection.getByRole("heading", { name: "你的问题" })).toBeVisible();
   await expect(evidenceSection.getByRole("heading", { name: "牌面线索" })).toBeVisible();
   await expect(evidenceSection.getByRole("heading", { name: "解读逻辑" })).toBeVisible();
+}
+
+async function expectElementBefore(
+  page: Parameters<typeof test>[0]["page"],
+  firstSelector: string,
+  secondSelector: string,
+) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          ([first, second]) => {
+            const firstElement = document.querySelector(first);
+            const secondElement = document.querySelector(second);
+
+            if (!firstElement || !secondElement) {
+              return false;
+            }
+
+            return Boolean(
+              firstElement.compareDocumentPosition(secondElement)
+                & Node.DOCUMENT_POSITION_FOLLOWING,
+            );
+          },
+          [firstSelector, secondSelector],
+        ),
+      { timeout: 3000 },
+    )
+    .toBe(true);
 }
 
 async function expectReadingQuickReady(
@@ -312,10 +343,6 @@ async function holdToStart(
   page: Parameters<typeof test>[0]["page"],
   durationMs = 2200,
 ) {
-  const startButton = page.getByRole("button", { name: /长按开始仪式/i });
-  await expect(startButton).toBeVisible();
-  await expect(startButton).toBeEnabled();
-
   let completed = false;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -324,6 +351,9 @@ async function holdToStart(
     }
 
     try {
+      const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+      await expect(startButton).toBeVisible({ timeout: 3000 });
+      await expect(startButton).toBeEnabled({ timeout: 3000 });
       await startButton.dispatchEvent("mousedown", undefined, { timeout: 3000 });
       await expect(
         page.getByRole("button", { name: /正在收束意图/i }),
@@ -331,6 +361,11 @@ async function holdToStart(
     } catch (error) {
       if (/\/(ritual|offline-draw)$/i.test(page.url())) {
         return;
+      }
+
+      if (attempt < 2) {
+        await page.waitForTimeout(250);
+        continue;
       }
 
       throw error;
@@ -570,7 +605,10 @@ test.describe("AetherTarot smoke flow", () => {
     await enterReading(page);
 
     await expectReadingQuickReady(page);
+    await expectElementBefore(page, "#reading-quick", "[data-testid='hero-spread-display']");
     await expectTrustPath(page);
+    await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeVisible();
+    await expect(page.locator("#reading-feedback")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "看到什么" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "在这个位置" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
@@ -578,6 +616,14 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "可以带走的思考" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "温柔的提醒" })).toBeVisible();
     await completeFollowup(page);
+    const desktopNav = page.getByTestId("desktop-reading-nav");
+    await expect(desktopNav).toBeVisible();
+    await expect(desktopNav.locator("a")).toHaveCount(6);
+    await expect(page.getByText("使用牌阵：圣三角")).toBeVisible();
+    await desktopNav.getByRole("link", { name: "依据" }).click();
+    await expect(page.locator("#reading-evidence")).toBeInViewport();
+    await desktopNav.getByRole("link", { name: "反馈" }).click();
+    await expect(page.locator("#reading-feedback")).toBeInViewport();
     await waitForPersistedHistoryEntry(page, "我该如何看待当前的职业选择？");
     await gotoAppRoute(page, "/history");
 
@@ -735,6 +781,8 @@ test.describe("AetherTarot smoke flow", () => {
 
     // Feedback
     const feedbackSection = page.locator("#reading-feedback");
+    await expectElementBefore(page, "#reading-feedback", "#reading-boundary");
+    await expectElementBefore(page, "#reading-feedback", "#reading-notes");
     await feedbackSection.getByRole("button", { name: "有帮助" }).click();
     await feedbackSection.getByRole("button", { name: "提交反馈" }).click();
     await expect(feedbackSection.getByText("反馈已记录，谢谢。")).toBeVisible();
@@ -1326,6 +1374,14 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("link", { name: "思考" }).click();
     await expect(page.locator("#reading-guidance")).toBeInViewport();
     await expectNoHorizontalOverflow(page);
+
+    const firstCardLink = page.locator('#reading-cards a[href^="/encyclopedia?card="]').first();
+    const targetHref = await firstCardLink.getAttribute("href");
+    await firstCardLink.click();
+    await expect(page).toHaveURL(/\/encyclopedia\?card=/);
+    if (targetHref) {
+      expect(page.url()).toContain(targetHref);
+    }
   });
 
   test("keeps the ritual draw stage inside the desktop viewport", async ({
@@ -1439,7 +1495,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test("shows a simplified mobile reading nav with three anchors", async ({
+  test("shows a mobile reading nav with shared reading anchors", async ({
     page,
   }) => {
     test.setTimeout(120000);
@@ -1455,15 +1511,26 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(mobileNav).toBeVisible();
 
     const anchors = mobileNav.locator("a");
-    await expect(anchors).toHaveCount(3);
+    await expect(anchors).toHaveCount(6);
     await expect(mobileNav.getByText("核心")).toBeVisible();
+    await expect(mobileNav.getByText("依据")).toBeVisible();
     await expect(mobileNav.getByText("逐牌")).toBeVisible();
+    await expect(mobileNav.getByText("综合")).toBeVisible();
     await expect(mobileNav.getByText("思考")).toBeVisible();
+    await expect(mobileNav.getByText("反馈")).toBeVisible();
+
+    await mobileNav.getByText("依据").click();
+    await expect(page.locator("#reading-evidence")).toBeInViewport();
 
     await mobileNav.getByText("逐牌").click();
     await expect(page.locator("#reading-cards")).toBeInViewport();
 
     await mobileNav.getByText("思考").click();
     await expect(page.locator("#reading-guidance")).toBeInViewport();
+
+    await expect(page.locator("#reading-feedback")).toHaveCount(0);
+    await completeFollowup(page);
+    await mobileNav.getByText("反馈").click();
+    await expect(page.locator("#reading-feedback")).toBeInViewport();
   });
 });

@@ -15,11 +15,16 @@ export const FEEDBACK_OPTIONS = [
 
 export type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
 
-export const MOBILE_READING_NAV_ITEMS = [
+export const READING_NAV_ITEMS = [
   { id: "reading-quick", label: "核心" },
+  { id: "reading-evidence", label: "依据" },
   { id: "reading-cards", label: "逐牌" },
+  { id: "reading-synthesis", label: "综合" },
   { id: "reading-guidance", label: "思考" },
+  { id: "reading-feedback", label: "反馈" },
 ] as const;
+
+export type ReadingNavItem = (typeof READING_NAV_ITEMS)[number];
 
 export const LOADING_STAGES = [
   {

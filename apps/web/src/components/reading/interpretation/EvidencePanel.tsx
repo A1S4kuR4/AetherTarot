@@ -5,7 +5,6 @@ import { CollapsibleSection } from "./CollapsibleSection";
 import { QUESTION_TYPE_LABELS } from "./constants";
 import type { ContinuitySource } from "@/context/ReadingContext";
 import type {
-  DrawnCard,
   ReadingCardResult,
   StructuredReading,
 } from "@aethertarot/shared-types";
@@ -22,24 +21,65 @@ interface SpreadExperience {
 interface EvidencePanelProps {
   question: string;
   reading: StructuredReading;
-  drawnCards: DrawnCard[];
+  spreadName: string;
   trustPathCards: TrustPathCard[];
   spreadExperience: SpreadExperience | null;
   continuitySource: ContinuitySource | null;
 }
 
+const FALLBACK_MECHANISM_SUMMARY = "基于提问、牌阵位置与牌面关键词综合整理。";
+const SUMMARY_MAX_LENGTH = 60;
+
+function summarizeMechanism(value: string | undefined) {
+  const normalized = value?.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return FALLBACK_MECHANISM_SUMMARY;
+  }
+
+  if (normalized.length <= SUMMARY_MAX_LENGTH) {
+    return normalized;
+  }
+
+  const slice = normalized.slice(0, SUMMARY_MAX_LENGTH);
+  const boundaryIndex = Math.max(
+    slice.lastIndexOf("。"),
+    slice.lastIndexOf("，"),
+    slice.lastIndexOf("；"),
+    slice.lastIndexOf("、"),
+    slice.lastIndexOf("."),
+    slice.lastIndexOf(","),
+    slice.lastIndexOf(";"),
+    slice.lastIndexOf(" "),
+  );
+  const trimmed = boundaryIndex > 12 ? slice.slice(0, boundaryIndex + 1).trim() : slice.trim();
+
+  return `${trimmed}...`;
+}
+
 export function EvidencePanel({
   question,
   reading,
-  drawnCards,
+  spreadName,
   trustPathCards,
   spreadExperience,
   continuitySource,
 }: EvidencePanelProps) {
+  const totalCards = reading.cards.length;
+  const firstCardName = trustPathCards[0]?.name ?? reading.cards[0]?.name ?? "暂无";
+  const cardSummary = totalCards > 1
+    ? `${firstCardName}等 ${totalCards} 张`
+    : firstCardName;
   const collapsedHint = (
-    <p className="text-sm leading-relaxed text-text-muted">
-      基于你的提问、{drawnCards.length} 张牌面与牌阵位置综合分析得出。点击展开查看详细依据。
-    </p>
+    <div
+      data-testid="reading-evidence-summary"
+      className="space-y-1.5 text-sm leading-relaxed text-text-muted"
+    >
+      <p>
+        {QUESTION_TYPE_LABELS[reading.question_type]} · {spreadName} · 关键牌：{cardSummary}
+      </p>
+      <p>{summarizeMechanism(spreadExperience?.readingMechanism)}</p>
+    </div>
   );
 
   return (
