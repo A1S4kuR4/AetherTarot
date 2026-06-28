@@ -10,7 +10,7 @@ import {
 export const dynamic = "force-dynamic";
 
 type EncyclopediaSearchParams = Promise<
-  Record<string, string | string[] | undefined> | undefined
+  Record<string, string | string[] | undefined>
 >;
 
 function firstSearchValue(value: string | string[] | undefined) {

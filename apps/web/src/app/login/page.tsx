@@ -1,9 +1,7 @@
 import { resolveSafeLocalRedirect } from "@/lib/navigation/safe-local-redirect";
 import LoginForm from "@/components/auth/LoginForm";
 
-type LoginSearchParams = Promise<
-  Record<string, string | string[] | undefined> | undefined
->;
+type LoginSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const LOGIN_REDIRECT_ORIGIN = "https://aethertarot.local";
 
