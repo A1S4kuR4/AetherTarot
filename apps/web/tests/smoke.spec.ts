@@ -200,6 +200,25 @@ async function expectNoHorizontalOverflow(
     .toBeLessThanOrEqual(tolerance);
 }
 
+async function expectEncyclopediaImagePaneWidth(
+  page: Parameters<typeof test>[0]["page"],
+  matcher: { max?: number; min?: number },
+) {
+  const imagePane = page.getByTestId("encyclopedia-image-pane");
+  const width = () =>
+    imagePane.evaluate((element) =>
+      Math.round(element.getBoundingClientRect().width),
+    );
+
+  if (matcher.max !== undefined) {
+    await expect.poll(width, { timeout: 3000 }).toBeLessThanOrEqual(matcher.max);
+  }
+
+  if (matcher.min !== undefined) {
+    await expect.poll(width, { timeout: 3000 }).toBeGreaterThanOrEqual(matcher.min);
+  }
+}
+
 async function expectHomeSectionsDoNotClipContent(
   page: Parameters<typeof test>[0]["page"],
 ) {
@@ -925,7 +944,8 @@ test.describe("AetherTarot smoke flow", () => {
     await gotoAppRoute(page, "/encyclopedia");
 
     await expect(page.getByRole("heading", { name: "塔罗百科" })).toBeVisible();
-    await expect(page.getByText("78 / 78").first()).toBeVisible();
+    await expect(page.getByText("已收录 78/78 张牌")).toBeVisible();
+    await expect(page.getByText("10 个核心概念 · 9 种牌阵")).toBeVisible();
     await expect(page.getByRole("button", { name: /权杖 \(14\)/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /圣杯 \(14\)/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /宝剑 \(14\)/ })).toBeVisible();
@@ -957,6 +977,12 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByTestId("encyclopedia-agent-answer")).toBeVisible();
     await expect(page.getByText(/愚者的逆位/)).toBeVisible();
     await expect(page.getByText(/knowledge\/wiki\/major-arcana\/the-fool\.md/)).toBeVisible();
+
+    await page.getByRole("button", { name: /全部 \(78\)/ }).click();
+    await runtimeCardGrid.getByRole("button", { name: "愚者" }).click();
+    await page.getByRole("heading", { name: "深度百科" }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: "深度百科" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "1. 核心象征与视觉意象" })).toBeVisible();
   });
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
@@ -1334,18 +1360,21 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("button", { name: /宝剑 \(14\)/ }).click();
     await expect(runtimeCardGrid.getByRole("button")).toHaveCount(14);
     await runtimeCardGrid.getByRole("button", { name: "宝剑王牌" }).click();
-    await expect(page.getByRole("heading", { name: "宝剑王牌" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "宝剑王牌", exact: true })).toBeVisible();
 
     await detailPanel.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
 
     await runtimeCardGrid.getByRole("button", { name: "宝剑二" }).click();
-    await expect(page.getByRole("heading", { name: "宝剑二" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "宝剑二", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/card=two-of-swords/);
     await expect
       .poll(() => detailPanel.evaluate((element) => element.scrollTop))
       .toBe(0);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.getByRole("heading", { name: "深度百科" }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: "深度百科" })).toBeVisible();
     await expectDocumentFitsViewport(page);
   });
 
@@ -1361,8 +1390,40 @@ test.describe("AetherTarot smoke flow", () => {
     const swordsTwoButton = runtimeCardGrid.getByRole("button", { name: "宝剑二" });
     await expect(swordsTwoButton).toBeVisible();
     await swordsTwoButton.click();
-    await expect(page.getByRole("heading", { name: "宝剑二" })).toBeInViewport();
+    await expectEncyclopediaImagePaneWidth(page, { max: 120 });
+    await expect(page.getByRole("heading", { name: "深度百科" })).toBeInViewport();
+
+    await page.getByRole("button", { name: "展开牌图" }).click();
+    await expectEncyclopediaImagePaneWidth(page, { min: 160 });
+    await expect(page.getByRole("button", { name: "收起牌图" })).toBeVisible();
+
+    await page.getByRole("heading", { name: "塔罗百科" }).scrollIntoViewIfNeeded();
+    await runtimeCardGrid.getByRole("button", { name: "宝剑三" }).click();
+    await expectEncyclopediaImagePaneWidth(page, { max: 120 });
+    await expect(page.getByRole("button", { name: "展开牌图" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+  });
+
+  test("opens encyclopedia directly to a card and renders wiki markdown cleanly", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await gotoAppRoute(page, "/encyclopedia?card=two-of-swords");
+
+    await expect(page.getByRole("heading", { name: "宝剑二", exact: true })).toBeVisible();
+    await page.getByRole("heading", { name: "深度百科" }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: "深度百科" })).toBeVisible();
+
+    await gotoAppRoute(page, "/encyclopedia?card=not-real");
+    await expect(page.getByRole("heading", { name: "愚者", exact: true })).toBeVisible();
+    await page.getByRole("heading", { name: "深度百科" }).scrollIntoViewIfNeeded();
+    await expect(page.getByText("来源: 78W").first()).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/\[[^\]]+\]\([^)]+\.md\)|\*\*/);
+
+    await page.getByRole("heading", { name: "6. 关联与交叉引用" }).scrollIntoViewIfNeeded();
+    await page.getByRole("link", { name: "魔术师" }).click();
+    await expect(page).toHaveURL(/card=the-magician/);
+    await expect(page.getByRole("heading", { name: "魔术师", exact: true })).toBeVisible();
   });
 
   test("redirects protected pages back to the start when state is missing", async ({

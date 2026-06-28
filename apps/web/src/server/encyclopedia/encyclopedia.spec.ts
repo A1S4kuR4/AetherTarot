@@ -4,6 +4,10 @@ import { ReadingServiceError } from "@/server/reading/errors";
 import { retrieveEncyclopediaSources } from "@/server/encyclopedia/retrieval";
 import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 import { loadEncyclopediaWikiPages } from "@/server/encyclopedia/wiki";
+import {
+  buildCardWikiSummaries,
+  countEncyclopediaWikiPages,
+} from "@/server/encyclopedia/wiki-summary";
 import { LlmEncyclopediaProvider } from "@/server/encyclopedia/provider";
 import type { AuthenticatedTester, PublicFeatureActor } from "@/server/beta/access";
 import type { LlmTokenGate } from "@/server/beta/token-budget";
@@ -90,6 +94,27 @@ describe("encyclopedia wiki retrieval", () => {
       sourceIds: expect.arrayContaining(["78W"]),
     });
     expect(fool?.sections.some((section) => section.heading.includes("核心牌义"))).toBe(true);
+  });
+
+  it("builds card wiki summaries and knowledge counts for page rendering", async () => {
+    const pages = await loadEncyclopediaWikiPages();
+    const counts = countEncyclopediaWikiPages(pages);
+    const summaries = buildCardWikiSummaries(pages);
+    const fool = summaries.find((page) => page.cardId === "fool");
+
+    expect(counts).toEqual({
+      cards: 78,
+      concepts: 10,
+      spreads: 9,
+    });
+    expect(summaries).toHaveLength(78);
+    expect(summaries.some((page) => page.cardId === "four-elements")).toBe(false);
+    expect(fool).toMatchObject({
+      cardId: "fool",
+      title: "愚者 (The Fool)",
+      sourceIds: expect.arrayContaining(["78W"]),
+    });
+    expect(fool?.sections.length).toBeGreaterThan(0);
   });
 
   it("retrieves card, concept, and spread pages from deterministic terms", async () => {
