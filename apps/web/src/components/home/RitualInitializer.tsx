@@ -392,13 +392,16 @@ export default function RitualInitializer() {
             onChange={(event) => setQuestion(event.target.value)}
           />
 
-          <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 hide-scrollbar">
+          <div
+            data-testid="suggested-prompt-list"
+            className="flex min-w-0 max-w-full flex-wrap items-center gap-2"
+          >
             {SUGGESTED_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 onClick={() => setQuestion(prompt)}
-                className="shrink-0 rounded-full border border-midnight-border bg-night/35 px-3 py-1.5 text-xs text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
+                className="min-h-11 max-w-full rounded-full border border-midnight-border bg-night/35 px-3 py-2 text-left text-xs leading-relaxed text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
               >
                 {prompt}
               </button>

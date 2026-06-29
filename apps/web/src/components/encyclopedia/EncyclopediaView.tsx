@@ -221,7 +221,7 @@ export default function EncyclopediaView({
   }, [isImageCollapsed]);
 
   return (
-    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col lg:flex-row h-[calc(100dvh-4rem)] overflow-hidden px-4 sm:px-6 lg:px-8 pt-4 gap-4 lg:gap-10">
+    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-4 sm:px-6 lg:h-[calc(100dvh-4rem)] lg:flex-row lg:gap-10 lg:overflow-hidden lg:px-8">
       {/* Left Gallery Pane */}
       <motion.div
         layout
@@ -266,7 +266,8 @@ export default function EncyclopediaView({
       <motion.div 
         layout 
         onScroll={handleScroll}
-        className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar flex flex-col gap-6 lg:gap-8 lg:pr-4 pb-12"
+        data-testid="encyclopedia-content-pane"
+        className="flex min-w-0 flex-1 flex-col gap-6 pb-12 lg:h-full lg:gap-8 lg:overflow-y-auto lg:pr-4 custom-scrollbar"
       >
         <header className="shrink-0 mt-2 lg:mt-0">
           <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
@@ -309,14 +310,17 @@ export default function EncyclopediaView({
                 className="min-h-10 w-full rounded-2xl border border-paper-border bg-paper py-2 pl-10 pr-4 text-sm text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
               />
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div
+              data-testid="encyclopedia-filter-list"
+              className="flex flex-wrap gap-2"
+            >
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
                   type="button"
                   onClick={() => setRuntimeFilter(filter.id)}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-[11px] transition-all",
+                    "min-h-10 rounded-full border px-3 py-2 text-xs leading-none transition-all",
                     runtimeFilter === filter.id
                       ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
                       : "border-paper-border bg-paper text-text-muted hover:text-ink"
@@ -333,7 +337,7 @@ export default function EncyclopediaView({
         <div
           ref={gridRef}
           data-testid="runtime-card-grid"
-          className="h-[240px] shrink-0 overflow-y-auto custom-scrollbar rounded-2xl border border-paper-border bg-paper/50 p-3"
+          className="shrink-0 overflow-visible rounded-2xl border border-paper-border bg-paper/50 p-3 lg:h-[240px] lg:overflow-y-auto custom-scrollbar"
         >
           {visibleCards.length > 0 ? (
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
