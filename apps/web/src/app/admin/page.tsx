@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getAdminSummary } from "@/server/beta/admin-summary";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { 
@@ -18,14 +19,34 @@ function formatCny(value: number) {
   return `￥${value.toFixed(2)}`;
 }
 
+const ERROR_CODE_LABELS: Record<string, string> = {
+  "rate_limited": "触发限流",
+  "provider_timeout": "模型超时",
+  "provider_unavailable": "服务不可用",
+  "unauthorized": "未授权",
+  "forbidden": "权限不足",
+  "unknown": "未知错误",
+};
+
+const FEEDBACK_LABELS: Record<string, string> = {
+  "insightful": "很有启发",
+  "accurate": "描述准确",
+  "confusing": "令人困惑",
+  "inaccurate": "不太准确",
+  "too_long": "篇幅过长",
+  "too_short": "篇幅过短",
+};
+
 function SummaryCard({
   label,
   value,
   icon: Icon,
+  subtext,
 }: {
   label: string;
   value: string | number;
   icon?: React.ElementType;
+  subtext?: React.ReactNode;
 }) {
   return (
     <div className="group relative overflow-hidden rounded-[20px] bg-paper-raised p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-paper-border">
@@ -41,11 +62,22 @@ function SummaryCard({
       <p className="relative z-10 mt-3 font-serif text-3xl font-medium tracking-tight text-ink drop-shadow-sm">
         {value}
       </p>
+      {subtext && (
+        <div className="relative z-10 mt-2 text-[10px] font-medium tracking-wide text-text-muted/80">
+          {subtext}
+        </div>
+      )}
     </div>
   );
 }
 
-function KeyValueList({ items }: { items: Record<string, number> }) {
+function KeyValueList({
+  items,
+  dictionary,
+}: {
+  items: Record<string, number>;
+  dictionary?: Record<string, string>;
+}) {
   const entries = Object.entries(items).sort((a, b) => b[1] - a[1]);
 
   if (entries.length === 0) {
@@ -60,7 +92,9 @@ function KeyValueList({ items }: { items: Record<string, number> }) {
     <div className="space-y-3">
       {entries.map(([key, value]) => (
         <div key={key} className="group flex items-center justify-between text-sm">
-          <span className="font-medium text-text-body">{key}</span>
+          <span className="font-medium text-text-body">
+            {dictionary ? (dictionary[key] || key) : key}
+          </span>
           <div className="mx-4 flex-1 border-b border-dashed border-paper-border/60 transition-colors group-hover:border-terracotta/30"></div>
           <span className="font-semibold text-ink">{value}</span>
         </div>
@@ -82,7 +116,13 @@ function ForbiddenAdmin() {
   );
 }
 
-function AdminSummaryView({ summary }: { summary: AdminSummary }) {
+function AdminSummaryView({
+  summary,
+  currentWindow,
+}: {
+  summary: AdminSummary;
+  currentWindow: string;
+}) {
   const formattedSince = new Date(summary.since).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
 
   return (
@@ -100,21 +140,57 @@ function AdminSummaryView({ summary }: { summary: AdminSummary }) {
         <h1 className="mt-4 font-serif text-5xl font-medium tracking-tight text-ink drop-shadow-sm">
           内测观测台
         </h1>
-        <div className="mt-6 inline-flex">
-          <span className="chip-muted flex items-center gap-2 border border-paper-border/50 bg-paper/50 backdrop-blur-sm px-4 py-1.5">
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <span className="chip-muted flex items-center gap-2 border border-paper-border/50 bg-paper/50 backdrop-blur-sm px-4 py-1.5 w-fit">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-terracotta opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-terracotta"></span>
             </span>
             统计窗口自 {formattedSince} 开启
           </span>
+
+          <div className="flex items-center gap-2 rounded-lg bg-paper-muted p-1 border border-paper-border/30 w-fit">
+            <Link
+              href="?window=1d"
+              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '1d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+            >
+              今日
+            </Link>
+            <Link
+              href="?window=7d"
+              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '7d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+            >
+              近 7 日
+            </Link>
+            <Link
+              href="?window=30d"
+              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '30d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+            >
+              近 30 日
+            </Link>
+          </div>
         </div>
       </header>
 
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        <SummaryCard label="Reading 请求" value={summary.readingRequests} icon={Activity} />
-        <SummaryCard label="百科请求" value={summary.encyclopediaRequests} icon={Target} />
-        <SummaryCard label="用户数" value={summary.activeUsers} icon={Users} />
+        <SummaryCard
+          label="Reading 请求"
+          value={summary.readingRequests}
+          icon={Activity}
+          subtext={`登录: ${summary.registeredReadingRequests} | 游客: ${summary.guestReadingRequests}`}
+        />
+        <SummaryCard
+          label="百科请求"
+          value={summary.encyclopediaRequests}
+          icon={Target}
+          subtext={`登录: ${summary.registeredEncyclopediaRequests} | 游客: ${summary.guestEncyclopediaRequests}`}
+        />
+        <SummaryCard
+          label="用户数"
+          value={summary.activeUsers}
+          icon={Users}
+          subtext={`登录: ${summary.registeredUsers} | 游客: ${summary.guestUsers}`}
+        />
         <SummaryCard label="估算成本" value={formatCny(summary.estimatedCostCny)} icon={CircleDollarSign} />
         <SummaryCard label="Token" value={`${summary.totalTokens} / ${summary.tokenLimit}`} icon={Cpu} />
       </section>
@@ -147,7 +223,7 @@ function AdminSummaryView({ summary }: { summary: AdminSummary }) {
           
           <div className="mt-6 border-t border-paper-border/60 pt-6">
             <p className="mb-4 text-xs font-medium uppercase tracking-wider text-text-muted">失败状态分布</p>
-            <KeyValueList items={summary.failureByCode} />
+            <KeyValueList items={summary.failureByCode} dictionary={ERROR_CODE_LABELS} />
           </div>
         </div>
 
@@ -190,7 +266,7 @@ function AdminSummaryView({ summary }: { summary: AdminSummary }) {
           
           <div className="mt-2 border-t border-paper-border/60 pt-6">
             <p className="mb-4 text-xs font-medium uppercase tracking-wider text-text-muted">反馈标签统计</p>
-            <KeyValueList items={summary.feedbackByLabel} />
+            <KeyValueList items={summary.feedbackByLabel} dictionary={FEEDBACK_LABELS} />
           </div>
         </div>
       </section>
@@ -198,12 +274,18 @@ function AdminSummaryView({ summary }: { summary: AdminSummary }) {
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const windowParam = typeof searchParams?.window === "string" ? searchParams.window : "1d";
+  const days = windowParam === "7d" ? 7 : windowParam === "30d" ? 30 : 1;
+
   let summary: AdminSummary | null = null;
   let isForbidden = false;
 
   try {
-    summary = await getAdminSummary();
+    summary = await getAdminSummary(days);
   } catch (error) {
     if (isReadingServiceError(error) && error.code === "unauthorized") {
       redirect("/login?next=/admin");
@@ -224,5 +306,5 @@ export default async function AdminPage() {
     throw new Error("Admin summary is unavailable.");
   }
 
-  return <AdminSummaryView summary={summary} />;
+  return <AdminSummaryView summary={summary} currentWindow={windowParam} />;
 }
