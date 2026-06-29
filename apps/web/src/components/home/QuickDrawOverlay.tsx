@@ -158,7 +158,7 @@ function QuickDrawOverlayContent({
                       sizes="260px"
                       quality={75}
                       priority
-                      className="h-full w-full rounded-[12px] object-cover"
+                      className="h-full w-full rounded-[12px] object-contain"
                     />
                   </div>
 
@@ -172,7 +172,7 @@ function QuickDrawOverlayContent({
                         height={850}
                         sizes="260px"
                         quality={75}
-                        className={`h-full w-full rounded-[12px] object-cover ${
+                        className={`h-full w-full rounded-[12px] object-contain ${
                           isReversed ? "rotate-180" : ""
                         }`}
                       />
@@ -269,7 +269,7 @@ function QuickDrawOverlayContent({
                 transition={{ duration: 0.4, delay: 0.3 }}
                 className="animate-hint-pulse fixed bottom-12 left-1/2 -translate-x-1/2 font-serif text-sm tracking-[0.2em] text-text-inverse-muted md:bottom-16 md:text-base z-10"
               >
-                轻触翻开牌面
+                点击卡牌翻开牌面
               </m.p>
             )}
           </AnimatePresence>
