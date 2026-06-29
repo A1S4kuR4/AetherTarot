@@ -50,7 +50,7 @@ export function CoreMessageCard({ quickRead, presentationMode }: CoreMessageCard
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
             <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-terracotta/80">
-              下一步可以
+              试着问自己
             </p>
             <p className="mt-2 text-sm leading-relaxed text-text-body">
               {quickRead.action}
