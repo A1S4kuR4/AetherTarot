@@ -11,6 +11,8 @@ interface ReadingEventRow {
   status: "success" | "failure";
   error_code: string | null;
   estimated_cost_usd: number | string | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
   total_tokens: number | null;
   completed_initial: boolean | null;
   completed_final: boolean | null;
@@ -25,6 +27,8 @@ interface EncyclopediaEventRow {
   status: "success" | "failure";
   error_code: string | null;
   estimated_cost_usd: number | string | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
 }
 
 interface DailyTokenRow {
@@ -80,12 +84,12 @@ export async function getAdminSummary() {
   ] = await Promise.all([
     adminClient
       .from("reading_events")
-      .select("user_id, phase, status, error_code, estimated_cost_usd, total_tokens, completed_initial, completed_final")
+      .select("user_id, phase, status, error_code, estimated_cost_usd, prompt_tokens, completion_tokens, total_tokens, completed_initial, completed_final")
       .gte("created_at", since)
       .limit(10000),
     adminClient
       .from("encyclopedia_events")
-      .select("user_id, status, error_code, estimated_cost_usd")
+      .select("user_id, status, error_code, estimated_cost_usd, prompt_tokens, completion_tokens")
       .gte("created_at", since)
       .limit(10000),
     adminClient
@@ -144,17 +148,22 @@ export async function getAdminSummary() {
     (event) => event.phase === "final" && event.status === "success",
   ).length;
 
+  const totalPromptTokens = 
+    events.reduce((sum, event) => sum + numberValue(event.prompt_tokens), 0) + 
+    encyclopediaEvents.reduce((sum, event) => sum + numberValue(event.prompt_tokens), 0);
+    
+  const totalCompletionTokens = 
+    events.reduce((sum, event) => sum + numberValue(event.completion_tokens), 0) + 
+    encyclopediaEvents.reduce((sum, event) => sum + numberValue(event.completion_tokens), 0);
+
+  const estimatedCostCny = (totalPromptTokens / 1_000_000) * 1.00 + (totalCompletionTokens / 1_000_000) * 2.00;
+
   return {
     since,
     readingRequests: events.length,
     encyclopediaRequests: encyclopediaEvents.length,
     activeUsers: activeUsers.size,
-    estimatedCostUsd:
-      events.reduce((sum, event) => sum + numberValue(event.estimated_cost_usd), 0)
-      + encyclopediaEvents.reduce(
-        (sum, event) => sum + numberValue(event.estimated_cost_usd),
-        0,
-      ),
+    estimatedCostCny,
     totalTokens: numberValue((tokenRow as DailyTokenRow | null)?.consumed_tokens),
     outstandingReservedTokens: numberValue(
       (tokenRow as DailyTokenRow | null)?.outstanding_reserved_tokens,
