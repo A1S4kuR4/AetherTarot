@@ -12,6 +12,7 @@ import {
   shuffleTarotDeck,
 } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 const DRAW_ANIMATION_MS = 1050;
 
@@ -34,11 +35,12 @@ interface DrawOverlayState {
 
 export default function RitualView() {
   const router = useRouter();
-  const { question, selectedSpread, completeRitual } = useReading();
+  const { question, selectedSpread, completeRitual, isHydrated } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
   const [isRevealing, setIsRevealing] = useState(false);
+  const [isNavigatingToReveal, setIsNavigatingToReveal] = useState(false);
   const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
@@ -73,12 +75,16 @@ export default function RitualView() {
   }, [completeRitual, drawnCards, selectedSpread]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!question.trim() || !selectedSpread) {
       router.replace("/");
     }
-  }, [question, router, selectedSpread]);
+  }, [isHydrated, question, router, selectedSpread]);
 
-  if (!selectedSpread || !question.trim()) {
+  if (!isHydrated || !selectedSpread || !question.trim()) {
     return null;
   }
 
@@ -187,6 +193,15 @@ export default function RitualView() {
     }
   };
 
+  const handleReveal = () => {
+    if (isNavigatingToReveal) {
+      return;
+    }
+
+    setIsNavigatingToReveal(true);
+    router.push("/reveal");
+  };
+
   return (
     <section className="ritual-view-stage relative flex flex-col items-center px-4 pb-4 pt-4 md:px-6 lg:min-h-0">
       {drawOverlay ? (
@@ -236,11 +251,12 @@ export default function RitualView() {
               drawOverlay.isMajorArcana ? "border-terracotta/80" : "border-indigo/40",
             )}
           >
-            <img
+            <CardImage
               src={CARD_BACK_IMAGE}
               alt={`${drawOverlay.positionName} card back`}
-              className="h-full w-full object-cover"
-              referrerPolicy="no-referrer"
+              sizes={`${Math.ceil(drawOverlay.to.width)}px`}
+              quality={50}
+              priority
             />
           </div>
         </motion.div>
@@ -266,47 +282,52 @@ export default function RitualView() {
         </p>
       </div>
 
-      <div className="relative z-10 mb-4 flex flex-wrap items-end justify-center gap-6 md:gap-10">
-        {selectedSpread.positions.map((position) => {
-          const drawn = drawnCards.find((card) => card.positionId === position.id);
+      <div
+        data-testid="ritual-position-track"
+        className="relative z-60 mb-4 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-2 hide-scrollbar md:snap-none md:overflow-visible"
+      >
+        <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-4 md:w-full md:flex-wrap md:justify-center md:gap-10">
+          {selectedSpread.positions.map((position) => {
+            const drawn = drawnCards.find((card) => card.positionId === position.id);
 
-          return (
-            <div key={position.id} className="flex flex-col items-center gap-3">
-              <div
-                ref={(node) => {
-                  slotRefs.current[position.id] = node;
-                }}
-                className={cn(
-                  "relative flex w-[90px] aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300 md:w-[120px]",
-                  drawn
-                    ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
-                    : "border-dashed border-midnight-border",
-                )}
-              >
-                {drawn ? (
-                  <img
-                    src={CARD_BACK_IMAGE}
-                    alt="Tarot Back"
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <span className="font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
-                    {position.name}
-                  </span>
-                )}
+            return (
+              <div key={position.id} className="flex w-[86px] shrink-0 scroll-mx-4 snap-center flex-col items-center gap-3 md:w-[120px]">
+                <div
+                  ref={(node) => {
+                    slotRefs.current[position.id] = node;
+                  }}
+                  className={cn(
+                    "relative flex w-full aspect-[1/1.7] items-center justify-center overflow-hidden rounded-card-md border transition-all duration-300",
+                    drawn
+                      ? "border-indigo/30 shadow-[0_0_24px_rgba(113,112,255,0.12)]"
+                      : "border-dashed border-midnight-border",
+                  )}
+                >
+                  {drawn ? (
+                    <CardImage
+                      src={CARD_BACK_IMAGE}
+                      alt="Tarot Back"
+                      sizes="(min-width: 768px) 120px, 86px"
+                      quality={50}
+                    />
+                  ) : (
+                    <span className="px-2 text-center font-sans text-[10px] uppercase tracking-wide text-text-inverse-muted/40">
+                      {position.name}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "max-w-full truncate font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
+                    drawn ? "text-indigo" : "text-text-inverse-muted/50",
+                  )}
+                >
+                  {position.name}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
-                  drawn ? "text-indigo" : "text-text-inverse-muted/50",
-                )}
-              >
-                {position.name}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       <div className="relative z-50 mb-2 flex flex-wrap justify-center gap-4">
@@ -334,16 +355,17 @@ export default function RitualView() {
         {isComplete ? (
           <button
             type="button"
-            onClick={() => router.push("/reveal")}
-            className="btn-primary"
+            onClick={handleReveal}
+            disabled={isNavigatingToReveal}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LegacyIcon name="visibility" className="text-lg" />
-            <span>揭示牌阵</span>
+            <span>{isNavigatingToReveal ? "正在揭示..." : "揭示牌阵"}</span>
           </button>
         ) : null}
       </div>
 
-      <div className="ritual-deck-field relative flex w-full max-w-4xl items-center justify-center">
+      <div className="ritual-deck-field relative z-30 flex w-full max-w-4xl items-center justify-center">
         <div
           ref={deckOriginRef}
           className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
@@ -392,14 +414,15 @@ export default function RitualView() {
               disabled={!canDraw}
             >
               <div className="h-full w-full overflow-hidden rounded-[12px] border border-midnight-border-subtle bg-midnight-elevated">
-                <img
+                <CardImage
                   src={CARD_BACK_IMAGE}
                   alt="Tarot Back"
+                  sizes="(min-width: 768px) 120px, 90px"
+                  quality={50}
                   className={cn(
-                    "h-full w-full object-cover opacity-70 transition-opacity duration-300",
+                    "opacity-70 transition-opacity duration-300",
                     isShuffling ? "opacity-90" : "hover:opacity-100",
                   )}
-                  referrerPolicy="no-referrer"
                 />
               </div>
             </motion.button>
@@ -407,7 +430,7 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-10 mx-auto mt-2 w-full max-w-md">
+      <div className="relative z-40 mx-auto mt-2 w-full max-w-md">
         <div className="midnight-panel text-center">
           <p className="text-sm leading-relaxed text-text-inverse-muted">
             你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。

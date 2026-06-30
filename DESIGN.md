@@ -573,6 +573,10 @@ Motion is essential, but it must be emotionally aligned.
 - Stepper should simplify into concise progress labeling
 - Large spread layouts must degrade gracefully
 - Long readings should include clear sectional anchors or sticky mini-nav when appropriate
+- Use `390x844` as the primary mobile validation viewport for the current beta main flow.
+- Mobile pages may use natural page scrolling even when desktop contracts use locked workspaces.
+- Large spread reveals should use an internal horizontal card track or another contained browsing pattern; body-level horizontal scrolling is not acceptable.
+- Long reading pages should expose a sticky mini-nav and card thumbnail strip on mobile while preserving the desktop side summary.
 
 ---
 

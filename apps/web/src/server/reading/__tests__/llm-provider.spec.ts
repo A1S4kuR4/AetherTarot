@@ -20,6 +20,14 @@ import type {
   FinalReadingContext,
   HydratedReadingContext,
 } from "@/server/reading/types";
+import type { LlmTokenGate } from "@/server/beta/token-budget";
+
+function buildTokenGate(): LlmTokenGate {
+  return {
+    reserve: vi.fn(async () => ({ id: "reservation-id", reservedTokens: 4000 })),
+    settle: vi.fn(async () => undefined),
+  };
+}
 
 function buildHydratedContext(): HydratedReadingContext {
   const payload = buildHolyTrianglePayload();
@@ -121,6 +129,33 @@ describe("llm provider baseline", () => {
         DASHSCOPE_API_KEY: "sk-test-braced",
       }).apiKey,
     ).toBe("sk-test-braced");
+  });
+
+  it("configures provider thinking mode explicitly for models that default to thinking", () => {
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_THINKING_MODE: "disabled",
+        AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      }).thinkingMode,
+    ).toBe("disabled");
+
+    expect(
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      }).responseFormat,
+    ).toBe("json_object");
+
+    expect(() =>
+      resolveLlmProviderConfig({
+        AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+        AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+        AETHERTAROT_LLM_THINKING_MODE: "sometimes",
+      }),
+    ).toThrow(/AETHERTAROT_LLM_THINKING_MODE/);
   });
 
   it("normalizes initial llm draft output and trims oversized arrays", () => {
@@ -322,11 +357,14 @@ describe("llm provider baseline", () => {
       {
         baseUrl: "http://127.0.0.1:11434/v1",
         model: "test-model",
+        thinkingMode: "disabled",
+        responseFormat: "json_object",
         temperature: 0.2,
         timeoutMs: 5_000,
         maxOutputTokens: 1800,
       },
       fetchMock as typeof fetch,
+      buildTokenGate(),
     );
 
     const draft = await provider.generateFinalRead(context);
@@ -338,10 +376,68 @@ describe("llm provider baseline", () => {
     expect(
       JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)),
     ).toMatchObject({
+      thinking: { type: "disabled" },
+      response_format: { type: "json_object" },
       max_tokens: 1800,
     });
     expect(draft.themes).toEqual(context.initialReading.themes);
     expect(draft.follow_up_questions).toHaveLength(1);
     expect(draft.reflective_guidance).toHaveLength(3);
+  });
+
+  it("does not call the model when the daily token reservation is rejected", async () => {
+    const context = await buildFinalContext();
+    const fetchMock = vi.fn();
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 1800,
+      },
+      fetchMock as typeof fetch,
+      {
+        reserve: vi.fn(async () => {
+          throw new ReadingServiceError(
+            "token_limit_exceeded",
+            "今日体验额度已用完，请于明日再试。",
+            429,
+          );
+        }),
+        settle: vi.fn(async () => undefined),
+      },
+    );
+
+    await expect(provider.generateFinalRead(context)).rejects.toMatchObject({
+      code: "token_limit_exceeded",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("settles the full reservation after a failed external request", async () => {
+    const context = await buildFinalContext();
+    const tokenGate = buildTokenGate();
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 1800,
+      },
+      vi.fn(async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+      tokenGate,
+    );
+
+    await expect(provider.generateFinalRead(context)).rejects.toMatchObject({
+      code: "provider_unavailable",
+    });
+    expect(tokenGate.settle).toHaveBeenCalledWith({
+      reservation: { id: "reservation-id", reservedTokens: 4000 },
+      actualTokens: undefined,
+    });
   });
 });

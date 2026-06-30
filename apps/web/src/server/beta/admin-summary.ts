@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireBetaTesterAccess } from "@/server/beta/access";
+import { getLlmTokenBudgetConfig } from "@/server/beta/config";
 import { ReadingServiceError } from "@/server/reading/errors";
 
 interface ReadingEventRow {
@@ -19,10 +20,33 @@ interface FeedbackRow {
   labels: string[] | null;
 }
 
-function todayStartIso() {
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
-  return start.toISOString();
+interface EncyclopediaEventRow {
+  user_id: string | null;
+  status: "success" | "failure";
+  error_code: string | null;
+  estimated_cost_usd: number | string | null;
+}
+
+interface DailyTokenRow {
+  consumed_tokens: number | null;
+  outstanding_reserved_tokens: number | null;
+}
+
+export function getBeijingDayWindow(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  const usageDay = `${part("year")}-${part("month")}-${part("day")}`;
+
+  return {
+    usageDay,
+    since: new Date(`${usageDay}T00:00:00+08:00`).toISOString(),
+  };
 }
 
 function numberValue(value: number | string | null | undefined) {
@@ -47,10 +71,12 @@ export async function getAdminSummary() {
     );
   }
 
-  const since = todayStartIso();
+  const { usageDay, since } = getBeijingDayWindow();
   const [
     { data: eventRows, error: eventError },
+    { data: encyclopediaEventRows, error: encyclopediaEventError },
     { data: feedbackRows, error: feedbackError },
+    { data: tokenRow, error: tokenError },
   ] = await Promise.all([
     adminClient
       .from("reading_events")
@@ -58,13 +84,23 @@ export async function getAdminSummary() {
       .gte("created_at", since)
       .limit(10000),
     adminClient
+      .from("encyclopedia_events")
+      .select("user_id, status, error_code, estimated_cost_usd")
+      .gte("created_at", since)
+      .limit(10000),
+    adminClient
       .from("reading_feedback")
       .select("labels")
       .gte("created_at", since)
       .limit(10000),
+    adminClient
+      .from("llm_daily_token_usage")
+      .select("consumed_tokens, outstanding_reserved_tokens")
+      .eq("usage_day", usageDay)
+      .maybeSingle(),
   ]);
 
-  if (eventError || feedbackError) {
+  if (eventError || encyclopediaEventError || feedbackError || tokenError) {
     throw new ReadingServiceError(
       "provider_unavailable",
       "管理后台统计查询失败，请稍后再试。",
@@ -73,14 +109,23 @@ export async function getAdminSummary() {
   }
 
   const events = (eventRows ?? []) as ReadingEventRow[];
+  const encyclopediaEvents = (encyclopediaEventRows ?? []) as EncyclopediaEventRow[];
   const feedback = (feedbackRows ?? []) as FeedbackRow[];
   const activeUsers = new Set(
-    events.map((event) => event.user_id).filter((value): value is string => Boolean(value)),
+    [...events, ...encyclopediaEvents]
+      .map((event) => event.user_id)
+      .filter((value): value is string => Boolean(value)),
   );
   const failureByCode: Record<string, number> = {};
   const feedbackByLabel: Record<string, number> = {};
 
   for (const event of events) {
+    if (event.status === "failure") {
+      increment(failureByCode, event.error_code ?? "unknown");
+    }
+  }
+
+  for (const event of encyclopediaEvents) {
     if (event.status === "failure") {
       increment(failureByCode, event.error_code ?? "unknown");
     }
@@ -102,17 +147,25 @@ export async function getAdminSummary() {
   return {
     since,
     readingRequests: events.length,
+    encyclopediaRequests: encyclopediaEvents.length,
     activeUsers: activeUsers.size,
-    estimatedCostUsd: events.reduce(
-      (sum, event) => sum + numberValue(event.estimated_cost_usd),
-      0,
+    estimatedCostUsd:
+      events.reduce((sum, event) => sum + numberValue(event.estimated_cost_usd), 0)
+      + encyclopediaEvents.reduce(
+        (sum, event) => sum + numberValue(event.estimated_cost_usd),
+        0,
+      ),
+    totalTokens: numberValue((tokenRow as DailyTokenRow | null)?.consumed_tokens),
+    outstandingReservedTokens: numberValue(
+      (tokenRow as DailyTokenRow | null)?.outstanding_reserved_tokens,
     ),
-    totalTokens: events.reduce(
-      (sum, event) => sum + numberValue(event.total_tokens),
-      0,
-    ),
-    successCount: events.filter((event) => event.status === "success").length,
-    failureCount: events.filter((event) => event.status === "failure").length,
+    tokenLimit: getLlmTokenBudgetConfig().dailyTokenLimit,
+    successCount:
+      events.filter((event) => event.status === "success").length
+      + encyclopediaEvents.filter((event) => event.status === "success").length,
+    failureCount:
+      events.filter((event) => event.status === "failure").length
+      + encyclopediaEvents.filter((event) => event.status === "failure").length,
     failureByCode,
     initialSuccess,
     finalSuccess,

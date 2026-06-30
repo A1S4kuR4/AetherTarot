@@ -1,9 +1,8 @@
 "use client";
 
-import { Player } from "@remotion/player";
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
+import { useId, useMemo, useState } from "react";
 
-type RadarAxisKey = "spirit" | "fire" | "water" | "earth" | "air" | "chaos";
+export type RadarAxisKey = "spirit" | "fire" | "water" | "earth" | "air" | "chaos";
 
 interface RadarAxisValue extends Record<string, number> {
   count: number;
@@ -11,18 +10,13 @@ interface RadarAxisValue extends Record<string, number> {
   score: number;
 }
 
-interface RadarChartValues extends Record<RadarAxisKey, RadarAxisValue> {
+export interface RadarChartValues extends Record<RadarAxisKey, RadarAxisValue> {
   spirit: RadarAxisValue;
   fire: RadarAxisValue;
   water: RadarAxisValue;
   earth: RadarAxisValue;
   air: RadarAxisValue;
   chaos: RadarAxisValue;
-}
-
-interface RadarChartCompositionProps extends Record<string, unknown> {
-  values: RadarChartValues;
-  size: number;
 }
 
 interface RadarChartProps {
@@ -82,163 +76,26 @@ const AXES: Array<{
     color: "#B4546F",
   },
 ];
-const FPS = 30;
-const DURATION_IN_FRAMES = 90;
 
 function getPoint(center: number, radius: number, angle: number, value: number) {
-  return `${center + radius * value * Math.cos(angle)},${center + radius * value * Math.sin(angle)}`;
+  return {
+    x: center + radius * value * Math.cos(angle),
+    y: center + radius * value * Math.sin(angle),
+  };
 }
 
-function getPointsString(center: number, radius: number, angles: number[], values: number[]) {
-  return values.map((value, index) => getPoint(center, radius, angles[index] ?? 0, value)).join(" ");
-}
-
-function RadarChartComposition({ values, size }: RadarChartCompositionProps) {
-  const frame = useCurrentFrame();
-  const center = size / 2;
-  const radius = size * 0.29;
-  const drawProgress = interpolate(frame, [6, 56], [0, 1], {
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const labelOpacity = interpolate(frame, [18, 44], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const pulseOpacity = interpolate(frame, [42, DURATION_IN_FRAMES], [0.45, 0.1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const dataValues = AXES.map((axis) => values[axis.key].score);
-  const angles = Array.from({ length: AXES.length }).map((_, index) => -Math.PI / 2 + (index * Math.PI) / 3);
-  const maxPoints = getPointsString(center, radius, angles, Array(AXES.length).fill(1));
-  const midPoints = getPointsString(center, radius, angles, Array(AXES.length).fill(0.5));
-  const dataPoints = getPointsString(
-    center,
-    radius,
-    angles,
-    dataValues.map((value) => value * drawProgress),
-  );
-
-  return (
-    <AbsoluteFill style={{ background: "transparent" }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <defs>
-          <linearGradient id="settlement-neon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#7C6BFF" stopOpacity="0.9" />
-            <stop offset="48%" stopColor="#D66B3D" stopOpacity="0.78" />
-            <stop offset="100%" stopColor="#B4546F" stopOpacity="0.85" />
-          </linearGradient>
-          <filter id="settlement-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        <polygon
-          points={maxPoints}
-          fill="rgba(124, 107, 255, 0.035)"
-          stroke="rgba(124, 107, 255, 0.3)"
-          strokeWidth="1"
-        />
-        <polygon
-          points={midPoints}
-          fill="none"
-          stroke="rgba(180, 84, 111, 0.24)"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-        />
-
-        {angles.map((angle, index) => (
-          <line
-            key={`axis-${AXES[index]?.key ?? index}`}
-            x1={center}
-            y1={center}
-            x2={center + radius * Math.cos(angle)}
-            y2={center + radius * Math.sin(angle)}
-            stroke="rgba(94, 111, 134, 0.22)"
-            strokeWidth="1"
-          />
-        ))}
-
-        {angles.map((angle, index) => {
-          const axis = AXES[index] ?? AXES[0];
-          const value = values[axis.key];
-          const labelRadius = radius + 24;
-          const x = center + labelRadius * Math.cos(angle);
-          const y = center + labelRadius * Math.sin(angle);
-
-          return (
-            <g key={`label-${axis.key}`} opacity={labelOpacity}>
-              <circle cx={x} cy={y - 9} r="4" fill={axis.color} opacity="0.78" />
-              <text
-                x={x}
-                y={y + 3}
-                fill="#2A2520"
-                fontSize="12"
-                fontFamily="sans-serif"
-                fontWeight="600"
-                textAnchor="middle"
-                dominantBaseline="middle"
-              >
-                {axis.label}
-              </text>
-              <text
-                x={x}
-                y={y + 18}
-                fill="rgba(92, 70, 58, 0.72)"
-                fontSize="10"
-                fontFamily="sans-serif"
-                textAnchor="middle"
-                dominantBaseline="middle"
-              >
-                {value.count}/{value.total}
-              </text>
-            </g>
-          );
-        })}
-
-        <polygon
-          points={dataPoints}
-          fill="url(#settlement-neon-gradient)"
-          fillOpacity={0.42 + pulseOpacity * 0.24}
-          stroke="url(#settlement-neon-gradient)"
-          strokeWidth="3"
-          filter="url(#settlement-glow)"
-        />
-        <polygon
-          points={dataPoints}
-          fill="none"
-          stroke="#fff"
-          strokeWidth="1"
-          strokeOpacity={0.38 + pulseOpacity}
-        />
-        {angles.map((angle, index) => {
-          const axis = AXES[index] ?? AXES[0];
-          const value = values[axis.key].score * drawProgress;
-          const x = center + radius * value * Math.cos(angle);
-          const y = center + radius * value * Math.sin(angle);
-
-          return (
-            <circle
-              key={`point-${axis.key}`}
-              cx={x}
-              cy={y}
-              r="4"
-              fill={axis.color}
-              stroke="#fff"
-              strokeWidth="1.5"
-            />
-          );
-        })}
-      </svg>
-    </AbsoluteFill>
-  );
+function getPointsString(
+  center: number,
+  radius: number,
+  angles: number[],
+  values: number[],
+) {
+  return values
+    .map((value, index) => {
+      const point = getPoint(center, radius, angles[index] ?? 0, value);
+      return `${point.x},${point.y}`;
+    })
+    .join(" ");
 }
 
 export default function RadarChart({
@@ -247,13 +104,38 @@ export default function RadarChart({
   className,
   layout = "inline",
 }: RadarChartProps) {
+  const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
+  const gradientId = useId();
+  const glowId = useId();
+  const chartKey = useMemo(
+    () => AXES.map((axis) => values[axis.key].count).join("-"),
+    [values],
+  );
+
+  const center = size / 2;
+  const radius = size * 0.29;
+  const angles = useMemo(
+    () =>
+      Array.from({ length: AXES.length }).map(
+        (_, index) => -Math.PI / 2 + (index * Math.PI) / 3,
+      ),
+    [],
+  );
+
+  const dataValues = AXES.map((axis) => values[axis.key].score);
+  const maxPoints = getPointsString(center, radius, angles, Array(AXES.length).fill(1));
+  const midPoints = getPointsString(center, radius, angles, Array(AXES.length).fill(0.5));
+  const dataPoints = getPointsString(center, radius, angles, dataValues);
+
   const orderedAxes = AXES.map((axis) => ({
     ...axis,
     value: values[axis.key],
   }));
-  const leadingAxis = orderedAxes.reduce((currentLeader, axis) => {
-    return axis.value.count > currentLeader.value.count ? axis : currentLeader;
-  }, orderedAxes[0]);
+  const leadingAxis = orderedAxes.reduce(
+    (currentLeader, axis) =>
+      axis.value.count > currentLeader.value.count ? axis : currentLeader,
+    orderedAxes[0],
+  );
 
   return (
     <div className={className}>
@@ -265,20 +147,140 @@ export default function RadarChart({
         }
       >
         <div style={{ width: size, height: size }}>
-          <Player
-            component={RadarChartComposition}
-            inputProps={{ values, size }}
-            compositionWidth={size}
-            compositionHeight={size}
-            durationInFrames={DURATION_IN_FRAMES}
-            fps={FPS}
-            autoPlay
-            loop={false}
-            moveToBeginningWhenEnded={false}
-            controls={false}
-            clickToPlay={false}
-            style={{ width: size, height: size }}
-          />
+          <svg
+            key={chartKey}
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            className="radar-chart-svg"
+          >
+            <defs>
+              <linearGradient
+                id={gradientId}
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#7C6BFF" stopOpacity="0.9" />
+                <stop offset="48%" stopColor="#D66B3D" stopOpacity="0.78" />
+                <stop offset="100%" stopColor="#B4546F" stopOpacity="0.85" />
+              </linearGradient>
+              <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <polygon
+              points={maxPoints}
+              fill="rgba(124, 107, 255, 0.035)"
+              stroke="rgba(124, 107, 255, 0.3)"
+              strokeWidth="1"
+            />
+            <polygon
+              points={midPoints}
+              fill="none"
+              stroke="rgba(180, 84, 111, 0.24)"
+              strokeWidth="1"
+              strokeDasharray="4 4"
+            />
+
+            {angles.map((angle, index) => (
+              <line
+                key={`axis-${AXES[index]?.key ?? index}`}
+                x1={center}
+                y1={center}
+                x2={center + radius * Math.cos(angle)}
+                y2={center + radius * Math.sin(angle)}
+                stroke="rgba(94, 111, 134, 0.22)"
+                strokeWidth="1"
+              />
+            ))}
+
+            {angles.map((angle, index) => {
+              const axis = AXES[index] ?? AXES[0];
+              const value = values[axis.key];
+              const labelRadius = radius + 24;
+              const x = center + labelRadius * Math.cos(angle);
+              const y = center + labelRadius * Math.sin(angle);
+
+              return (
+                <g
+                  key={`label-${axis.key}`}
+                  className="radar-chart-label"
+                  style={{ transformOrigin: `${x}px ${y}px` }}
+                >
+                  <circle cx={x} cy={y - 9} r="4" fill={axis.color} opacity="0.78" />
+                  <text
+                    x={x}
+                    y={y + 3}
+                    fill="#2A2520"
+                    fontSize="12"
+                    fontFamily="sans-serif"
+                    fontWeight="600"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    {axis.label}
+                  </text>
+                  <text
+                    x={x}
+                    y={y + 18}
+                    fill="rgba(92, 70, 58, 0.72)"
+                    fontSize="10"
+                    fontFamily="sans-serif"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    {value.count}/{value.total}
+                  </text>
+                </g>
+              );
+            })}
+
+            <g
+              className="radar-chart-data"
+              style={{ transformOrigin: `${center}px ${center}px` }}
+            >
+              <polygon
+                points={dataPoints}
+                fill={`url(#${gradientId})`}
+                className="radar-chart-data-fill"
+                stroke={`url(#${gradientId})`}
+                strokeWidth="3"
+                filter={`url(#${glowId})`}
+              />
+              <polygon
+                points={dataPoints}
+                fill="none"
+                stroke="#fff"
+                strokeWidth="1"
+                className="radar-chart-data-stroke"
+              />
+              {angles.map((angle, index) => {
+                const axis = AXES[index] ?? AXES[0];
+                const value = values[axis.key].score;
+                const point = getPoint(center, radius, angle, value);
+
+                return (
+                  <circle
+                    key={`point-${axis.key}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r="4"
+                    fill={axis.color}
+                    stroke="#fff"
+                    strokeWidth="1.5"
+                  />
+                );
+              })}
+            </g>
+          </svg>
         </div>
         <div className="w-full max-w-[280px] space-y-3 text-left">
           <div className="rounded-2xl border border-terracotta/15 bg-paper/70 p-4 shadow-sm">
@@ -294,7 +296,12 @@ export default function RadarChart({
           </div>
           <div className="grid gap-2">
             {orderedAxes.map((axis) => (
-              <div key={axis.key} className="grid grid-cols-[52px_1fr_42px] items-center gap-2">
+              <div
+                key={axis.key}
+                className="group relative grid grid-cols-[52px_1fr_42px] items-center gap-2 cursor-help"
+                onMouseEnter={() => setHoveredAxis(axis.key)}
+                onMouseLeave={() => setHoveredAxis(null)}
+              >
                 <span className="font-sans text-xs font-medium text-text-muted">
                   {axis.label}
                 </span>
@@ -310,6 +317,11 @@ export default function RadarChart({
                 <span className="text-right font-sans text-xs text-text-muted">
                   {axis.value.count}/{axis.value.total}
                 </span>
+                {hoveredAxis === axis.key && (
+                  <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-paper-border bg-paper-raised px-3 py-1.5 font-sans text-xs text-text-body shadow-md">
+                    {axis.shorthand} · {axis.description}
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function MindsetSection() {
   return (
-    <section className="flex h-full w-full items-center justify-center px-6 py-10 text-center">
+    <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-10">
       <div className="w-full max-w-3xl space-y-10">
         <header className="space-y-4">
           <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">
@@ -18,7 +18,7 @@ export default function MindsetSection() {
 
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -36,9 +36,9 @@ export default function MindsetSection() {
                   “在这段关系中，我需要学习什么？”
                 </span>
               </div>
-            </motion.div>
+            </m.div>
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -57,10 +57,10 @@ export default function MindsetSection() {
                   “如果离开，我的核心恐惧和渴望是什么？”
                 </span>
               </div>
-            </motion.div>
+            </m.div>
           </div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -69,7 +69,7 @@ export default function MindsetSection() {
             <p className="italic leading-relaxed text-text-body">
               塔罗不会给你一个“是”或“否”的简单指令。它会剥开现实的洋葱，让你看到行为背后的动机、环境中的隐藏阻力，以及每一个选择所携带的能量轨迹。
             </p>
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </section>

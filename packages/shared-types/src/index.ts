@@ -9,6 +9,7 @@ export interface TarotCard {
   reversedKeywords: string[];
   symbolism: string[];
   imageUrl: string;
+  thumbnailUrl?: string;
 }
 
 export interface SpreadPosition {
@@ -139,6 +140,7 @@ export type ReadingErrorCode =
   | "unauthorized"
   | "forbidden"
   | "rate_limited"
+  | "token_limit_exceeded"
   | "cost_limit_exceeded"
   | "provider_unavailable"
   | "generation_failed"

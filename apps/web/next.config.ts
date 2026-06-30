@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  images: {
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    qualities: [50, 75, 80],
+  },
   transpilePackages: [
     "@aethertarot/shared-types",
     "@aethertarot/domain-tarot",

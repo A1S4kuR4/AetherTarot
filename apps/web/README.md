@@ -6,12 +6,12 @@
 - `/new` 提问与牌阵选择，并在存在 continuity source 时显示“延续中的线索”提示；同时提供快速解读入口，未选牌阵时默认单牌，已选牌阵时尊重当前牌阵
 - `/ritual` 洗牌与抽牌
 - `/reveal` 展示抽到的牌
-- `/reading` 展示结构化解读结果、核心速读、三层可信路径、`sober_check` 摩擦与安全阻断状态
+- `/reading` 展示结构化解读结果、牌阵英雄区、此刻核心讯息、可折叠解读依据、`sober_check` 摩擦与安全阻断状态
 - `/history` 查看本地历史记录，并支持“回看这次解读”与“延续这条线”两个分离动作
-- `/encyclopedia` 浏览静态塔罗百科
+- `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
 - `/api/reading-feedback` 记录 completed reading 的轻量质量反馈
-- `/login` Supabase magic-link 内测登录
+- `/login` 进入 Credentials 登录页；内测账号由管理员预先创建，不开放注册或邮件流程
 - `/admin` 第一轮内测最小观测台，仅 `beta_testers.role = admin` 可访问
 
 ## State Flow
@@ -27,17 +27,20 @@
 - Tier 2 决策外包场景返回 `200`，payload 中包含 `sober_check` 与 `presentation_mode = "sober_anchor"`
 - 快速解读使用 `lite` profile 自动抽牌并直达 `/reading`，但仍复用同一 `/api/reading`、hard stop、sober check 与 completed history 规则
 - 当前已接入最小 LangGraph reading 编排，并支持 `placeholder` 与 OpenAI-compatible `llm` provider；当前第一轮内测 baseline 为 DashScope `qwen3.6-flash`
+- 真实模型预算保护验收前，reading 使用 `placeholder`，百科问答 provider 保持 `disabled`；两者分别启用
 
-## Supabase Skeleton
+## Auth And Supabase
 
-仓库使用 Supabase 承载第一轮内测的 session、邮箱白名单、quota、reading events 与 feedback 观测数据。
+仓库使用 Auth.js Credentials 作为当前认证系统，Supabase 只承载第一轮内测的数据库、白名单、quota、reading events 与 feedback 观测数据。
 
 - 运行期入口使用 `src/proxy.ts`
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
-- 如果未配置 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`，页面仍可启动，但 `/api/reading` 会拒绝内测调用
-- `/api/reading` 还需要 `SUPABASE_SERVICE_ROLE_KEY`、`beta_testers` 白名单和 `consume_reading_quota` RPC；未登录、非白名单、邮箱/IP/全局 LLM 成本超限会在 provider 调用前返回结构化错误
-- `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过 reading quota；admin 请求仍写入 reading events
-- schema 位于 `supabase/migrations/202604270001_beta_ops.sql`
+- Auth.js Credentials provider 需要 `AUTH_SECRET`；生产还必须设置正确的 `AUTH_URL`
+- Supabase DB-only 访问需要服务端 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`；不要配置或依赖 `NEXT_PUBLIC_SUPABASE_*`
+- `/api/reading` 与 `/api/encyclopedia/query` 允许未登录访客按 IP hash 每日各体验一次；已登录用户仍要求 Credentials session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
+- `/api/reading-feedback`、账号级历史接口与 `/admin` 继续要求 Credentials session 与 `beta_testers` 白名单
+- `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
+- schema 位于 `supabase/migrations/`；生产配额与保留规则见 `docs/70-ops/production-deployment.md`
 - 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth
-- 本地 magic-link 邮件进入 Mailpit：`http://127.0.0.1:55424`
+- 内测账号由管理员创建并分发，当前不开放自助注册、找回密码或邮件登录流程
 - Playwright e2e 有测试专用 beta access bypass：仅在非 production 且明确测试标记存在时生效，不属于产品访问能力

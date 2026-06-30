@@ -1,49 +1,69 @@
 "use client";
 
+import { useCallback, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const navItems = [
   { href: "/", label: "首页", icon: "home" },
   { href: "/journey", label: "旅程", icon: "history" },
   { href: "/encyclopedia", label: "百科", icon: "auto_stories" },
-  { href: "/login", label: "登录", icon: "login" },
 ] as const;
 
 /**
  * Mobile-only slide-out drawer navigation.
  * Hidden on desktop; toggled via Topbar hamburger button.
  */
-export default function Sidebar() {
+export default function Sidebar({
+  isOpen = false,
+  onClose,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const handleClose = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+      onClose?.();
+    },
+    [onClose],
+  );
 
   return (
     <>
       {/* Backdrop */}
       <div
         id="mobile-sidebar-backdrop"
-        className="fixed inset-0 z-[60] hidden bg-ink/40 backdrop-blur-sm md:hidden"
-        onClick={() => {
-          document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-          document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-        }}
+        className={cn(
+          "fixed inset-0 z-[60] bg-ink/40 backdrop-blur-sm transition-opacity md:hidden",
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={handleClose}
       />
 
       {/* Drawer */}
       <aside
         id="mobile-sidebar"
-        className="fixed top-0 right-0 z-[70] flex h-full w-72 translate-x-full flex-col bg-paper-raised border-l border-paper-border p-8 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden"
+        className={cn(
+          "fixed top-0 right-0 z-[70] flex h-full w-[min(18rem,86vw)] flex-col border-l border-paper-border bg-paper-raised p-6 pt-20 shadow-2xl transition-transform duration-300 ease-out md:hidden",
+          isOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none translate-x-full",
+        )}
+        aria-hidden={!isOpen}
+        onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
-          className="absolute top-5 right-5 rounded-xl p-2 text-text-muted hover:bg-paper-muted"
+          className="absolute top-5 right-5 z-[80] flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-xl p-2 text-text-muted hover:bg-paper-muted"
           aria-label="关闭菜单"
-          onClick={() => {
-            document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-            document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-          }}
+          onClick={handleClose}
         >
           <LegacyIcon name="close" className="text-xl" />
         </button>
@@ -58,12 +78,9 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => {
-                  document.getElementById("mobile-sidebar")?.classList.add("translate-x-full");
-                  document.getElementById("mobile-sidebar-backdrop")?.classList.add("hidden");
-                }}
+                onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
+                  "flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
                   isActive
                     ? "bg-terracotta/10 text-terracotta"
                     : "text-text-body hover:bg-paper-muted",
@@ -74,6 +91,39 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          {status === "authenticated" ? (
+            <>
+              {session?.user?.email && (
+                <div className="flex min-h-11 items-center gap-3 px-4 py-3 font-sans text-sm font-medium text-text-muted opacity-80">
+                  <LegacyIcon name="person" className="text-lg" />
+                  <span className="truncate">{session.user.email}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(true)}
+                className="flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium text-text-body transition-colors hover:bg-paper-muted"
+              >
+                <LegacyIcon name="logout" className="text-lg" />
+                登出
+              </button>
+            </>
+          ) : status === "unauthenticated" ? (
+            <Link
+              href="/login"
+              onClick={onClose}
+              className={cn(
+                "flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm font-medium transition-colors",
+                pathname === "/login"
+                  ? "bg-terracotta/10 text-terracotta"
+                  : "text-text-body hover:bg-paper-muted",
+              )}
+            >
+              <LegacyIcon name="login" className="text-lg" />
+              登录
+            </Link>
+          ) : null}
         </nav>
 
         <div className="mt-auto pt-8 border-t border-paper-border">
@@ -82,6 +132,19 @@ export default function Sidebar() {
           </p>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="退出登录"
+        description="确定要退出登录吗？退出后需要重新输入账号密码。"
+        confirmLabel="退出登录"
+        cancelLabel="取消"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          signOut({ callbackUrl: "/login" });
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </>
   );
 }

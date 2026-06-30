@@ -11,6 +11,10 @@ import type {
 } from "@aethertarot/shared-types";
 import { ReadingServiceError } from "@/server/reading/errors";
 import {
+  databaseLlmTokenGate,
+  type LlmTokenGate,
+} from "@/server/beta/token-budget";
+import {
   calculateLlmCostUsd,
   estimateTokenCount,
   recordLlmCall,
@@ -22,10 +26,12 @@ import type {
   ReadingProvider,
 } from "@/server/reading/types";
 
-interface LlmProviderConfig {
+export interface LlmProviderConfig {
   apiKey?: string;
   baseUrl: string;
   model: string;
+  thinkingMode?: "enabled" | "disabled";
+  responseFormat?: "json_object";
   temperature: number;
   timeoutMs: number;
   maxOutputTokens: number;
@@ -156,6 +162,38 @@ function parseMaxOutputTokens(value: string | undefined) {
   return parsed;
 }
 
+function parseThinkingMode(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === "enabled" || value === "disabled") {
+    return value;
+  }
+
+  throw new ReadingServiceError(
+    "provider_unavailable",
+    "AETHERTAROT_LLM_THINKING_MODE 必须是 enabled 或 disabled。",
+    503,
+  );
+}
+
+function parseResponseFormat(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === "json_object") {
+    return value;
+  }
+
+  throw new ReadingServiceError(
+    "provider_unavailable",
+    "AETHERTAROT_LLM_RESPONSE_FORMAT 必须是 json_object。",
+    503,
+  );
+}
+
 export function resolveLlmProviderConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): LlmProviderConfig {
@@ -178,6 +216,8 @@ export function resolveLlmProviderConfig(
       ) ?? undefined,
     baseUrl: baseUrl.replace(/\/+$/, ""),
     model,
+    thinkingMode: parseThinkingMode(env.AETHERTAROT_LLM_THINKING_MODE),
+    responseFormat: parseResponseFormat(env.AETHERTAROT_LLM_RESPONSE_FORMAT),
     temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),
     timeoutMs: parseTimeoutMs(env.AETHERTAROT_LLM_TIMEOUT_MS),
     maxOutputTokens: parseMaxOutputTokens(env.AETHERTAROT_LLM_MAX_OUTPUT_TOKENS),
@@ -550,9 +590,16 @@ export class LlmReadingProvider implements ReadingProvider {
   constructor(
     private readonly config: LlmProviderConfig,
     private readonly fetchImplementation: FetchImplementation = fetch,
+    private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
   ) {}
 
   private async requestDraft(prompt: { system: string; user: string }) {
+    const promptText = `${prompt.system}\n${prompt.user}`;
+    const reservation = await this.tokenGate.reserve({
+      source: "reading",
+      promptText,
+      maxOutputTokens: this.config.maxOutputTokens,
+    });
     let response: Response;
     const startedAt = Date.now();
     const abortController = new AbortController();
@@ -560,7 +607,16 @@ export class LlmReadingProvider implements ReadingProvider {
       () => abortController.abort(),
       this.config.timeoutMs,
     );
-    const promptText = `${prompt.system}\n${prompt.user}`;
+    let reservationSettled = false;
+
+    const settleReservation = async (actualTokens?: number) => {
+      if (reservationSettled) {
+        return;
+      }
+
+      reservationSettled = true;
+      await this.tokenGate.settle({ reservation, actualTokens });
+    };
 
     const recordCall = ({
       success,
@@ -594,6 +650,8 @@ export class LlmReadingProvider implements ReadingProvider {
         }),
         errorCode,
       });
+
+      return totalTokens;
     };
 
     try {
@@ -609,6 +667,12 @@ export class LlmReadingProvider implements ReadingProvider {
           },
           body: JSON.stringify({
             model: this.config.model,
+            ...(this.config.thinkingMode
+              ? { thinking: { type: this.config.thinkingMode } }
+              : {}),
+            ...(this.config.responseFormat
+              ? { response_format: { type: this.config.responseFormat } }
+              : {}),
             temperature: this.config.temperature,
             max_tokens: this.config.maxOutputTokens,
             stream: false,
@@ -625,6 +689,7 @@ export class LlmReadingProvider implements ReadingProvider {
 
       if (error instanceof Error && error.name === "AbortError") {
         recordCall({ success: false, errorCode: "timeout" });
+        await settleReservation();
         throw new ReadingServiceError(
           "provider_unavailable",
           "llm provider 请求超时，请稍后再试。",
@@ -633,6 +698,7 @@ export class LlmReadingProvider implements ReadingProvider {
       }
 
       recordCall({ success: false, errorCode: "fetch_failed" });
+      await settleReservation();
       throw new ReadingServiceError(
         "provider_unavailable",
         "llm provider 当前不可用，请检查本地 API 是否已启动。",
@@ -648,6 +714,7 @@ export class LlmReadingProvider implements ReadingProvider {
         httpStatus: response.status,
         errorCode: `http_${response.status}`,
       });
+      await settleReservation();
       throw new ReadingServiceError(
         "provider_unavailable",
         `llm provider 请求失败（HTTP ${response.status}）。`,
@@ -665,6 +732,7 @@ export class LlmReadingProvider implements ReadingProvider {
         httpStatus: response.status,
         errorCode: "invalid_json",
       });
+      await settleReservation();
       throw new ReadingServiceError(
         "generation_failed",
         "llm provider 返回的响应不是合法 JSON。",
@@ -678,21 +746,23 @@ export class LlmReadingProvider implements ReadingProvider {
     try {
       messageText = extractMessageText(payload);
       const parsed = parseJsonRecord(messageText);
-      recordCall({
+      const totalTokens = recordCall({
         success: true,
         httpStatus: response.status,
         outputText: messageText,
         usage,
       });
+      await settleReservation(totalTokens);
       return parsed;
     } catch (error) {
-      recordCall({
+      const totalTokens = recordCall({
         success: false,
         httpStatus: response.status,
         outputText: messageText,
         errorCode: "invalid_provider_payload",
         usage,
       });
+      await settleReservation(usage || messageText ? totalTokens : undefined);
       throw error;
     }
   }
@@ -721,9 +791,11 @@ export class LlmReadingProvider implements ReadingProvider {
 export function createLlmReadingProviderFromEnv(
   env: NodeJS.ProcessEnv = process.env,
   fetchImplementation: FetchImplementation = fetch,
+  tokenGate: LlmTokenGate = databaseLlmTokenGate,
 ) {
   return new LlmReadingProvider(
     resolveLlmProviderConfig(env),
     fetchImplementation,
+    tokenGate,
   );
 }

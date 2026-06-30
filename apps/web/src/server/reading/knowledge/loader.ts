@@ -43,7 +43,7 @@ export function resolveKnowledgeWikiRoot() {
   const envWikiRoot = process.env.AETHERTAROT_WIKI_ROOT?.trim();
 
   if (envWikiRoot) {
-    return path.resolve(envWikiRoot);
+    return path.resolve(/*turbopackIgnore: true*/ envWikiRoot);
   }
 
   const candidates = [
@@ -258,7 +258,7 @@ async function loadTarotKnowledgeChunksFromDisk(wikiRoot: string) {
   const chunks: TarotKnowledgeChunk[] = [];
 
   for (const directory of WIKI_DIRECTORIES) {
-    const absoluteDirectory = path.join(wikiRoot, directory);
+    const absoluteDirectory = path.join(/*turbopackIgnore: true*/ wikiRoot, directory);
     let entries: Dirent[];
 
     try {
@@ -278,16 +278,17 @@ async function loadTarotKnowledgeChunksFromDisk(wikiRoot: string) {
       }
 
       try {
+        const absolutePath = path.join(/*turbopackIgnore: true*/ absoluteDirectory, entry.name);
         chunks.push(
           ...(await loadWikiFile({
             wikiRoot,
-            absolutePath: path.join(absoluteDirectory, entry.name),
+            absolutePath,
           })),
         );
       } catch (error) {
         warnKnowledgeLoadFailure({
           kind: "file",
-          targetPath: path.join(absoluteDirectory, entry.name),
+          targetPath: path.join(/*turbopackIgnore: true*/ absoluteDirectory, entry.name),
           error,
         });
         continue;
@@ -301,7 +302,9 @@ async function loadTarotKnowledgeChunksFromDisk(wikiRoot: string) {
 export async function loadTarotKnowledgeChunks(options?: {
   wikiRoot?: string;
 }) {
-  const wikiRoot = path.resolve(options?.wikiRoot ?? resolveKnowledgeWikiRoot());
+  const wikiRoot = options?.wikiRoot
+    ? path.resolve(/*turbopackIgnore: true*/ options.wikiRoot)
+    : resolveKnowledgeWikiRoot();
   const now = Date.now();
   const cached = tarotKnowledgeCache.get(wikiRoot);
 

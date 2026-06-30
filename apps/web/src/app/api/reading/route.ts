@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { createHash } from "node:crypto";
 import type { ReadingErrorPayload, ReadingRequestPayload } from "@aethertarot/shared-types";
 import { getClientIpHash } from "@/server/beta/ip";
 import {
@@ -8,10 +9,11 @@ import {
 import {
   E2E_ACCESS_BYPASS_HEADER,
   isE2eAccessBypassEnabled,
-  requireBetaTesterAccess,
-  type AuthenticatedTester,
+  resolvePublicFeatureActor,
+  type PublicFeatureActor,
 } from "@/server/beta/access";
 import { consumeReadingQuota } from "@/server/beta/quota";
+import { readBoundedJsonBody } from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { readingRequestPayloadSchema } from "@/server/reading/schemas";
 import { generateStructuredReading } from "@/server/reading/service";
@@ -27,13 +29,14 @@ import {
 } from "@/server/observability/reading-events";
 
 export const runtime = "nodejs";
+const MAX_READING_REQUEST_BYTES = 64 * 1024;
 
 interface ReadingRouteDependencies {
   getIpHash: (request: Request) => string;
   getProviderName: () => string;
-  requireAccess: () => Promise<AuthenticatedTester>;
+  requireAccess: () => Promise<PublicFeatureActor>;
   consumeQuota: (input: {
-    tester: AuthenticatedTester;
+    actor: PublicFeatureActor;
     ipHash: string;
     config?: BetaOpsConfig;
   }) => Promise<void>;
@@ -45,12 +48,15 @@ interface ReadingRouteDependencies {
 const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   getIpHash: getClientIpHash,
   getProviderName: getReadingProviderName,
-  requireAccess: () => requireBetaTesterAccess(),
+  requireAccess: () => resolvePublicFeatureActor(),
   consumeQuota: consumeReadingQuota,
   generateReading: generateStructuredReading,
   collectUsage: collectLlmUsage,
   recordEvent: recordReadingEvent,
 };
+type ReadingGenerationResult = Awaited<ReturnType<typeof collectLlmUsage<Awaited<ReturnType<typeof generateStructuredReading>>>>>;
+
+const inFlightReadingGenerations = new Map<string, Promise<ReadingGenerationResult>>();
 
 function buildErrorResponse(
   code: ReadingErrorPayload["error"]["code"],
@@ -75,20 +81,20 @@ function buildErrorResponse(
 
 function getEventBase({
   parsedPayload,
-  tester,
+  actor,
   ipHash,
   provider,
   startedAt,
 }: {
   parsedPayload: ReadingRequestPayload | null;
-  tester: AuthenticatedTester | null;
+  actor: PublicFeatureActor | null;
   ipHash: string;
   provider: string;
   startedAt: number;
 }) {
   return {
-    userId: tester?.userId ?? null,
-    email: tester?.email ?? null,
+    userId: actor?.userId ?? null,
+    email: actor?.email ?? null,
     ipHash,
     provider,
     phase: parsedPayload?.phase ?? "initial",
@@ -96,6 +102,41 @@ function getEventBase({
     initialReadingId: parsedPayload?.initial_reading?.reading_id ?? null,
     durationMs: Date.now() - startedAt,
   };
+}
+
+function buildGenerationKey({
+  payload,
+  actor,
+  ipHash,
+}: {
+  payload: ReadingRequestPayload;
+  actor: PublicFeatureActor;
+  ipHash: string;
+}) {
+  const subject = actor.userId ?? actor.email ?? `anonymous:${ipHash}`;
+  const hash = createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex");
+
+  return `${subject}:${hash}`;
+}
+
+async function runSingleFlightGeneration(
+  key: string,
+  generate: () => Promise<ReadingGenerationResult>,
+) {
+  const existing = inFlightReadingGenerations.get(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const promise = generate().finally(() => {
+    inFlightReadingGenerations.delete(key);
+  });
+
+  inFlightReadingGenerations.set(key, promise);
+  return promise;
 }
 
 export async function handleReadingPost(
@@ -111,7 +152,7 @@ export async function handleReadingPost(
   );
   let payload: unknown;
   let parsedPayload: ReadingRequestPayload | null = null;
-  let tester: AuthenticatedTester | null = null;
+  let actor: PublicFeatureActor | null = null;
 
   const recordEvent = async (input: ReadingEventInput) => {
     if (shouldSkipBetaOps) {
@@ -122,12 +163,16 @@ export async function handleReadingPost(
   };
 
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readBoundedJsonBody(
+      request,
+      MAX_READING_REQUEST_BYTES,
+      "Reading",
+    );
+  } catch (error) {
     await recordEvent({
       ...getEventBase({
         parsedPayload,
-        tester,
+        actor,
         ipHash,
         provider,
         startedAt,
@@ -143,26 +188,32 @@ export async function handleReadingPost(
       completedInitial: false,
       completedFinal: false,
     });
-    return buildErrorResponse(
-      "invalid_request",
-      "请求体不是有效的 JSON。",
-      400,
-    );
+    if (isReadingServiceError(error)) {
+      return buildErrorResponse(error.code, error.message, error.status);
+    }
+
+    return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
   }
 
   try {
     parsedPayload = readingRequestPayloadSchema.parse(payload);
-    tester = await deps.requireAccess();
-    await deps.consumeQuota({ tester, ipHash });
-    const { result: reading, calls } = await deps.collectUsage(() =>
-      deps.generateReading(parsedPayload as ReadingRequestPayload)
+    actor = await deps.requireAccess();
+    await deps.consumeQuota({ actor, ipHash });
+    const generationKey = buildGenerationKey({
+      payload: parsedPayload,
+      actor,
+      ipHash,
+    });
+    const { result: reading, calls } = await runSingleFlightGeneration(
+      generationKey,
+      () => deps.collectUsage(() => deps.generateReading(parsedPayload as ReadingRequestPayload)),
     );
     const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
 
     await recordEvent({
       ...getEventBase({
         parsedPayload,
-        tester,
+        actor,
         ipHash,
         provider,
         startedAt,
@@ -191,7 +242,7 @@ export async function handleReadingPost(
       await recordEvent({
         ...getEventBase({
           parsedPayload,
-          tester,
+          actor,
           ipHash,
           provider,
           startedAt,

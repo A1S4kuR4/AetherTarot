@@ -1,21 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { getBetaOpsConfig } from "@/server/beta/config";
+import {
+  getBetaOpsConfig,
+  getEncyclopediaQuotaConfig,
+  getLlmTokenBudgetConfig,
+  isEncyclopediaQueryEnabled,
+} from "@/server/beta/config";
 
 describe("beta ops config", () => {
-  it("uses conservative defaults for llm beta limits", () => {
-    expect(getBetaOpsConfig({ AETHERTAROT_READING_PROVIDER: "llm" })).toEqual({
-      emailDailyLimit: 5,
-      ipMinuteLimit: 3,
-      ipDailyLimit: 20,
-      dailyLlmCostLimitUsd: 1,
-      llmCostReservationUsd: 0.05,
+  it("uses production beta defaults for reading limits", () => {
+    expect(getBetaOpsConfig({})).toEqual({
+      userDailyLimit: 10,
+      anonymousDailyLimit: 1,
+      ipMinuteLimit: 6,
     });
   });
 
-  it("does not reserve llm budget for placeholder provider", () => {
-    expect(getBetaOpsConfig({ AETHERTAROT_READING_PROVIDER: "placeholder" }))
-      .toMatchObject({
-        llmCostReservationUsd: 0,
-      });
+  it("uses separate encyclopedia limits with the shared burst guard", () => {
+    expect(getEncyclopediaQuotaConfig({})).toEqual({
+      userDailyLimit: 20,
+      anonymousDailyLimit: 1,
+      ipMinuteLimit: 6,
+    });
+  });
+
+  it("defaults the shared daily token budget to 200000", () => {
+    expect(getLlmTokenBudgetConfig({})).toEqual({
+      dailyTokenLimit: 200_000,
+    });
+  });
+
+  it("keeps encyclopedia model queries disabled until explicitly enabled", () => {
+    expect(isEncyclopediaQueryEnabled({})).toBe(false);
+    expect(
+      isEncyclopediaQueryEnabled({
+        AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "llm",
+      }),
+    ).toBe(true);
   });
 });

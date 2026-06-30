@@ -1,9 +1,6 @@
 import "server-only";
 
-import type {
-  CardOrientation,
-  StructuredReading,
-} from "@aethertarot/shared-types";
+import type { StructuredReading } from "@aethertarot/shared-types";
 
 const DEFAULT_ADVICE_MAX_LENGTH = 120;
 const GUIDANCE_ITEM_MAX_LENGTH = 72;
@@ -14,12 +11,6 @@ export const GENERIC_LAST_ADVICE_FALLBACK =
 
 export interface ExtractLastAdviceSummaryInput {
   reading: StructuredReading;
-  topic?: string;
-  cards?: Array<{
-    id: string;
-    name?: string;
-    orientation?: CardOrientation;
-  }>;
 }
 
 function normalizeAdviceText(value: string, maxLength = DEFAULT_ADVICE_MAX_LENGTH) {

@@ -9,11 +9,39 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      app_users: {
+        Row: {
+          id: string;
+          auth_provider: "credentials";
+          auth_subject: string;
+          email: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auth_provider: "credentials";
+          auth_subject: string;
+          email: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          auth_provider?: "keycloak";
+          auth_subject?: string;
+          email?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       beta_testers: {
         Row: {
           email: string;
           role: "tester" | "admin";
           is_active: boolean;
+          password_hash: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -21,6 +49,7 @@ export interface Database {
           email: string;
           role?: "tester" | "admin";
           is_active?: boolean;
+          password_hash?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -28,6 +57,7 @@ export interface Database {
           email?: string;
           role?: "tester" | "admin";
           is_active?: boolean;
+          password_hash?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -57,6 +87,90 @@ export interface Database {
           count_value?: number;
           cost_value_usd?: number;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      llm_daily_token_usage: {
+        Row: {
+          usage_day: string;
+          consumed_tokens: number;
+          outstanding_reserved_tokens: number;
+          updated_at: string;
+        };
+        Insert: {
+          usage_day: string;
+          consumed_tokens?: number;
+          outstanding_reserved_tokens?: number;
+          updated_at?: string;
+        };
+        Update: {
+          usage_day?: string;
+          consumed_tokens?: number;
+          outstanding_reserved_tokens?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      llm_token_reservations: {
+        Row: {
+          id: string;
+          usage_day: string;
+          source: "reading" | "encyclopedia";
+          reserved_tokens: number;
+          settled_tokens: number | null;
+          status: "reserved" | "settled";
+          created_at: string;
+          settled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          usage_day: string;
+          source: "reading" | "encyclopedia";
+          reserved_tokens: number;
+          settled_tokens?: number | null;
+          status?: "reserved" | "settled";
+          created_at?: string;
+          settled_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          usage_day?: string;
+          source?: "reading" | "encyclopedia";
+          reserved_tokens?: number;
+          settled_tokens?: number | null;
+          status?: "reserved" | "settled";
+          created_at?: string;
+          settled_at?: string | null;
+        };
+        Relationships: [];
+      };
+      auth_email_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          email: string | null;
+          ip_hash: string;
+          status: "success" | "failure";
+          error_code: string | null;
+          duration_ms: number;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          email?: string | null;
+          ip_hash: string;
+          status: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          email?: string | null;
+          ip_hash?: string;
+          status?: "success" | "failure";
+          error_code?: string | null;
+          duration_ms?: number;
         };
         Relationships: [];
       };
@@ -137,7 +251,6 @@ export interface Database {
           email: string | null;
           ip_hash: string;
           provider: string;
-          query_text: string | null;
           card_id: string | null;
           source_count: number;
           status: "success" | "failure";
@@ -156,7 +269,6 @@ export interface Database {
           email?: string | null;
           ip_hash: string;
           provider: string;
-          query_text?: string | null;
           card_id?: string | null;
           source_count?: number;
           status: "success" | "failure";
@@ -175,7 +287,6 @@ export interface Database {
           email?: string | null;
           ip_hash?: string;
           provider?: string;
-          query_text?: string | null;
           card_id?: string | null;
           source_count?: number;
           status?: "success" | "failure";
@@ -222,32 +333,102 @@ export interface Database {
         };
         Relationships: [];
       };
+      stored_readings: {
+        Row: {
+          id: string;
+          user_id: string;
+          reading_id: string;
+          created_at: string;
+          spread_id: string;
+          draw_source: string | null;
+          drawn_cards: Json;
+          reading: Json;
+          user_notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          reading_id: string;
+          created_at?: string;
+          spread_id: string;
+          draw_source?: string | null;
+          drawn_cards?: Json;
+          reading: Json;
+          user_notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          reading_id?: string;
+          created_at?: string;
+          spread_id?: string;
+          draw_source?: string | null;
+          drawn_cards?: Json;
+          reading?: Json;
+          user_notes?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      consume_anonymous_reading_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_anonymous_daily_limit: number;
+          p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
+      consume_anonymous_encyclopedia_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_anonymous_daily_limit: number;
+          p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
       consume_reading_quota: {
         Args: {
-          p_email: string;
           p_user_id: string;
           p_ip_hash: string;
-          p_email_daily_limit: number;
+          p_user_daily_limit: number;
           p_ip_minute_limit: number;
-          p_ip_daily_limit: number;
-          p_daily_cost_limit_usd: number;
-          p_cost_reservation_usd: number;
         };
         Returns: Json;
       };
       consume_encyclopedia_quota: {
         Args: {
-          p_email: string;
           p_user_id: string;
           p_ip_hash: string;
-          p_email_daily_limit: number;
+          p_user_daily_limit: number;
           p_ip_minute_limit: number;
-          p_ip_daily_limit: number;
-          p_daily_cost_limit_usd: number;
-          p_cost_reservation_usd: number;
+        };
+        Returns: Json;
+      };
+      reserve_daily_llm_tokens: {
+        Args: {
+          p_source: "reading" | "encyclopedia";
+          p_requested_tokens: number;
+          p_daily_limit: number;
+        };
+        Returns: Json;
+      };
+      settle_daily_llm_tokens: {
+        Args: {
+          p_reservation_id: string;
+          p_actual_tokens: number;
+        };
+        Returns: Json;
+      };
+      consume_auth_email_quota: {
+        Args: {
+          p_email: string;
+          p_ip_hash: string;
+          p_email_hourly_limit: number;
+          p_email_daily_limit: number;
+          p_ip_hourly_limit: number;
+          p_global_hourly_limit: number;
         };
         Returns: Json;
       };

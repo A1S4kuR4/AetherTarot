@@ -7,6 +7,7 @@ import { getAllSpreads } from "@aethertarot/domain-tarot";
 import { HISTORY_THUMBNAIL } from "@/constants";
 import { useReading } from "@/context/ReadingContext";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 const spreads = getAllSpreads();
 
@@ -65,7 +66,7 @@ export default function HistoryView() {
   const recentTheme = useMemo(() => analyzeRecentThemes(history), [history]);
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-6 py-16 lg:px-8">
+    <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <header className="mb-10">
         <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
           占卜历史
@@ -106,15 +107,16 @@ export default function HistoryView() {
             return (
               <article
                 key={historyEntry.id}
-                className="group relative w-full cursor-pointer rounded-2xl border border-paper-border bg-paper-raised p-5 text-left transition-all duration-200 hover:border-terracotta/20 hover:shadow-sm"
+                className="group relative w-full cursor-pointer rounded-2xl border border-paper-border bg-paper-raised p-4 text-left transition-all duration-200 hover:border-terracotta/20 hover:shadow-sm sm:p-5"
               >
-                <div className="flex items-start gap-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
                   <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-xl border border-paper-border">
-                    <img
+                    <CardImage
                       src={HISTORY_THUMBNAIL}
                       alt="Reading"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
+                      sizes="68px"
+                      quality={50}
+                      className="transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
 
@@ -152,14 +154,14 @@ export default function HistoryView() {
                       {historyEntry.reading.synthesis}
                     </p>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       <button
                         type="button"
                         onClick={() => {
                           selectHistoryReading(historyEntry);
                           router.push("/reading");
                         }}
-                        className="rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-ink transition hover:bg-paper"
+                        className="min-h-11 rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-ink transition hover:bg-paper"
                       >
                         回看这次解读
                       </button>
@@ -173,7 +175,7 @@ export default function HistoryView() {
 
                             router.push("/new");
                           }}
-                          className="rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-medium text-terracotta transition hover:bg-terracotta/10"
+                          className="min-h-11 rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-medium text-terracotta transition hover:bg-terracotta/10"
                         >
                           延续这条线
                         </button>

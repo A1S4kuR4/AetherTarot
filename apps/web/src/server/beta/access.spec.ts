@@ -3,6 +3,7 @@ import {
   assertRequiredRole,
   getE2eAccessBypassTester,
   isE2eAccessBypassEnabled,
+  normalizeAuthSession,
   normalizeTesterRow,
   type AuthenticatedTester,
 } from "@/server/beta/access";
@@ -38,6 +39,37 @@ describe("beta access helpers", () => {
         email: "tester@example.com",
         role: "owner",
         is_active: true,
+      }),
+    ).toBeNull();
+  });
+
+  it("normalizes auth sessions by subject and email", () => {
+    expect(
+      normalizeAuthSession({
+        user: {
+          id: " user-subject ",
+          email: " Tester@Example.COM ",
+        },
+      }),
+    ).toEqual({
+      subject: "user-subject",
+      email: "tester@example.com",
+    });
+  });
+
+  it("rejects auth sessions without a subject or email", () => {
+    expect(
+      normalizeAuthSession({
+        user: {
+          id: "user-subject",
+        },
+      }),
+    ).toBeNull();
+    expect(
+      normalizeAuthSession({
+        user: {
+          email: "tester@example.com",
+        },
       }),
     ).toBeNull();
   });

@@ -1,10 +1,11 @@
-import type { NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
-
-export async function proxy(request: NextRequest) {
-  return updateSession(request);
-}
+export { auth as proxy } from "@/auth";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/reading/:path*",
+    "/api/reading-feedback/:path*",
+    "/api/encyclopedia/query/:path*",
+  ],
 };

@@ -2,16 +2,19 @@
 
 import { motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useReading } from "@/context/ReadingContext";
+import { getRevealCardImageUrl } from "@/lib/card-assets";
 import { cn } from "@/lib/utils";
 import { getSpreadExperience } from "@/lib/spreadExperience";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import CardImage from "@/components/ui/CardImage";
 
 export default function RevealView() {
   const router = useRouter();
-  const { selectedSpread, drawSource, drawnCards } = useReading();
+  const { selectedSpread, drawSource, drawnCards, isHydrated } = useReading();
   const [scope, animate] = useAnimate();
+  const [isEnteringReading, setIsEnteringReading] = useState(false);
 
   useEffect(() => {
     if (drawnCards.length > 0 && selectedSpread) {
@@ -29,6 +32,10 @@ export default function RevealView() {
   }, [animate, drawnCards.length, selectedSpread]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!selectedSpread) {
       router.replace("/");
       return;
@@ -37,9 +44,9 @@ export default function RevealView() {
     if (drawnCards.length === 0) {
       router.replace(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
     }
-  }, [drawSource, drawnCards.length, router, selectedSpread]);
+  }, [drawSource, drawnCards.length, isHydrated, router, selectedSpread]);
 
-  if (!selectedSpread || drawnCards.length === 0) {
+  if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
 
@@ -58,9 +65,17 @@ export default function RevealView() {
     selectedSpread.name,
     selectedSpread.positions.map((position) => position.name),
   );
+  const handleEnterReading = () => {
+    if (isEnteringReading) {
+      return;
+    }
+
+    setIsEnteringReading(true);
+    router.push("/reading");
+  };
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 pt-12 pb-10">
+    <section className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6 lg:pt-12">
       {/* Header */}
       <div className="mb-8 flex flex-col items-center text-center">
         <span className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted">
@@ -71,7 +86,7 @@ export default function RevealView() {
         </h1>
       </div>
 
-      <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-midnight-border bg-midnight-panel/60 px-6 py-5 text-center">
+      <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-midnight-border bg-midnight-panel/60 px-4 py-5 text-center sm:px-6">
         <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-indigo/80">
           先看整组牌的气候
         </p>
@@ -86,11 +101,20 @@ export default function RevealView() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-12">
         {/* Card Spread Area */}
-        <div className="relative flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-8 pt-16 pb-8 lg:col-span-8">
+        <div className="relative flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-4 pb-6 pt-8 sm:px-8 sm:pt-16 lg:col-span-8">
           {/* Spread Cards */}
-          <div ref={scope} className={cn("relative z-10 grid w-full max-w-4xl grid-cols-1 gap-10", spreadCardGridClass)}>
+          <div
+            ref={scope}
+            data-testid="reveal-card-track"
+            className={cn(
+              "relative z-10 grid w-full max-w-4xl grid-cols-1 gap-8 sm:gap-10",
+              spreadCardGridClass,
+              selectedSpread.positions.length > 1
+                && "hide-scrollbar max-md:flex max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:pb-3",
+            )}
+          >
             {selectedSpread.positions.map((position, index) => {
               const drawn = drawnCards.find(
                 (card) => card.positionId === position.id,
@@ -104,7 +128,7 @@ export default function RevealView() {
                 <div
                   key={position.id}
                   className={cn(
-                    "reveal-card-container group flex flex-col items-center opacity-0",
+                    "reveal-card-container group flex flex-col items-center opacity-0 max-md:w-[72vw] max-md:max-w-[260px] max-md:shrink-0 max-md:snap-center",
                     selectedSpread.id === "holy-triangle" && index === 1 && "md:-mt-12",
                   )}
                 >
@@ -126,14 +150,16 @@ export default function RevealView() {
                       )}
                       style={{ transformStyle: "preserve-3d" }}
                     >
-                      <img
-                        src={drawn.card.imageUrl}
+                      <CardImage
+                        src={getRevealCardImageUrl(drawn.card.imageUrl)}
                         alt={drawn.card.name}
-                        className={cn(
-                          "h-full w-full object-cover",
-                          drawn.isReversed && "rotate-180",
-                        )}
-                        referrerPolicy="no-referrer"
+                        intrinsicWidth={selectedSpread.positions.length === 1 ? 384 : 260}
+                        sizes={selectedSpread.positions.length === 1 ? "384px" : "260px"}
+                        quality={75}
+                        priority={index === 0}
+                        loading="eager"
+                        isReversed={drawn.isReversed}
+                        className="transition-transform duration-500"
                       />
                     </motion.div>
                   </div>
@@ -151,7 +177,7 @@ export default function RevealView() {
                         逆位 · REVERSED
                       </span>
                     )}
-                    <div className="mt-2 flex justify-center gap-1.5">
+                    <div className="mt-2 flex flex-wrap justify-center gap-1.5">
                       {(drawn.isReversed
                         ? drawn.card.reversedKeywords
                         : drawn.card.uprightKeywords
@@ -172,10 +198,13 @@ export default function RevealView() {
           {/* CTA */}
           <button
             type="button"
-            onClick={() => router.push("/reading")}
-            className="btn-primary mt-14"
+            onClick={handleEnterReading}
+            disabled={isEnteringReading}
+            className="btn-primary mt-8 min-h-12 w-full disabled:cursor-not-allowed disabled:opacity-70 sm:mt-14 sm:w-auto"
           >
-            <span className="text-sm font-medium">带着整组气候进入深读</span>
+            <span className="text-sm font-medium">
+              {isEnteringReading ? "正在进入深读..." : "带着整组气候进入深读"}
+            </span>
             <LegacyIcon name="arrow_right_alt" className="text-lg" />
           </button>
         </div>

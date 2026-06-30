@@ -69,7 +69,7 @@ const VAGUE_QUESTION_PATTERN =
 const KNOWLEDGE_RETRIEVAL_PATTERN =
   /牌义|正位|逆位|组合|代表什么|什么意思|怎么理解|含义|meaning|reversed|upright/i;
 const THREAD_MEMORY_FOLLOWUP_PATTERN =
-  /^(那|那么|所以|刚才|上次|上一轮|继续|如果这样|这样的话)|上一轮|上次|刚才|前面|之前|接着|马上|立刻|投简历|要不要|是不是应该|should i/i;
+  /(?:^(?:那|那么|所以|刚才|上次|上一轮|继续|如果这样|这样的话)|上一轮|上次|刚才|前面|之前|接着|马上|立刻|投简历|要不要|是不是应该|^(?:(?:so|then)\s+)?should i\b)/i;
 
 export const AGENT_DECIDER_PROMPT = `
 You are AetherTarot's controlled reading agent decider.

@@ -1,20 +1,31 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+const requireFromWeb = createRequire(path.join(repoRoot, "apps/web/package.json"));
+const sharp = requireFromWeb("sharp");
 const deckPath = path.join(repoRoot, "data/decks/rider-waite-smith.json");
 const manifestPath = path.join(repoRoot, "data/decks/card-asset-manifest.json");
 const publicRoot = path.join(repoRoot, "apps/web/public");
 const runtimeCardsRoot = path.join(publicRoot, "cardsV2");
+const runtimeThumbsRoot = path.join(runtimeCardsRoot, "thumbs");
+const runtimeRevealRoot = path.join(runtimeCardsRoot, "reveal");
 const cardBackImageUrl = "/cardsV2/back.png";
 const expectedCardCount = 78;
 const expectedManifestEntryCount = expectedCardCount + 1;
 const expectedAspectRatio = 1 / 1.7;
 const aspectRatioTolerance = 0.035;
 const expectedImagePaths = new Set();
+const expectedThumbPaths = new Set();
+const expectedRevealPaths = new Set();
+const expectedThumbWidth = 120;
+const expectedThumbHeight = 204;
+const expectedRevealWidth = 384;
+const expectedRevealHeight = 653;
 const allowedSourceKinds = new Set([
   "image-model-medieval-europe",
   "human-reviewed-portrait",
@@ -123,6 +134,24 @@ for (const card of deck) {
   const imagePath = path.join(publicRoot, card.imageUrl.slice(1));
   expectedImagePaths.add(imagePath);
   validateImage(imagePath, card.id, card.imageUrl);
+  await validateDerivedWebp({
+    sourceImageUrl: card.imageUrl,
+    cardId: card.id,
+    directory: runtimeThumbsRoot,
+    expectedPaths: expectedThumbPaths,
+    expectedWidth: expectedThumbWidth,
+    expectedHeight: expectedThumbHeight,
+    label: "thumbnail",
+  });
+  await validateDerivedWebp({
+    sourceImageUrl: card.imageUrl,
+    cardId: card.id,
+    directory: runtimeRevealRoot,
+    expectedPaths: expectedRevealPaths,
+    expectedWidth: expectedRevealWidth,
+    expectedHeight: expectedRevealHeight,
+    label: "reveal",
+  });
 }
 
 const cardBackPath = path.join(publicRoot, cardBackImageUrl.slice(1));
@@ -159,9 +188,12 @@ for (const imageUrl of manifestEntries.keys()) {
   }
 }
 
+validateDerivedDirectory(runtimeThumbsRoot, expectedThumbPaths, "thumbnail");
+validateDerivedDirectory(runtimeRevealRoot, expectedRevealPaths, "reveal");
+
 if (!process.exitCode) {
   console.log(
-    `Validated ${deck.length} tarot cards plus card back in ${path.relative(repoRoot, runtimeCardsRoot)}.`,
+    `Validated ${deck.length} tarot cards plus card back and derived WebP assets in ${path.relative(repoRoot, runtimeCardsRoot)}.`,
   );
 }
 
@@ -219,5 +251,65 @@ function validateManifestEntry(imagePath, imageUrl) {
   const actualHash = sha256(imagePath);
   if (entry.sha256 !== actualHash) {
     fail(`${imageUrl} sha256 mismatch; update the asset manifest after review`);
+  }
+}
+
+async function validateDerivedWebp({
+  sourceImageUrl,
+  cardId,
+  directory,
+  expectedPaths,
+  expectedWidth,
+  expectedHeight,
+  label,
+}) {
+  const baseName = path.basename(sourceImageUrl, path.extname(sourceImageUrl));
+  const imagePath = path.join(directory, `${baseName}.webp`);
+  const relativePath = path.relative(repoRoot, imagePath);
+  expectedPaths.add(imagePath);
+
+  if (!fs.existsSync(imagePath)) {
+    fail(`${cardId} ${label} WebP is missing: ${relativePath}`);
+    return;
+  }
+
+  try {
+    const metadata = await sharp(imagePath).metadata();
+    if (metadata.format !== "webp") {
+      fail(`${relativePath} must be a WebP image`);
+    }
+    if (metadata.width !== expectedWidth || metadata.height !== expectedHeight) {
+      fail(
+        `${relativePath} is ${metadata.width}x${metadata.height}; expected ${expectedWidth}x${expectedHeight}`,
+      );
+    }
+  } catch (error) {
+    fail(`${relativePath} is invalid (${error.message})`);
+  }
+}
+
+function validateDerivedDirectory(directory, expectedPaths, label) {
+  const relativeDirectory = path.relative(repoRoot, directory);
+  if (!fs.existsSync(directory)) {
+    fail(`${label} directory is missing: ${relativeDirectory}`);
+    return;
+  }
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const imagePath = path.join(directory, entry.name);
+
+    if (!entry.isFile()) {
+      fail(`unexpected non-file entry in ${relativeDirectory}: ${entry.name}`);
+      continue;
+    }
+
+    if (path.extname(entry.name).toLowerCase() !== ".webp") {
+      fail(`unexpected non-WebP file in ${relativeDirectory}: ${entry.name}`);
+      continue;
+    }
+
+    if (!expectedPaths.has(imagePath)) {
+      fail(`unreferenced ${label} image: ${path.relative(repoRoot, imagePath)}`);
+    }
   }
 }

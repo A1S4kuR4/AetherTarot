@@ -24,6 +24,14 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+    },
   ],
   webServer: {
     command:
@@ -33,6 +41,8 @@ export default defineConfig({
       ...process.env,
       AETHERTAROT_E2E_BYPASS_BETA_ACCESS: "1",
       AETHERTAROT_READING_PROVIDER: "placeholder",
+      AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "llm",
+      AUTH_SECRET: "aethertarot-local-e2e-auth-secret",
     },
     url: baseURL,
     reuseExistingServer: !process.env.CI,

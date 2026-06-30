@@ -1,42 +1,152 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { m } from "motion/react";
+import { getAllSpreads } from "@aethertarot/domain-tarot";
+import type { DrawnCard } from "@aethertarot/shared-types";
+import { drawCardsForSpread } from "@/lib/tarotDraw";
+import { useReading } from "@/context/ReadingContext";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import QuickDrawOverlay from "../QuickDrawOverlay";
+
+const QUICK_DRAW_QUESTION =
+  "我还不知道具体要问什么，请抽取我当下最需要看见的状态。";
 
 export default function IntroSection() {
+  const router = useRouter();
+  const {
+    setQuestion,
+    setSelectedSpread,
+    setAgentProfile,
+    setDrawSource,
+    completeRitual,
+  } = useReading();
+
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+  const [drawnCard, setDrawnCard] = useState<DrawnCard | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleDrawClick = useCallback(() => {
+    if (isOverlayOpen || isNavigating) return;
+
+    const spreads = getAllSpreads();
+    const singleSpread =
+      spreads.find((s) => s.id === "single") ?? spreads[0];
+
+    if (!singleSpread) return;
+
+    const cards = drawCardsForSpread(singleSpread.positions);
+
+    if (cards.length !== singleSpread.positions.length || !cards[0]) return;
+
+    setDrawnCard(cards[0]);
+    setIsOverlayOpen(true);
+  }, [isOverlayOpen, isNavigating]);
+
+  const handleClose = useCallback(() => {
+    setIsOverlayOpen(false);
+    setDrawnCard(null);
+  }, []);
+
+  const handleEnterReading = useCallback(() => {
+    if (isNavigating || !drawnCard) return;
+
+    setIsNavigating(true);
+
+    const spreads = getAllSpreads();
+    const singleSpread =
+      spreads.find((s) => s.id === "single") ?? spreads[0];
+
+    if (!singleSpread) return;
+
+    setQuestion(QUICK_DRAW_QUESTION);
+    setAgentProfile("lite");
+    setDrawSource("digital_random");
+    setSelectedSpread(singleSpread);
+    completeRitual([drawnCard]);
+    router.push("/reading");
+  }, [
+    isNavigating,
+    drawnCard,
+    setQuestion,
+    setAgentProfile,
+    setDrawSource,
+    setSelectedSpread,
+    completeRitual,
+    router,
+  ]);
+
   return (
-    <section className="flex h-full w-full items-center justify-center px-6 text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="max-w-3xl space-y-8"
-      >
-        <h1 className="font-serif text-5xl font-semibold tracking-tight text-ink md:text-7xl">
-          万物皆有回声
-        </h1>
-        <div className="space-y-4">
-          <p className="font-serif text-xl leading-relaxed text-text-muted md:text-2xl">
-            塔罗并非开启未来的钥匙，而是映照当下的镜子。
-          </p>
-          <p className="mx-auto max-w-2xl font-sans text-base leading-relaxed text-text-muted opacity-80 md:text-lg">
-            在名为“潜意识”的湖泊中，那些未被察觉的情绪、渴望与困惑，
-            正通过 78 张古老的象征图景，寻找着与你的共鸣。
-          </p>
-        </div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="pt-12"
+    <>
+      <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-0">
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-3xl space-y-8"
         >
-          <LegacyIcon
-            name="keyboard_double_arrow_down"
-            className="animate-float-slow text-text-placeholder"
-          />
-        </motion.div>
-      </motion.div>
-    </section>
+          <h1 className="font-serif text-5xl font-semibold tracking-tight text-ink md:text-7xl">
+            万物皆有回声
+          </h1>
+          <div className="space-y-4">
+            <p className="font-serif text-xl leading-relaxed text-text-muted md:text-2xl">
+              塔罗并非开启未来的钥匙，而是映照当下的镜子。
+            </p>
+            <p className="mx-auto max-w-2xl font-sans text-base leading-relaxed text-text-muted opacity-80 md:text-lg">
+              在名为&ldquo;潜意识&rdquo;的湖泊中，那些未被察觉的情绪、渴望与困惑，
+              正通过 78 张古老的象征图景，寻找着与你的共鸣。
+            </p>
+          </div>
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 1 }}
+            className="flex justify-center pt-16"
+          >
+            <m.button
+              type="button"
+              disabled={isNavigating}
+              onClick={handleDrawClick}
+              whileHover={!isNavigating ? "hover" : undefined}
+              initial="rest"
+              animate="rest"
+              variants={{
+                rest: { y: 0 },
+                hover: { y: -4 }
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="group relative flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {/* Focus Halo / 背景光晕 */}
+              <m.div
+                variants={{
+                  rest: { opacity: 0, scale: 0.9 },
+                  hover: { opacity: 1, scale: 1 }
+                }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
+              />
+
+              <span className="relative z-10 text-lg font-semibold tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
+                抽一张当下之镜
+              </span>
+              <LegacyIcon
+                name="keyboard_double_arrow_down"
+                className="relative z-10 animate-float-slow text-text-placeholder transition-colors group-hover:text-terracotta/70"
+              />
+            </m.button>
+          </m.div>
+        </m.div>
+      </section>
+
+      <QuickDrawOverlay
+        isOpen={isOverlayOpen}
+        drawnCard={drawnCard}
+        onClose={handleClose}
+        onEnterReading={handleEnterReading}
+      />
+    </>
   );
 }

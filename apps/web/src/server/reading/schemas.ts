@@ -17,7 +17,11 @@ export const drawSourceSchema = z.enum(["digital_random", "offline_manual"]);
 
 export const followupAnswerSchema = z.object({
   question: z.string().trim().min(1, "followup question 不能为空。"),
-  answer: z.string().trim().min(1, "followup answer 不能为空。"),
+  answer: z
+    .string()
+    .trim()
+    .min(1, "followup answer 不能为空。")
+    .max(600, "followup answer 不能超过 600 个字符。"),
 });
 
 export const readingRequestCardInputSchema = z.object({
@@ -77,16 +81,25 @@ export const structuredReadingSchema: z.ZodType<StructuredReading> = z.object({
 
 export const readingRequestPayloadSchema = z
   .object({
-    question: z.string().trim().min(1, "question 不能为空。"),
+    question: z
+      .string()
+      .trim()
+      .min(1, "question 不能为空。")
+      .max(1000, "question 不能超过 1000 个字符。"),
     spreadId: z.string().trim().min(1, "spreadId 不能为空。"),
     drawnCards: z
       .array(readingRequestCardInputSchema)
       .min(1, "drawnCards 至少需要包含一张牌。"),
-    thread_id: z.string().trim().min(1, "thread_id 不能为空。").optional(),
+    thread_id: z
+      .string()
+      .trim()
+      .min(1, "thread_id 不能为空。")
+      .max(128, "thread_id 不能超过 128 个字符。")
+      .optional(),
     agent_profile: agentProfileSchema.default("standard"),
     phase: readingPhaseSchema.default("initial"),
     draw_source: drawSourceSchema.default("digital_random"),
-    prior_session_capsule: z.string().trim().min(1).nullable().optional(),
+    prior_session_capsule: z.string().trim().min(1).max(280).nullable().optional(),
     initial_reading: z.lazy(() => structuredReadingSchema).optional(),
     followup_answers: z.array(followupAnswerSchema).optional(),
   })

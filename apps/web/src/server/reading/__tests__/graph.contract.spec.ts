@@ -160,6 +160,43 @@ describe("reading graph contract hardening", () => {
     ]);
   });
 
+  it.each([
+    "should i apply now",
+    "so should i apply now",
+    "then should i apply now",
+  ])("routes clear English should-i follow-up through memory: %s", async (question) => {
+    const result = await runReadingGraphWithDiagnostics({
+      ...buildSinglePayload(question),
+      thread_id: `english-followup-${question.replace(/\s+/g, "-")}`,
+    });
+
+    expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
+      "get_session_memory",
+      "final_answer",
+    ]);
+    expect(result.agentState.tool_calls[0]).toMatchObject({
+      tool_name: "get_session_memory",
+      ok: true,
+    });
+  });
+
+  it.each([
+    "why should i wait",
+    "i should inform my partner",
+  ])("does not treat broad English should-i text as a memory follow-up: %s", async (question) => {
+    const result = await runReadingGraphWithDiagnostics({
+      ...buildSinglePayload(question),
+      thread_id: `english-non-followup-${question.replace(/\s+/g, "-")}`,
+    });
+
+    expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
+      "final_answer",
+    ]);
+    expect(result.agentState.tool_calls.map((toolCall) => toolCall.tool_name)).not.toContain(
+      "get_session_memory",
+    );
+  });
+
   it("skips get_session_memory gracefully when a forced memory action has no thread_id", async () => {
     const result = await runReadingGraphWithDiagnostics(
       buildSinglePayload("那我是不是应该马上投简历？"),

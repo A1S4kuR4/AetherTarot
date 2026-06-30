@@ -1,16 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
-import { motion } from "motion/react";
-import NextLink from "next/link";
+import { m } from "motion/react";
 
 import IntroSection from "./sections/IntroSection";
 import KnowledgeSection from "./sections/KnowledgeSection";
 import MindsetSection from "./sections/MindsetSection";
+import FinalGateSection from "./sections/FinalGateSection";
 import PaginationDots from "./PaginationDots";
+import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function HomeView() {
   const [activeSection, setActiveSection] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelLockRef = useRef(false);
 
@@ -18,6 +20,16 @@ export default function HomeView() {
     return containerRef.current?.querySelectorAll<HTMLElement>(
       ":scope > .scroll-snap-section",
     );
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -48,13 +60,23 @@ export default function HomeView() {
         return;
       }
 
-      container.scrollTo({
-        top: sections[index].offsetTop,
-        behavior: "smooth",
-      });
+      const targetTop = sections[index].offsetTop;
+
+      if (window.matchMedia("(min-width: 1024px) and (min-height: 860px)").matches) {
+        container.scrollTo({
+          top: targetTop,
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+      } else {
+        window.scrollTo({
+          top: container.offsetTop + targetTop,
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+      }
+
       setActiveSection(index);
     },
-    [getSections],
+    [getSections, prefersReducedMotion],
   );
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -83,17 +105,34 @@ export default function HomeView() {
     scrollToSection(nextIndex);
     window.setTimeout(() => {
       wheelLockRef.current = false;
-    }, 700);
+    }, prefersReducedMotion ? 100 : 700);
   };
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-paper">
+    <main className="relative bg-paper viewport-workspace">
       {/* Pagination Dots */}
       <PaginationDots 
         total={4} 
         active={activeSection} 
         onChange={scrollToSection} 
       />
+
+      {activeSection < 3 ? (
+        <m.button
+          type="button"
+          data-testid="home-scroll-cue"
+          aria-label="继续下探"
+          onClick={() => scrollToSection(activeSection + 1)}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed inset-x-0 bottom-5 z-40 mx-auto flex min-h-12 w-max items-center gap-2 rounded-full border border-terracotta/25 bg-paper-raised/95 px-4 py-2 text-xs font-medium text-terracotta shadow-[0_10px_28px_rgba(24,23,19,0.14)] backdrop-blur md:hidden"
+        >
+          <span>继续下探</span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-paper shadow-sm">
+            <LegacyIcon name="keyboard_arrow_down" className="animate-float-slow text-[18px]" />
+          </span>
+        </m.button>
+      ) : null}
 
       {/* Snap Scroll Container */}
       <div 
@@ -119,93 +158,7 @@ export default function HomeView() {
 
         {/* Section 3: The Fork / Final Gate */}
         <div data-index="3" className="scroll-snap-section">
-          <section className="flex w-full max-w-5xl flex-col items-center justify-center px-6 text-center">
-            <motion.header
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mb-16 space-y-4"
-            >
-              <h2 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
-                通往深处
-              </h2>
-              <p className="mx-auto max-w-lg text-base text-text-muted">
-                在这里，你的意志将化为指引。你选择回顾过往的影子，还是开启一段未知的仪式？
-              </p>
-            </motion.header>
-
-            <div className="grid w-full gap-8 md:grid-cols-2">
-              {/* Path A: Journey */}
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="group relative"
-              >
-                <NextLink href="/journey" className="block text-left">
-                  <div className="overflow-hidden rounded-[32px] border border-paper-border bg-paper-raised p-2 transition-all duration-500 hover:border-terracotta/30 hover:shadow-xl">
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-paper-muted">
-                      {/* Symbolic representation of history */}
-                      <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                        <img 
-                          src="/home/journey_cover.png" 
-                          alt="Journey Cover"
-                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
-                        />
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/20 to-transparent p-6">
-                        <span className="chip-warm text-[10px] uppercase tracking-widest">
-                          Memory Archive
-                        </span>
-                      </div>
-                    </div>
-                    <div className="px-6 py-6">
-                      <h3 className="mb-2 font-serif text-2xl text-ink">回溯过往旅程</h3>
-                      <p className="text-sm leading-relaxed text-text-muted">
-                        在这面镜子前，你曾经的提问与线索依然闪烁，等待着再次被反思。
-                      </p>
-                    </div>
-                  </div>
-                </NextLink>
-              </motion.div>
-
-              {/* Path B: New Ritual */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="group relative"
-              >
-                <NextLink href="/new" className="block text-left">
-                  <div className="overflow-hidden rounded-[32px] border border-ink/5 bg-night p-2 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-midnight-panel">
-                      {/* Symbolic representation of new ritual */}
-                      <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                        <img 
-                          src="/home/ritual_cover.png" 
-                          alt="Ritual Cover"
-                          className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700"
-                        />
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-6">
-                        <span className="rounded-full border border-indigo/20 bg-indigo/10 px-3 py-1 text-[10px] uppercase tracking-widest text-indigo-400">
-                          New Ritual
-                        </span>
-                      </div>
-                    </div>
-                    <div className="px-6 py-6">
-                      <h3 className="mb-2 font-serif text-2xl text-text-inverse">开启崭新仪式</h3>
-                      <p className="text-sm leading-relaxed text-text-inverse-muted">
-                        在这片虚空中，你可以收束意念，让 78 张牌重新排列出当下的共鸣。
-                      </p>
-                    </div>
-                  </div>
-                </NextLink>
-              </motion.div>
-            </div>
-          </section>
+          <FinalGateSection />
         </div>
       </div>
     </main>

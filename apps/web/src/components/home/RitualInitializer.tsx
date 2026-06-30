@@ -12,8 +12,8 @@ import type {
 } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
 import { cn } from "@/lib/utils";
-import { drawCardsForSpread } from "@/lib/tarotDraw";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { useQuickDraw } from "@/hooks/useQuickDraw";
 
 const SENSITIVE_TERM_REGEX = /(离|辞|投资|买|卖|生病|死|分手|必须|一定|到底|决定|怎么)/;
 const MAJOR_DECISION_TERM_REGEX =
@@ -21,6 +21,15 @@ const MAJOR_DECISION_TERM_REGEX =
 
 const spreads = getAllSpreads();
 const QUICK_DEFAULT_SPREAD = spreads.find((spread) => spread.id === "single") ?? spreads[0];
+
+const SUGGESTED_PROMPTS = [
+  "我最近在潜意识中抵触什么？",
+  "我现在真正需要看清的情绪是什么？",
+  "这段关系里，我忽略了什么真实张力？",
+  "面对这个选择，我最需要补齐哪类现实信息？",
+  "接下来的工作重心，我适合先聚焦在哪里？",
+  "我最近反复卡住的模式是什么？",
+];
 
 const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: string }> = [
   {
@@ -142,6 +151,7 @@ function getFocusCalibrationCopy(question: string) {
 
 export default function RitualInitializer() {
   const router = useRouter();
+  const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
   const {
     question,
     selectedSpread,
@@ -154,7 +164,6 @@ export default function RitualInitializer() {
     setAgentProfile,
     setDrawSource,
     clearContinuitySource,
-    completeRitual,
     startRitual,
   } = useReading();
 
@@ -166,7 +175,9 @@ export default function RitualInitializer() {
   const [showDecisionBoundaryModal, setShowDecisionBoundaryModal] = useState(false);
   const [decisionBoundaryAcknowledged, setDecisionBoundaryAcknowledged] = useState(false);
   const [pendingStartMode, setPendingStartMode] = useState<"ritual" | "quick" | null>(null);
+  const [navigationMode, setNavigationMode] = useState<"ritual" | "quick" | null>(null);
   const trimmedQuestion = question.trim();
+  const isNavigationPending = navigationMode !== null || isQuickDrawing;
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const focusCalibrationCopy = getFocusCalibrationCopy(trimmedQuestion);
   const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
@@ -176,7 +187,7 @@ export default function RitualInitializer() {
       : "先选择一个牌阵，让阅读容器决定我们从哪些角度观看你的问题。";
 
   const startPress = () => {
-    if (!question.trim() || !selectedSpread) return;
+    if (!question.trim() || !selectedSpread || isNavigationPending) return;
     setIsPressing(true);
     setProgress(0);
 
@@ -240,30 +251,20 @@ export default function RitualInitializer() {
       return;
     }
 
+    setNavigationMode("ritual");
     router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
   };
 
   const handleQuickStart = () => {
-    const targetSpread = selectedSpread ?? QUICK_DEFAULT_SPREAD;
-
-    if (!trimmedQuestion || !targetSpread) {
-      return;
-    }
-
-    const quickDrawnCards = drawCardsForSpread(targetSpread.positions);
-
-    if (quickDrawnCards.length !== targetSpread.positions.length) {
-      return;
-    }
-
-    setAgentProfile("lite");
-    setDrawSource("digital_random");
-    setSelectedSpread(targetSpread);
-    completeRitual(quickDrawnCards);
-    router.push("/reading");
+    setNavigationMode("quick");
+    performQuickDraw();
   };
 
   const requestStart = (mode: "ritual" | "quick") => {
+    if (isNavigationPending) {
+      return;
+    }
+
     if (isMajorDecisionQuestion) {
       setPendingStartMode(mode);
       setShowDecisionBoundaryModal(true);
@@ -283,12 +284,19 @@ export default function RitualInitializer() {
 
   const selectedSpreadPositionCount =
     selectedSpread?.positions.length ?? QUICK_DEFAULT_SPREAD?.positions.length ?? 1;
-  const startButtonDisabled = !trimmedQuestion || !selectedSpread;
-  const startButtonLabel = isPressing
+  const startButtonDisabled = !trimmedQuestion || !selectedSpread || isNavigationPending;
+  const quickButtonDisabled = !trimmedQuestion || isNavigationPending;
+  const startButtonLabel = navigationMode === "ritual"
+    ? drawSource === "offline_manual"
+      ? "正在进入录入..."
+      : "正在进入仪式..."
+    : isPressing
     ? "正在收束意图..."
     : drawSource === "offline_manual"
       ? "长按开始录入"
       : "长按开始仪式";
+  const quickButtonLabel =
+    navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "快速解读";
   const ctaDescription = `跳过仪式会使用${selectedSpread?.name ?? QUICK_DEFAULT_SPREAD?.name ?? "单牌启示"}生成轻量初读；安全边界与完整流程一致。`;
 
   return (
@@ -354,13 +362,13 @@ export default function RitualInitializer() {
         </div>
       ) : null}
 
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
+      <div className="grid min-w-0 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/80 p-3.5 shadow-sm lg:p-4"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/80 p-3.5 shadow-sm lg:p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -383,6 +391,19 @@ export default function RitualInitializer() {
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
+
+          <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 hide-scrollbar">
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => setQuestion(prompt)}
+                className="shrink-0 rounded-full border border-midnight-border bg-night/35 px-3 py-1.5 text-xs text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
 
           <div className="rounded-2xl border border-midnight-border-subtle bg-black/10 p-3">
             <div className="mb-2 flex items-center gap-2 text-text-inverse">
@@ -443,10 +464,10 @@ export default function RitualInitializer() {
               <button
                 type="button"
                 onClick={() => requestStart("quick")}
-                disabled={!trimmedQuestion}
+                disabled={quickButtonDisabled}
                 className="min-h-12 rounded-xl border border-midnight-border bg-midnight-panel px-5 py-3 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
               >
-                快速解读
+                {quickButtonLabel}
               </button>
             </div>
             <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-text-inverse-muted/70">
@@ -460,7 +481,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/70 p-3.5 shadow-sm lg:p-4"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/70 p-3.5 shadow-sm lg:p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -565,7 +586,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
-          className="flex min-h-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/60 p-3.5 shadow-sm lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
+          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/60 p-3.5 shadow-sm lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
         >
           <div>
             <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
@@ -705,15 +726,15 @@ export default function RitualInitializer() {
         <button
           type="button"
           onClick={() => requestStart("quick")}
-          disabled={!trimmedQuestion}
+          disabled={quickButtonDisabled}
           className="min-h-12 flex-1 rounded-xl border border-midnight-border bg-midnight-panel px-4 py-3 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
         >
-          快速解读
+          {quickButtonLabel}
         </button>
       </div>
 
       {showDecisionBoundaryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6 mobile-safe-bottom sm:px-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -723,12 +744,12 @@ export default function RitualInitializer() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-paper-border bg-paper p-8 shadow-2xl"
+            className="relative z-10 my-auto max-h-[calc(100dvh-3rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-paper-border bg-paper p-5 shadow-2xl sm:p-8"
           >
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-100 bg-red-50/50 text-red-500 sm:h-14 sm:w-14">
               <LegacyIcon name="warning" className="text-3xl" />
             </div>
-            <h3 className="mb-3 text-center font-serif text-2xl text-ink">
+            <h3 className="mb-3 text-center font-serif text-xl text-ink sm:text-2xl">
               重大现实决定前的校准
             </h3>
             <p className="text-center text-sm leading-relaxed text-text-body">
@@ -753,14 +774,14 @@ export default function RitualInitializer() {
                 type="button"
                 onClick={handleDecisionBoundaryConfirm}
                 disabled={!decisionBoundaryAcknowledged}
-                className="w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-12 w-full rounded-2xl bg-red-900/80 px-6 py-4 text-sm font-medium text-paper transition-all hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 确认现实边界并继续
               </button>
               <button
                 type="button"
                 onClick={closeDecisionBoundaryModal}
-                className="w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
+                className="min-h-12 w-full rounded-2xl border border-paper-border bg-transparent px-6 py-4 text-sm font-medium text-text-muted transition-all hover:bg-paper-raised"
               >
                 返回修改问题
               </button>

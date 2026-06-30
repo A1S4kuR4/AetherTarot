@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireBetaTesterAccess } from "@/server/beta/access";
+import {
+  E2E_ACCESS_BYPASS_HEADER,
+  isE2eAccessBypassEnabled,
+  requireBetaTesterAccess,
+} from "@/server/beta/access";
 import { getClientIpHash } from "@/server/beta/ip";
 import { isReadingServiceError, ReadingServiceError } from "@/server/reading/errors";
 
@@ -11,6 +15,7 @@ const feedbackLabelSchema = z.enum([
   "template_like",
   "too_agreeable",
   "helpful",
+  "could_be_better",
 ]);
 
 const feedbackPayloadSchema = z.object({
@@ -35,6 +40,14 @@ export async function POST(request: Request) {
   try {
     const parsedPayload = feedbackPayloadSchema.parse(payload);
     const tester = await requireBetaTesterAccess();
+    const shouldSkipPersistence = isE2eAccessBypassEnabled(
+      request.headers.get(E2E_ACCESS_BYPASS_HEADER),
+    );
+
+    if (shouldSkipPersistence) {
+      return Response.json({ ok: true });
+    }
+
     const adminClient = createAdminClient();
 
     if (!adminClient) {

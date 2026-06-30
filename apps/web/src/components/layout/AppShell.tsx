@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, m, LazyMotion, domAnimation } from "motion/react";
 import { usePathname } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -15,32 +16,76 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isMidnight = MIDNIGHT_ROUTES.includes(pathname);
 
   return (
     <ReadingProvider>
-      <div
-        className={
-          isMidnight ? "midnight-surface min-h-screen" : "paper-surface min-h-screen"
-        }
-      >
-        <Topbar isMidnight={isMidnight} />
-        <Sidebar />
+      <RouteShell key={pathname} pathname={pathname}>
+        {children}
+      </RouteShell>
+    </ReadingProvider>
+  );
+}
 
+function RouteShell({
+  children,
+  pathname,
+}: {
+  children: React.ReactNode;
+  pathname: string;
+}) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [shouldReduceRouteMotion, setShouldReduceRouteMotion] = useState(false);
+  const isMidnight = MIDNIGHT_ROUTES.includes(pathname);
+
+  useEffect(() => {
+    const mobileMedia = window.matchMedia("(max-width: 767px)");
+    const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setShouldReduceRouteMotion(mobileMedia.matches || reducedMotionMedia.matches);
+    };
+
+    update();
+    mobileMedia.addEventListener("change", update);
+    reducedMotionMedia.addEventListener("change", update);
+
+    return () => {
+      mobileMedia.removeEventListener("change", update);
+      reducedMotionMedia.removeEventListener("change", update);
+    };
+  }, []);
+
+  return (
+    <div
+      data-route-motion={shouldReduceRouteMotion ? "reduced" : "standard"}
+      className={
+        isMidnight ? "midnight-surface min-h-screen" : "paper-surface min-h-screen"
+      }
+    >
+      <Topbar
+        isMidnight={isMidnight}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onMobileMenuToggle={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+      />
+      <Sidebar
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
+
+      <LazyMotion features={domAnimation}>
         <main className="pt-16">
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              initial={shouldReduceRouteMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={shouldReduceRouteMotion ? { opacity: 1 } : { opacity: 0 }}
+              transition={shouldReduceRouteMotion ? { duration: 0 } : { duration: 0.25, ease: "easeOut" }}
             >
               {children}
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </main>
-      </div>
-    </ReadingProvider>
+      </LazyMotion>
+    </div>
   );
 }

@@ -21,11 +21,20 @@ import type {
   Spread,
   StructuredReading,
 } from "@aethertarot/shared-types";
+import {
+  buildReadingDraftSnapshot,
+  parseReadingDraftSnapshot,
+  READING_DRAFT_STORAGE_KEY,
+} from "@/lib/reading-draft-storage";
+import { fetchJsonWithTimeout } from "@/lib/fetch-json-with-timeout";
 
-const HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
-const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v2";
+const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
+const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
+const READING_REQUEST_TIMEOUT_MS = 45_000;
+const READING_REQUEST_TIMEOUT_MESSAGE =
+  "解读生成等待超时。请检查网络后重新尝试；刚才的牌阵还在，可以直接重试。";
 const EMPTY_SOBER_GATE: SoberGateState = {
   readingId: null,
   input: "",
@@ -73,7 +82,7 @@ type ReadingContextValue = {
   continueFromHistoryReading: (reading: ReadingHistoryEntry) => boolean;
   clearContinuitySource: () => void;
   resetReading: () => void;
-  updateHistoryNotes: (id: string, notes: string) => void;
+  updateHistoryNotes: (id: string, notes: string) => Promise<void>;
 };
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
@@ -81,10 +90,6 @@ const ReadingContext = createContext<ReadingContextValue | null>(null);
 type HydrationAwareWindow = Window & {
   __AETHERTAROT_READING_HYDRATED__?: boolean;
 };
-
-function serializeHistory(history: ReadingHistoryEntry[]) {
-  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-}
 
 function toRequestDrawnCards(drawnCards: DrawnCard[]): ReadingRequestCardInput[] {
   return drawnCards.map((drawnCard) => ({
@@ -130,6 +135,68 @@ function buildContinuitySource(reading: StructuredReading): ContinuitySource | n
   };
 }
 
+function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
+  try {
+    const saved =
+      localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY)
+      ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+
+    if (saved) {
+      return JSON.parse(saved) as ReadingHistoryEntry[];
+    }
+  } catch {
+    // Ignore parse errors.
+  }
+  return null;
+}
+
+function writeLegacyLocalStorage(entries: ReadingHistoryEntry[]) {
+  try {
+    localStorage.setItem(LEGACY_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+  } catch {
+    // Storage can be unavailable.
+  }
+}
+
+function dedupeHistoryEntries(entries: ReadingHistoryEntry[]) {
+  const seen = new Set<string>();
+  const deduped: ReadingHistoryEntry[] = [];
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) {
+      continue;
+    }
+
+    seen.add(entry.id);
+    deduped.push(entry);
+  }
+
+  return deduped;
+}
+
+function readActiveReadingDraft() {
+  try {
+    return parseReadingDraftSnapshot(
+      sessionStorage.getItem(READING_DRAFT_STORAGE_KEY),
+      {
+        findSpreadById,
+        findCardById,
+      },
+    );
+  } catch {
+    return null;
+  }
+}
+
+function clearActiveReadingDraft() {
+  try {
+    sessionStorage.removeItem(READING_DRAFT_STORAGE_KEY);
+  } catch {
+    // Storage can be unavailable.
+  }
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
@@ -148,29 +215,119 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    try {
-      const savedHistory =
-        localStorage.getItem(HISTORY_STORAGE_KEY)
-        ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY);
+    let cancelled = false;
 
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory) as ReadingHistoryEntry[]);
-      }
-    } catch {
+    async function hydrate() {
       try {
-        localStorage.removeItem(HISTORY_STORAGE_KEY);
+        const response = await fetch("/api/readings");
+
+        if (cancelled) return;
+
+        if (response.ok) {
+          const payload = await response.json() as { readings?: ReadingHistoryEntry[] };
+          const serverReadings = payload.readings ?? [];
+
+          if (serverReadings.length > 0) {
+            setHistory(serverReadings);
+          } else {
+            const legacy = readLegacyLocalStorage();
+            if (legacy && legacy.length > 0) {
+              const dedupedLegacy = dedupeHistoryEntries(legacy);
+              try {
+                const migrateResponse = await fetch("/api/readings/migrate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(dedupedLegacy),
+                });
+
+                if (!cancelled && migrateResponse.ok) {
+                  setHistory(dedupedLegacy);
+                  try {
+                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY);
+                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
+                  } catch {
+                    // Storage can be unavailable.
+                  }
+                } else if (!cancelled) {
+                  setHistory(legacy);
+                }
+              } catch {
+                if (!cancelled) {
+                  setHistory(dedupedLegacy);
+                }
+              }
+            }
+          }
+        } else {
+          const legacy = readLegacyLocalStorage();
+          if (!cancelled && legacy) {
+            setHistory(dedupeHistoryEntries(legacy));
+          }
+        }
       } catch {
-        // Storage can be unavailable in restricted browser contexts.
+        const legacy = readLegacyLocalStorage();
+        if (!cancelled && legacy) {
+          setHistory(dedupeHistoryEntries(legacy));
+        }
+      } finally {
+        if (!cancelled) {
+          const restoredDraft = readActiveReadingDraft();
+
+          if (restoredDraft) {
+            setQuestionState(restoredDraft.question);
+            setSelectedSpreadState(restoredDraft.selectedSpread);
+            setAgentProfileState(restoredDraft.agentProfile);
+            setDrawSourceState(restoredDraft.drawSource);
+            setDrawnCards(restoredDraft.drawnCards);
+            setReading(null);
+            setErrorMessage(null);
+            setSafetyIntercept(null);
+            setSoberGate(EMPTY_SOBER_GATE);
+            interpretSignatureRef.current = null;
+          }
+
+          setIsHydrated(true);
+          (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
+        }
       }
-    } finally {
-      setIsHydrated(true);
-      (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
     }
+
+    hydrate();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = isHydrated;
   }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    if (!question.trim() || !selectedSpread || drawnCards.length === 0 || reading) {
+      clearActiveReadingDraft();
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        READING_DRAFT_STORAGE_KEY,
+        JSON.stringify(buildReadingDraftSnapshot({
+          question,
+          selectedSpread,
+          agentProfile,
+          drawSource,
+          drawnCards,
+        })),
+      );
+    } catch {
+      // Storage can be unavailable.
+    }
+  }, [agentProfile, drawSource, drawnCards, isHydrated, question, reading, selectedSpread]);
 
   const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
     if (!selectedSpread) {
@@ -178,22 +335,27 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const newEntry: ReadingHistoryEntry = {
+      id: nextReading.reading_id,
+      createdAt: new Date().toISOString(),
+      spreadId: selectedSpread.id,
+      drawSource,
+      drawnCards: requestDrawnCards,
+      reading: nextReading,
+    };
 
-    setHistory((currentHistory) => {
-      const nextHistory = [
-        {
-          id: nextReading.reading_id,
-          createdAt: new Date().toISOString(),
-          spreadId: selectedSpread.id,
-          drawSource,
-          drawnCards: requestDrawnCards,
-          reading: nextReading,
-        },
-        ...currentHistory,
-      ];
-
-      serializeHistory(nextHistory);
+    setHistory((current) => {
+      const nextHistory = [newEntry, ...current.filter((entry) => entry.id !== newEntry.id)];
+      writeLegacyLocalStorage(nextHistory);
       return nextHistory;
+    });
+
+    fetch("/api/readings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEntry),
+    }).catch(() => {
+      // Fire-and-forget; entry is already in local state.
     });
   }, [drawSource, drawnCards, selectedSpread]);
 
@@ -278,7 +440,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = requestSignature;
 
     try {
-      const response = await fetch("/api/reading", {
+      const { response, payload } = await fetchJsonWithTimeout<
+        StructuredReading | ReadingErrorPayload
+      >("/api/reading", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -292,9 +456,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           draw_source: drawSource,
           prior_session_capsule: continuitySource?.capsule ?? null,
         }),
+        timeoutMs: READING_REQUEST_TIMEOUT_MS,
+        timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
       });
-
-      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -313,6 +477,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const nextReading = payload as StructuredReading;
 
       setReading(nextReading);
+      clearActiveReadingDraft();
 
       if (!nextReading.requires_followup) {
         persistCompletedReading(nextReading);
@@ -370,7 +535,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = requestSignature;
 
     try {
-      const response = await fetch("/api/reading", {
+      const { response, payload } = await fetchJsonWithTimeout<
+        StructuredReading | ReadingErrorPayload
+      >("/api/reading", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -386,9 +553,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           initial_reading: reading,
           followup_answers: answers,
         }),
+        timeoutMs: READING_REQUEST_TIMEOUT_MS,
+        timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
       });
-
-      const payload = (await response.json()) as StructuredReading | ReadingErrorPayload;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -408,6 +575,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       const wasSoberUnlocked = soberGate.readingId === reading.reading_id && soberGate.isPassed;
 
       setReading(nextReading);
+      clearActiveReadingDraft();
 
       if (nextReading.sober_check && wasSoberUnlocked) {
         setSoberGate({
@@ -505,14 +673,24 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
-  const updateHistoryNotes = (id: string, notes: string) => {
+  const updateHistoryNotes = async (id: string, notes: string): Promise<void> => {
     setHistory((currentHistory) => {
       const nextHistory = currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
       );
-      serializeHistory(nextHistory);
+      writeLegacyLocalStorage(nextHistory);
       return nextHistory;
     });
+
+    const response = await fetch("/api/readings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reading_id: id, user_notes: notes }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save notes");
+    }
   };
 
   return (
