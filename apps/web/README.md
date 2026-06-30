@@ -40,7 +40,7 @@
 - `/api/reading` 与 `/api/encyclopedia/query` 允许未登录访客按 IP hash 每日各体验一次；已登录用户仍要求 Credentials session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
 - `/api/reading-feedback`、账号级历史接口与 `/admin` 继续要求 Credentials session 与 `beta_testers` 白名单
 - `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
-- schema 位于 `supabase/migrations/`；生产配额与保留规则见 `docs/70-ops/production-deployment.md`
+- schema 位于 `supabase/migrations/`；生产配额与保留规则由服务端环境变量和数据库 RPC 共同约束
 - 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth
 - 内测账号由管理员创建并分发，当前不开放自助注册、找回密码或邮件登录流程
 - Playwright e2e 有测试专用 beta access bypass：仅在非 production 且明确测试标记存在时生效，不属于产品访问能力

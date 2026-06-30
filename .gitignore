@@ -28,7 +28,8 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-apps/web/dev-server.*.log
+*.log
+apps/web/dev-server*.log
 
 # TypeScript
 *.tsbuildinfo
@@ -51,8 +52,13 @@ prototype/dist/
 # Local operator notes
 docs/
 memory/
-memory/*-health-report-*.md
-memory/knowledge-ingest-backlog.md
+outputs/
+scratch/
+old_home.tsx
+P1-P6-Full-Review-2026-05-21.md
+aether_tarot_*_设计文档.md
+apps/web/src/server/reading/docs/
+.agents/skills/aethertarot-server-deploy/
 
 # Copyright-sensitive source materials
 knowledge/raw/*
