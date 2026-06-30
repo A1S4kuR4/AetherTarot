@@ -49,6 +49,8 @@ prototype/dist/
 .claude/settings.local.json
 
 # Local operator notes
+docs/
+memory/
 memory/*-health-report-*.md
 memory/knowledge-ingest-backlog.md
 
