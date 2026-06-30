@@ -1,50 +1,50 @@
 # AetherTarot Agent
 
-AetherTarot is a reflective tarot reading agent built around structured output, safety boundaries, and a Next.js reading experience.
+AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验为核心的反思式塔罗智能体项目。
 
-The product goal is not deterministic fortune telling. It uses tarot language as a narrative and reflective interface: questions are interpreted through spread positions, card evidence, synthesis, and gentle next-step prompts.
+本项目的目标不是提供确定性预言，而是把塔罗作为一种叙事与反思界面：用户的问题会被放入牌阵位置、牌面证据、综合推断和温和的行动提示中理解。
 
-## Online Experience
+## 在线体验
 
-Production beta is available at [https://aethertarot.cn/](https://aethertarot.cn/).
+生产内测入口：[https://aethertarot.cn/](https://aethertarot.cn/)
 
-Guest and tester quotas are enforced at runtime. Logged-in beta users are managed through the invite-only Credentials flow.
+游客与内测账号额度由运行时服务控制。已登录用户通过邀请制 Credentials 流程管理。
 
-## What Is In This Repository
+## 仓库内容
 
-- `apps/web`: the active Next.js app, including reading flow, encyclopedia, history, login, admin, and API routes.
-- `packages/domain-tarot`: runtime tarot deck and spread access.
-- `packages/prompting`: prompt and provider assembly for structured readings.
-- `packages/shared-types`: shared reading, history, card, and spread contracts.
-- `knowledge`: governed runtime tarot knowledge used by encyclopedia and retrieval paths.
-- `data`: card and spread source data consumed by the app.
-- `scripts`: repository maintenance and asset validation utilities.
-- `.agents/skills`: public repo-local agent skills that are safe to share.
+- `apps/web`：当前唯一活跃的 Next.js 应用，包含 reading 流程、百科、历史、登录、后台和 API routes。
+- `packages/domain-tarot`：运行时塔罗牌组与牌阵访问层。
+- `packages/prompting`：结构化解读的 prompt 与 provider 组装逻辑。
+- `packages/shared-types`：reading、history、card、spread 等共享类型契约。
+- `knowledge`：受治理的运行时塔罗知识，用于百科和检索路径。
+- `data`：应用消费的牌组与牌阵源数据。
+- `scripts`：仓库维护和资产校验脚本。
+- `.agents/skills`：可公开分享的 repo-local agent skills。
 
-Local planning notes, operational work logs, generated reports, scratch files, private deployment instructions, and long-form internal docs are intentionally excluded from the public repository.
+本地计划、运维 work log、生成报告、scratch 文件、私有部署说明和长篇内部文档不会进入公开仓库。
 
-## Runtime Capabilities
+## 当前能力
 
-The current app supports:
+当前应用支持：
 
-- single-card, holy triangle, four-aspects, seven-card, and Celtic cross spreads
-- structured reading output through `/api/reading`
-- safety hard stops and sober-check responses for high-risk or decision-outsourcing cases
-- quick reading and full ritual reading paths
-- local history replay plus account-level completed reading storage
-- encyclopedia browsing backed by `knowledge/wiki`
-- optional OpenAI-compatible LLM providers behind server-side environment variables
-- invite-only beta access, quota tracking, telemetry, and lightweight feedback
+- 单牌、圣三角、四个面向、七张牌、赛尔特十字牌阵
+- 通过 `/api/reading` 返回结构化 reading 输出
+- 对高风险或决策外包问题提供安全阻断与 sober-check 响应
+- 快速解读路径与完整仪式路径
+- 本地历史回放与账号级 completed reading 存储
+- 基于 `knowledge/wiki` 的塔罗百科浏览
+- 通过服务端环境变量启用可选的 OpenAI-compatible LLM provider
+- 邀请制内测访问、额度控制、telemetry 与轻量反馈
 
-The current app does not include:
+当前应用不包含：
 
-- public self-registration
-- Supabase Auth magic-link login
-- long-term user profiling or memory merge
-- thread/session checkpoint persistence
-- payment, subscription, or public account management
+- 公开自助注册
+- Supabase Auth magic-link 登录
+- 长期用户画像或 memory merge
+- thread/session checkpoint 持久化
+- 支付、订阅或公开账号管理
 
-## App Architecture
+## 应用结构
 
 ```text
 AetherTarot/
@@ -67,21 +67,21 @@ AetherTarot/
 └─ README.md
 ```
 
-The active runtime lives in `apps/web`. The route surface includes:
+当前运行时位于 `apps/web`。主要页面与路由包括：
 
-- `/`: entry and returning-user journey
-- `/new`: question and spread selection
-- `/ritual`: shuffle and draw interaction
-- `/reveal`: card reveal
-- `/reading`: structured reading result
-- `/history`: completed reading replay
-- `/encyclopedia`: tarot knowledge browser
-- `/login`: invite-only Credentials login
-- `/admin`: beta operations dashboard for admin users
+- `/`：入口与回访用户 journey
+- `/new`：问题输入与牌阵选择
+- `/ritual`：洗牌与抽牌交互
+- `/reveal`：牌面揭示
+- `/reading`：结构化解读结果页
+- `/history`：completed reading 回放
+- `/encyclopedia`：塔罗知识百科
+- `/login`：邀请制 Credentials 登录
+- `/admin`：admin 用户的内测观测台
 
-## Development
+## 开发
 
-Use the workspace package scripts from the repository root:
+在仓库根目录执行 workspace 脚本：
 
 ```powershell
 npm ci
@@ -90,18 +90,18 @@ npm run lint -w @aethertarot/web
 npm run build -w @aethertarot/web
 ```
 
-For end-to-end checks:
+端到端检查：
 
 ```powershell
 npm run test:e2e -w @aethertarot/web
 ```
 
-## Public Repository Hygiene
+## 公开仓库边界
 
-Do not commit secrets, environment files, test account credentials, private deployment details, generated reports, scratch experiments, or local work logs.
+不要提交 secrets、环境变量文件、测试账号凭据、私有部署细节、生成报告、scratch 实验或本地 work log。
 
-The public repository keeps product/runtime code and governed runtime knowledge. Private project notes and operator procedures should stay local.
+公开仓库只保留产品运行时代码和受治理的运行时知识。私人项目笔记与操作者流程应保留在本地。
 
-## Disclaimer
+## 免责声明
 
-AetherTarot is for AI product exploration and reflective entertainment. Tarot readings do not replace medical, legal, financial, psychological, or other professional advice.
+AetherTarot 仅用于 AI 产品探索与反思式娱乐。塔罗解读不能替代医疗、法律、财务、心理或其他专业建议。
