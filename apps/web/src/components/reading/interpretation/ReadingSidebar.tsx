@@ -1,59 +1,35 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { DrawSource, Spread } from "@aethertarot/shared-types";
+import type { ReadingNavItem } from "./constants";
 
 interface ReadingSidebarProps {
-  spread: Spread;
-  drawSource: DrawSource;
+  spreadName: string;
+  navItems: readonly ReadingNavItem[];
 }
 
-export function ReadingSidebar({ spread, drawSource }: ReadingSidebarProps) {
-  const steps = [
-    "提问",
-    drawSource === "offline_manual" ? "录入" : "仪式",
-    "揭示",
-    "解读",
-  ];
-
+export function ReadingSidebar({ spreadName, navItems }: ReadingSidebarProps) {
   return (
     <>
       <div className="reading-card">
-        <h4 className="mb-4 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-          解读流程
-        </h4>
-        <div className="space-y-3">
-          {steps.map((step, index) => (
-            <div
-              key={step}
-              className={cn("flex items-center gap-2.5", index < 3 && "opacity-40")}
-            >
-              <div
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  index === 3 ? "bg-terracotta" : "bg-paper-border",
-                )}
-              />
-              <span
-                className={cn(
-                  "font-sans text-xs",
-                  index === 3 && "font-medium text-terracotta",
-                )}
-              >
-                {step}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="reading-card">
-        <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-          使用牌阵：{spread.name}
-        </h4>
-        <p className="mt-2 font-serif text-sm italic leading-relaxed text-text-muted">
-          {spread.description}
+        <p className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+          阅读导航
         </p>
+        <h4 className="mt-1 font-serif text-lg text-ink">使用牌阵：{spreadName}</h4>
+        <nav
+          className="mt-5 space-y-2"
+          aria-label="解读阅读导航"
+          data-testid="desktop-reading-nav"
+        >
+          {navItems.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className="block rounded-full border border-paper-border bg-paper px-4 py-2.5 text-sm font-medium text-text-muted transition hover:border-terracotta/30 hover:text-terracotta"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
       </div>
 
       <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">

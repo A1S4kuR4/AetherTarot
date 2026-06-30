@@ -41,7 +41,7 @@ export default function CardImage({
       priority={priority}
       loading={priority ? undefined : loading}
       className={cn(
-        "block aspect-[1/1.7] w-full object-cover",
+        "block aspect-[1/1.7] w-full object-contain",
         isReversed && "rotate-180",
         className,
       )}

@@ -15,7 +15,10 @@ export function BoundaryNote({ safetyNote, confidenceNote }: BoundaryNoteProps) 
   }
 
   return (
-    <section className="scroll-mt-32 rounded-2xl border border-terracotta/20 bg-[#F4F1EE] p-5 shadow-inner ring-1 ring-inset ring-terracotta/10 md:p-6">
+    <section
+      id="reading-boundary"
+      className="scroll-mt-32 rounded-2xl border border-terracotta/20 bg-[#F4F1EE] p-5 shadow-inner ring-1 ring-inset ring-terracotta/10 md:p-6"
+    >
       <div className="flex items-center gap-3 border-b border-terracotta/20 pb-3">
         <LegacyIcon name="info" className="text-terracotta/80" />
         <div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
 import CardImage from "@/components/ui/CardImage";
 import type { DrawnCard, ReadingCardResult } from "@aethertarot/shared-types";
@@ -60,7 +61,14 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-serif text-xl text-ink">{card.name}</h3>
+                    <h3 className="font-serif text-xl text-ink">
+                      <Link
+                        href={`/encyclopedia?card=${encodeURIComponent(card.card_id)}`}
+                        className="underline-offset-4 transition hover:text-terracotta hover:underline"
+                      >
+                        {card.name}
+                      </Link>
+                    </h3>
                     <p className="text-sm text-text-muted">{card.english_name}</p>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">

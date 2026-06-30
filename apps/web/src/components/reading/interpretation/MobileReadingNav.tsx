@@ -1,6 +1,6 @@
 "use client";
 
-import { MOBILE_READING_NAV_ITEMS } from "./constants";
+import { READING_NAV_ITEMS } from "./constants";
 
 export function MobileReadingNav() {
   return (
@@ -10,7 +10,7 @@ export function MobileReadingNav() {
       aria-label="解读分段导航"
     >
       <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-        {MOBILE_READING_NAV_ITEMS.map((item) => (
+        {READING_NAV_ITEMS.map((item) => (
           <a
             key={item.id}
             href={`#${item.id}`}

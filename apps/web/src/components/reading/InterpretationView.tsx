@@ -33,6 +33,7 @@ import { SoberCheckGate } from "./interpretation/SoberCheckGate";
 import type { FeedbackLabel } from "./interpretation/constants";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
+import { READING_NAV_ITEMS } from "./interpretation/constants";
 
 function getLeadSentence(value: string, fallbackKeywords: string[]) {
   const normalized = value.replace(/\s+/g, " ").trim();
@@ -440,7 +441,10 @@ export default function InterpretationView() {
   return (
     <ReadingLayout
       sidebar={
-        <ReadingSidebar spread={selectedSpread} drawSource={drawSource} />
+        <ReadingSidebar
+          spreadName={selectedSpread.name}
+          navItems={READING_NAV_ITEMS}
+        />
       }
     >
       <ReadingHero
@@ -496,13 +500,6 @@ export default function InterpretationView() {
           >
             <MobileReadingNav />
 
-            <SpreadHeroGrid
-              drawnCards={drawnCards}
-              positionNames={selectedSpread.positions.map(
-                (position) => position.name,
-              )}
-            />
-
             {coreQuickRead ? (
               <CoreMessageCard
                 quickRead={coreQuickRead}
@@ -510,10 +507,17 @@ export default function InterpretationView() {
               />
             ) : null}
 
+            <SpreadHeroGrid
+              drawnCards={drawnCards}
+              positionNames={selectedSpread.positions.map(
+                (position) => position.name,
+              )}
+            />
+
             <EvidencePanel
               question={question}
               reading={reading}
-              drawnCards={drawnCards}
+              spreadName={selectedSpread.name}
               trustPathCards={trustPathCards}
               spreadExperience={spreadExperience}
               continuitySource={continuitySource}
@@ -553,15 +557,6 @@ export default function InterpretationView() {
               />
             ) : null}
 
-            <BoundaryNote
-              safetyNote={reading.safety_note}
-              confidenceNote={reading.confidence_note}
-            />
-
-            {drawnCards.length > 0 ? (
-              <EnergyRadarSection values={radarValues} />
-            ) : null}
-
             {isCompletedReading ? (
               <FeedbackSection
                 labels={activeFeedbackLabels}
@@ -572,6 +567,15 @@ export default function InterpretationView() {
                 onNoteChange={handleFeedbackNoteChange}
                 onSubmit={() => void handleSubmitFeedback()}
               />
+            ) : null}
+
+            <BoundaryNote
+              safetyNote={reading.safety_note}
+              confidenceNote={reading.confidence_note}
+            />
+
+            {drawnCards.length > 0 ? (
+              <EnergyRadarSection values={radarValues} />
             ) : null}
 
             {currentHistoryEntry ? (

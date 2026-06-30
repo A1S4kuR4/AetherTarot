@@ -7,13 +7,20 @@ import { motion } from "motion/react";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
+import type {
+  CardWikiSummary,
+  EncyclopediaKnowledgeCounts,
+} from "@/server/encyclopedia/wiki-summary";
+import { resolveInitialCardId } from "@/lib/encyclopedia/card-selection";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import EncyclopediaQuestionPanel from "@/components/encyclopedia/EncyclopediaQuestionPanel";
+import WikiContent from "@/components/encyclopedia/WikiContent";
 
 const tarotCards = getAllCards();
 
 type RuntimeFilter = "all" | "major" | "wands" | "cups" | "swords" | "pentacles";
+type ImagePaneMode = "auto" | "manual-expanded" | "manual-collapsed";
 
 const FILTERS: Array<{
   id: RuntimeFilter;
@@ -58,6 +65,20 @@ function getFilterCount(filterId: RuntimeFilter) {
   ).length;
 }
 
+function resolveCardById(cardId: string | null | undefined) {
+  const resolvedCardId = resolveInitialCardId({
+    requestedCardId: cardId,
+    fallbackCardId: tarotCards[0].id,
+    knownCardIds: tarotCards.map((card) => card.id),
+  });
+
+  return tarotCards.find((card) => card.id === resolvedCardId) ?? tarotCards[0];
+}
+
+function isMobileViewport() {
+  return typeof window !== "undefined" && window.innerWidth < 1024;
+}
+
 function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) {
   const [columns, setColumns] = useState(4);
 
@@ -87,24 +108,35 @@ function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) 
 
 export default function EncyclopediaView({
   coverage,
+  cardWikiPages,
+  initialCardId,
   isQuestionEnabled,
+  knowledgeCounts,
 }: {
   coverage: EncyclopediaCoverageSummary;
+  cardWikiPages: CardWikiSummary[];
+  initialCardId: string | null;
   isQuestionEnabled: boolean;
+  knowledgeCounts: EncyclopediaKnowledgeCounts;
 }) {
-  const [selectedCard, setSelectedCard] = useState<TarotCard>(tarotCards[0]);
+  const [selectedCard, setSelectedCard] = useState<TarotCard>(() => resolveCardById(initialCardId));
   const [runtimeFilter, setRuntimeFilter] = useState<RuntimeFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const detailRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const columnsPerRow = useColumnsPerRow(gridRef);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [imagePaneMode, setImagePaneMode] = useState<ImagePaneMode>("auto");
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    if (imagePaneMode !== "auto") {
+      return;
+    }
+
     const y = e.currentTarget.scrollTop;
     if (y > 120 && !isCollapsed) setIsCollapsed(true);
     if (y <= 80 && isCollapsed) setIsCollapsed(false);
-  }, [isCollapsed]);
+  }, [imagePaneMode, isCollapsed]);
 
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
@@ -133,36 +165,71 @@ export default function EncyclopediaView({
 
   const isSelectedCardVisible = visibleCards.some((card) => card.id === selectedCard.id);
   const activeCard = isSelectedCardVisible ? selectedCard : visibleCards[0] ?? selectedCard;
+  const activeWikiPage = useMemo(
+    () => cardWikiPages.find((page) => page.cardId === activeCard.id) ?? null,
+    [activeCard.id, cardWikiPages],
+  );
+  const isImageCollapsed = imagePaneMode === "manual-expanded"
+    ? false
+    : imagePaneMode === "manual-collapsed"
+      ? true
+      : isCollapsed;
+
+  const syncCardQuery = useCallback((cardId: string) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("card", cardId);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   useEffect(() => {
     detailRef.current?.scrollTo({ top: 0 });
-    setIsCollapsed(false);
+    setIsCollapsed(isMobileViewport());
   }, [activeCard.id]);
+
+  useEffect(() => {
+    setSelectedCard(resolveCardById(initialCardId));
+    setImagePaneMode("auto");
+    setIsCollapsed(isMobileViewport());
+  }, [initialCardId]);
 
   const handleSelectCard = useCallback((card: TarotCard) => {
     setSelectedCard(card);
-    setIsCollapsed(false);
+    setImagePaneMode("auto");
+    setIsCollapsed(isMobileViewport());
+    syncCardQuery(card.id);
 
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+    if (isMobileViewport()) {
       window.requestAnimationFrame(() => {
-        const title = detailRef.current?.querySelector("[data-card-detail-title]");
+        const title =
+          detailRef.current?.querySelector("[data-wiki-detail-title]")
+          ?? detailRef.current?.querySelector("[data-card-detail-title]");
         (title ?? detailRef.current)?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
       });
     }
-  }, []);
+  }, [syncCardQuery]);
+
+  const handleToggleImagePane = useCallback(() => {
+    setImagePaneMode(isImageCollapsed ? "manual-expanded" : "manual-collapsed");
+    setIsCollapsed(!isImageCollapsed);
+  }, [isImageCollapsed]);
 
   return (
-    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col lg:flex-row h-[calc(100dvh-4rem)] overflow-hidden px-4 sm:px-6 lg:px-8 pt-4 gap-4 lg:gap-10">
+    <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-4 sm:px-6 lg:h-[calc(100dvh-4rem)] lg:flex-row lg:gap-10 lg:overflow-hidden lg:px-8">
       {/* Left Gallery Pane */}
       <motion.div
         layout
         initial={false}
+        data-testid="encyclopedia-image-pane"
         className={cn(
           "shrink-0 z-10 flex flex-col justify-center transition-all duration-300",
-          isCollapsed
+          isImageCollapsed
             ? "w-24 mx-auto lg:mx-0 lg:w-32 lg:h-auto lg:mt-4"
             : "w-44 sm:w-52 max-w-[260px] mx-auto lg:w-5/12 h-auto lg:h-full pb-2 lg:pb-8"
         )}
@@ -171,26 +238,36 @@ export default function EncyclopediaView({
           layout
           className={cn(
             "relative overflow-hidden border border-paper-border shadow-sm transition-all",
-            isCollapsed ? "aspect-[1/1.7] rounded-card-sm" : "aspect-[1/1.7] rounded-card-md"
+            isImageCollapsed ? "aspect-[1/1.7] rounded-card-sm" : "aspect-[1/1.7] rounded-card-md"
           )}
         >
           <Image
             src={activeCard.imageUrl}
             alt={activeCard.name}
             fill
-            sizes={isCollapsed ? "128px" : "(min-width: 1024px) 40vw, 100vw"}
+            sizes={isImageCollapsed ? "128px" : "(min-width: 1024px) 40vw, 100vw"}
             quality={80}
             priority
+            loading="eager"
             className="h-full w-full object-cover"
           />
         </motion.div>
+        <button
+          type="button"
+          onClick={handleToggleImagePane}
+          aria-pressed={!isImageCollapsed}
+          className="mt-2 inline-flex min-h-9 items-center justify-center rounded-full border border-paper-border bg-paper px-3 text-xs font-medium text-text-muted shadow-sm lg:hidden"
+        >
+          {isImageCollapsed ? "展开牌图" : "收起牌图"}
+        </button>
       </motion.div>
 
       {/* Right Content Pane */}
       <motion.div 
         layout 
         onScroll={handleScroll}
-        className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar flex flex-col gap-6 lg:gap-8 lg:pr-4 pb-12"
+        data-testid="encyclopedia-content-pane"
+        className="flex min-w-0 flex-1 flex-col gap-6 pb-12 lg:h-full lg:gap-8 lg:overflow-y-auto lg:pr-4 custom-scrollbar"
       >
         <header className="shrink-0 mt-2 lg:mt-0">
           <h1 className="mb-1 font-serif text-3xl font-semibold text-ink md:text-4xl">
@@ -207,18 +284,14 @@ export default function EncyclopediaView({
           <div className="rounded-3xl border border-paper-border bg-paper-raised p-4 sm:p-5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center gap-2 text-terracotta mb-4">
               <LegacyIcon name="stacks" className="text-lg" />
-              <h2 className="font-serif text-base text-ink">覆度状态</h2>
+              <h2 className="font-serif text-base text-ink">收录状态</h2>
             </div>
-            <div className="flex gap-6">
-              <div>
-                <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted">Runtime</p>
-                <p className="font-serif text-xl text-ink mt-1">{coverage.runtimeCards} <span className="text-sm text-text-muted">/ 78</span></p>
-              </div>
-              <div>
-                <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted">Knowledge</p>
-                <p className="font-serif text-xl text-ink mt-1">{coverage.knowledgeCards} <span className="text-sm text-text-muted">/ 78</span></p>
-              </div>
-            </div>
+            <p className="font-serif text-xl leading-relaxed text-ink">
+              已收录 {coverage.knowledgeCards}/{coverage.runtimeCards} 张牌
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-text-muted">
+              {knowledgeCounts.concepts} 个核心概念 · {knowledgeCounts.spreads} 种牌阵
+            </p>
           </div>
 
           {/* Search & Filters */}
@@ -237,14 +310,17 @@ export default function EncyclopediaView({
                 className="min-h-10 w-full rounded-2xl border border-paper-border bg-paper py-2 pl-10 pr-4 text-sm text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
               />
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div
+              data-testid="encyclopedia-filter-list"
+              className="flex flex-wrap gap-2"
+            >
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
                   type="button"
                   onClick={() => setRuntimeFilter(filter.id)}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-[11px] transition-all",
+                    "min-h-10 rounded-full border px-3 py-2 text-xs leading-none transition-all",
                     runtimeFilter === filter.id
                       ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
                       : "border-paper-border bg-paper text-text-muted hover:text-ink"
@@ -261,7 +337,7 @@ export default function EncyclopediaView({
         <div
           ref={gridRef}
           data-testid="runtime-card-grid"
-          className="h-[240px] shrink-0 overflow-y-auto custom-scrollbar rounded-2xl border border-paper-border bg-paper/50 p-3"
+          className="shrink-0 overflow-visible rounded-2xl border border-paper-border bg-paper/50 p-3 lg:h-[240px] lg:overflow-y-auto custom-scrollbar"
         >
           {visibleCards.length > 0 ? (
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
@@ -401,6 +477,39 @@ export default function EncyclopediaView({
               ))}
             </ul>
           </div>
+
+          <section className="space-y-5 border-t border-paper-border pt-7">
+            <div>
+              <h3
+                data-wiki-detail-title
+                className="font-serif text-2xl text-ink"
+              >
+                深度百科
+              </h3>
+              <p className="mt-1 text-sm text-text-muted">
+                {activeWikiPage
+                  ? `${activeWikiPage.title} · 来源 ${activeWikiPage.sourceIds.join(" / ")}`
+                  : "这张牌的 wiki 条目尚未收录。"}
+              </p>
+            </div>
+            {activeWikiPage ? (
+              <div className="space-y-6">
+                {activeWikiPage.sections.map((section) => (
+                  <section
+                    key={`${activeWikiPage.cardId}-${section.heading}`}
+                    className="space-y-3"
+                  >
+                    <h4 className="font-serif text-xl text-ink">
+                      {section.heading}
+                    </h4>
+                    <div className="space-y-3">
+                      <WikiContent content={section.content} />
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : null}
+          </section>
         </article>
       </motion.div>
     </section>
