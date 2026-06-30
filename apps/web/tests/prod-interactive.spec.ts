@@ -179,7 +179,7 @@ async function expectReadingQuickReady(page: Page, timeout = 90000) {
     .poll(
       async () => {
         const quickSection = page.locator("#reading-quick").first();
-        const quickLabel = page.getByText("此刻的核心讯息").first();
+        const quickLabel = page.getByText("当下的关键启示").first();
         return (await quickSection.isVisible().catch(() => false))
           || (await quickLabel.isVisible().catch(() => false));
       },

@@ -174,7 +174,7 @@ async function expectReadingQuickReady(
     .poll(
       async () => {
         const quickSection = page.locator("#reading-quick").first();
-        const quickLabel = page.getByText("此刻的核心讯息").first();
+        const quickLabel = page.getByText("当下的关键启示").first();
         return (await quickSection.isVisible().catch(() => false))
           || (await quickLabel.isVisible().catch(() => false));
       },
@@ -610,8 +610,8 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeVisible();
     await expect(page.locator("#reading-feedback")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "看到什么" }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "在这个位置" }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "综合推断" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "它代表着..." }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "这意味着什么" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "串联在一起的故事" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "可以带走的思考" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "温柔的提醒" })).toBeVisible();

@@ -33,7 +33,7 @@ export function CoreMessageCard({ quickRead, presentationMode }: CoreMessageCard
           className="text-[14px] text-terracotta/70"
         />
         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta/80">
-          此刻的核心讯息
+          当下的关键启示
         </span>
       </div>
       <div className="space-y-6">
@@ -58,7 +58,7 @@ export function CoreMessageCard({ quickRead, presentationMode }: CoreMessageCard
           </div>
           <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
             <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-              请记住
+              一个小前提
             </p>
             <p className="mt-2 text-sm leading-relaxed text-text-body">
               {quickRead.boundary}

@@ -94,7 +94,7 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                     </div>
                     <div className="border-l-2 border-terracotta/20 pl-4">
                       <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                        在这个位置
+                        它代表着...
                       </h4>
                       <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
                         {card.position_meaning}
@@ -103,7 +103,7 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                   </div>
                   <div className="border-l-2 border-terracotta/40 bg-terracotta/5 py-3 pl-4 pr-3">
                     <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-terracotta opacity-80">
-                      综合推断
+                      这意味着什么
                     </h4>
                     <p className="font-serif text-base italic leading-[1.8] text-ink">
                       {card.interpretation}

@@ -69,7 +69,7 @@ export function FollowupAnswerFormSection({
   return (
     <section className="reading-card scroll-mt-32 border-terracotta/30 bg-terracotta/5">
       <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-        校准
+        补充现实细节
       </p>
       <h2 className="mt-1 font-serif text-2xl text-ink">回答后进入整合深读</h2>
       <p className="mt-3 text-sm leading-relaxed text-text-body">

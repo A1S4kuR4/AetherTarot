@@ -85,7 +85,7 @@ export function EvidencePanel({
   return (
     <CollapsibleSection
       id="reading-evidence"
-      kicker="解读依据"
+      kicker="背后的拆解逻辑"
       title="这个解读是怎么来的"
       defaultOpen={false}
       collapsedHint={collapsedHint}
