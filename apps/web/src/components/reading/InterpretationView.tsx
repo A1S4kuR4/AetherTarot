@@ -34,7 +34,6 @@ import type { FeedbackLabel } from "./interpretation/constants";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
 import { READING_NAV_ITEMS } from "./interpretation/constants";
-
 import { getLeadSentence, uniqueStrings } from "./interpretation/utils";
 
 interface TrustPathCard extends ReadingCardResult {

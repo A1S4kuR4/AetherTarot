@@ -94,7 +94,7 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                           ))}
                         </div>
                       ) : (
-                        <p className="mt-2 font-sans text-xs text-text-muted italic">暂无线索</p>
+                        <p className="mt-2 font-sans text-xs text-text-muted">暂无线索</p>
                       )}
                     </div>
                     <div className="border-l-2 border-terracotta/20 pl-4">

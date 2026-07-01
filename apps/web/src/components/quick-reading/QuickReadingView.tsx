@@ -103,9 +103,7 @@ export default function QuickReadingView() {
     }
 
     return {
-      core:
-        getLeadSentence(reading.synthesis, keywords)
-        || `这次解读的核心落在${keywords.join("。")}。`,
+      core: getLeadSentence(reading.synthesis, keywords),
       keywords,
       action:
         reading.reflective_guidance[0]

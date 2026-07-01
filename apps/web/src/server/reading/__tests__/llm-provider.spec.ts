@@ -85,7 +85,7 @@ describe("llm provider baseline", () => {
     expect(prompt.user).toMatch(/Question: 我该如何看待当前的职业选择/);
     expect(prompt.user).toMatch(/Follow-up questions must be anchored/);
     expect(prompt.user).toMatch(/Follow-up questions must be distinct/);
-    expect(prompt.user).toMatch(/Themes should be plain, everyday language/);
+    expect(prompt.user).toMatch(/Themes should be plain, compact, and insight-bearing/);
     expect(prompt.user).toMatch(/Do not state what the other person secretly feels/);
   });
 
