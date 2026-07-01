@@ -35,26 +35,7 @@ import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
 import { READING_NAV_ITEMS } from "./interpretation/constants";
 
-function getLeadSentence(value: string, fallbackKeywords: string[]) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-
-  if (!normalized) {
-    return `这次重点落在：${fallbackKeywords.join("、")}。`;
-  }
-
-  const match = normalized.match(/^.+?[。！？!?]/);
-  const sentence = match?.[0] ?? normalized;
-
-  if (sentence.length <= 44) {
-    return sentence;
-  }
-
-  return `这次重点落在：${fallbackKeywords.join("、")}。`;
-}
-
-function uniqueStrings(values: string[]) {
-  return [...new Set(values.filter(Boolean))];
-}
+import { getLeadSentence, uniqueStrings } from "./interpretation/utils";
 
 interface TrustPathCard extends ReadingCardResult {
   keywords: string[];
@@ -528,6 +509,8 @@ export default function InterpretationView() {
               drawnCards={drawnCards}
             />
 
+            <div className="my-10 border-t border-paper-border/40" />
+
             <SynthesisSection
               synthesis={reading.synthesis}
               presentationMode={reading.presentation_mode}
@@ -538,12 +521,15 @@ export default function InterpretationView() {
               presentationMode={reading.presentation_mode}
             />
 
-            <FollowupSection
-              readingId={reading.reading_id}
-              readingPhase={reading.reading_phase}
-              questions={reading.follow_up_questions}
-              presentationMode={reading.presentation_mode}
-            />
+            {!isInitialAwaitingFollowup && reading.follow_up_questions.length > 0 ? (
+              <FollowupSection
+                readingId={reading.reading_id}
+                readingPhase={reading.reading_phase}
+                questions={reading.follow_up_questions}
+                answers={reading.followup_answers}
+                presentationMode={reading.presentation_mode}
+              />
+            ) : null}
 
             {isInitialAwaitingFollowup ? (
               <FollowupAnswerFormSection
@@ -569,11 +555,6 @@ export default function InterpretationView() {
               />
             ) : null}
 
-            <BoundaryNote
-              safetyNote={reading.safety_note}
-              confidenceNote={reading.confidence_note}
-            />
-
             {drawnCards.length > 0 ? (
               <EnergyRadarSection values={radarValues} />
             ) : null}
@@ -586,6 +567,11 @@ export default function InterpretationView() {
                 onSave={handleSaveNotes}
               />
             ) : null}
+
+            <BoundaryNote
+              safetyNote={reading.safety_note}
+              confidenceNote={reading.confidence_note}
+            />
 
             <ReadingFooter onReset={handleResetReading} />
           </motion.div>

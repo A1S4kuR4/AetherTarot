@@ -33,7 +33,7 @@ export function ReadingSidebar({ spreadName, navItems }: ReadingSidebarProps) {
       </div>
 
       <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">
-        <p className="font-serif text-sm italic leading-relaxed text-text-muted">
+        <p className="font-serif text-sm leading-relaxed text-text-muted">
           真理并不是被强行规定的结论，而是从你的处境中慢慢浮现的方向感。
         </p>
       </div>

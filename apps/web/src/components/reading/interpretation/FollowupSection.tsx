@@ -1,12 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { PresentationMode } from "@aethertarot/shared-types";
+import type { PresentationMode, FollowupAnswer } from "@aethertarot/shared-types";
 
 interface FollowupSectionProps {
   readingId: string;
   readingPhase: "initial" | "final";
   questions: string[];
+  answers?: FollowupAnswer[] | null;
   presentationMode?: PresentationMode;
 }
 
@@ -14,6 +15,7 @@ export function FollowupSection({
   readingId,
   readingPhase,
   questions,
+  answers,
   presentationMode,
 }: FollowupSectionProps) {
   const isFinal = readingPhase === "final";
@@ -32,17 +34,28 @@ export function FollowupSection({
       <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
         {kicker}
       </p>
-      <h2 className="mt-1 font-serif text-2xl text-ink">{title}</h2>
-      <ul className="mt-4 space-y-3">
-        {questions.map((prompt, index) => (
-          <li
-            key={`${readingId}-followup-${index}`}
-            className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body"
-          >
-            {prompt}
-          </li>
-        ))}
-      </ul>
+      <h2 className="mt-1 font-serif text-xl md:text-2xl text-ink">{title}</h2>
+      <div className="mt-4 space-y-3">
+        {questions.map((prompt, index) => {
+          const matchingAnswer = answers?.find((a) => a.question === prompt) ?? answers?.[index];
+
+          return (
+            <div
+              key={`${readingId}-followup-${index}`}
+              className="rounded-xl border border-paper-border bg-paper px-5 py-3.5 text-base leading-relaxed text-text-body space-y-2.5"
+            >
+              <p className="font-serif text-sm font-medium text-text-muted opacity-90">
+                问题 {index + 1}：{prompt}
+              </p>
+              {isFinal && matchingAnswer?.answer ? (
+                <blockquote className="border-l-2 border-terracotta/30 bg-paper-raised/50 py-2 pl-4 pr-3 text-sm text-text-body not-italic rounded-r-lg">
+                  {matchingAnswer.answer}
+                </blockquote>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

@@ -25,7 +25,7 @@ export function ReadingHero({
       <h1 className="font-serif text-3xl font-semibold text-ink md:text-5xl">
         {phase === "initial" ? "初步解读" : "解读结果"}
       </h1>
-      <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base italic leading-relaxed text-text-muted">
+      <blockquote className="border-l-2 border-terracotta/30 py-2 pl-5 text-base leading-relaxed text-text-muted">
         这些牌面映射的是你当下的状态与可能性——不是定论，而是一面帮你看清方向的镜子。
       </blockquote>
 

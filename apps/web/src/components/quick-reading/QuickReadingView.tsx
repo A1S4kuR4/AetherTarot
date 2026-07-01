@@ -21,26 +21,7 @@ import {
 } from "@/components/reading/interpretation/constants";
 import { SingleCardAnalysisSection } from "./SingleCardAnalysisSection";
 
-function getLeadSentence(value: string, fallbackKeywords: string[]) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-
-  if (!normalized) {
-    return `这次重点落在：${fallbackKeywords.join("。")}。`;
-  }
-
-  const match = normalized.match(/^.+?[。！？!?]/);
-  const sentence = match?.[0] ?? normalized;
-
-  if (sentence.length <= 44) {
-    return sentence;
-  }
-
-  return `这次重点落在：${fallbackKeywords.join("。")}。`;
-}
-
-function uniqueStrings(values: string[]) {
-  return [...new Set(values.filter(Boolean))];
-}
+import { getLeadSentence, uniqueStrings } from "@/components/reading/interpretation/utils";
 
 export default function QuickReadingView() {
   const router = useRouter();

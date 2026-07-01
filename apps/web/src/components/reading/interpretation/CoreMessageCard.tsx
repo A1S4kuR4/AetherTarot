@@ -42,7 +42,7 @@ export function CoreMessageCard({ quickRead, presentationMode }: CoreMessageCard
             一句话看核心
           </p>
           <div className="max-w-[38rem]">
-            <h2 className="mt-2 font-serif text-2xl leading-[1.45] text-ink md:text-[28px]">
+            <h2 className="mt-2 font-serif text-2xl leading-[1.55] tracking-tight text-ink md:text-[28px]">
               {quickRead.core}
             </h2>
           </div>

@@ -348,7 +348,7 @@
     @apply text-text-accent;
   }
   .markdown-body blockquote {
-    @apply border-l-2 border-terracotta/30 pl-4 italic text-text-muted my-4;
+    @apply border-l-2 border-terracotta/30 pl-4 text-text-muted my-4;
   }
   /* ---- Scroll Snap (for narrative pages) ---- */
   .scroll-snap-container {

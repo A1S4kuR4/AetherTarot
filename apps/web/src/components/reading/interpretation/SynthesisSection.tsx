@@ -27,8 +27,8 @@ export function SynthesisSection({
       <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
         {kicker}
       </p>
-      <h2 className="mt-1 font-serif text-2xl text-ink">{title}</h2>
-      <p className="mt-4 text-base leading-[1.85] text-text-body">{synthesis}</p>
+      <h2 className="mt-1 font-serif text-2xl md:text-3xl text-ink">{title}</h2>
+      <p className="mt-4 font-serif text-[17px] leading-[1.85] text-text-body">{synthesis}</p>
     </section>
   );
 }
