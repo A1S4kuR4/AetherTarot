@@ -9,6 +9,7 @@ interface ReadingHeroProps {
   questionType: QuestionType | null;
   spreadName: string;
   isOffline: boolean;
+  hideQuestion?: boolean;
 }
 
 export function ReadingHero({
@@ -17,6 +18,7 @@ export function ReadingHero({
   questionType,
   spreadName,
   isOffline,
+  hideQuestion = false,
 }: ReadingHeroProps) {
   return (
     <header className="space-y-5">
@@ -27,27 +29,29 @@ export function ReadingHero({
         这些牌面映射的是你当下的状态与可能性——不是定论，而是一面帮你看清方向的镜子。
       </blockquote>
 
-      <div className="reading-card">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-              你的提问
-            </p>
-            <p className="mt-1.5 text-base leading-relaxed text-ink">
-              {`"${question}"`}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {questionType ? (
-              <span className="chip-accent text-[11px]">
-                {QUESTION_TYPE_LABELS[questionType]}
-              </span>
-            ) : null}
-            <span className="chip-warm text-[11px]">{spreadName}</span>
-            {isOffline ? <span className="chip-accent text-[11px]">线下录入</span> : null}
+      {hideQuestion ? null : (
+        <div className="reading-card">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
+                你的提问
+              </p>
+              <p className="mt-1.5 text-base leading-relaxed text-ink">
+                {`"${question}"`}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {questionType ? (
+                <span className="chip-accent text-[11px]">
+                  {QUESTION_TYPE_LABELS[questionType]}
+                </span>
+              ) : null}
+              <span className="chip-warm text-[11px]">{spreadName}</span>
+              {isOffline ? <span className="chip-accent text-[11px]">线下录入</span> : null}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }

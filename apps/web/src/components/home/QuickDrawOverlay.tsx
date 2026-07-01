@@ -6,29 +6,33 @@ import Image from "next/image";
 import type { DrawnCard } from "@aethertarot/shared-types";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import { getRevealCardImageUrl } from "@/lib/card-assets";
+import type { QuickAnalysis } from "@/lib/quickAnalysis";
 
 type Phase = "entering" | "card-back" | "flipping" | "revealed";
 
 type QuickDrawOverlayProps = {
   isOpen: boolean;
   drawnCard: DrawnCard | null;
+  quickAnalysis: QuickAnalysis | null;
   onClose: () => void;
-  onEnterReading: () => void;
+  onDeepReading: () => void;
 };
 
 export default function QuickDrawOverlay({
   isOpen,
   drawnCard,
+  quickAnalysis,
   onClose,
-  onEnterReading,
+  onDeepReading,
 }: QuickDrawOverlayProps) {
   return (
     <AnimatePresence>
       {isOpen && (
         <QuickDrawOverlayContent
           drawnCard={drawnCard}
+          quickAnalysis={quickAnalysis}
           onClose={onClose}
-          onEnterReading={onEnterReading}
+          onDeepReading={onDeepReading}
         />
       )}
     </AnimatePresence>
@@ -37,8 +41,9 @@ export default function QuickDrawOverlay({
 
 function QuickDrawOverlayContent({
   drawnCard,
+  quickAnalysis,
   onClose,
-  onEnterReading,
+  onDeepReading,
 }: Omit<QuickDrawOverlayProps, "isOpen">) {
   const [phase, setPhase] = useState<Phase>("entering");
 
@@ -233,25 +238,45 @@ function QuickDrawOverlayContent({
                     </div>
                   )}
 
-                  {/* Description excerpt */}
-                  <p className="mt-3 sm:mt-5 text-sm leading-relaxed text-text-inverse-muted">
-                    {card.description.length > 120
-                      ? card.description.slice(0, 120) + "……"
-                      : card.description}
-                  </p>
+                  {/* Quick local analysis */}
+                  {quickAnalysis && (
+                    <div className="mt-4 space-y-3 sm:mt-6">
+                      <p className="text-sm leading-relaxed text-text-inverse">
+                        {quickAnalysis.core}
+                      </p>
+                      <p className="text-sm leading-relaxed text-text-inverse-muted">
+                        {quickAnalysis.action}
+                      </p>
+                      <p className="text-xs leading-relaxed text-text-inverse-muted/70">
+                        {quickAnalysis.boundary}
+                      </p>
+                    </div>
+                  )}
 
-                  {/* Enter reading button */}
-                  <m.button
-                    type="button"
-                    onClick={onEnterReading}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.4 }}
-                    className="mt-4 sm:mt-8 inline-flex items-center gap-2 rounded-xl bg-terracotta px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-terracotta-hover hover:shadow-xl active:scale-[0.98]"
-                  >
-                    <span>进入解读</span>
-                    <LegacyIcon name="arrow_forward" className="text-base" />
-                  </m.button>
+                  {/* Action buttons */}
+                  <div className="mt-5 flex flex-col items-center gap-3 sm:mt-8 md:items-start">
+                    <m.button
+                      type="button"
+                      onClick={onDeepReading}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
+                      className="inline-flex items-center gap-2 rounded-xl bg-terracotta px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-terracotta-hover hover:shadow-xl active:scale-[0.98]"
+                    >
+                      <span>开启深度解读</span>
+                      <LegacyIcon name="arrow_forward" className="text-base" />
+                    </m.button>
+                    <m.button
+                      type="button"
+                      onClick={onClose}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6, duration: 0.4 }}
+                      className="text-sm text-text-inverse-muted underline-offset-4 transition-colors hover:text-text-inverse hover:underline"
+                    >
+                      我知道了
+                    </m.button>
+                  </div>
                 </m.div>
               )}
             </AnimatePresence>

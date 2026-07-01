@@ -6,6 +6,7 @@ import { m } from "motion/react";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type { DrawnCard } from "@aethertarot/shared-types";
 import { drawCardsForSpread } from "@/lib/tarotDraw";
+import { buildLocalQuickAnalysis, type QuickAnalysis } from "@/lib/quickAnalysis";
 import { useReading } from "@/context/ReadingContext";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import QuickDrawOverlay from "../QuickDrawOverlay";
@@ -25,6 +26,7 @@ export default function IntroSection() {
 
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [drawnCard, setDrawnCard] = useState<DrawnCard | null>(null);
+  const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
 
   const handleDrawClick = useCallback(() => {
@@ -40,16 +42,20 @@ export default function IntroSection() {
 
     if (cards.length !== singleSpread.positions.length || !cards[0]) return;
 
-    setDrawnCard(cards[0]);
+    const card = cards[0];
+
+    setDrawnCard(card);
+    setQuickAnalysis(buildLocalQuickAnalysis(card));
     setIsOverlayOpen(true);
   }, [isOverlayOpen, isNavigating]);
 
   const handleClose = useCallback(() => {
     setIsOverlayOpen(false);
     setDrawnCard(null);
+    setQuickAnalysis(null);
   }, []);
 
-  const handleEnterReading = useCallback(() => {
+  const handleDeepReading = useCallback(() => {
     if (isNavigating || !drawnCard) return;
 
     setIsNavigating(true);
@@ -65,7 +71,7 @@ export default function IntroSection() {
     setDrawSource("digital_random");
     setSelectedSpread(singleSpread);
     completeRitual([drawnCard]);
-    router.push("/reading");
+    router.push("/quick-reading");
   }, [
     isNavigating,
     drawnCard,
@@ -144,8 +150,9 @@ export default function IntroSection() {
       <QuickDrawOverlay
         isOpen={isOverlayOpen}
         drawnCard={drawnCard}
+        quickAnalysis={quickAnalysis}
         onClose={handleClose}
-        onEnterReading={handleEnterReading}
+        onDeepReading={handleDeepReading}
       />
     </>
   );
