@@ -404,9 +404,9 @@
     }
   }
 
-  @media (min-width: 1024px) and (min-height: 720px) {
+  @media (min-width: 1024px) and (min-height: 600px) {
     .new-reading-workspace {
-      height: calc(100dvh - 4rem);
+      height: calc(100vh - 4rem);
       max-height: calc(100vh - 4rem);
       min-height: 0;
       overflow: hidden;

@@ -297,12 +297,11 @@ export default function RitualInitializer() {
       : "长按开始仪式";
   const quickButtonLabel =
     navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "快速解读";
-  const ctaDescription = `跳过仪式会使用${selectedSpread?.name ?? QUICK_DEFAULT_SPREAD?.name ?? "单牌启示"}生成轻量初读；安全边界与完整流程一致。`;
 
   return (
     <div className="flex w-full max-w-[1500px] flex-col gap-2 pb-28 text-left lg:h-full lg:min-h-0 lg:pb-0">
       {(continuitySource || repeatedThemeNotice) ? (
-        <div className="grid shrink-0 gap-2 lg:max-h-[106px] lg:grid-cols-2 lg:overflow-y-auto">
+        <div className="grid shrink-0 gap-2 lg:max-h-[140px] lg:grid-cols-2 lg:overflow-y-auto">
           {continuitySource ? (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -362,7 +361,7 @@ export default function RitualInitializer() {
         </div>
       ) : null}
 
-      <div className="grid min-w-0 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
+      <div className="grid min-w-0 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,0.95fr)_minmax(420px,1.35fr)_minmax(250px,0.78fr)] lg:grid-rows-1 xl:grid-cols-[minmax(330px,0.95fr)_minmax(520px,1.45fr)_minmax(280px,0.8fr)]">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -370,7 +369,7 @@ export default function RitualInitializer() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-midnight-border bg-midnight-panel/80 p-3.5 shadow-sm lg:p-4"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <div>
               <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/60">
                 Intent
@@ -384,61 +383,63 @@ export default function RitualInitializer() {
             </span>
           </div>
 
-          <textarea
-            className="min-h-[104px] w-full resize-none rounded-2xl border border-midnight-border bg-night/45 px-4 py-3 font-sans text-base leading-relaxed text-text-inverse shadow-sm transition-all duration-200 placeholder:text-text-inverse-muted focus:border-terracotta/40 focus:outline-none focus:ring-2 focus:ring-terracotta/10 lg:min-h-[96px]"
-            placeholder="今天，你想向内心询问什么？"
-            rows={4}
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
+          <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto">
+            <textarea
+              className="min-h-[104px] w-full resize-none rounded-2xl border border-midnight-border bg-night/45 px-4 py-3 font-sans text-base leading-relaxed text-text-inverse shadow-sm transition-all duration-200 placeholder:text-text-inverse-muted focus:border-terracotta/40 focus:outline-none focus:ring-2 focus:ring-terracotta/10 lg:min-h-[96px]"
+              placeholder="今天，你想向内心询问什么？"
+              rows={4}
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+            />
 
-          <div
-            data-testid="suggested-prompt-list"
-            className="flex min-w-0 max-w-full flex-wrap items-center gap-2"
-          >
-            {SUGGESTED_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => setQuestion(prompt)}
-                className="min-h-11 max-w-full rounded-full border border-midnight-border bg-night/35 px-3 py-2 text-left text-xs leading-relaxed text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
-              >
-                {prompt}
-              </button>
-            ))}
+            <div
+              data-testid="suggested-prompt-list"
+              className="flex min-w-0 max-w-full flex-wrap items-center gap-2"
+            >
+              {SUGGESTED_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setQuestion(prompt)}
+                  className="min-h-11 max-w-full rounded-full border border-midnight-border bg-night/35 px-3 py-2 text-left text-xs leading-relaxed text-text-inverse-muted transition-colors hover:bg-midnight-panel hover:text-text-inverse"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-midnight-border-subtle bg-black/10 p-3">
+              <div className="mb-2 flex items-center gap-2 text-text-inverse">
+                <LegacyIcon name="center_focus_strong" className="text-[18px] text-indigo" />
+                <h3 className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-text-inverse-muted">
+                  焦点校准
+                </h3>
+              </div>
+              <p className="text-sm leading-relaxed text-text-inverse-muted">
+                {focusCalibrationCopy}
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div className="rounded-xl border border-midnight-border-subtle bg-white/[0.03] px-3 py-2.5">
+                  <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-indigo/80">
+                    更适合问
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-text-inverse-muted">
+                    我正在忽略什么？真实张力在哪？
+                  </p>
+                </div>
+                <div className="rounded-xl border border-midnight-border-subtle bg-white/[0.03] px-3 py-2.5">
+                  <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-terracotta/80">
+                    尽量别问
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-text-inverse-muted">
+                    他一定会怎样？塔罗能否替我确认答案？
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-midnight-border-subtle bg-black/10 p-3">
-            <div className="mb-2 flex items-center gap-2 text-text-inverse">
-              <LegacyIcon name="center_focus_strong" className="text-[18px] text-indigo" />
-              <h3 className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-text-inverse-muted">
-                焦点校准
-              </h3>
-            </div>
-            <p className="text-sm leading-relaxed text-text-inverse-muted">
-              {focusCalibrationCopy}
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <div className="rounded-xl border border-midnight-border-subtle bg-white/[0.03] px-3 py-2.5">
-                <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-indigo/80">
-                  更适合问
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-text-inverse-muted">
-                  我正在忽略什么？真实张力在哪？
-                </p>
-              </div>
-              <div className="rounded-xl border border-midnight-border-subtle bg-white/[0.03] px-3 py-2.5">
-                <p className="font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-terracotta/80">
-                  尽量别问
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-text-inverse-muted">
-                  他一定会怎样？塔罗能否替我确认答案？
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-auto hidden rounded-2xl border border-midnight-border bg-night/35 px-3 py-3 text-center lg:block">
+          <div className="hidden shrink-0 rounded-2xl border border-midnight-border bg-night/35 px-3 py-3 text-center lg:block">
             <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row lg:flex-col xl:flex-row">
               <motion.button
                 type="button"
@@ -473,9 +474,6 @@ export default function RitualInitializer() {
                 {quickButtonLabel}
               </button>
             </div>
-            <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-text-inverse-muted/70">
-              {ctaDescription}
-            </p>
           </div>
         </motion.section>
 
@@ -699,9 +697,6 @@ export default function RitualInitializer() {
       </div>
 
       <div className="ritual-cta-bar lg:hidden">
-        <p className="order-first w-full text-center text-[11px] leading-relaxed text-text-inverse-muted/75">
-          {ctaDescription}
-        </p>
         <motion.button
           type="button"
           onMouseDown={startPress}
