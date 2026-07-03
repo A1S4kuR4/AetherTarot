@@ -8,13 +8,16 @@ export function shuffleTarotDeck(cards: TarotCard[] = getAllCards()) {
 export function drawRandomCardForPosition(
   deck: TarotCard[],
   positionId: string,
+  options: { cardIndex?: number } = {},
 ): { drawnCard: DrawnCard | null; remainingDeck: TarotCard[] } {
   if (deck.length === 0) {
     return { drawnCard: null, remainingDeck: [] };
   }
 
-  const randomIndex = Math.floor(Math.random() * deck.length);
-  const card = deck[randomIndex];
+  const selectedIndex = typeof options.cardIndex === "number"
+    ? Math.min(Math.max(Math.trunc(options.cardIndex), 0), deck.length - 1)
+    : Math.floor(Math.random() * deck.length);
+  const card = deck[selectedIndex];
 
   if (!card) {
     return { drawnCard: null, remainingDeck: deck };
@@ -26,7 +29,7 @@ export function drawRandomCardForPosition(
       card,
       isReversed: Math.random() > 0.8,
     },
-    remainingDeck: deck.filter((_, index) => index !== randomIndex),
+    remainingDeck: deck.filter((_, index) => index !== selectedIndex),
   };
 }
 

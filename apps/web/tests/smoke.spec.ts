@@ -346,7 +346,7 @@ async function holdToStart(
   let completed = false;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    if (/\/(ritual|offline-draw)$/i.test(page.url())) {
+    if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
       return;
     }
 
@@ -359,7 +359,7 @@ async function holdToStart(
         page.getByRole("button", { name: /正在收束意图/i }),
       ).toBeVisible({ timeout: 3000 });
     } catch (error) {
-      if (/\/(ritual|offline-draw)$/i.test(page.url())) {
+      if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
         return;
       }
 
@@ -373,12 +373,12 @@ async function holdToStart(
 
     await page.waitForTimeout(durationMs);
 
-    if (/\/(ritual|offline-draw)$/i.test(page.url())) {
+    if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
       return;
     }
 
     completed = await Promise.race([
-      page.waitForURL(/\/(ritual|offline-draw)$/i, { timeout: 1000 })
+      page.waitForURL(/\/(ritual\/draw|offline-draw)$/i, { timeout: 1000 })
         .then(() => true)
         .catch(() => false),
       page
@@ -392,7 +392,7 @@ async function holdToStart(
       return;
     }
 
-    if (/\/(ritual|offline-draw)$/i.test(page.url())) {
+    if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
       return;
     }
 
@@ -597,7 +597,7 @@ test.describe("AetherTarot smoke flow", () => {
 
     await startReading(page, "我该如何看待当前的职业选择？", /圣三角/i);
 
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 3);
     await revealSpread(page);
     await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
@@ -638,7 +638,7 @@ test.describe("AetherTarot smoke flow", () => {
 
   test("completes a lite reading without a blocking follow-up", async ({ page }) => {
     await startReading(page, "我现在最该注意什么？", /单牌启示/i, /快速塔罗师/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -731,7 +731,7 @@ test.describe("AetherTarot smoke flow", () => {
     test.setTimeout(120000);
 
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -759,7 +759,7 @@ test.describe("AetherTarot smoke flow", () => {
     test.setTimeout(120000);
 
     await startReading(page, "今天我的运气怎样？", /单牌启示/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
     await enterReading(page);
@@ -805,7 +805,7 @@ test.describe("AetherTarot smoke flow", () => {
     test.setTimeout(120000);
 
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -844,7 +844,7 @@ test.describe("AetherTarot smoke flow", () => {
 
     await startReading(page, "我需要如何梳理接下来三个月的整体方向？", /赛尔特十字/i);
 
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 10);
     await revealSpread(page);
 
@@ -874,7 +874,7 @@ test.describe("AetherTarot smoke flow", () => {
   test("supports a full four-aspects reading flow", async ({ page }) => {
     await startReading(page, "我该如何理解眼前这次转向？", /四个面向/i);
 
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 4);
     await revealSpread(page);
 
@@ -905,7 +905,7 @@ test.describe("AetherTarot smoke flow", () => {
   test("supports a full seven-card reading flow", async ({ page }) => {
     await startReading(page, "这段变化接下来会怎样展开？", /七张牌/i);
 
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 7);
     await revealSpread(page);
 
@@ -942,7 +942,7 @@ test.describe("AetherTarot smoke flow", () => {
     test.setTimeout(120000);
 
     await startReading(page, "接下来一周我应该把重点放在哪里？", /单牌启示/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -1035,7 +1035,7 @@ test.describe("AetherTarot smoke flow", () => {
 
   test("shows a hard-stop intercept for crisis questions", async ({ page }) => {
     await startReading(page, "我是不是不该活下去了？", /单牌启示/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -1061,7 +1061,7 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByLabel(/我确认这次阅读只用于整理线索/i).check();
     await expect(decisionContinueButton).toBeEnabled();
     await decisionContinueButton.click();
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 1);
     await revealSpread(page);
 
@@ -1305,7 +1305,7 @@ test.describe("AetherTarot smoke flow", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await startReading(page, "这段变化接下来会怎样展开？", /七张牌/i);
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await expect(page.getByTestId("ritual-position-track")).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
@@ -1390,7 +1390,7 @@ test.describe("AetherTarot smoke flow", () => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await startReading(page, "我现在最需要看清什么？", /单牌启示/i);
 
-    await expect(page).toHaveURL(/\/ritual$/);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
     await expectDocumentFitsViewport(page);
     await expect(page.getByRole("heading", { name: "仪式" })).toBeInViewport();
     await expect(page.getByRole("button", { name: "洗牌" })).toBeInViewport();

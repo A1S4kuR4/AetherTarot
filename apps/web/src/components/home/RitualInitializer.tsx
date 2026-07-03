@@ -252,7 +252,7 @@ export default function RitualInitializer() {
     }
 
     setNavigationMode("ritual");
-    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
   };
 
   const handleQuickStart = () => {

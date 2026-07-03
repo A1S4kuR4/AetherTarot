@@ -75,6 +75,7 @@ type ReadingContextValue = {
   setAgentProfile: (profile: AgentProfile) => void;
   setDrawSource: (source: DrawSource) => void;
   startRitual: () => boolean;
+  startDailyRitual: (dailyQuestion: string, spreadId: string) => boolean;
   completeRitual: (cards: DrawnCard[]) => void;
   interpretReading: () => Promise<boolean>;
   submitFollowupAnswers: (answers: FollowupAnswer[]) => Promise<boolean>;
@@ -398,6 +399,20 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  const startDailyRitual = (dailyQuestion: string, spreadId: string) => {
+    const spread = findSpreadById(spreadId);
+    if (!spread || !dailyQuestion.trim()) {
+      return false;
+    }
+    setQuestionState(dailyQuestion.trim());
+    setSelectedSpreadState(spread);
+    setAgentProfileState(DEFAULT_AGENT_PROFILE);
+    setDrawSourceState(DEFAULT_DRAW_SOURCE);
+    setContinuitySource(null);
+    clearGeneratedState();
+    return true;
+  };
+
   const completeRitual = (cards: DrawnCard[]) => {
     interpretSignatureRef.current = null;
     setDrawnCards(cards);
@@ -715,6 +730,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         setAgentProfile,
         setDrawSource,
         startRitual,
+        startDailyRitual,
         completeRitual,
         interpretReading,
         submitFollowupAnswers,

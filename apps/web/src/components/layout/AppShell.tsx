@@ -8,7 +8,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import { ReadingProvider } from "@/context/ReadingContext";
 
 /** Routes that use Midnight Mode (dark immersive surface) */
-const MIDNIGHT_ROUTES = ["/ritual", "/reveal", "/new"];
+const MIDNIGHT_ROUTES = ["/ritual", "/ritual/draw", "/reveal", "/new"];
 
 export default function AppShell({
   children,

@@ -15,6 +15,7 @@ import LegacyIcon from "@/components/ui/LegacyIcon";
 import CardImage from "@/components/ui/CardImage";
 
 const DRAW_ANIMATION_MS = 1050;
+const VISIBLE_DECK_CARD_COUNT = 22;
 
 interface RectSnapshot {
   left: number;
@@ -31,6 +32,7 @@ interface DrawOverlayState {
   positionName: string;
   from: RectSnapshot;
   to: RectSnapshot;
+  initialRotate: number;
 }
 
 export default function RitualView() {
@@ -38,10 +40,13 @@ export default function RitualView() {
   const { question, selectedSpread, completeRitual, isHydrated } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
   const [isRevealing, setIsRevealing] = useState(false);
   const [isNavigatingToReveal, setIsNavigatingToReveal] = useState(false);
   const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
+  const [hoveredDeckIndex, setHoveredDeckIndex] = useState<number | null>(null);
+  const [extractingDeckIndex, setExtractingDeckIndex] = useState<number | null>(null);
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
   const revealScheduledRef = useRef(false);
@@ -89,7 +94,7 @@ export default function RitualView() {
   }
 
   const isComplete = drawnCards.length === selectedSpread.positions.length;
-  const canDraw = !isShuffling && !isComplete && deck.length > 0;
+  const canDraw = !isShuffling && !isDrawing && !isComplete && deck.length > 0;
   const nextPosition = selectedSpread.positions[drawnCards.length] ?? null;
 
   const handleShuffle = async () => {
@@ -110,19 +115,20 @@ export default function RitualView() {
     setIsShuffling(false);
   };
 
-  const handleDraw = async () => {
+  const handleDraw = async (params?: { cardIndex?: number; rect?: RectSnapshot; rotate?: number; targetElement?: HTMLElement }) => {
     const currentDrawnCards = drawnCardsRef.current;
     const currentDeck = deckRef.current;
 
     if (
       isShuffling ||
+      isDrawing ||
       currentDrawnCards.length >= selectedSpread.positions.length ||
       currentDeck.length === 0
     ) {
       return;
     }
 
-    setIsShuffling(true);
+    setIsDrawing(true);
 
     const nextPosition = selectedSpread.positions[currentDrawnCards.length];
     const { drawnCard, remainingDeck } = drawRandomCardForPosition(
@@ -131,50 +137,71 @@ export default function RitualView() {
     );
 
     if (!drawnCard || !nextPosition) {
-      setIsShuffling(false);
+      setIsDrawing(false);
       return;
     }
+
+    const cardIndex = params?.cardIndex ?? 0;
+    
+    // Phase 1: Radial Pop-Out (200ms)
+    setExtractingDeckIndex(cardIndex);
+
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
 
     const isMajorArcana = drawnCard.card.arcana.toLowerCase().startsWith("major");
     const slotRect = slotRefs.current[nextPosition.id]?.getBoundingClientRect();
     const deckRect = deckOriginRef.current?.getBoundingClientRect();
 
-    if (!slotRect || !deckRect) {
-      setIsShuffling(false);
+    if (!slotRect) {
+      setExtractingDeckIndex(null);
+      setIsDrawing(false);
       return;
     }
 
-    const startWidth = slotRect.width;
-    const startHeight = slotRect.height;
+    // Get exact rect of popped-out element if available
+    let startRect: RectSnapshot;
+    if (params?.targetElement) {
+      const rect = params.targetElement.getBoundingClientRect();
+      startRect = {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      };
+    } else if (params?.rect) {
+      startRect = params.rect;
+    } else {
+      const defaultWidth = slotRect.width;
+      const defaultHeight = slotRect.height;
+      startRect = {
+        left: (deckRect?.left ?? window.innerWidth / 2) + (deckRect?.width ?? 0) / 2 - defaultWidth / 2,
+        top: (deckRect?.top ?? window.innerHeight / 2) + (deckRect?.height ?? 0) / 2 - defaultHeight / 2,
+        width: defaultWidth,
+        height: defaultHeight,
+      };
+    }
 
+    // Phase 2: Fly to Slot (750ms)
     setDrawOverlay({
       key: Date.now(),
       drawnCard,
       remainingDeck,
       isMajorArcana,
       positionName: nextPosition.name,
-      from: {
-        left: deckRect.left + deckRect.width / 2 - startWidth / 2,
-        top: deckRect.top + deckRect.height / 2 - startHeight / 2,
-        width: startWidth,
-        height: startHeight,
-      },
+      from: startRect,
       to: {
         left: slotRect.left,
         top: slotRect.top,
         width: slotRect.width,
         height: slotRect.height,
       },
+      initialRotate: params?.rotate ?? 0,
     });
 
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, DRAW_ANIMATION_MS);
-    });
+    await new Promise((resolve) => window.setTimeout(resolve, DRAW_ANIMATION_MS));
 
-    const nextDrawnCards = [
-      ...currentDrawnCards,
-      drawnCard,
-    ];
+    // Phase 3: Settle & Re-balance Deck
+    const nextDrawnCards = [...currentDrawnCards, drawnCard];
 
     deckRef.current = remainingDeck;
     drawnCardsRef.current = nextDrawnCards;
@@ -184,7 +211,8 @@ export default function RitualView() {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         setDrawOverlay(null);
-        setIsShuffling(false);
+        setExtractingDeckIndex(null);
+        setIsDrawing(false);
       });
     });
 
@@ -203,7 +231,7 @@ export default function RitualView() {
   };
 
   return (
-    <section className="ritual-view-stage relative flex flex-col items-center px-4 pb-4 pt-4 md:px-6 lg:min-h-0">
+    <section className="ritual-view-stage relative flex h-[calc(100dvh-4rem)] w-full flex-col items-center justify-between overflow-hidden px-4 py-2 md:px-6 md:py-3">
       {drawOverlay ? (
         <motion.div
           key={drawOverlay.key}
@@ -212,7 +240,7 @@ export default function RitualView() {
             top: drawOverlay.from.top,
             width: drawOverlay.from.width,
             height: drawOverlay.from.height,
-            rotate: -10,
+            rotate: drawOverlay.initialRotate,
             scale: 1,
             opacity: 0.96,
           }}
@@ -221,7 +249,7 @@ export default function RitualView() {
             top: [drawOverlay.from.top, drawOverlay.to.top - 84, drawOverlay.to.top],
             width: drawOverlay.to.width,
             height: drawOverlay.to.height,
-            rotate: [-10, 6, 0],
+            rotate: [drawOverlay.initialRotate, drawOverlay.initialRotate * 0.4, 0],
             scale: [1, drawOverlay.isMajorArcana ? 1.16 : 1.1, 1],
             opacity: 1,
           }}
@@ -261,37 +289,33 @@ export default function RitualView() {
           </div>
         </motion.div>
       ) : null}
-      <div className="relative z-10 mb-1 flex w-full max-w-3xl flex-col items-center text-center">
-        <div className="mb-2 inline-flex items-center gap-2.5 rounded-full border border-midnight-border bg-midnight-panel px-4 py-1.5">
+            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center pt-1">
+        <div className="inline-flex items-center gap-2 rounded-full border border-midnight-border/60 bg-midnight-panel/80 px-4 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.2)] backdrop-blur-md">
           <span
             className={cn(
-              "h-1.5 w-1.5 rounded-full",
+              "h-1.5 w-1.5 rounded-full animate-pulse",
               isComplete ? "bg-success" : "bg-indigo",
             )}
           />
-          <span className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-inverse-muted">
-            {drawnCards.length} / {selectedSpread.positions.length} 张牌
+          <span className="font-serif text-sm font-medium tracking-wide text-text-inverse">
+            仪式 · {selectedSpread.name}
+          </span>
+          <span className="font-sans text-xs font-medium text-text-inverse-muted/70">
+            ({drawnCards.length}/{selectedSpread.positions.length})
           </span>
         </div>
-
-        <h1 className="mb-1 font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
-          仪式
-        </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-text-inverse-muted">
-          静下心来，专注于你的问题。随机会决定哪张牌出现，{selectedSpread.name} 会决定我们如何理解它。
-        </p>
       </div>
 
       <div
         data-testid="ritual-position-track"
-        className="relative z-60 mb-4 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-2 hide-scrollbar md:snap-none md:overflow-visible"
+        className="relative z-60 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-1 hide-scrollbar md:snap-none md:overflow-visible my-auto"
       >
-        <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-4 md:w-full md:flex-wrap md:justify-center md:gap-10">
+        <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-6 md:w-full md:flex-wrap md:justify-center md:gap-16">
           {selectedSpread.positions.map((position) => {
             const drawn = drawnCards.find((card) => card.positionId === position.id);
 
             return (
-              <div key={position.id} className="flex w-[86px] shrink-0 scroll-mx-4 snap-center flex-col items-center gap-3 md:w-[120px]">
+              <div key={position.id} className="flex w-[76px] shrink-0 scroll-mx-4 snap-center flex-col items-center gap-3 md:w-[108px]">
                 <div
                   ref={(node) => {
                     slotRefs.current[position.id] = node;
@@ -307,7 +331,7 @@ export default function RitualView() {
                     <CardImage
                       src={CARD_BACK_IMAGE}
                       alt="Tarot Back"
-                      sizes="(min-width: 768px) 120px, 86px"
+                      sizes="(min-width: 768px) 108px, 76px"
                       quality={50}
                     />
                   ) : (
@@ -330,7 +354,7 @@ export default function RitualView() {
         </div>
       </div>
 
-      <div className="relative z-50 mb-2 flex flex-wrap justify-center gap-4">
+      <div className="relative z-50 mb-1 flex flex-wrap justify-center gap-4">
         <button
           type="button"
           onClick={handleShuffle}
@@ -345,7 +369,7 @@ export default function RitualView() {
         </button>
         <button
           type="button"
-          onClick={handleDraw}
+          onClick={() => void handleDraw()}
           disabled={!canDraw}
           className="btn-secondary-dark"
         >
@@ -370,17 +394,28 @@ export default function RitualView() {
           ref={deckOriginRef}
           className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
         />
-        {Array.from({ length: 22 }).map((_, index) => {
-          const baseAngle = (index / 22) * 360;
+        {Array.from({ length: Math.min(deck.length, VISIBLE_DECK_CARD_COUNT) }).map((_, index) => {
+          const baseAngle = (index / VISIBLE_DECK_CARD_COUNT) * 360;
           const cutDirection = index % 2 === 0 ? 1 : -1;
           const packetOffset = index % 4;
           const shuffleX = cutDirection * (42 + packetOffset * 12);
           const shuffleY = -24 + packetOffset * 14;
+          
+          const isExtracting = extractingDeckIndex === index;
+          const isBeingFlown = drawOverlay !== null && extractingDeckIndex === index;
+          const isHovered = hoveredDeckIndex === index;
+
+          // Radial offsets
+          const popOffset = isExtracting ? 36 : isHovered ? 20 : 0;
+          const scaleVal = isExtracting ? 1.12 : isHovered ? 1.04 : 1;
+
           return (
             <motion.button
               key={index}
               type="button"
               aria-label="从牌堆抽牌"
+              data-testid="deck-card"
+              data-deck-index={index}
               initial={{ rotate: baseAngle }}
               animate={
                 isShuffling
@@ -394,13 +429,20 @@ export default function RitualView() {
                       x: [0, shuffleX, -shuffleX * 0.72, 0],
                       y: [0, shuffleY, 26 - packetOffset * 5, 0],
                       scale: [1, 1.08, 0.94, 1],
+                      opacity: 1,
                     }
-                  : { rotate: baseAngle, x: 0, y: 0, scale: 1 }
+                  : { 
+                      rotate: baseAngle, 
+                      x: popOffset ? Math.sin(baseAngle * (Math.PI / 180)) * popOffset : 0,
+                      y: popOffset ? -Math.cos(baseAngle * (Math.PI / 180)) * popOffset : 0,
+                      scale: scaleVal,
+                      opacity: isBeingFlown ? 0 : 1,
+                    }
               }
               transition={{
-                duration: isShuffling ? 1.15 : 0.8,
+                duration: isShuffling ? 1.15 : isExtracting ? 0.2 : 0.8,
                 delay: isShuffling ? (index % 7) * 0.018 : 0,
-                ease: isShuffling ? "easeInOut" : undefined,
+                ease: isShuffling ? "easeInOut" : "easeOut",
                 type: isShuffling ? "tween" : "spring",
               }}
               className="deck-card absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
@@ -408,9 +450,35 @@ export default function RitualView() {
                 transformOrigin: "center 150px",
                 transform: `rotate(${baseAngle}deg)`,
                 top: "0px",
-                zIndex: isShuffling ? 10 : 10 + index,
+                zIndex: isExtracting ? 90 : isHovered ? 80 : isShuffling ? 10 : 10 + index,
               }}
-              onClick={handleDraw}
+              onPointerEnter={() => setHoveredDeckIndex(index)}
+              onPointerLeave={() => {
+                setHoveredDeckIndex((currentIndex) =>
+                  currentIndex === index ? null : currentIndex,
+                );
+              }}
+              onFocus={() => setHoveredDeckIndex(index)}
+              onBlur={() => {
+                setHoveredDeckIndex((currentIndex) =>
+                  currentIndex === index ? null : currentIndex,
+                );
+              }}
+              onClick={(event) => {
+                const targetElem = event.currentTarget;
+                const rect = targetElem.getBoundingClientRect();
+                handleDraw({
+                  cardIndex: index,
+                  targetElement: targetElem,
+                  rect: {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                  },
+                  rotate: baseAngle,
+                });
+              }}
               disabled={!canDraw}
             >
               <div className="h-full w-full overflow-hidden rounded-[12px] border border-midnight-border-subtle bg-midnight-elevated">
@@ -420,8 +488,11 @@ export default function RitualView() {
                   sizes="(min-width: 768px) 120px, 90px"
                   quality={50}
                   className={cn(
-                    "opacity-70 transition-opacity duration-300",
-                    isShuffling ? "opacity-90" : "hover:opacity-100",
+                    "transition-all duration-300",
+                    isShuffling ? "opacity-90" : 
+                    isExtracting ? "opacity-100 brightness-125" :
+                    isHovered ? "opacity-100 brightness-110" : 
+                    hoveredDeckIndex !== null || extractingDeckIndex !== null ? "opacity-40" : "opacity-80"
                   )}
                 />
               </div>
@@ -430,17 +501,14 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-40 mx-auto mt-2 w-full max-w-md">
-        <div className="midnight-panel text-center">
-          <p className="text-sm leading-relaxed text-text-inverse-muted">
-            你已选择 {drawnCards.length} / {selectedSpread.positions.length} 张牌。
-            {selectedSpread.name} 将揭示你的问题在不同维度中的走向。
-          </p>
-          <p className="mt-2 text-xs leading-relaxed text-text-inverse-muted/80">
+      <div className="relative z-40 mx-auto w-full max-w-xl text-center pb-1">
+        <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-midnight-border/50 bg-midnight-panel/60 px-4 py-1 text-xs text-text-inverse-muted shadow-sm backdrop-blur-sm">
+          <LegacyIcon name="info" className="text-xs text-indigo-light shrink-0" />
+          <span className="truncate">
             {nextPosition
-              ? `下一张会落在「${nextPosition.name}」：${nextPosition.description}`
-              : "全部位置已归位。接下来先看整组牌面的气候与张力，再进入完整解读。"}
-          </p>
+              ? `当前槽位「${nextPosition.name}」：${nextPosition.description}`
+              : "全部位置已归位，准备揭示牌阵。"}
+          </span>
         </div>
       </div>
     </section>
