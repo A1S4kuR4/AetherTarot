@@ -289,7 +289,7 @@ export default function RitualView() {
           </div>
         </motion.div>
       ) : null}
-            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center pt-1">
+            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center pt-3 md:pt-5">
         <div className="inline-flex items-center gap-2 rounded-full border border-midnight-border/60 bg-midnight-panel/80 px-4 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.2)] backdrop-blur-md">
           <span
             className={cn(
@@ -308,7 +308,7 @@ export default function RitualView() {
 
       <div
         data-testid="ritual-position-track"
-        className="relative z-60 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-1 hide-scrollbar md:snap-none md:overflow-visible my-auto"
+        className="relative z-60 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-1 hide-scrollbar md:snap-none md:overflow-visible mt-2 mb-4 md:mt-3 md:mb-6"
       >
         <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-6 md:w-full md:flex-wrap md:justify-center md:gap-16">
           {selectedSpread.positions.map((position) => {
@@ -354,7 +354,7 @@ export default function RitualView() {
         </div>
       </div>
 
-      <div className="relative z-50 mb-1 flex flex-wrap justify-center gap-4">
+      <div className="relative z-50 mb-6 md:mb-8 flex flex-wrap justify-center gap-4">
         <button
           type="button"
           onClick={handleShuffle}
@@ -389,7 +389,7 @@ export default function RitualView() {
         ) : null}
       </div>
 
-      <div className="ritual-deck-field relative z-30 flex w-full max-w-4xl items-center justify-center">
+      <div className="ritual-deck-field relative z-30 flex w-full max-w-4xl items-center justify-center pb-6 md:pb-8">
         <div
           ref={deckOriginRef}
           className="pointer-events-none absolute top-0 aspect-[1/1.7] w-[90px] md:w-[120px]"
