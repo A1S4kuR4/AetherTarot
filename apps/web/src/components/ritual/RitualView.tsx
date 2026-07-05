@@ -231,7 +231,7 @@ export default function RitualView() {
   };
 
   return (
-    <section className="ritual-view-stage relative flex h-[calc(100dvh-4rem)] w-full flex-col items-center justify-between overflow-hidden px-4 py-2 md:px-6 md:py-3">
+    <section className="ritual-view-stage relative flex min-h-[calc(100dvh-4rem)] w-full flex-col items-center justify-between overflow-x-hidden px-4 py-2 md:px-6 md:py-3 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
       {drawOverlay ? (
         <motion.div
           key={drawOverlay.key}
