@@ -385,7 +385,7 @@ export default function RitualInitializer() {
     navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "快速解读";
 
   return (
-    <div className="flex h-full w-full max-w-[1500px] flex-col gap-2 overflow-hidden text-left">
+    <div className="flex w-full max-w-[1500px] flex-col gap-3 text-left lg:h-full lg:overflow-hidden">
       {/* Hidden SVG Filter for Stippled Edge Turbulence */}
       <svg className="absolute h-0 w-0 pointer-events-none">
         <defs>
@@ -460,7 +460,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-white/[0.08] bg-[#0D1017]/80 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:p-4"
+          className="order-2 flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-white/[0.08] bg-[#0D1017]/80 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:order-1 lg:p-4"
         >
           <div className="flex items-center justify-between gap-3 shrink-0">
             <div>
@@ -566,7 +566,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
-          className="flex min-h-0 min-w-0 flex-col gap-4 justify-between rounded-2xl border border-white/[0.08] bg-[#0D1017]/85 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:p-4"
+          className="order-1 flex min-h-0 min-w-0 flex-col justify-between gap-4 rounded-2xl border border-white/[0.08] bg-[#0D1017]/85 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:order-2 lg:p-4"
         >
           <div className="flex shrink-0 items-center justify-between gap-3">
             <div>
@@ -611,8 +611,8 @@ export default function RitualInitializer() {
                 </button>
               </div>
 
-              {/* Category Tabs Pill Row */}
-              <div className="flex flex-wrap items-center gap-1.5 px-0.5">
+              {/* Category Tabs Pill Row (Horizontal Smooth Scroll Track) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar flex-nowrap shrink-0 px-0.5">
                 {PROMPT_CATEGORIES.map((cat) => {
                   const isCatActive = activeCategory === cat.id;
 
@@ -625,7 +625,7 @@ export default function RitualInitializer() {
                         setPromptBatchIndex(0);
                       }}
                       className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-medium transition-all duration-200",
+                        "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all duration-200",
                         isCatActive
                           ? "border-terracotta/60 bg-terracotta/20 text-terracotta shadow-[0_0_12px_rgba(214,107,61,0.2)]"
                           : "border-white/[0.08] bg-white/[0.03] text-text-inverse-muted hover:border-white/20 hover:text-text-inverse",
@@ -764,7 +764,7 @@ export default function RitualInitializer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.16, ease: "easeOut" }}
-          className="flex min-h-0 min-w-0 flex-col gap-3.5 rounded-2xl border border-white/[0.08] bg-[#0D1017]/75 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
+          className="order-3 flex min-h-0 min-w-0 flex-col gap-3.5 rounded-2xl border border-white/[0.08] bg-[#0D1017]/75 p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:order-3 lg:overflow-y-auto lg:p-4 lg:pr-3 hide-scrollbar"
         >
           <div>
             <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-indigo-light/70">
