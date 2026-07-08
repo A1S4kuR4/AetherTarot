@@ -108,6 +108,8 @@ function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) 
   return { columns, gridWidth };
 }
 
+const LAYOUT_TRANSITION_MS = 300;
+
 export default function EncyclopediaView({
   coverage,
   cardWikiPages,
@@ -130,11 +132,24 @@ export default function EncyclopediaView({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [imagePaneMode, setImagePaneMode] = useState<ImagePaneMode>("auto");
   const [hasMounted, setHasMounted] = useState(false);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setIsCollapsed(isMobileViewport());
     setHasMounted(true);
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCollapsed(isMobileViewport());
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const visibleCards = useMemo(() => {
@@ -208,8 +223,12 @@ export default function EncyclopediaView({
     setIsCollapsed(isMobileViewport());
     syncCardQuery(card.id);
 
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
     if (isMobileViewport()) {
-      setTimeout(() => {
+      scrollTimeoutRef.current = setTimeout(() => {
         const title =
           detailRef.current?.querySelector("[data-wiki-detail-title]")
           ?? detailRef.current?.querySelector("[data-card-detail-title]");
@@ -217,7 +236,7 @@ export default function EncyclopediaView({
           behavior: "smooth",
           block: "start",
         });
-      }, 100);
+      }, LAYOUT_TRANSITION_MS);
     }
   }, [syncCardQuery]);
 
@@ -234,10 +253,10 @@ export default function EncyclopediaView({
         initial={false}
         data-testid="encyclopedia-image-pane"
         className={cn(
-          "shrink-0 z-10 flex flex-col justify-center",
+          "shrink-0 z-10 flex flex-col pb-2 lg:pb-8 h-auto lg:h-full",
           isImageCollapsed
-            ? "w-24 mx-auto lg:mx-0 lg:w-32 h-auto lg:h-full pb-2 lg:pb-8"
-            : "w-44 sm:w-52 max-w-[260px] mx-auto lg:w-5/12 h-auto lg:h-full pb-2 lg:pb-8"
+            ? "w-24 mx-auto lg:mx-0 lg:w-32 lg:justify-start lg:pt-4"
+            : "w-44 sm:w-52 max-w-[260px] mx-auto lg:w-5/12 justify-center"
         )}
       >
         <div
@@ -246,7 +265,7 @@ export default function EncyclopediaView({
             isImageCollapsed ? "aspect-[1/1.7] rounded-card-sm" : "aspect-[1/1.7] rounded-card-md"
           )}
         >
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="sync">
             <motion.div
               key={activeCard.id}
               initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
