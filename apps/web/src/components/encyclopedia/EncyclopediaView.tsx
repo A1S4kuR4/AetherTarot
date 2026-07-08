@@ -133,7 +133,7 @@ export default function EncyclopediaView({
   const [imagePaneMode, setImagePaneMode] = useState<ImagePaneMode>("auto");
   const [hasMounted, setHasMounted] = useState(false);
   const shouldReduceMotion = useReducedMotion() ?? false;
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -145,12 +145,23 @@ export default function EncyclopediaView({
   }, []);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const handleResize = () => {
-      setIsCollapsed(isMobileViewport());
+      if (timeoutId) return;
+      timeoutId = setTimeout(() => {
+        if (imagePaneMode === "auto") {
+          setIsCollapsed(isMobileViewport());
+        }
+        timeoutId = null;
+      }, 100);
     };
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    handleResize();
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [imagePaneMode]);
 
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
