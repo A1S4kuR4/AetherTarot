@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { getAllCards } from "@aethertarot/domain-tarot";
 import type { TarotCard } from "@aethertarot/shared-types";
 import type { EncyclopediaCoverageSummary } from "@/server/encyclopedia/coverage";
@@ -81,6 +81,7 @@ function isMobileViewport() {
 
 function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) {
   const [columns, setColumns] = useState(4);
+  const [gridWidth, setGridWidth] = useState(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -88,6 +89,7 @@ function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) 
 
     const update = () => {
       const width = el.clientWidth;
+      setGridWidth(width);
       if (width < 400) {
         setColumns(3);
       } else if (width >= 768 && width < 1024) {
@@ -103,7 +105,7 @@ function useColumnsPerRow(containerRef: React.RefObject<HTMLDivElement | null>) 
     return () => observer.disconnect();
   }, [containerRef]);
 
-  return columns;
+  return { columns, gridWidth };
 }
 
 export default function EncyclopediaView({
@@ -124,19 +126,16 @@ export default function EncyclopediaView({
   const [searchTerm, setSearchTerm] = useState("");
   const detailRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const columnsPerRow = useColumnsPerRow(gridRef);
+  const { columns: columnsPerRow, gridWidth } = useColumnsPerRow(gridRef);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [imagePaneMode, setImagePaneMode] = useState<ImagePaneMode>("auto");
+  const [hasMounted, setHasMounted] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
-  const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
-    if (imagePaneMode !== "auto") {
-      return;
-    }
-
-    const y = e.currentTarget.scrollTop;
-    if (y > 120 && !isCollapsed) setIsCollapsed(true);
-    if (y <= 80 && isCollapsed) setIsCollapsed(false);
-  }, [imagePaneMode, isCollapsed]);
+  useEffect(() => {
+    setIsCollapsed(isMobileViewport());
+    setHasMounted(true);
+  }, []);
 
   const visibleCards = useMemo(() => {
     const activeFilter = FILTERS.find((filter) => filter.id === runtimeFilter);
@@ -159,7 +158,14 @@ export default function EncyclopediaView({
   const virtualizer = useVirtualizer({
     count: totalRows,
     getScrollElement: () => gridRef.current,
-    estimateSize: () => 170,
+    estimateSize: useCallback(() => {
+      if (!gridWidth) return 170;
+      const contentWidth = gridWidth - 24; // p-3 * 2 padding
+      const gap = 10;                      // gap-2.5
+      const cardWidth = (contentWidth - gap * (columnsPerRow - 1)) / columnsPerRow;
+      const rowHeight = cardWidth * 1.7 + 10; // mb-2.5
+      return Math.max(120, rowHeight);
+    }, [columnsPerRow, gridWidth]),
     overscan: 2,
   });
 
@@ -203,7 +209,7 @@ export default function EncyclopediaView({
     syncCardQuery(card.id);
 
     if (isMobileViewport()) {
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         const title =
           detailRef.current?.querySelector("[data-wiki-detail-title]")
           ?? detailRef.current?.querySelector("[data-card-detail-title]");
@@ -211,7 +217,7 @@ export default function EncyclopediaView({
           behavior: "smooth",
           block: "start",
         });
-      });
+      }, 100);
     }
   }, [syncCardQuery]);
 
@@ -224,48 +230,57 @@ export default function EncyclopediaView({
     <section className="viewport-workspace mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-4 sm:px-6 lg:h-[calc(100dvh-4rem)] lg:flex-row lg:gap-10 lg:overflow-hidden lg:px-8">
       {/* Left Gallery Pane */}
       <motion.div
-        layout
+        layout={hasMounted && !shouldReduceMotion}
         initial={false}
         data-testid="encyclopedia-image-pane"
         className={cn(
-          "shrink-0 z-10 flex flex-col justify-center transition-all duration-300",
+          "shrink-0 z-10 flex flex-col justify-center",
           isImageCollapsed
-            ? "w-24 mx-auto lg:mx-0 lg:w-32 lg:h-auto lg:mt-4"
+            ? "w-24 mx-auto lg:mx-0 lg:w-32 h-auto lg:h-full pb-2 lg:pb-8"
             : "w-44 sm:w-52 max-w-[260px] mx-auto lg:w-5/12 h-auto lg:h-full pb-2 lg:pb-8"
         )}
       >
-        <motion.div
-          layout
+        <div
           className={cn(
-            "relative overflow-hidden border border-paper-border shadow-sm transition-all",
+            "relative overflow-hidden border border-paper-border shadow-sm",
             isImageCollapsed ? "aspect-[1/1.7] rounded-card-sm" : "aspect-[1/1.7] rounded-card-md"
           )}
         >
-          <Image
-            src={activeCard.imageUrl}
-            alt={activeCard.name}
-            fill
-            sizes={isImageCollapsed ? "128px" : "(min-width: 1024px) 40vw, 100vw"}
-            quality={80}
-            priority
-            loading="eager"
-            className="h-full w-full object-cover"
-          />
-        </motion.div>
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={activeCard.id}
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+              layout={false}
+              className="absolute inset-0"
+            >
+              <Image
+                src={activeCard.imageUrl}
+                alt={activeCard.name}
+                fill
+                sizes={isImageCollapsed ? "128px" : "(min-width: 1024px) 40vw, 100vw"}
+                quality={80}
+                priority
+                loading="eager"
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
         <button
           type="button"
           onClick={handleToggleImagePane}
           aria-pressed={!isImageCollapsed}
-          className="mt-2 inline-flex min-h-9 items-center justify-center rounded-full border border-paper-border bg-paper px-3 text-xs font-medium text-text-muted shadow-sm lg:hidden"
+          className="mt-2 inline-flex min-h-9 items-center justify-center rounded-full border border-paper-border bg-paper px-3 text-xs font-medium text-text-muted shadow-sm"
         >
           {isImageCollapsed ? "展开牌图" : "收起牌图"}
         </button>
       </motion.div>
 
       {/* Right Content Pane */}
-      <motion.div 
-        layout 
-        onScroll={handleScroll}
+      <div 
         data-testid="encyclopedia-content-pane"
         className="flex min-w-0 flex-1 flex-col gap-6 pb-12 lg:h-full lg:gap-8 lg:overflow-y-auto lg:pr-4 custom-scrollbar"
       >
@@ -511,7 +526,7 @@ export default function EncyclopediaView({
             ) : null}
           </section>
         </article>
-      </motion.div>
+      </div>
     </section>
   );
 }
