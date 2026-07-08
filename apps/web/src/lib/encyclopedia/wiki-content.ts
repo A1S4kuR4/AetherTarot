@@ -1,6 +1,19 @@
 const SOURCE_HREF_PREFIX = "aether-source:";
 const DISABLED_HREF_PREFIX = "aether-disabled:";
 
+const SOURCE_MAP: Record<string, string> = {
+  "78W": "《78度的智慧》",
+  "YAT": "《其实你已经很塔罗了》",
+  "CTB": "《塔罗全书》",
+  "MAN": "《塔罗牌使用说明书》",
+  "SFB": "《塔罗葵花宝典》",
+};
+
+export function formatSourceLabel(sourceId: string): string {
+  const normalizedId = sourceId.trim().toUpperCase();
+  return SOURCE_MAP[normalizedId] ?? sourceId;
+}
+
 export function sourceHref(sourceId: string) {
   return `${SOURCE_HREF_PREFIX}${encodeURIComponent(sourceId.trim())}`;
 }
@@ -10,7 +23,8 @@ export function isSourceHref(href: string | undefined) {
 }
 
 export function sourceLabelFromHref(href: string) {
-  return decodeURIComponent(href.slice(SOURCE_HREF_PREFIX.length));
+  const rawLabel = decodeURIComponent(href.slice(SOURCE_HREF_PREFIX.length));
+  return formatSourceLabel(rawLabel);
 }
 
 export function disabledHref(label: string) {

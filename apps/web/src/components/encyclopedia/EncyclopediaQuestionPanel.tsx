@@ -7,6 +7,7 @@ import type {
 } from "@aethertarot/shared-types";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import { cn } from "@/lib/utils";
+import { formatSourceLabel } from "@/lib/encyclopedia/wiki-content";
 
 type QueryState =
   | { status: "idle"; data?: undefined; error?: undefined }
@@ -178,7 +179,7 @@ export default function EncyclopediaQuestionPanel({
                       {source.excerpt}
                     </p>
                     <p className="mt-1 text-[11px] text-text-muted">
-                      {source.path} · {source.source_ids.join(", ") || "未知来源"}
+                      {source.path} · {source.source_ids.map(formatSourceLabel).join(", ") || "未知来源"}
                     </p>
                   </article>
                 ))}

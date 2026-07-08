@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveInitialCardId } from "./card-selection";
 import {
   disabledLabelFromHref,
+  formatSourceLabel,
   isDisabledHref,
   isSourceHref,
   mapWikiHref,
@@ -58,6 +59,13 @@ describe("wiki markdown helpers", () => {
     expect(prepared).toContain("[来源: 78W](aether-source:78W)");
     expect(sourceHref).toBeDefined();
     expect(isSourceHref(sourceHref)).toBe(true);
-    expect(sourceLabelFromHref(sourceHref ?? "")).toBe("78W");
+    expect(sourceLabelFromHref(sourceHref ?? "")).toBe("《78度的智慧》");
+  });
+
+  it("formats registered source abbreviation to Chinese book title", () => {
+    expect(formatSourceLabel("78W")).toBe("《78度的智慧》");
+    expect(formatSourceLabel("YAT")).toBe("《其实你已经很塔罗了》");
+    expect(formatSourceLabel("CTB")).toBe("《塔罗全书》");
+    expect(formatSourceLabel("BOTA")).toBe("BOTA"); // Fallback for unregistered IDs
   });
 });

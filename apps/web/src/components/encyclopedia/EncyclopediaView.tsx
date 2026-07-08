@@ -13,6 +13,7 @@ import type {
 } from "@/server/encyclopedia/wiki-summary";
 import { resolveInitialCardId } from "@/lib/encyclopedia/card-selection";
 import { cn } from "@/lib/utils";
+import { formatSourceLabel } from "@/lib/encyclopedia/wiki-content";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import EncyclopediaQuestionPanel from "@/components/encyclopedia/EncyclopediaQuestionPanel";
 import WikiContent from "@/components/encyclopedia/WikiContent";
@@ -533,7 +534,7 @@ export default function EncyclopediaView({
               </h3>
               <p className="mt-1 text-sm text-text-muted">
                 {activeWikiPage
-                  ? `${activeWikiPage.title} · 来源 ${activeWikiPage.sourceIds.join(" / ")}`
+                  ? `${activeWikiPage.title} · 来源 ${activeWikiPage.sourceIds.map(formatSourceLabel).join(" / ")}`
                   : "这张牌的 wiki 条目尚未收录。"}
               </p>
             </div>
