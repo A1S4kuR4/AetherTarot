@@ -74,8 +74,13 @@ export default function RevealView() {
     router.push("/reading");
   };
 
+  const enterReadingButtonClass = "btn-primary min-h-12 disabled:cursor-not-allowed disabled:opacity-70";
+  const enterReadingButtonLabel = isEnteringReading
+    ? "正在进入深读..."
+    : "带着整组气候进入深读";
+
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6 lg:pt-12">
+    <section className="mx-auto w-full max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:pb-10 lg:pt-12">
       {/* Header */}
       <div className="mb-8 flex flex-col items-center text-center">
         <span className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted">
@@ -195,22 +200,28 @@ export default function RevealView() {
             })}
           </div>
 
-          {/* CTA */}
-          <button
-            type="button"
-            onClick={handleEnterReading}
-            disabled={isEnteringReading}
-            className="btn-primary mt-8 min-h-12 w-full disabled:cursor-not-allowed disabled:opacity-70 sm:mt-14 sm:w-auto"
-          >
-            <span className="text-sm font-medium">
-              {isEnteringReading ? "正在进入深读..." : "带着整组气候进入深读"}
-            </span>
-            <LegacyIcon name="arrow_right_alt" className="text-lg" />
-          </button>
+          {/* Bottom spacer — CTA moved to persistent action surfaces */}
+          <div className="mt-8 sm:mt-14" />
         </div>
 
         {/* Side Panel — Position Meanings */}
         <div className="space-y-6 lg:col-span-4">
+          {/* Desktop primary CTA: visible without scrolling on every spread */}
+          <div className="midnight-panel hidden border-indigo/20 bg-gradient-to-b from-indigo/[0.08] to-midnight-panel lg:block">
+            <p className="mb-4 text-sm leading-relaxed text-text-inverse-muted">
+              已经感受完这组牌的整体气候？进入深读，逐张理解每张牌在位置中的含义。
+            </p>
+            <button
+              type="button"
+              onClick={handleEnterReading}
+              disabled={isEnteringReading}
+              className={cn(enterReadingButtonClass, "w-full")}
+            >
+              <span className="text-sm font-medium">{enterReadingButtonLabel}</span>
+              <LegacyIcon name="arrow_right_alt" className="text-lg" />
+            </button>
+          </div>
+
           <div className="midnight-panel">
             <div className="mb-3 flex items-center gap-2.5">
               <LegacyIcon name="flare" className="text-lg text-terracotta" />
@@ -304,6 +315,22 @@ export default function RevealView() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Mobile sticky CTA: reachable without scrolling on every spread */}
+      <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-night via-night/90 to-transparent px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-8 lg:hidden">
+        <button
+          type="button"
+          onClick={handleEnterReading}
+          disabled={isEnteringReading}
+          className={cn(
+            enterReadingButtonClass,
+            "w-full shadow-[0_8px_32px_rgba(0,0,0,0.32)]",
+          )}
+        >
+          <span className="text-sm font-medium">{enterReadingButtonLabel}</span>
+          <LegacyIcon name="arrow_right_alt" className="text-lg" />
+        </button>
       </div>
     </section>
   );
