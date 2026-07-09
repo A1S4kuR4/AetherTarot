@@ -42,7 +42,10 @@ export default function HomeView() {
           }
         });
       },
-      { threshold: 0.6 },
+      { 
+        threshold: 0.5,
+        rootMargin: "-64px 0px 0px 0px",
+      },
     );
 
     const sections = getSections();
@@ -60,16 +63,18 @@ export default function HomeView() {
         return;
       }
 
-      const targetTop = sections[index].offsetTop;
-
       if (window.matchMedia("(min-width: 1024px) and (min-height: 860px)").matches) {
+        const targetTop = sections[index].offsetTop;
         container.scrollTo({
           top: targetTop,
           behavior: prefersReducedMotion ? "auto" : "smooth",
         });
       } else {
+        const rect = sections[index].getBoundingClientRect();
+        const absoluteTop = rect.top + window.scrollY;
+        const topBarHeight = 64;
         window.scrollTo({
-          top: container.offsetTop + targetTop,
+          top: absoluteTop - topBarHeight,
           behavior: prefersReducedMotion ? "auto" : "smooth",
         });
       }
