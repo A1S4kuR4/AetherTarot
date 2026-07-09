@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import {
+  formatSourceLabel,
   isDisabledHref,
   isSourceHref,
   mapWikiHref,
@@ -14,16 +16,34 @@ interface WikiContentProps {
   content: string;
 }
 
+function textFromMarkdownChildren(children: React.ReactNode) {
+  return React.Children.toArray(children)
+    .map((child) => typeof child === "string" || typeof child === "number" ? String(child) : "")
+    .join("")
+    .trim();
+}
+
 export default function WikiContent({ content }: WikiContentProps) {
   return (
     <ReactMarkdown
       components={{
         a: ({ href, children }) => {
+          const childText = textFromMarkdownChildren(children);
+          const sourceTextMatch = childText.match(/^来源:\s*(.+)$/);
+
+          if (sourceTextMatch?.[1]) {
+            return (
+              <span className="inline-flex rounded-full border border-paper-border bg-paper px-2.5 py-1 font-sans text-[10px] font-medium text-text-muted">
+                来源: {formatSourceLabel(sourceTextMatch[1])}
+              </span>
+            );
+          }
+
           const mappedHref = mapWikiHref(href);
 
           if (isSourceHref(mappedHref)) {
             return (
-              <span className="inline-flex rounded-full border border-paper-border bg-paper px-2 py-0.5 font-sans text-[10px] font-medium text-text-muted">
+              <span className="inline-flex rounded-full border border-paper-border bg-paper px-2.5 py-1 font-sans text-[10px] font-medium text-text-muted">
                 来源: {sourceLabelFromHref(mappedHref)}
               </span>
             );

@@ -304,7 +304,7 @@ export default function EncyclopediaView({
           type="button"
           onClick={handleToggleImagePane}
           aria-pressed={!isImageCollapsed}
-          className="mt-2 inline-flex min-h-9 items-center justify-center rounded-full border border-paper-border bg-paper px-3 text-xs font-medium text-text-muted shadow-sm"
+          className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-text-muted shadow-sm"
         >
           {isImageCollapsed ? "展开牌图" : "收起牌图"}
         </button>

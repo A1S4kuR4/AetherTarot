@@ -254,7 +254,7 @@ export default function OfflineDrawView() {
                     type="button"
                     onClick={() => selectCard(card)}
                     className={cn(
-                      "rounded-2xl border px-3 py-3 text-left transition",
+                      "min-h-11 rounded-2xl border px-3 py-3 text-left transition",
                       activeInput.cardId === card.id
                         ? "border-terracotta/50 bg-terracotta/10"
                         : "border-midnight-border bg-black/10 hover:border-midnight-border-subtle",
@@ -284,7 +284,7 @@ export default function OfflineDrawView() {
                       type="button"
                       onClick={() => setOrientation(orientation.value)}
                       className={cn(
-                        "rounded-xl px-4 py-2 text-sm transition",
+                        "min-h-11 rounded-xl px-4 py-2 text-sm transition",
                         activeInput.isReversed === orientation.value
                           ? "bg-terracotta text-paper"
                           : "text-text-inverse-muted hover:bg-midnight-elevated",
@@ -301,7 +301,7 @@ export default function OfflineDrawView() {
                   type="button"
                   onClick={clearActivePosition}
                   disabled={!activeInput.cardId}
-                  className="rounded-full border border-midnight-border bg-transparent px-5 py-2.5 text-sm text-text-inverse-muted transition hover:border-midnight-border-subtle hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-40"
+                  className="min-h-11 rounded-full border border-midnight-border bg-transparent px-5 py-2.5 text-sm text-text-inverse-muted transition hover:border-midnight-border-subtle hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   清空当前位置
                 </button>
@@ -309,7 +309,7 @@ export default function OfflineDrawView() {
                   type="button"
                   onClick={goToNextOpenPosition}
                   disabled={isComplete}
-                  className="btn-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                  className="btn-secondary-dark min-h-11 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <LegacyIcon name="arrow_forward" className="text-lg" />
                   <span>下一张未录入</span>

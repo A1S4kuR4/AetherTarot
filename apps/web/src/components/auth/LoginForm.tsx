@@ -55,7 +55,7 @@ export default function LoginForm({ safeNextPath }: { safeNextPath: string }) {
             required
             autoComplete="email"
             disabled={isLoading}
-            className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-text-muted focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:opacity-50"
+            className="mt-1 block min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-text-muted focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:opacity-50"
           />
         </div>
         <div>
@@ -69,7 +69,7 @@ export default function LoginForm({ safeNextPath }: { safeNextPath: string }) {
             required
             autoComplete="current-password"
             disabled={isLoading}
-            className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-text-muted focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:opacity-50"
+            className="mt-1 block min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-text-muted focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:opacity-50"
           />
         </div>
         <button type="submit" disabled={isLoading} className="btn-primary w-full disabled:opacity-50">

@@ -14,7 +14,7 @@ export function MobileReadingNav() {
           <a
             key={item.id}
             href={`#${item.id}`}
-            className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-paper-border bg-paper-raised px-3.5 text-xs font-medium text-text-muted"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-paper-border bg-paper-raised px-4 text-xs font-medium text-text-muted"
           >
             {item.label}
           </a>

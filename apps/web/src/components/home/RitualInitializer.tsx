@@ -601,7 +601,7 @@ export default function RitualInitializer() {
                 <button
                   type="button"
                   onClick={handleRefreshPrompts}
-                  className="inline-flex items-center gap-1 rounded-full border border-indigo/25 bg-indigo/10 px-2.5 py-0.5 text-[11px] font-medium text-indigo-light transition hover:border-indigo/40 hover:bg-indigo/20 hover:text-white"
+                  className="inline-flex min-h-11 items-center gap-1 rounded-full border border-indigo/25 bg-indigo/10 px-3 py-2 text-[11px] font-medium text-indigo-light transition hover:border-indigo/40 hover:bg-indigo/20 hover:text-white"
                 >
                   <LegacyIcon
                     name="refresh"
@@ -625,7 +625,7 @@ export default function RitualInitializer() {
                         setPromptBatchIndex(0);
                       }}
                       className={cn(
-                        "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all duration-200",
+                        "min-h-11 shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition-all duration-200",
                         isCatActive
                           ? "border-terracotta/60 bg-terracotta/20 text-terracotta shadow-[0_0_12px_rgba(214,107,61,0.2)]"
                           : "border-white/[0.08] bg-white/[0.03] text-text-inverse-muted hover:border-white/20 hover:text-text-inverse",
@@ -700,19 +700,11 @@ export default function RitualInitializer() {
                     duration: 0.4,
                   }}
                 >
-                  {/* Liquid Amber Fill Progress Bar with Feathered Edge */}
+                  {/* Liquid Amber Fill Progress Bar */}
                   <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-terracotta via-amber-500 to-amber-300 opacity-95 transition-all duration-100 ease-linear"
+                    className="absolute inset-y-0 left-0 rounded-l-xl bg-gradient-to-r from-terracotta via-amber-500 to-amber-300 opacity-95 transition-all duration-100 ease-linear"
                     style={{
                       width: `${progress}%`,
-                      maskImage:
-                        progress > 2 && progress < 98
-                          ? "linear-gradient(to right, black calc(100% - 48px), transparent 100%)"
-                          : "none",
-                      WebkitMaskImage:
-                        progress > 2 && progress < 98
-                          ? "linear-gradient(to right, black calc(100% - 48px), transparent 100%)"
-                          : "none",
                     }}
                   />
 
