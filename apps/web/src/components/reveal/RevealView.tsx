@@ -52,14 +52,20 @@ export default function RevealView() {
 
   const spreadCardGridClass =
     selectedSpread.positions.length === 1
-      ? "max-w-sm grid-cols-1"
+      ? "max-w-[200px] grid-cols-1"
       : selectedSpread.positions.length === 3
-        ? "md:grid-cols-3"
+        ? "max-w-2xl md:grid-cols-3"
       : selectedSpread.positions.length === 4
-          ? "md:grid-cols-2 xl:grid-cols-4"
+          ? "max-w-3xl md:grid-cols-4"
           : selectedSpread.positions.length === 7
-            ? "md:grid-cols-2 xl:grid-cols-4"
-          : "md:grid-cols-2 xl:grid-cols-3";
+            ? "max-w-3xl md:grid-cols-4 xl:max-w-4xl"
+          : "max-w-4xl md:grid-cols-5";
+  const cardImageWidth =
+    selectedSpread.positions.length === 1
+      ? 200
+      : selectedSpread.positions.length === 3
+        ? 220
+        : 180;
   const spreadExperience = getSpreadExperience(
     selectedSpread.id,
     selectedSpread.name,
@@ -80,29 +86,29 @@ export default function RevealView() {
     : "带着整组气候进入深读";
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:pb-10 lg:pt-12">
+    <section className="mx-auto w-full max-w-7xl px-4 pb-24 pt-5 sm:px-6 sm:pt-6 lg:pb-8 lg:pt-6">
       {/* Header */}
-      <div className="mb-8 flex flex-col items-center text-center">
-        <span className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted">
+      <div className="mb-4 flex flex-col items-center text-center lg:mb-5">
+        <span className="mb-1.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted">
           牌阵揭示
         </span>
-        <h1 className="font-serif text-3xl font-semibold text-text-inverse md:text-5xl">
+        <h1 className="font-serif text-2xl font-semibold text-text-inverse sm:text-3xl lg:text-4xl">
           {selectedSpread.name}
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-12">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12 lg:gap-6">
         {/* Card Spread Area */}
-        <div className="relative flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-4 pb-6 pt-8 sm:px-8 sm:pt-16 lg:col-span-8">
+        <div className="relative flex min-h-[340px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-3 pb-4 pt-5 sm:min-h-[380px] sm:px-5 sm:pt-7 lg:col-span-8 lg:min-h-[300px]">
           {/* Spread Cards */}
           <div
             ref={scope}
             data-testid="reveal-card-track"
             className={cn(
-              "relative z-10 grid w-full max-w-4xl grid-cols-1 gap-8 sm:gap-10",
+              "relative z-10 grid w-full grid-cols-1 gap-4 sm:gap-5 lg:gap-6",
               spreadCardGridClass,
               selectedSpread.positions.length > 1
-                && "hide-scrollbar max-md:flex max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:pb-3",
+                && "hide-scrollbar max-md:flex max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:pb-2",
             )}
           >
             {selectedSpread.positions.map((position, index) => {
@@ -118,13 +124,13 @@ export default function RevealView() {
                 <div
                   key={position.id}
                   className={cn(
-                    "reveal-card-container group flex flex-col items-center opacity-0 max-md:w-[72vw] max-md:max-w-[260px] max-md:shrink-0 max-md:snap-center",
-                    selectedSpread.id === "holy-triangle" && index === 1 && "md:-mt-12",
+                    "reveal-card-container group flex flex-col items-center opacity-0 max-md:w-[58vw] max-md:max-w-[180px] max-md:shrink-0 max-md:snap-center",
+                    selectedSpread.id === "holy-triangle" && index === 1 && "md:-mt-10",
                   )}
                 >
                   {/* Position label */}
-                  <div className="mb-3">
-                    <span className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/50">
+                  <div className="mb-2">
+                    <span className="font-sans text-[9px] font-medium uppercase tracking-[0.2em] text-text-inverse-muted/50">
                       {position.name}
                     </span>
                   </div>
@@ -143,8 +149,8 @@ export default function RevealView() {
                       <CardImage
                         src={getRevealCardImageUrl(drawn.card.imageUrl)}
                         alt={drawn.card.name}
-                        intrinsicWidth={selectedSpread.positions.length === 1 ? 384 : 260}
-                        sizes={selectedSpread.positions.length === 1 ? "384px" : "260px"}
+                        intrinsicWidth={cardImageWidth}
+                        sizes={`${cardImageWidth}px`}
                         quality={75}
                         priority={index === 0}
                         loading="eager"
@@ -155,26 +161,26 @@ export default function RevealView() {
                   </div>
 
                   {/* Card info */}
-                  <div className="mt-5 text-center">
-                    <h3 className="font-serif text-lg text-text-inverse">
+                  <div className="mt-3 text-center">
+                    <h3 className="font-serif text-base text-text-inverse">
                       {drawn.card.name}
                     </h3>
-                    <span className="block text-xs text-text-inverse-muted">
+                    <span className="block text-[10px] text-text-inverse-muted">
                       {drawn.card.englishName}
                     </span>
                     {drawn.isReversed && (
-                      <span className="mt-1 block font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-indigo/60">
+                      <span className="mt-0.5 block font-sans text-[8px] font-bold uppercase tracking-[0.15em] text-indigo/60">
                         逆位 · REVERSED
                       </span>
                     )}
-                    <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                    <div className="mt-1.5 flex flex-wrap justify-center gap-1">
                       {(drawn.isReversed
                         ? drawn.card.reversedKeywords
                         : drawn.card.uprightKeywords
                       )
                         .slice(0, 2)
                         .map((keyword) => (
-                          <span key={keyword} className="chip-dark text-[10px]">
+                          <span key={keyword} className="chip-dark text-[9px]">
                             {keyword}
                           </span>
                       ))}
@@ -186,13 +192,13 @@ export default function RevealView() {
           </div>
 
           {/* Bottom spacer — CTA moved to persistent action surfaces */}
-          <div className="mt-8 sm:mt-14" />
+          <div className="mt-5 sm:mt-7" />
         </div>
 
         {/* Side Panel — Position Meanings */}
-        <div className="space-y-6 lg:col-span-4">
+        <div className="space-y-4 lg:col-span-4">
           {/* Desktop primary CTA: visible without scrolling on every spread */}
-          <div className="midnight-panel hidden lg:block">
+          <div className="midnight-panel hidden p-5 lg:block">
             <button
               type="button"
               onClick={handleEnterReading}
@@ -205,21 +211,21 @@ export default function RevealView() {
           </div>
 
           {/* Reading path: focus + organization, merged into one card */}
-          <div className="midnight-panel" data-testid="reveal-reading-path">
-            <div className="mb-3 flex items-center gap-2.5">
-              <LegacyIcon name="account_tree" className="text-lg text-indigo" />
-              <h2 className="font-serif text-lg text-text-inverse">
+          <div className="midnight-panel p-5" data-testid="reveal-reading-path">
+            <div className="mb-2 flex items-center gap-2">
+              <LegacyIcon name="account_tree" className="text-base text-indigo" />
+              <h2 className="font-serif text-base text-text-inverse">
                 阅读路径
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-text-inverse-muted">
               {spreadExperience.revealFocus}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {spreadExperience.organizationModel.map((item, index) => (
                 <span
                   key={`${selectedSpread.id}-organization-${item}`}
-                  className="rounded-full border border-midnight-border bg-midnight-elevated/60 px-3 py-1.5 font-sans text-[11px] text-text-inverse-muted"
+                  className="rounded-full border border-midnight-border bg-midnight-elevated/60 px-2.5 py-1 font-sans text-[10px] text-text-inverse-muted"
                 >
                   {index + 1}. {item}
                 </span>
@@ -227,22 +233,22 @@ export default function RevealView() {
             </div>
           </div>
 
-          <div className="midnight-panel">
-            <div className="mb-5 flex items-center gap-2.5">
-              <LegacyIcon name="auto_awesome" className="text-lg text-indigo" />
-              <h2 className="font-serif text-lg text-text-inverse">
+          <div className="midnight-panel p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <LegacyIcon name="auto_awesome" className="text-base text-indigo" />
+              <h2 className="font-serif text-base text-text-inverse">
                 牌阵解析
               </h2>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-4">
               {selectedSpread.positions.map((position, index) => (
                 <div
                   key={position.id}
-                  className="relative border-l border-midnight-border pl-5"
+                  className="relative border-l border-midnight-border pl-4"
                 >
                   <div
                     className={cn(
-                      "absolute top-0.5 -left-[4px] h-2 w-2 rounded-full",
+                      "absolute top-0.5 -left-[4px] h-1.5 w-1.5 rounded-full",
                       selectedSpread.id === "holy-triangle" && index === 1
                         ? "bg-indigo/50"
                         : "bg-text-inverse-muted/30",
@@ -250,7 +256,7 @@ export default function RevealView() {
                   />
                   <h4
                     className={cn(
-                      "mb-1 font-sans text-[11px] font-medium uppercase tracking-[0.12em]",
+                      "mb-0.5 font-sans text-[10px] font-medium uppercase tracking-[0.12em]",
                       "text-text-inverse-muted",
                     )}
                   >
@@ -264,7 +270,7 @@ export default function RevealView() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-midnight-border-subtle p-5">
+          <div className="rounded-xl border border-midnight-border-subtle p-4">
             <p className="text-center font-serif text-sm leading-relaxed italic text-text-inverse-muted/60">
               在星辰的指引下，所有的偶然都像是更深层线索的显影。
             </p>
@@ -273,7 +279,7 @@ export default function RevealView() {
       </div>
 
       {/* Mobile sticky CTA: reachable without scrolling on every spread */}
-      <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-night via-night/90 to-transparent px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-8 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-night via-night/90 to-transparent px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 lg:hidden">
         <button
           type="button"
           onClick={handleEnterReading}
