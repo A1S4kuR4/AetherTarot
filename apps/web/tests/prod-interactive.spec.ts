@@ -142,7 +142,7 @@ async function revealSpread(page: Page) {
 
     try {
       await expect(page).toHaveURL(/\/reveal$/, { timeout: 5000 });
-      await expect(page.getByRole("heading", { name: "本轮观察重点" })).toBeVisible();
+      await expect(page.getByTestId("reveal-reading-path")).toBeVisible();
       return;
     } catch (error) {
       lastError = error;

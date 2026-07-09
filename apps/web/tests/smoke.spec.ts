@@ -522,8 +522,7 @@ async function revealSpread(page: Parameters<typeof test>[0]["page"]) {
 
     try {
       await expect(page).toHaveURL(/\/reveal$/, { timeout: 5000 });
-      await expect(page.getByRole("heading", { name: "本轮观察重点" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
+      await expect(page.getByTestId("reveal-reading-path")).toBeVisible();
       return;
     } catch (error) {
       lastError = error;
@@ -600,7 +599,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page).toHaveURL(/\/ritual\/draw$/);
     await drawCards(page, 3);
     await revealSpread(page);
-    await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
+    await expect(page.getByTestId("reveal-reading-path")).toBeVisible();
 
     await enterReading(page);
 
@@ -1314,8 +1313,8 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("button", { name: /揭示牌阵/i }).click();
     await expect(page.getByRole("button", { name: /正在揭示/i })).toBeDisabled();
     await expect(page).toHaveURL(/\/reveal$/, { timeout: 10000 });
-    await expect(page.getByRole("heading", { name: "本轮观察重点" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "牌阵如何组织随机" })).toBeVisible();
+    await expect(page.getByTestId("reveal-reading-path")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "阅读路径" })).toBeVisible();
 
     const revealTrack = page.getByTestId("reveal-card-track");
     await expect(revealTrack).toBeVisible();

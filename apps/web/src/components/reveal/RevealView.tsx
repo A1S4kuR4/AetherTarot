@@ -91,21 +91,6 @@ export default function RevealView() {
         </h1>
       </div>
 
-      <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-midnight-border bg-midnight-panel/60 px-4 py-5 text-center sm:px-6">
-        <p className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-indigo/80">
-          先看整组牌的气候
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-text-inverse-muted">
-          {drawSource === "offline_manual"
-            ? `这些牌来自你的线下抽取，但你已经用 ${selectedSpread.name} 选择了观察角度。`
-            : `这些牌的出现仍然带有随机性，但你已经用 ${selectedSpread.name} 选择了观察角度。`}
-          接下来请先感受整组牌在不同位置形成的张力，而不是急着把它们听成一个确定答案。
-        </p>
-        <p className="mt-3 text-sm leading-relaxed text-text-inverse">
-          {spreadExperience.revealFocus}
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-12">
         {/* Card Spread Area */}
         <div className="relative flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-midnight-border bg-midnight-panel/50 px-4 pb-6 pt-8 sm:px-8 sm:pt-16 lg:col-span-8">
@@ -207,10 +192,7 @@ export default function RevealView() {
         {/* Side Panel — Position Meanings */}
         <div className="space-y-6 lg:col-span-4">
           {/* Desktop primary CTA: visible without scrolling on every spread */}
-          <div className="midnight-panel hidden border-indigo/20 bg-gradient-to-b from-indigo/[0.08] to-midnight-panel lg:block">
-            <p className="mb-4 text-sm leading-relaxed text-text-inverse-muted">
-              已经感受完这组牌的整体气候？进入深读，逐张理解每张牌在位置中的含义。
-            </p>
+          <div className="midnight-panel hidden lg:block">
             <button
               type="button"
               onClick={handleEnterReading}
@@ -222,43 +204,16 @@ export default function RevealView() {
             </button>
           </div>
 
-          <div className="midnight-panel">
+          {/* Reading path: focus + organization, merged into one card */}
+          <div className="midnight-panel" data-testid="reveal-reading-path">
             <div className="mb-3 flex items-center gap-2.5">
-              <LegacyIcon name="flare" className="text-lg text-terracotta" />
+              <LegacyIcon name="account_tree" className="text-lg text-indigo" />
               <h2 className="font-serif text-lg text-text-inverse">
-                阅读容器
-              </h2>
-            </div>
-            <p className="text-sm leading-relaxed text-text-inverse-muted">
-              {drawSource === "offline_manual"
-                ? "你在线下完成抽取，系统只接收牌面与正逆位。牌阵负责把这些实体牌结果组织成可阅读的结构。"
-                : "你没有在操纵结果，而是在选择一副观看问题的镜框。随机给出牌面，牌阵负责把这些偶然组织成可阅读的结构。"}
-            </p>
-          </div>
-
-          <div className="midnight-panel">
-            <div className="mb-4 flex items-center gap-2.5">
-              <LegacyIcon name="travel_explore" className="text-lg text-terracotta" />
-              <h2 className="font-serif text-lg text-text-inverse">
-                本轮观察重点
+                阅读路径
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-text-inverse-muted">
               {spreadExperience.revealFocus}
-            </p>
-          </div>
-
-          <div className="midnight-panel">
-            <div className="mb-4 flex items-center gap-2.5">
-              <LegacyIcon name="account_tree" className="text-lg text-indigo" />
-              <h2 className="font-serif text-lg text-text-inverse">
-                牌阵如何组织随机
-              </h2>
-            </div>
-            <p className="text-sm leading-relaxed text-text-inverse-muted">
-              {drawSource === "offline_manual"
-                ? `线下抽取决定哪张牌进入哪个位置；${selectedSpread.name} 决定阅读顺序、位置语义与综合路径。`
-                : `随机决定哪张牌进入哪个位置；${selectedSpread.name} 决定阅读顺序、位置语义与综合路径。`}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {spreadExperience.organizationModel.map((item, index) => (
