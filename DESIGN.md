@@ -589,6 +589,8 @@ Motion is essential, but it must be emotionally aligned.
 - supporting copy should reduce pressure, not hype prediction
 
 ### Ritual
+- Reader mode selector uses “快速塔罗师 / 日常塔罗师 / 深度塔罗师”. Describe 深度塔罗师 as suitable for multi-card spreads, sorting multiple factors, or validating assumptions; never frame it as a credential or as the mode for outsourcing major decisions.
+- “深度塔罗师” means analytical depth only. It does not imply medical, legal, financial, psychological, or other professional qualification, and its visual prominence must not weaken the same safety and sober-check flow shared by every mode.
 - fullscreen or near-fullscreen midnight environment
 - visible UI chrome reduced by 30–50%
 - cards, gesture, and progression dominate

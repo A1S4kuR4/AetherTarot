@@ -69,6 +69,7 @@ function buildPayload(evalCase: ReadingEvalCase): ReadingRequestPayload {
       cardId: card.id,
       isReversed: card.orientation === "reversed",
     })),
+    agent_profile: evalCase.input.agent_profile,
     thread_id: evalCase.runtime?.fixture === "thread_memory_followup"
       ? "eval-thread-memory-followup"
       : undefined,

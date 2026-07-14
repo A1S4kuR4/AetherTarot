@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { DrawnCard, Spread, TarotCard } from "@aethertarot/shared-types";
 import {
   buildReadingDraftSnapshot,
@@ -129,5 +129,54 @@ describe("reading draft storage", () => {
       findSpreadById: () => spread,
       findCardById: () => undefined,
     })).toBeNull();
+  });
+
+  it("restores legacy agent_profile aliases from drafts", () => {
+    const baseSnapshot = buildReadingDraftSnapshot({
+      question: "我最近在工作上需要看清什么？",
+      selectedSpread: spread,
+      agentProfile: "lite",
+      drawSource: "digital_random",
+      drawnCards,
+    });
+
+    const restored = parseReadingDraftSnapshot(JSON.stringify({
+      ...baseSnapshot,
+      agentProfile: "quick",
+    }), {
+      findSpreadById: () => spread,
+      findCardById: () => card,
+    });
+
+    expect(restored?.agentProfile).toBe("lite");
+  });
+
+  it("safely falls back to standard for unknown agent_profile draft values", () => {
+    const baseSnapshot = buildReadingDraftSnapshot({
+      question: "我最近在工作上需要看清什么？",
+      selectedSpread: spread,
+      agentProfile: "lite",
+      drawSource: "digital_random",
+      drawnCards,
+    });
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const restored = parseReadingDraftSnapshot(JSON.stringify({
+      ...baseSnapshot,
+      agentProfile: "expert-v2",
+    }), {
+      findSpreadById: () => spread,
+      findCardById: () => card,
+    });
+
+    expect(restored?.agentProfile).toBe("standard");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[reading-draft-storage] unknown agent_profile in draft; falling back to",
+      "standard",
+      { valueType: "string" },
+    );
+
+    warnSpy.mockRestore();
   });
 });

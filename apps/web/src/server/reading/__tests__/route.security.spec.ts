@@ -242,6 +242,48 @@ describe("reading route beta access and quota", () => {
     );
   });
 
+  it("accepts known legacy agent_profile aliases and maps them to canonical IDs", async () => {
+    const deps = buildDependencies();
+    const aliases = [
+      { raw: "quick", canonical: "lite" },
+      { raw: "daily", canonical: "standard" },
+      { raw: "professional", canonical: "sober" },
+      { raw: "clear", canonical: "sober" },
+      { raw: "rational", canonical: "sober" },
+    ] as const;
+
+    for (const { raw, canonical } of aliases) {
+      const response = await handleReadingPost(
+        buildRequest({
+          ...buildSinglePayload(),
+          agent_profile: raw,
+        }),
+        deps,
+      );
+      const payload = await response.json();
+
+      expect(response.status, `alias ${raw}`).toBe(200);
+      expect(payload.agent_profile, `alias ${raw}`).toBe(canonical);
+    }
+  });
+
+  it("rejects completely unknown agent_profile values instead of silently defaulting", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(
+      buildRequest({
+        ...buildSinglePayload(),
+        agent_profile: "expert-v2",
+      }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(400);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.requireAccess).not.toHaveBeenCalled();
+    expect(deps.generateReading).not.toHaveBeenCalled();
+  });
+
   it("shares one provider generation for concurrent duplicate requests", async () => {
     const payload = {
       ...buildSinglePayload("我现在最需要看清什么？"),

@@ -145,6 +145,45 @@ export function assertReadingEvalCase(result: ReadingEvalRunResult) {
     );
   }
 
+  const followupCount = result.reading?.follow_up_questions.length ?? 0;
+  const guidanceCount = result.reading?.reflective_guidance.length ?? 0;
+
+  if (
+    expected.min_followup_questions !== undefined
+    && followupCount < expected.min_followup_questions
+  ) {
+    failures.push(
+      `Expected at least ${expected.min_followup_questions} follow_up_questions but got ${followupCount}.`,
+    );
+  }
+
+  if (
+    expected.max_followup_questions !== undefined
+    && followupCount > expected.max_followup_questions
+  ) {
+    failures.push(
+      `Expected at most ${expected.max_followup_questions} follow_up_questions but got ${followupCount}.`,
+    );
+  }
+
+  if (
+    expected.min_guidance_items !== undefined
+    && guidanceCount < expected.min_guidance_items
+  ) {
+    failures.push(
+      `Expected at least ${expected.min_guidance_items} reflective_guidance items but got ${guidanceCount}.`,
+    );
+  }
+
+  if (
+    expected.max_guidance_items !== undefined
+    && guidanceCount > expected.max_guidance_items
+  ) {
+    failures.push(
+      `Expected at most ${expected.max_guidance_items} reflective_guidance items but got ${guidanceCount}.`,
+    );
+  }
+
   const visibleText = collectVisibleReadingText(result.reading);
   const forbiddenPhrases = [
     ...(expected.forbidden_phrases ?? []),

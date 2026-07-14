@@ -1,4 +1,9 @@
-import type { StructuredReading } from "@aethertarot/shared-types";
+import {
+  normalizeAgentProfile,
+  restoreAgentProfile,
+  type AgentProfile,
+  type StructuredReading,
+} from "@aethertarot/shared-types";
 import { z } from "zod";
 
 export const questionTypeSchema = z.enum([
@@ -9,7 +14,51 @@ export const questionTypeSchema = z.enum([
   "other",
 ]);
 
-export const agentProfileSchema = z.enum(["lite", "standard", "sober"]);
+export const canonicalAgentProfileSchema = z.enum([
+  "lite",
+  "standard",
+  "sober",
+]);
+
+/**
+ * Strict schema for external API requests.
+ *
+ * Canonical IDs and known legacy aliases are accepted. Unknown values cause a
+ * validation error instead of silently falling back to "standard".
+ * Omitted values default to "standard".
+ */
+export const apiAgentProfileSchema = z.preprocess(
+  (val) => (val === undefined ? "standard" : val),
+  z
+    .string()
+    .refine((val) => normalizeAgentProfile(val) !== null, {
+      message: "agent_profile 必须是 lite、standard、sober 或已知的旧别名。",
+    })
+    .transform((val) => normalizeAgentProfile(val) as AgentProfile)
+    .pipe(canonicalAgentProfileSchema),
+);
+
+/**
+ * Lenient schema for stored readings and history.
+ *
+ * Unknown values are safely restored to "standard" so historical records and
+ * drafts remain openable.
+ */
+export const restoredAgentProfileSchema = z.preprocess(
+  (val) => restoreAgentProfile(val, (original, fallback) => {
+    const valueType = original === null
+      ? "null"
+      : Array.isArray(original)
+        ? "array"
+        : typeof original;
+
+    console.warn(
+      "[reading-history] invalid agent_profile; falling back to standard",
+      { fallback, valueType },
+    );
+  }),
+  canonicalAgentProfileSchema,
+);
 
 export const readingPhaseSchema = z.enum(["initial", "final"]);
 
@@ -56,12 +105,11 @@ const readingCardResultSchema = z.object({
   interpretation: z.string().min(1),
 });
 
-export const structuredReadingSchema: z.ZodType<StructuredReading> = z.object({
+const structuredReadingShape = {
   reading_id: z.string().min(1),
   locale: z.string().min(1),
   question: z.string().min(1),
   question_type: questionTypeSchema,
-  agent_profile: agentProfileSchema,
   reading_phase: readingPhaseSchema,
   requires_followup: z.boolean(),
   initial_reading_id: z.string().min(1).nullable(),
@@ -77,6 +125,18 @@ export const structuredReadingSchema: z.ZodType<StructuredReading> = z.object({
   session_capsule: z.string().min(1).nullable(),
   sober_check: z.string().min(1).nullable().optional(),
   presentation_mode: z.enum(["standard", "void_narrative", "sober_anchor"]).optional(),
+};
+
+/** Strict schema for current provider output and API request snapshots. */
+export const structuredReadingSchema: z.ZodType<StructuredReading> = z.object({
+  ...structuredReadingShape,
+  agent_profile: canonicalAgentProfileSchema,
+});
+
+/** Lenient recovery schema used only for stored readings, drafts, and history. */
+export const restoredStructuredReadingSchema: z.ZodType<StructuredReading> = z.object({
+  ...structuredReadingShape,
+  agent_profile: restoredAgentProfileSchema,
 });
 
 export const readingRequestPayloadSchema = z
@@ -96,7 +156,7 @@ export const readingRequestPayloadSchema = z
       .min(1, "thread_id 不能为空。")
       .max(128, "thread_id 不能超过 128 个字符。")
       .optional(),
-    agent_profile: agentProfileSchema.default("standard"),
+    agent_profile: apiAgentProfileSchema.default("standard"),
     phase: readingPhaseSchema.default("initial"),
     draw_source: drawSourceSchema.default("digital_random"),
     prior_session_capsule: z.string().trim().min(1).max(280).nullable().optional(),

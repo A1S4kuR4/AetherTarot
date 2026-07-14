@@ -124,21 +124,33 @@ const PROMPT_CATEGORIES = [
   { id: "decision", label: "抉择困局" },
 ];
 
-const AGENT_PROFILES: Array<{ id: AgentProfile; name: string; description: string }> = [
+const AGENT_PROFILES: Array<{
+  id: AgentProfile;
+  name: string;
+  subtitle: string;
+  description: string;
+  badge?: string;
+}> = [
   {
     id: "lite",
     name: "快速塔罗师",
-    description: "轻量初读，适合先看一个清晰倾向。",
+    subtitle: "快速看懂当前最值得关注的一点",
+    description: "适合简单问题或快速抽牌。",
+    badge: "快速体验",
   },
   {
     id: "standard",
-    name: "标准塔罗师",
-    description: "两阶段校准，先让牌面说话，再结合你的回应。",
+    name: "日常塔罗师",
+    subtitle: "用自然语言理解牌面与你的处境",
+    description: "适合大多数感情、事业和自我探索问题。",
+    badge: "推荐",
   },
   {
     id: "sober",
-    name: "清醒塔罗师",
-    description: "更强调现实边界，适合重大决定或高压力议题。",
+    name: "深度塔罗师",
+    subtitle: "从多角度深入分析复杂问题",
+    description: "适合多牌阵、需要梳理多重因素或验证假设的议题。",
+    badge: "深度分析",
   },
 ];
 
@@ -789,24 +801,46 @@ export default function RitualInitializer() {
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          "font-serif text-base leading-tight transition-colors",
-                          isSelected ? "text-text-inverse font-medium" : "text-text-inverse-muted",
-                        )}
-                      >
-                        {profile.name}
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={cn(
+                            "truncate font-serif text-base leading-tight transition-colors",
+                            isSelected ? "text-text-inverse font-medium" : "text-text-inverse-muted",
+                          )}
+                        >
+                          {profile.name}
+                        </span>
+                        {profile.badge ? (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                              profile.badge === "推荐"
+                                ? "border-terracotta/40 bg-terracotta/15 text-terracotta"
+                                : "border-white/10 bg-white/[0.04] text-text-inverse-muted/70",
+                            )}
+                          >
+                            {profile.badge}
+                          </span>
+                        ) : null}
                       </span>
                       {isSelected ? (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-terracotta/25 text-terracotta shadow-[0_0_8px_rgba(214,107,61,0.4)]">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-terracotta/25 text-terracotta shadow-[0_0_8px_rgba(214,107,61,0.4)]">
                           <LegacyIcon name="check" className="text-xs" />
                         </span>
                       ) : null}
                     </div>
                     <span
                       className={cn(
-                        "mt-1.5 block text-xs leading-relaxed transition-colors",
-                        isSelected ? "text-text-inverse-muted" : "text-text-inverse-muted/60",
+                        "mt-1 block text-xs leading-relaxed transition-colors",
+                        isSelected ? "text-text-inverse-muted" : "text-text-inverse-muted/70",
+                      )}
+                    >
+                      {profile.subtitle}
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-0.5 block text-[11px] leading-relaxed transition-colors",
+                        isSelected ? "text-text-inverse-muted/80" : "text-text-inverse-muted/50",
                       )}
                     >
                       {profile.description}

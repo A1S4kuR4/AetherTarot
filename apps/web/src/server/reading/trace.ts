@@ -195,6 +195,7 @@ function summarizeActionOutput({
   if (action.type === "final_answer") {
     return {
       reading_id: state.reading?.reading_id,
+      agent_profile: state.reading?.agent_profile,
       grounding_status: grounding.grounding_status,
       used_source_ids: grounding.used_source_ids,
       requires_followup: state.reading?.requires_followup,

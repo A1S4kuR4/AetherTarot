@@ -1,4 +1,3 @@
-import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import {
   E2E_ACCESS_BYPASS_HEADER,
   isE2eAccessBypassEnabled,
@@ -14,6 +13,7 @@ import {
   DEFAULT_STORED_READINGS_LIMIT,
   MAX_STORED_READING_NOTES_LENGTH,
   normalizeStoredReadingsLimit,
+  parseStoredReadingHistoryEntry,
 } from "@/server/readings/stored-readings";
 
 export const runtime = "nodejs";
@@ -46,24 +46,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
-}
-
-function isStoredReadingPayload(value: unknown): value is ReadingHistoryEntry {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  const reading = value.reading;
-
-  return (
-    isNonEmptyString(value.id)
-    && isNonEmptyString(value.createdAt)
-    && isNonEmptyString(value.spreadId)
-    && Array.isArray(value.drawnCards)
-    && isObject(reading)
-    && isNonEmptyString(reading.reading_id)
-    && reading.reading_id === value.id
-  );
 }
 
 function parseLimitFromRequest(request: Request | null) {
@@ -130,11 +112,13 @@ export async function handleReadingsPost(
       "保存记录",
     )) as unknown;
 
-    if (!isStoredReadingPayload(payload)) {
+    const entry = parseStoredReadingHistoryEntry(payload);
+
+    if (!entry) {
       return invalidRequest("记录数据不完整。");
     }
 
-    const result = await deps.save(tester.userId, payload);
+    const result = await deps.save(tester.userId, entry);
 
     if (result.error) {
       return Response.json(

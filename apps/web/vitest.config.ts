@@ -10,6 +10,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/server/**/*.spec.ts", "src/lib/**/*.spec.ts", "src/app/**/*.spec.ts"],
+    include: [
+      "src/server/**/*.spec.ts",
+      "src/lib/**/*.spec.ts",
+      "src/app/**/*.spec.ts",
+      "../../packages/shared-types/src/**/*.spec.ts",
+    ],
   },
 });

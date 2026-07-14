@@ -77,11 +77,129 @@ const QUESTION_TYPE_FOLLOW_UP: Record<QuestionType, string[]> = {
   ],
 };
 
-const PROFILE_GUIDANCE: Record<AgentProfile, string> = {
-  lite: "这次先保留轻量判断，不急着展开过多分支。",
-  standard: "这次适合先让牌面建立主轴，再用你的补充来校准解释空间。",
-  sober: "这次需要把牌面启发和现实条件并排放置，避免把决定完全交给解读。",
+export type ReaderModeDetailLevel = "low" | "medium" | "high";
+export type ReaderModeTerminologyLevel = "low" | "medium";
+export type ReaderModeClarificationDepth = "minimal" | "light" | "deep";
+export type ReaderModeAlternativeInterpretation =
+  | "optional"
+  | "when_needed"
+  | "required_when_plausible";
+export type ReaderModeUncertaintyStyle = "brief" | "natural" | "explicit";
+
+export interface ReaderModeStrategy {
+  displayName: string;
+  goal: string;
+  detailLevel: ReaderModeDetailLevel;
+  terminologyLevel: ReaderModeTerminologyLevel;
+  clarificationDepth: ReaderModeClarificationDepth;
+  alternativeInterpretation: ReaderModeAlternativeInterpretation;
+  uncertaintyStyle: ReaderModeUncertaintyStyle;
+  maxFollowupQuestions: number;
+  guidanceItemCount: number;
+  outputLength: { singleCard: string; multiCard: string };
+  structure: string[];
+  focusNote: string;
+}
+
+/**
+ * Reader-mode strategies keyed by the stable internal AgentProfile id.
+ *
+ * The internal ids (`lite` / `standard` / `sober`) are preserved for persistence
+ * and backward compatibility; only the user-visible names differ
+ * (快速塔罗师 / 日常塔罗师 / 深度塔罗师). The behavioral difference between
+ * modes is driven by this config rather than by duplicated prompts.
+ */
+export const readerModeStrategies: Record<AgentProfile, ReaderModeStrategy> = {
+  lite: {
+    displayName: "快速塔罗师",
+    goal: "快速指出当前最重要的信息，并给出一个可执行建议",
+    detailLevel: "low",
+    terminologyLevel: "low",
+    clarificationDepth: "minimal",
+    alternativeInterpretation: "optional",
+    uncertaintyStyle: "brief",
+    maxFollowupQuestions: 1,
+    guidanceItemCount: 2,
+    outputLength: { singleCard: "约 150-250 字", multiCard: "约 250-450 字" },
+    structure: [
+      "核心提示",
+      "牌面与当前问题的联系",
+      "一个行动建议",
+      "必要时一句边界提醒",
+    ],
+    focusNote:
+      "结论优先；只保留一到两个最重要洞察；避免逐张复述完整牌义与长篇铺垫；最多一个主要行动建议；最多一个简短反思问题；默认不主动发起多轮澄清；不因追求简短而给出宿命化或过度确定的答案。",
+  },
+  standard: {
+    displayName: "日常塔罗师",
+    goal: "用自然语言完成完整、易理解的现实映射",
+    detailLevel: "medium",
+    terminologyLevel: "low",
+    clarificationDepth: "light",
+    alternativeInterpretation: "when_needed",
+    uncertaintyStyle: "natural",
+    maxFollowupQuestions: 2,
+    guidanceItemCount: 4,
+    outputLength: { singleCard: "约 300-500 字", multiCard: "约 500-800 字" },
+    structure: [
+      "当前状态",
+      "核心情绪或矛盾",
+      "牌面与现实处境的联系",
+      "用户可能忽略的部分",
+      "一到两个可执行建议",
+      "一个低负担后续问题",
+    ],
+    focusNote:
+      "使用自然生活化中文，减少塔罗术语堆叠；出现必要术语时立即用普通语言解释；不只解释牌是什么意思，还要说明它与用户处境的关系；保持温度和共情，但不为共鸣而迎合用户预设；避免“相信自己/顺其自然/一切都会好”等空泛表达；建议必须结合问题与处境；可做一次轻量校准。",
+  },
+  sober: {
+    displayName: "深度塔罗师",
+    goal: "对复杂议题进行结构化、多视角、重边界的分析",
+    detailLevel: "high",
+    terminologyLevel: "medium",
+    clarificationDepth: "deep",
+    alternativeInterpretation: "required_when_plausible",
+    uncertaintyStyle: "explicit",
+    maxFollowupQuestions: 2,
+    guidanceItemCount: 4,
+    outputLength: { singleCard: "约 450-700 字", multiCard: "约 700-1100 字" },
+    structure: [
+      "问题重述与分析边界",
+      "牌阵整体趋势",
+      "关键牌及位置分析",
+      "牌与牌之间的关系",
+      "主要解释",
+      "替代解释",
+      "事实/推测/期待区分",
+      "风险与不确定性",
+      "现实验证信号",
+      "行动建议或后续追问",
+    ],
+    focusNote:
+      "不盲目迎合；不默认用户猜测成立；不把第三方心理说成确定事实；不把未来事件说成必然；主动区分用户提供的事实、根据牌面的解释、尚未验证的推测、用户自身的期待；至少考虑一个合理替代解释；分析牌间支持/冲突/递进/转折；说明牌阵位置对牌义的影响；信息不足时降低结论强度；必要时反问隐含前提；给出现实验证信号；对医疗/法律/财务/安全主动收紧边界；不为显得专业而堆砌术语或无意义增加篇幅。",
+  },
 };
+
+const PROFILE_GUIDANCE: Record<AgentProfile, string> = {
+  lite: "这次先给出最重要的判断和一个可执行建议，不展开过多分支。",
+  standard: "这次用自然语言把牌面和你当前的现实处境联系起来，完整但不过重。",
+  sober:
+    "这次要把牌面启发与现实条件并排放置，区分事实、推测与期待，保留替代解释，避免把决定完全交给解读。",
+};
+
+function buildModeStrategyBlock(agentProfile: AgentProfile) {
+  const strategy = readerModeStrategies[agentProfile];
+
+  return [
+    `Mode strategy: ${strategy.displayName} (internal id: ${agentProfile}).`,
+    `Goal: ${strategy.goal}`,
+    `Detail level: ${strategy.detailLevel}; terminology: ${strategy.terminologyLevel}; clarification depth: ${strategy.clarificationDepth}.`,
+    `Alternative interpretation: ${strategy.alternativeInterpretation}; uncertainty style: ${strategy.uncertaintyStyle}.`,
+    `Target visible-prose length (JSON metadata excluded): single card ${strategy.outputLength.singleCard}; multi-card ${strategy.outputLength.multiCard}.`,
+    `Recommended structure: ${strategy.structure.join(" -> ")}.`,
+    `Mode focus: ${strategy.focusNote}`,
+  ].join("\n");
+}
 
 export interface ReadingPrompt {
   system: string;
@@ -784,6 +902,20 @@ function buildOutputContract({
           ? "follow_up_questions: return 1-2 reality-check questions anchored to card tension, boundary, risk, or missing condition."
           : "follow_up_questions: return 1-2 questions anchored to card tension, position semantics, or missing reality context.";
 
+  const guidanceRule =
+    agentProfile === "lite"
+      ? "reflective_guidance: return 2 concise items."
+      : agentProfile === "sober"
+        ? "reflective_guidance: return 3-4 items; at least one item must offer an alternative interpretation or a reality-verification signal, and at least one must separate fact from speculation or expectation."
+        : "reflective_guidance: return 3-4 items that connect the cards to the user's real-life situation.";
+
+  const synthesisRule =
+    agentProfile === "lite"
+      ? "synthesis: lead with the single most important point in the first sentence; keep it short and direct; do not retell each card's full meaning."
+      : agentProfile === "sober"
+        ? "synthesis: distinguish facts the user provided, card-based interpretation, unverified speculation, and the user's own expectations; include at least one plausible alternative interpretation; keep conclusions appropriately hedged."
+        : "synthesis: connect the card meanings to the user's real-life situation in natural everyday language; be complete but not overlong.";
+
   return [
     "Return JSON only. Do not wrap in markdown fences.",
     "All user-visible prose must be fluent natural Simplified Chinese (zh-CN).",
@@ -804,7 +936,8 @@ function buildOutputContract({
     "Every card interpretation must be a non-empty Chinese string under the exact key interpretation; never leave it blank, null, an object, or an array.",
     "For card metadata fields (card_id, name, english_name, orientation, position_id, position, position_meaning), copy the authority values exactly and do not rewrite, translate, paraphrase, or invent replacements.",
     "themes: 2-4 short, concrete thematic labels in plain everyday language; avoid professional tarot jargon (e.g. elements, suits, major/minor arcana) and abstract psychological terms, so beginners can easily understand.",
-    "reflective_guidance: 2-4 items.",
+    guidanceRule,
+    synthesisRule,
     followupRule,
     "Include at least one constructive tension point in synthesis or reflective_guidance: an observation that does not simply affirm the user's expected answer.",
     "The constructive tension point must be anchored to a card, orientation, position meaning, spread relationship, or unverified reality condition.",
@@ -862,9 +995,22 @@ export function buildPlaceholderInitialReadingDraft({
     buildConstructiveGuidance(questionType),
     ...QUESTION_TYPE_GUIDANCE[questionType],
   ]);
-  const reflectiveGuidance = agentProfile === "lite"
-    ? baseGuidance.slice(0, 2)
-    : baseGuidance.slice(0, 4);
+  const reflectiveGuidance =
+    agentProfile === "lite"
+      ? uniqueStrings([
+          `核心提示：眼下最值得留意的是${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}。`,
+          buildConstructiveGuidance(questionType),
+        ]).slice(0, readerModeStrategies.lite.guidanceItemCount)
+      : agentProfile === "sober"
+        ? uniqueStrings([
+            `替代解释：${themes[0] ?? QUESTION_TYPE_LENSES[questionType]}也可能对应另一种现实走向，先不把它读成唯一结论。`,
+            `把牌面启发、你已提供的事实、尚未验证的推测与你自己的期待分开放置，不要把推测说成事实。`,
+            buildConstructiveGuidance(questionType),
+            ...(buildSpreadSpecificGuidance(spread, "initial")
+              ? [buildSpreadSpecificGuidance(spread, "initial") as string]
+              : []),
+          ]).slice(0, readerModeStrategies.sober.guidanceItemCount)
+        : baseGuidance.slice(0, readerModeStrategies.standard.guidanceItemCount);
 
   return {
     cards,
@@ -911,22 +1057,38 @@ export function buildPlaceholderFinalReadingDraft({
     initialReading,
     questionType,
   );
-  const finalGuidance = uniqueStrings([
-    `保留初读里的“${initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType]}”作为观察主轴。`,
-    ...(sessionMemory?.last_advice_summary
-      ? [`也保留同一 thread 上一轮的建议：${sessionMemory.last_advice_summary}`]
-      : []),
-    ...buildFollowupAnswerGuidance(followupAnswers),
-    "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。",
-    ...(buildSpreadSpecificGuidance(initialReading.spread, "final")
-      ? [buildSpreadSpecificGuidance(initialReading.spread, "final") as string]
-      : []),
-    buildConstructiveGuidance(questionType),
-    agentProfile === "sober"
-      ? "在做重大决定前，先确认现实资源、风险承受边界和可咨询的专业对象。"
-      : "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。",
-    ...initialReading.reflective_guidance.slice(0, 1),
-  ]).slice(0, 4);
+  const primaryThemeLabel = initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType];
+  const preserveTheme = `保留初读里的“${primaryThemeLabel}”作为观察主轴。`;
+  const factSplit = "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。";
+  const lowRiskAction = "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。";
+  const spreadFinalGuidance = buildSpreadSpecificGuidance(initialReading.spread, "final");
+
+  const finalGuidance =
+    agentProfile === "lite"
+      ? uniqueStrings([
+          `核心提示仍落在${primaryThemeLabel}，先看一个可执行的小动作。`,
+          lowRiskAction,
+        ]).slice(0, readerModeStrategies.lite.guidanceItemCount)
+      : agentProfile === "sober"
+        ? uniqueStrings([
+            preserveTheme,
+            "给出至少一个与主解释并存的替代解释，并说明在什么现实信号下你会倾向其中之一。",
+            "区分你已确认的事实、根据牌面的推测、与你自己的期待；不要把推测说成事实。",
+            "在做重大决定前，先确认现实资源、风险承受边界和可咨询的专业对象。",
+            ...(spreadFinalGuidance ? [spreadFinalGuidance as string] : []),
+          ]).slice(0, readerModeStrategies.sober.guidanceItemCount)
+        : uniqueStrings([
+            preserveTheme,
+            ...(sessionMemory?.last_advice_summary
+              ? [`也保留同一 thread 上一轮的建议：${sessionMemory.last_advice_summary}`]
+              : []),
+            ...buildFollowupAnswerGuidance(followupAnswers),
+            factSplit,
+            ...(spreadFinalGuidance ? [spreadFinalGuidance as string] : []),
+            buildConstructiveGuidance(questionType),
+            lowRiskAction,
+            ...initialReading.reflective_guidance.slice(0, 1),
+          ]).slice(0, readerModeStrategies.standard.guidanceItemCount);
 
   return {
     cards: initialReading.cards,
@@ -996,12 +1158,7 @@ export function buildInitialReadingPrompt({
   sessionMemory?: SessionMemoryContext;
   knowledgeGrounding?: KnowledgeGroundingContext;
 }): ReadingPrompt {
-  const profileHint =
-    agentProfile === "lite"
-      ? "Keep the reading concise but still structured."
-      : agentProfile === "sober"
-        ? "Keep a reflective tone, but strengthen reality-check language and boundary awareness."
-        : "Deliver the full two-stage initial read and ask anchored follow-up questions.";
+  const modeStrategy = buildModeStrategyBlock(agentProfile);
   const spreadBias = buildSpreadPromptBias(spread, "initial");
 
   return {
@@ -1015,7 +1172,7 @@ export function buildInitialReadingPrompt({
       `Question: ${question}`,
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
-      profileHint,
+      modeStrategy,
       spreadBias,
       formatSpread(spread),
       "Authority drawn cards:",
@@ -1069,10 +1226,7 @@ export function buildFinalReadingPrompt({
   sessionMemory?: SessionMemoryContext;
   knowledgeGrounding?: KnowledgeGroundingContext;
 }): ReadingPrompt {
-  const profileHint =
-    agentProfile === "sober"
-      ? "Keep the tone reflective and reality-anchored; strengthen boundary and risk awareness without becoming deterministic."
-      : "Integrate the user's answers while preserving the initial thematic axis.";
+  const modeStrategy = buildModeStrategyBlock(agentProfile);
   const spreadBias = buildSpreadPromptBias(spread, "final");
 
   return {
@@ -1086,7 +1240,7 @@ export function buildFinalReadingPrompt({
       `Question: ${question}`,
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
-      profileHint,
+      modeStrategy,
       spreadBias,
       formatSpread(spread),
       "Authority drawn cards:",

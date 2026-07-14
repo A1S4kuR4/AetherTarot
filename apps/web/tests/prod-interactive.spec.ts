@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import * as path from "path";
 
 const ARTIFACT_DIR = "C:\\Users\\yoga\\.gemini\\antigravity\\brain\\cc241b25-ab43-4983-a8cf-df8cd23d96f8";
@@ -254,10 +254,10 @@ test("Production Interaction and Flow E2E Test", async ({ page }) => {
   // Wait for open questions check
   await page.waitForTimeout(1500);
   
-  // Select spread "单牌启示" and "标准塔罗师"
+  // Select spread "单牌启示" and "日常塔罗师"
   console.log("Configuring spread and profile...");
   await page.getByRole("button", { name: /单牌启示/i }).click();
-  await page.getByRole("button", { name: /标准塔罗师/i }).click();
+  await page.getByRole("button", { name: /日常塔罗师/i }).click();
   
   await takeScreenshot(page, "4-ritual-prepared.png");
 
@@ -355,10 +355,10 @@ test("Production Mobile Interaction and Flow E2E Test", async ({ page }) => {
   // Wait for open questions check
   await page.waitForTimeout(1500);
   
-  // Select spread "单牌启示" and "标准塔罗师"
+  // Select spread "单牌启示" and "日常塔罗师"
   console.log("[Mobile] Configuring spread and profile...");
   await page.getByRole("button", { name: /单牌启示/i }).click();
-  await page.getByRole("button", { name: /标准塔罗师/i }).click();
+  await page.getByRole("button", { name: /日常塔罗师/i }).click();
   
   await takeScreenshot(page, "mobile-4-ritual-prepared.png");
 

@@ -56,9 +56,12 @@ function buildReading(id = "reading-1"): StructuredReading {
         interpretation: "这张牌提示你先恢复节奏。",
       },
     ],
-    themes: ["恢复节奏"],
+    themes: ["恢复节奏", "现实验证"],
     synthesis: "这次阅读更像是在提醒你把注意力收回可行动的地方。",
-    reflective_guidance: ["先做一个能在今天完成的小整理。"],
+    reflective_guidance: [
+      "先做一个能在今天完成的小整理。",
+      "再记录一个可以核实的现实信号。",
+    ],
     follow_up_questions: [],
     safety_note: null,
     confidence_note: "塔罗适合作为反思线索，而不是确定性结论。",
@@ -84,12 +87,12 @@ function buildEntry(id = "reading-1"): ReadingHistoryEntry {
   };
 }
 
-function createQueryMock() {
+function createQueryMock(data: unknown[] = []) {
   const query = {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
     order: vi.fn(() => query),
-    limit: vi.fn(async () => ({ data: [], error: null })),
+    limit: vi.fn(async () => ({ data, error: null })),
     insert: vi.fn(async () => ({ error: null })),
     upsert: vi.fn(async () => ({ error: null })),
     update: vi.fn(() => query),
@@ -156,5 +159,41 @@ describe("stored readings service", () => {
 
     expect(result.error).toBeNull();
     expect(query.limit).toHaveBeenCalledWith(50);
+  });
+
+  it("canonicalizes historical profiles and skips structurally damaged database rows", async () => {
+    const legacyEntry = buildEntry("reading-legacy");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const query = createQueryMock([
+      {
+        reading_id: legacyEntry.id,
+        created_at: legacyEntry.createdAt,
+        spread_id: legacyEntry.spreadId,
+        draw_source: legacyEntry.drawSource,
+        drawn_cards: legacyEntry.drawnCards,
+        reading: { ...legacyEntry.reading, agent_profile: "professional" },
+        user_notes: null,
+      },
+      {
+        reading_id: "reading-damaged",
+        created_at: legacyEntry.createdAt,
+        spread_id: legacyEntry.spreadId,
+        draw_source: legacyEntry.drawSource,
+        drawn_cards: [],
+        reading: { reading_id: "reading-damaged" },
+        user_notes: null,
+      },
+    ]);
+    mocks.createAdminClient.mockReturnValue({ from: vi.fn(() => query) });
+
+    const result = await listStoredReadings(USER_ID);
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data?.[0]?.reading.agent_profile).toBe("sober");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[stored-readings] skipped invalid reading",
+      { readingId: "reading-damaged" },
+    );
+    warnSpy.mockRestore();
   });
 });

@@ -2,10 +2,11 @@ import type {
   AgentProfile,
   DrawSource,
   DrawnCard,
-  ReadingRequestCardInput,
   Spread,
   TarotCard,
+  ReadingRequestCardInput,
 } from "@aethertarot/shared-types";
+import { restoreAgentProfile } from "@aethertarot/shared-types";
 
 export const READING_DRAFT_STORAGE_KEY = "aether_tarot_active_reading_v1";
 
@@ -31,7 +32,6 @@ interface ParseReadingDraftOptions {
   findCardById: (id: string) => TarotCard | undefined;
 }
 
-const AGENT_PROFILES = new Set<AgentProfile>(["lite", "standard", "sober"]);
 const DRAW_SOURCES = new Set<DrawSource>(["digital_random", "offline_manual"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -118,7 +118,6 @@ export function parseReadingDraftSnapshot(
     parsed.version !== 1 ||
     !question ||
     !spreadId ||
-    !AGENT_PROFILES.has(agentProfile as AgentProfile) ||
     !DRAW_SOURCES.has(drawSource as DrawSource) ||
     !Array.isArray(parsed.drawnCards) ||
     parsed.drawnCards.length === 0
@@ -161,7 +160,19 @@ export function parseReadingDraftSnapshot(
   return {
     question,
     selectedSpread,
-    agentProfile: agentProfile as AgentProfile,
+    agentProfile: restoreAgentProfile(agentProfile, (original, fallback) => {
+      const valueType = original === null
+        ? "null"
+        : Array.isArray(original)
+          ? "array"
+          : typeof original;
+
+      console.warn(
+        "[reading-draft-storage] unknown agent_profile in draft; falling back to",
+        fallback,
+        { valueType },
+      );
+    }),
     drawSource: drawSource as DrawSource,
     drawnCards,
   };

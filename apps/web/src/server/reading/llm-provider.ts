@@ -41,6 +41,38 @@ type FetchImplementation = typeof fetch;
 
 type JsonRecord = Record<string, unknown>;
 
+const READING_OUTPUT_TOKEN_BUDGETS: Record<
+  AgentProfile,
+  readonly [number, number, number, number]
+> = {
+  lite: [900, 1400, 1800, 2200],
+  standard: [1400, 1900, 2400, 2800],
+  sober: [1800, 2300, 2800, 3200],
+};
+
+export function resolveReadingMaxOutputTokens({
+  agentProfile,
+  cardCount,
+  configuredMaxOutputTokens,
+}: {
+  agentProfile: AgentProfile;
+  cardCount: number;
+  configuredMaxOutputTokens: number;
+}) {
+  const budgetIndex = cardCount <= 1
+    ? 0
+    : cardCount <= 4
+      ? 1
+      : cardCount <= 7
+        ? 2
+        : 3;
+
+  return Math.min(
+    READING_OUTPUT_TOKEN_BUDGETS[agentProfile][budgetIndex],
+    configuredMaxOutputTokens,
+  );
+}
+
 function asNonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
@@ -146,7 +178,7 @@ function parseTimeoutMs(value: string | undefined) {
 
 function parseMaxOutputTokens(value: string | undefined) {
   if (!value) {
-    return 1800;
+    return 3200;
   }
 
   const parsed = Number(value);
@@ -337,6 +369,21 @@ function extractMessageText(payload: unknown) {
     "llm provider 响应缺少可解析的 message.content。",
     500,
   );
+}
+
+function extractFinishReason(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const choices = (payload as { choices?: unknown }).choices;
+
+  if (!Array.isArray(choices) || choices.length === 0) {
+    return null;
+  }
+
+  const finishReason = (choices[0] as { finish_reason?: unknown }).finish_reason;
+  return typeof finishReason === "string" ? finishReason : null;
 }
 
 function extractUsage(payload: unknown) {
@@ -593,12 +640,15 @@ export class LlmReadingProvider implements ReadingProvider {
     private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
   ) {}
 
-  private async requestDraft(prompt: { system: string; user: string }) {
+  private async requestDraft(
+    prompt: { system: string; user: string },
+    maxOutputTokens: number,
+  ) {
     const promptText = `${prompt.system}\n${prompt.user}`;
     const reservation = await this.tokenGate.reserve({
       source: "reading",
       promptText,
-      maxOutputTokens: this.config.maxOutputTokens,
+      maxOutputTokens,
     });
     let response: Response;
     const startedAt = Date.now();
@@ -674,7 +724,7 @@ export class LlmReadingProvider implements ReadingProvider {
               ? { response_format: { type: this.config.responseFormat } }
               : {}),
             temperature: this.config.temperature,
-            max_tokens: this.config.maxOutputTokens,
+            max_tokens: maxOutputTokens,
             stream: false,
             messages: [
               { role: "system", content: prompt.system },
@@ -743,6 +793,28 @@ export class LlmReadingProvider implements ReadingProvider {
     const usage = extractUsage(payload);
     let messageText = "";
 
+    if (extractFinishReason(payload) === "length") {
+      try {
+        messageText = extractMessageText(payload);
+      } catch {
+        // The finish reason is authoritative even when content is absent.
+      }
+
+      const totalTokens = recordCall({
+        success: false,
+        httpStatus: response.status,
+        outputText: messageText,
+        errorCode: "output_truncated",
+        usage,
+      });
+      await settleReservation(usage || messageText ? totalTokens : undefined);
+      throw new ReadingServiceError(
+        "generation_failed",
+        "llm provider 输出达到长度上限，解读未完整生成，请稍后重试或减少牌数。",
+        500,
+      );
+    }
+
     try {
       messageText = extractMessageText(payload);
       const parsed = parseJsonRecord(messageText);
@@ -768,7 +840,15 @@ export class LlmReadingProvider implements ReadingProvider {
   }
 
   async generateInitialRead(context: HydratedReadingContext) {
-    const payload = await this.requestDraft(buildInitialReadingPrompt(context));
+    const maxOutputTokens = resolveReadingMaxOutputTokens({
+      agentProfile: context.agentProfile,
+      cardCount: context.drawnCards.length,
+      configuredMaxOutputTokens: this.config.maxOutputTokens,
+    });
+    const payload = await this.requestDraft(
+      buildInitialReadingPrompt(context),
+      maxOutputTokens,
+    );
 
     return normalizeReadingDraft({
       payload,
@@ -778,7 +858,15 @@ export class LlmReadingProvider implements ReadingProvider {
   }
 
   async generateFinalRead(context: FinalReadingContext) {
-    const payload = await this.requestDraft(buildFinalReadingPrompt(context));
+    const maxOutputTokens = resolveReadingMaxOutputTokens({
+      agentProfile: context.agentProfile,
+      cardCount: context.drawnCards.length,
+      configuredMaxOutputTokens: this.config.maxOutputTokens,
+    });
+    const payload = await this.requestDraft(
+      buildFinalReadingPrompt(context),
+      maxOutputTokens,
+    );
 
     return normalizeReadingDraft({
       payload,

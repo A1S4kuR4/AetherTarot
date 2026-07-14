@@ -21,6 +21,7 @@ import type {
   Spread,
   StructuredReading,
 } from "@aethertarot/shared-types";
+import { restoreAgentProfile } from "@aethertarot/shared-types";
 import {
   buildReadingDraftSnapshot,
   parseReadingDraftSnapshot,
@@ -119,7 +120,36 @@ function getErrorMessage(payload: unknown) {
 }
 
 function getReadingAgentProfile(reading: StructuredReading | null) {
-  return reading?.agent_profile ?? DEFAULT_AGENT_PROFILE;
+  return restoreAgentProfile(reading?.agent_profile, (original, fallback) => {
+    const valueType = original === null
+      ? "null"
+      : Array.isArray(original)
+        ? "array"
+        : typeof original;
+
+    console.warn(
+      "[ReadingContext] unknown agent_profile in history/continuity; falling back to",
+      fallback,
+      { valueType },
+    );
+  });
+}
+
+function normalizeReadingAgentProfile(reading: StructuredReading) {
+  const agentProfile = getReadingAgentProfile(reading);
+
+  return reading.agent_profile === agentProfile
+    ? reading
+    : { ...reading, agent_profile: agentProfile };
+}
+
+function normalizeHistoryEntry(entry: ReadingHistoryEntry) {
+  const reading = normalizeReadingAgentProfile(entry.reading);
+  return reading === entry.reading ? entry : { ...entry, reading };
+}
+
+function normalizeHistoryEntries(entries: ReadingHistoryEntry[]) {
+  return entries.map(normalizeHistoryEntry);
 }
 
 function buildContinuitySource(reading: StructuredReading): ContinuitySource | null {
@@ -143,7 +173,11 @@ function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
       ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY_V2);
 
     if (saved) {
-      return JSON.parse(saved) as ReadingHistoryEntry[];
+      const parsed = JSON.parse(saved) as unknown;
+
+      if (Array.isArray(parsed)) {
+        return normalizeHistoryEntries(parsed as ReadingHistoryEntry[]);
+      }
     }
   } catch {
     // Ignore parse errors.
@@ -226,7 +260,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
         if (response.ok) {
           const payload = await response.json() as { readings?: ReadingHistoryEntry[] };
-          const serverReadings = payload.readings ?? [];
+          const serverReadings = normalizeHistoryEntries(payload.readings ?? []);
 
           if (serverReadings.length > 0) {
             setHistory(serverReadings);
@@ -335,14 +369,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const canonicalReading = normalizeReadingAgentProfile(nextReading);
     const requestDrawnCards = toRequestDrawnCards(drawnCards);
     const newEntry: ReadingHistoryEntry = {
-      id: nextReading.reading_id,
+      id: canonicalReading.reading_id,
       createdAt: new Date().toISOString(),
       spreadId: selectedSpread.id,
       drawSource,
       drawnCards: requestDrawnCards,
-      reading: nextReading,
+      reading: canonicalReading,
     };
 
     setHistory((current) => {
@@ -527,14 +562,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const initialReading = normalizeReadingAgentProfile(reading);
     const requestSignature = JSON.stringify({
       question: question.trim(),
       spreadId: selectedSpread.id,
       drawnCards: requestDrawnCards,
-      agent_profile: getReadingAgentProfile(reading),
+      agent_profile: initialReading.agent_profile,
       phase: "final",
       draw_source: drawSource,
-      initial_reading_id: reading.reading_id,
+      initial_reading_id: initialReading.reading_id,
       followup_answers: answers,
       prior_session_capsule: continuitySource?.capsule ?? null,
     });
@@ -561,11 +597,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           question,
           spreadId: selectedSpread.id,
           drawnCards: requestDrawnCards,
-          agent_profile: getReadingAgentProfile(reading),
+          agent_profile: initialReading.agent_profile,
           phase: "final",
           draw_source: drawSource,
           prior_session_capsule: continuitySource?.capsule ?? null,
-          initial_reading: reading,
+          initial_reading: initialReading,
           followup_answers: answers,
         }),
         timeoutMs: READING_REQUEST_TIMEOUT_MS,
@@ -618,8 +654,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     interpretSignatureRef.current = null;
-    const spread = findSpreadById(historyEntry.spreadId) ?? null;
-    const reconstructedCards: DrawnCard[] = historyEntry.drawnCards
+    const canonicalEntry = normalizeHistoryEntry(historyEntry);
+    const spread = findSpreadById(canonicalEntry.spreadId) ?? null;
+    const reconstructedCards: DrawnCard[] = canonicalEntry.drawnCards
       .map((savedCard) => {
         const card = findCardById(savedCard.cardId);
 
@@ -635,12 +672,12 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       })
       .filter((card): card is DrawnCard => card !== null);
 
-    setQuestionState(historyEntry.reading.question);
+    setQuestionState(canonicalEntry.reading.question);
     setSelectedSpreadState(spread);
-    setAgentProfileState(historyEntry.reading.agent_profile ?? DEFAULT_AGENT_PROFILE);
-    setDrawSourceState(historyEntry.drawSource ?? DEFAULT_DRAW_SOURCE);
+    setAgentProfileState(canonicalEntry.reading.agent_profile);
+    setDrawSourceState(canonicalEntry.drawSource ?? DEFAULT_DRAW_SOURCE);
     setDrawnCards(reconstructedCards);
-    setReading(historyEntry.reading);
+    setReading(canonicalEntry.reading);
     setErrorMessage(null);
     setSafetyIntercept(null);
     setSoberGate(EMPTY_SOBER_GATE);
@@ -648,7 +685,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   };
 
   const continueFromHistoryReading = (historyEntry: ReadingHistoryEntry) => {
-    const nextContinuitySource = buildContinuitySource(historyEntry.reading);
+    const canonicalEntry = normalizeHistoryEntry(historyEntry);
+    const nextContinuitySource = buildContinuitySource(canonicalEntry.reading);
 
     if (!nextContinuitySource) {
       return false;

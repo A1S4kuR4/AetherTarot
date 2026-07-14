@@ -1,3 +1,4 @@
+import type { AgentProfile } from "@aethertarot/shared-types";
 import type { AgentAction, GroundingStatus } from "@/server/reading/reading-agent-core";
 
 export type ReadingEvalCardOrientation = "upright" | "reversed";
@@ -14,6 +15,7 @@ export interface ReadingEvalCase {
   input: {
     question: string;
     topic?: string;
+    agent_profile?: AgentProfile;
     cards?: Array<{
       id: string;
       name?: string;
@@ -29,6 +31,10 @@ export interface ReadingEvalCase {
     grounding_status?: GroundingStatus;
     min_retrieval_sources?: number;
     max_agent_steps?: number;
+    min_followup_questions?: number;
+    max_followup_questions?: number;
+    min_guidance_items?: number;
+    max_guidance_items?: number;
     forbidden_phrases?: string[];
     required_phrases?: string[];
   };
@@ -179,6 +185,62 @@ export const readingEvalCases: ReadingEvalCase[] = [
     },
     runtime: {
       fixture: "empty_retrieval",
+    },
+  },
+  {
+    id: "mode_quick_concise",
+    name: "快速塔罗师：结论优先、最多两个洞察、不发起澄清",
+    input: {
+      question: "这段关系里我最需要看清什么？",
+      topic: "relationship",
+      agent_profile: "lite",
+      cards: [{ id: "star", name: "星星", orientation: "upright" }],
+    },
+    expected: {
+      action_path: ["final_answer"],
+      should_retrieve: false,
+      grounding_status: "none",
+      max_followup_questions: 0,
+      max_guidance_items: 2,
+      required_phrases: ["核心提示"],
+    },
+  },
+  {
+    id: "mode_daily_reality_mapping",
+    name: "日常塔罗师：把牌面映射到现实处境、完整但不过重",
+    input: {
+      question: "这段关系里我最需要看清什么？",
+      topic: "relationship",
+      agent_profile: "standard",
+      cards: [{ id: "star", name: "星星", orientation: "upright" }],
+    },
+    expected: {
+      action_path: ["final_answer"],
+      should_retrieve: false,
+      grounding_status: "none",
+      min_followup_questions: 1,
+      max_followup_questions: 2,
+      min_guidance_items: 3,
+      required_phrases: ["现实"],
+    },
+  },
+  {
+    id: "mode_deep_alternative",
+    name: "深度塔罗师：区分事实/推测/期待并给出替代解释",
+    input: {
+      question: "这段关系里我最需要看清什么？",
+      topic: "relationship",
+      agent_profile: "sober",
+      cards: [{ id: "star", name: "星星", orientation: "upright" }],
+    },
+    expected: {
+      action_path: ["final_answer"],
+      should_retrieve: false,
+      grounding_status: "none",
+      min_followup_questions: 1,
+      max_followup_questions: 2,
+      min_guidance_items: 3,
+      required_phrases: ["替代解释"],
     },
   },
 ];

@@ -1,12 +1,43 @@
 import "server-only";
 
 import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
+import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
+import {
+  drawSourceSchema,
+  readingRequestCardInputSchema,
+  restoredStructuredReadingSchema,
+} from "@/server/reading/schemas";
 
 export const DEFAULT_STORED_READINGS_LIMIT = 50;
 export const MAX_STORED_READINGS_LIMIT = 100;
 export const MAX_STORED_READING_NOTES_LENGTH = 2000;
+
+const storedReadingHistoryEntrySchema: z.ZodType<ReadingHistoryEntry> = z
+  .object({
+    id: z.string().trim().min(1),
+    createdAt: z.string().trim().min(1),
+    spreadId: z.string().trim().min(1),
+    drawSource: drawSourceSchema.optional(),
+    drawnCards: z.array(readingRequestCardInputSchema).min(1),
+    reading: restoredStructuredReadingSchema,
+    user_notes: z.string().max(MAX_STORED_READING_NOTES_LENGTH).optional(),
+  })
+  .superRefine((entry, context) => {
+    if (entry.reading.reading_id !== entry.id) {
+      context.addIssue({
+        code: "custom",
+        message: "reading.reading_id 必须与记录 id 一致。",
+        path: ["reading", "reading_id"],
+      });
+    }
+  });
+
+export function parseStoredReadingHistoryEntry(value: unknown) {
+  const result = storedReadingHistoryEntrySchema.safeParse(value);
+  return result.success ? result.data : null;
+}
 
 export type ListStoredReadingsOptions = {
   limit?: number;
@@ -56,13 +87,19 @@ export async function saveStoredReading(
   userId: string,
   entry: ReadingHistoryEntry,
 ) {
+  const canonicalEntry = parseStoredReadingHistoryEntry(entry);
+
+  if (!canonicalEntry) {
+    return { error: "invalid_entry" as const };
+  }
+
   const adminClient = createAdminClient();
 
   if (!adminClient) {
     return { error: "database_unavailable" as const };
   }
 
-  const row = buildStoredReadingRow(userId, entry);
+  const row = buildStoredReadingRow(userId, canonicalEntry);
 
   const { error } = await adminClient
     .from("stored_readings")
@@ -104,15 +141,28 @@ export async function listStoredReadings(
     return { data: null, error: "query_failed" as const };
   }
 
-  const entries: ReadingHistoryEntry[] = (data ?? []).map((row) => ({
-    id: row.reading_id,
-    createdAt: row.created_at,
-    spreadId: row.spread_id,
-    drawSource: row.draw_source as ReadingHistoryEntry["drawSource"],
-    drawnCards: row.drawn_cards as unknown as ReadingHistoryEntry["drawnCards"],
-    reading: row.reading as unknown as ReadingHistoryEntry["reading"],
-    user_notes: row.user_notes ?? undefined,
-  }));
+  const entries: ReadingHistoryEntry[] = [];
+
+  for (const row of data ?? []) {
+    const entry = parseStoredReadingHistoryEntry({
+      id: row.reading_id,
+      createdAt: row.created_at,
+      spreadId: row.spread_id,
+      drawSource: row.draw_source ?? undefined,
+      drawnCards: row.drawn_cards,
+      reading: row.reading,
+      user_notes: row.user_notes ?? undefined,
+    });
+
+    if (!entry) {
+      console.warn("[stored-readings] skipped invalid reading", {
+        readingId: row.reading_id,
+      });
+      continue;
+    }
+
+    entries.push(entry);
+  }
 
   return { data: entries, error: null as null };
 }
@@ -153,13 +203,21 @@ export async function migrateStoredReadings(
   userId: string,
   entries: ReadingHistoryEntry[],
 ) {
+  const canonicalEntries = entries.map(parseStoredReadingHistoryEntry);
+
+  if (canonicalEntries.some((entry) => entry === null)) {
+    return { migrated: 0, error: "invalid_entry" as const };
+  }
+
   const adminClient = createAdminClient();
 
   if (!adminClient) {
     return { migrated: 0, error: "database_unavailable" as const };
   }
 
-  const dedupedEntries = dedupeEntriesByReadingId(entries);
+  const dedupedEntries = dedupeEntriesByReadingId(
+    canonicalEntries.filter((entry): entry is ReadingHistoryEntry => entry !== null),
+  );
 
   if (dedupedEntries.length === 0) {
     return { migrated: 0, error: null as null };

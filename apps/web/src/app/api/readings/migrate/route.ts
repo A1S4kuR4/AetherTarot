@@ -1,11 +1,13 @@
-import type { ReadingHistoryEntry } from "@aethertarot/shared-types";
 import {
   requireBetaTesterAccess,
   type AuthenticatedTester,
 } from "@/server/beta/access";
 import { readBoundedJsonBody } from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
-import { migrateStoredReadings } from "@/server/readings/stored-readings";
+import {
+  migrateStoredReadings,
+  parseStoredReadingHistoryEntry,
+} from "@/server/readings/stored-readings";
 
 export const runtime = "nodejs";
 const MAX_MIGRATE_REQUEST_BYTES = 2 * 1024 * 1024;
@@ -24,32 +26,6 @@ function invalidRequest(message: string) {
   return Response.json(
     { error: { code: "invalid_request", message } },
     { status: 400 },
-  );
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function isStoredReadingPayload(value: unknown): value is ReadingHistoryEntry {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  const reading = value.reading;
-
-  return (
-    isNonEmptyString(value.id)
-    && isNonEmptyString(value.createdAt)
-    && isNonEmptyString(value.spreadId)
-    && Array.isArray(value.drawnCards)
-    && isObject(reading)
-    && isNonEmptyString(reading.reading_id)
-    && reading.reading_id === value.id
   );
 }
 
@@ -73,11 +49,16 @@ export async function handleMigratePost(
       return Response.json({ migrated: 0 });
     }
 
-    if (!payload.every(isStoredReadingPayload)) {
+    const entries = payload.map(parseStoredReadingHistoryEntry);
+
+    if (entries.some((entry) => entry === null)) {
       return invalidRequest("记录数据不完整。");
     }
 
-    const result = await deps.migrate(tester.userId, payload);
+    const result = await deps.migrate(
+      tester.userId,
+      entries.filter((entry) => entry !== null),
+    );
 
     if (result.error) {
       return Response.json(

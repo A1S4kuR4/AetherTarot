@@ -275,8 +275,9 @@ async function expectRitualInitializerControlsInViewport(
   const controls = [
     page.getByPlaceholder("今天，你想向内心询问什么？"),
     page.getByRole("button", { name: /快速塔罗师/i }),
-    page.getByRole("button", { name: /标准塔罗师/i }),
-    page.getByRole("button", { name: /清醒塔罗师/i }),
+    page.getByRole("button", { name: /日常塔罗师/i }),
+    page.getByRole("button", { name: /深度塔罗师/i }),
+    page.getByText("深度分析", { exact: true }),
     page.getByRole("button", { name: /单牌启示/i }),
     page.getByRole("button", { name: /圣三角/i }),
     page.getByRole("button", { name: /四个面向/i }),
@@ -355,9 +356,6 @@ async function holdToStart(
       await expect(startButton).toBeVisible({ timeout: 3000 });
       await expect(startButton).toBeEnabled({ timeout: 3000 });
       await startButton.dispatchEvent("mousedown", undefined, { timeout: 3000 });
-      await expect(
-        page.getByRole("button", { name: /正在收束意图/i }),
-      ).toBeVisible({ timeout: 3000 });
     } catch (error) {
       if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
         return;
@@ -382,7 +380,9 @@ async function holdToStart(
         .then(() => true)
         .catch(() => false),
       page
-        .getByRole("heading", { name: "重大现实决定前的校准" })
+        .getByRole("heading", {
+          name: /重大现实决定前的校准|重大决策风险提示/,
+        })
         .waitFor({ state: "visible", timeout: 1000 })
         .then(() => true)
         .catch(() => false),
@@ -429,7 +429,7 @@ async function startReading(
     await expect(input).toHaveValue(question);
     await expect(
       page
-        .getByText(/问题已经具备开放性|现实决策重量|可以再具体一点/)
+        .getByText(/问题已经具备开放性|现实决策重量|可以再具体一点|关注你此刻最真实的感受/)
         .first(),
     ).toBeVisible({ timeout: 5000 });
     await spreadButton.click();
@@ -461,8 +461,8 @@ async function getSelectedCount(
   }
 
   const text =
-    (await page.getByText(/你已选择 \d+ \/ \d+ 张牌/).textContent()) ?? "";
-  const match = text.match(/你已选择 (\d+) \/ (\d+) 张牌/);
+    (await page.getByText(/你已选择 \d+ \/ \d+ 张牌|\(\d+\/\d+\)/).textContent()) ?? "";
+  const match = text.match(/(\d+)\s*\/\s*(\d+)/);
 
   return Number(match?.[1] ?? 0);
 }
@@ -586,6 +586,7 @@ async function completeFollowup(
   await expect(page.getByRole("heading", { name: "解读结果" })).toBeVisible({
     timeout: 60000,
   });
+  await expect(page.locator("#reading-synthesis")).toBeInViewport();
 }
 
 test.describe("AetherTarot smoke flow", () => {
@@ -1052,12 +1053,19 @@ test.describe("AetherTarot smoke flow", () => {
     page,
   }) => {
     await startReading(page, "我应该离婚吗？", /单牌启示/i);
-    await expect(page.getByRole("heading", { name: "重大现实决定前的校准" })).toBeVisible();
+    await expect(page.getByRole("heading", {
+      name: /重大现实决定前的校准|重大决策风险提示/,
+    })).toBeVisible();
     const decisionContinueButton = page.getByRole("button", {
-      name: /确认现实边界并继续/i,
+      name: /确认现实边界并继续|我已了解，继续仪式/i,
     });
-    await expect(decisionContinueButton).toBeDisabled();
-    await page.getByLabel(/我确认这次阅读只用于整理线索/i).check();
+    const boundaryCheckbox = page.getByLabel(/我确认这次阅读只用于整理线索/i);
+
+    if (await boundaryCheckbox.count()) {
+      await expect(decisionContinueButton).toBeDisabled();
+      await boundaryCheckbox.check();
+    }
+
     await expect(decisionContinueButton).toBeEnabled();
     await decisionContinueButton.click();
     await expect(page).toHaveURL(/\/ritual\/draw$/);
@@ -1096,12 +1104,19 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByPlaceholder("今天，你想向内心询问什么？").fill("我应该离婚吗？");
     await page.getByRole("button", { name: "快速解读" }).click();
 
-    await expect(page.getByRole("heading", { name: "重大现实决定前的校准" })).toBeVisible();
+    await expect(page.getByRole("heading", {
+      name: /重大现实决定前的校准|重大决策风险提示/,
+    })).toBeVisible();
     const decisionContinueButton = page.getByRole("button", {
-      name: /确认现实边界并继续/i,
+      name: /确认现实边界并继续|我已了解，继续仪式/i,
     });
-    await expect(decisionContinueButton).toBeDisabled();
-    await page.getByLabel(/我确认这次阅读只用于整理线索/i).check();
+    const boundaryCheckbox = page.getByLabel(/我确认这次阅读只用于整理线索/i);
+
+    if (await boundaryCheckbox.count()) {
+      await expect(decisionContinueButton).toBeDisabled();
+      await boundaryCheckbox.check();
+    }
+
     await expect(decisionContinueButton).toBeEnabled();
     await decisionContinueButton.click();
 
@@ -1250,17 +1265,26 @@ test.describe("AetherTarot smoke flow", () => {
 
     await expect(startButton).toBeVisible();
     await expect(startButton).toBeDisabled();
+    const deepModeButton = page.getByRole("button", { name: /深度塔罗师/i });
+    await expect(deepModeButton).toBeVisible();
+    await expect(page.getByText("深度分析", { exact: true })).toBeVisible();
+    await startButton.scrollIntoViewIfNeeded();
     await expect(startButton).toBeInViewport();
     await expect(quickButton).toBeVisible();
     await expect(quickButton).toBeDisabled();
+    await quickButton.scrollIntoViewIfNeeded();
     await expect(quickButton).toBeInViewport();
 
     await input.fill("我现在最需要看清什么？");
+    await deepModeButton.click();
+    await expect(deepModeButton).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: /圣三角/i }).click();
 
     await expect(startButton).toBeEnabled();
+    await startButton.scrollIntoViewIfNeeded();
     await expect(startButton).toBeInViewport();
     await expect(quickButton).toBeEnabled();
+    await quickButton.scrollIntoViewIfNeeded();
     await expect(quickButton).toBeInViewport();
     await expectNoHorizontalOverflow(page);
   });

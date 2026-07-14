@@ -58,9 +58,12 @@ function buildReading(id = "reading-1"): StructuredReading {
         interpretation: "这张牌提示你先恢复节奏。",
       },
     ],
-    themes: ["恢复节奏"],
+    themes: ["恢复节奏", "现实验证"],
     synthesis: "这次阅读更像是在提醒你把注意力收回可行动的地方。",
-    reflective_guidance: ["先做一个能在今天完成的小整理。"],
+    reflective_guidance: [
+      "先做一个能在今天完成的小整理。",
+      "再记录一个可以核实的现实信号。",
+    ],
     follow_up_questions: [],
     safety_note: null,
     confidence_note: "塔罗适合作为反思线索，而不是确定性结论。",
@@ -154,6 +157,50 @@ describe("readings account history routes", () => {
     expect(response.status).toBe(400);
     expect(payload.error?.code).toBe("invalid_request");
     expect(deps.save).not.toHaveBeenCalled();
+  });
+
+  it("canonicalizes legacy profiles before saving account history", async () => {
+    const deps = buildReadingsDeps();
+    const entry = buildEntry();
+
+    const response = await handleReadingsPost(
+      buildRequest("/api/readings", {
+        ...entry,
+        reading: { ...entry.reading, agent_profile: "professional" },
+      }),
+      deps,
+    );
+
+    expect(response.status).toBe(200);
+    expect(deps.save).toHaveBeenCalledWith(
+      TESTER.userId,
+      expect.objectContaining({
+        reading: expect.objectContaining({ agent_profile: "sober" }),
+      }),
+    );
+  });
+
+  it("falls back unknown historical profiles without accepting damaged reading fields", async () => {
+    const deps = buildReadingsDeps();
+    const entry = buildEntry();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const response = await handleReadingsPost(
+      buildRequest("/api/readings", {
+        ...entry,
+        reading: { ...entry.reading, agent_profile: "expert-v2" },
+      }),
+      deps,
+    );
+
+    expect(response.status).toBe(200);
+    expect(deps.save).toHaveBeenCalledWith(
+      TESTER.userId,
+      expect.objectContaining({
+        reading: expect.objectContaining({ agent_profile: "standard" }),
+      }),
+    );
+    warnSpy.mockRestore();
   });
 
   it("rejects notes over the supported storage limit", async () => {

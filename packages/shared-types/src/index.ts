@@ -44,6 +44,79 @@ export type QuestionType =
 
 export type AgentProfile = "lite" | "standard" | "sober";
 
+export const AGENT_PROFILE_CANONICAL_VALUES = [
+  "lite",
+  "standard",
+  "sober",
+] as const;
+
+export const AGENT_PROFILE_LEGACY_ALIASES: Record<string, AgentProfile> = {
+  quick: "lite",
+  default: "standard",
+  daily: "standard",
+  clear: "sober",
+  rational: "sober",
+  professional: "sober",
+};
+
+/**
+ * Strictly normalize an agent profile value.
+ *
+ * Returns a canonical `AgentProfile` for canonical IDs and known legacy aliases.
+ * Returns `null` for unknown values, non-strings, empty/whitespace strings, `null`
+ * or `undefined`.
+ *
+ * Use this for external API input validation where silent fallback would hide
+ * client bugs or version drift.
+ */
+export function normalizeAgentProfile(profile: unknown): AgentProfile | null {
+  if (typeof profile !== "string") {
+    return null;
+  }
+
+  const trimmed = profile.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const lower = trimmed.toLowerCase();
+
+  if (AGENT_PROFILE_CANONICAL_VALUES.includes(lower as AgentProfile)) {
+    return lower as AgentProfile;
+  }
+
+  const mapped = AGENT_PROFILE_LEGACY_ALIASES[lower];
+
+  if (mapped) {
+    return mapped;
+  }
+
+  return null;
+}
+
+/**
+ * Restore an agent profile value from stored data, drafts, or history.
+ *
+ * Maps canonical IDs and known legacy aliases. For unknown or malformed values,
+ * safely falls back to `"standard"` (日常塔罗师) so that drafts and history remain
+ * openable. The optional `onFallback` callback receives the original value and the
+ * fallback canonical ID for observability/logging.
+ */
+export function restoreAgentProfile(
+  profile: unknown,
+  onFallback?: (original: unknown, fallback: AgentProfile) => void,
+): AgentProfile {
+  const canonical = normalizeAgentProfile(profile);
+
+  if (canonical) {
+    return canonical;
+  }
+
+  onFallback?.(profile, "standard");
+  return "standard";
+}
+
 export type ReadingPhase = "initial" | "final";
 
 export type DrawSource = "digital_random" | "offline_manual";

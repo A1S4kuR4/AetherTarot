@@ -64,6 +64,7 @@ export default function InterpretationView() {
 
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldScrollToSynthesisRef = useRef(false);
   const [noteSaveStatus, setNoteSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<
     Record<string, Record<number, string>>
@@ -266,7 +267,7 @@ export default function InterpretationView() {
     }));
   };
 
-  const handleSubmitFollowup = () => {
+  const handleSubmitFollowup = async () => {
     if (!reading || !areFollowupAnswersValid) {
       return;
     }
@@ -276,7 +277,12 @@ export default function InterpretationView() {
       answer: (activeFollowupDrafts[index] ?? "").trim(),
     }));
 
-    void submitFollowupAnswers(answers);
+    shouldScrollToSynthesisRef.current = true;
+    const didSubmit = await submitFollowupAnswers(answers);
+
+    if (!didSubmit) {
+      shouldScrollToSynthesisRef.current = false;
+    }
   };
 
   const handleNotesChange = (value: string) => {
@@ -414,6 +420,25 @@ export default function InterpretationView() {
     };
   }, [isLoading]);
 
+  useEffect(() => {
+    if (
+      !shouldScrollToSynthesisRef.current
+      || isLoading
+      || reading?.reading_phase !== "final"
+    ) {
+      return;
+    }
+
+    const synthesisSection = document.getElementById("reading-synthesis");
+
+    if (!synthesisSection) {
+      return;
+    }
+
+    shouldScrollToSynthesisRef.current = false;
+    synthesisSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [isLoading, isSoberCheckPassed, reading?.reading_id, reading?.reading_phase]);
+
   if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
@@ -538,7 +563,7 @@ export default function InterpretationView() {
                 isValid={areFollowupAnswersValid}
                 isLoading={isLoading}
                 onDraftChange={handleFollowupChange}
-                onSubmit={handleSubmitFollowup}
+                onSubmit={() => void handleSubmitFollowup()}
               />
             ) : null}
 

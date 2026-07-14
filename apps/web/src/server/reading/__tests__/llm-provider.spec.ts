@@ -9,6 +9,7 @@ import {
   createLlmReadingProviderFromEnv,
   LlmReadingProvider,
   normalizeReadingDraft,
+  resolveReadingMaxOutputTokens,
   resolveLlmProviderConfig,
 } from "@/server/reading/llm-provider";
 import { runReadingGraph } from "@/server/reading/graph";
@@ -129,6 +130,38 @@ describe("llm provider baseline", () => {
         DASHSCOPE_API_KEY: "sk-test-braced",
       }).apiKey,
     ).toBe("sk-test-braced");
+  });
+
+  it("uses 3200 as the default hard output-token ceiling", () => {
+    expect(resolveLlmProviderConfig({
+      NODE_ENV: "test",
+      AETHERTAROT_LLM_BASE_URL: "https://api.example.com/v1",
+      AETHERTAROT_LLM_MODEL: "test-model",
+    }).maxOutputTokens).toBe(3200);
+  });
+
+  it.each([
+    [1, "lite", 900], [1, "standard", 1400], [1, "sober", 1800],
+    [3, "lite", 1400], [3, "standard", 1900], [3, "sober", 2300],
+    [6, "lite", 1800], [6, "standard", 2400], [6, "sober", 2800],
+    [9, "lite", 2200], [9, "standard", 2800], [9, "sober", 3200],
+  ] as const)(
+    "budgets %i cards in %s mode at %i tokens",
+    (cardCount, agentProfile, expected) => {
+      expect(resolveReadingMaxOutputTokens({
+        agentProfile,
+        cardCount,
+        configuredMaxOutputTokens: 3200,
+      })).toBe(expected);
+    },
+  );
+
+  it("clamps the profile/card budget to the configured hard ceiling", () => {
+    expect(resolveReadingMaxOutputTokens({
+      agentProfile: "sober",
+      cardCount: 10,
+      configuredMaxOutputTokens: 1750,
+    })).toBe(1750);
   });
 
   it("configures provider thinking mode explicitly for models that default to thinking", () => {
@@ -313,6 +346,7 @@ describe("llm provider baseline", () => {
 
   it("calls an OpenAI-compatible chat completions endpoint and normalizes the final draft", async () => {
     const context = await buildFinalContext();
+    const tokenGate = buildTokenGate();
     const fetchMock = vi.fn(async () =>
       new Response(
         JSON.stringify({
@@ -361,10 +395,10 @@ describe("llm provider baseline", () => {
         responseFormat: "json_object",
         temperature: 0.2,
         timeoutMs: 5_000,
-        maxOutputTokens: 1800,
+        maxOutputTokens: 3200,
       },
       fetchMock as typeof fetch,
-      buildTokenGate(),
+      tokenGate,
     );
 
     const draft = await provider.generateFinalRead(context);
@@ -378,8 +412,12 @@ describe("llm provider baseline", () => {
     ).toMatchObject({
       thinking: { type: "disabled" },
       response_format: { type: "json_object" },
-      max_tokens: 1800,
+      max_tokens: 1900,
     });
+    expect(tokenGate.reserve).toHaveBeenCalledWith(expect.objectContaining({
+      source: "reading",
+      maxOutputTokens: 1900,
+    }));
     expect(draft.themes).toEqual(context.initialReading.themes);
     expect(draft.follow_up_questions).toHaveLength(1);
     expect(draft.reflective_guidance).toHaveLength(3);
@@ -438,6 +476,47 @@ describe("llm provider baseline", () => {
     expect(tokenGate.settle).toHaveBeenCalledWith({
       reservation: { id: "reservation-id", reservedTokens: 4000 },
       actualTokens: undefined,
+    });
+  });
+
+  it("reports provider length truncation distinctly and settles actual usage", async () => {
+    const context = await buildFinalContext();
+    const tokenGate = buildTokenGate();
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 3200,
+      },
+      vi.fn(async () => new Response(JSON.stringify({
+        choices: [{
+          finish_reason: "length",
+          message: { content: '{"cards":[' },
+        }],
+        usage: {
+          prompt_tokens: 600,
+          completion_tokens: 1900,
+          total_tokens: 2500,
+        },
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch,
+      tokenGate,
+    );
+
+    await expect(provider.generateFinalRead(context)).rejects.toMatchObject({
+      code: "generation_failed",
+      message: expect.stringMatching(/长度上限.*未完整生成/),
+    });
+    expect(tokenGate.reserve).toHaveBeenCalledWith(expect.objectContaining({
+      maxOutputTokens: 1900,
+    }));
+    expect(tokenGate.settle).toHaveBeenCalledWith({
+      reservation: { id: "reservation-id", reservedTokens: 4000 },
+      actualTokens: 2500,
     });
   });
 });
