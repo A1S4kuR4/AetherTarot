@@ -11,6 +11,7 @@ import {
   SHARE_CARD_WIDTH,
   SHARE_MODE_DESCRIPTIONS,
   SHARE_MODE_LABELS,
+  SHARE_SAFETY_NOTE_MAX_LENGTH,
   type ShareMode,
 } from "./constants";
 import { ReadingShareCard } from "./ReadingShareCard";
@@ -40,6 +41,21 @@ type GenerationState =
   | { status: "ready"; blob: Blob; previewUrl: string; file: File }
   | { status: "error"; message: string };
 
+function getSummaryDisabledReason(reading: StructuredReading): string | null {
+  if (reading.sober_check) {
+    return "本次解读包含现实决策提醒，暂不支持分享完整解读。";
+  }
+
+  if (
+    reading.safety_note
+    && reading.safety_note.length > SHARE_SAFETY_NOTE_MAX_LENGTH
+  ) {
+    return "安全说明较长，为避免裁切，暂不支持分享摘要卡。可使用牌阵卡。";
+  }
+
+  return null;
+}
+
 export function ReadingShareDialog({
   reading,
   drawnCards,
@@ -56,7 +72,7 @@ export function ReadingShareDialog({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  const isSoberRestricted = Boolean(reading.sober_check);
+  const summaryDisabledReason = getSummaryDisabledReason(reading);
 
   const cleanupGeneration = useCallback(() => {
     abortRef.current?.abort();
@@ -87,7 +103,6 @@ export function ReadingShareDialog({
   useEffect(() => {
     return () => {
       cleanupGeneration();
-      returnFocusRef.current?.focus?.();
     };
   }, [cleanupGeneration]);
 
@@ -102,6 +117,11 @@ export function ReadingShareDialog({
 
   const handleGenerate = useCallback(async () => {
     if (!cardRef.current) return;
+
+    if (mode === "summary" && summaryDisabledReason) {
+      setGeneration({ status: "error", message: summaryDisabledReason });
+      return;
+    }
 
     if (mode === "summary" && !hasConfirmedSummary) {
       const confirmed = window.confirm(
@@ -144,7 +164,7 @@ export function ReadingShareDialog({
         error instanceof Error ? error.message : "图片生成失败，请重试。";
       setGeneration({ status: "error", message });
     }
-  }, [cleanupGeneration, hasConfirmedSummary, mode]);
+  }, [cleanupGeneration, hasConfirmedSummary, mode, summaryDisabledReason]);
 
   const handleShare = useCallback(async () => {
     if (generation.status !== "ready") return;
@@ -236,7 +256,8 @@ export function ReadingShareDialog({
               {generation.status !== "ready" && (
                 <div className="mb-5 space-y-3">
                   {(["minimal", "summary"] as ShareMode[]).map((m) => {
-                    const disabled = isSoberRestricted && m === "summary";
+                    const disabled =
+                      Boolean(summaryDisabledReason) && m === "summary";
                     return (
                       <button
                         key={m}
@@ -264,7 +285,7 @@ export function ReadingShareDialog({
                         </div>
                         <p className="mt-1 text-xs leading-relaxed text-text-muted">
                           {disabled
-                            ? "本次解读包含现实决策提醒，暂不支持分享完整解读。"
+                            ? summaryDisabledReason
                             : SHARE_MODE_DESCRIPTIONS[m]}
                         </p>
                       </button>
@@ -299,7 +320,10 @@ export function ReadingShareDialog({
                 {generation.status !== "ready" ? (
                   <button
                     type="button"
-                    disabled={generation.status === "generating"}
+                    disabled={
+                      generation.status === "generating"
+                      || (mode === "summary" && Boolean(summaryDisabledReason))
+                    }
                     onClick={handleGenerate}
                     className="btn-primary min-h-12 w-full"
                   >

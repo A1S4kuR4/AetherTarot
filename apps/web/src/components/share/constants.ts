@@ -3,6 +3,7 @@ export type ShareMode = "minimal" | "summary";
 export const SHARE_CARD_WIDTH = 600;
 export const SHARE_CARD_HEIGHT = 900;
 export const SHARE_CARD_PIXEL_RATIO = 2;
+export const SHARE_SAFETY_NOTE_MAX_LENGTH = 180;
 
 export const SHARE_MODE_LABELS: Record<ShareMode, string> = {
   minimal: "牌阵卡",

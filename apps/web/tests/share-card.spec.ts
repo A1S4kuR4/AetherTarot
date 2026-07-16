@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { StructuredReading } from "@aethertarot/shared-types";
+import { SHARE_SAFETY_NOTE_MAX_LENGTH } from "../src/components/share/constants";
 
 async function waitForReadingHydration(page: Page) {
   await page.waitForFunction(
@@ -33,6 +34,15 @@ const CARD_TEMPLATES = [
   { card_id: "strength", name: "力量", english_name: "Strength" },
   { card_id: "hermit", name: "隐士", english_name: "The Hermit" },
 ];
+
+const SAFETY_NOTE_SEGMENT =
+  "请把塔罗解读作为整理线索，并结合现实信息、个人判断与合格专业支持确认下一步。";
+
+function createSafetyNoteAtLength(length: number): string {
+  return SAFETY_NOTE_SEGMENT.repeat(
+    Math.ceil(length / SAFETY_NOTE_SEGMENT.length),
+  ).slice(0, length);
+}
 
 function createMockReading(
   overrides: Partial<StructuredReading> = {},
@@ -93,6 +103,112 @@ function createMockReading(
     presentation_mode: "standard",
     ...overrides,
   };
+}
+
+function createMockReadingWithCount(
+  cardCount: number,
+  overrides: Partial<StructuredReading> = {},
+): StructuredReading {
+  const reading = createMockReading({ cards: undefined, ...overrides });
+  reading.cards = CARD_TEMPLATES.slice(0, cardCount).map(
+    (template, index) => ({
+      card_id: template.card_id,
+      name: template.name,
+      english_name: template.english_name,
+      orientation:
+        index % 2 === 0 ? ("upright" as const) : ("reversed" as const),
+      position_id: `pos-${index}`,
+      position: `位置 ${index + 1}`,
+      position_meaning: `位置 ${index + 1} 的含义`,
+      interpretation: `位置 ${index + 1} 的解读内容。`,
+    }),
+  );
+  reading.spread.positions = reading.cards.map((card) => ({
+    id: card.position_id,
+    name: card.position,
+    description: `${card.position} 描述`,
+  }));
+  return reading;
+}
+
+async function assertShareCardLayout(
+  page: Page,
+  cardCount: number,
+  mode: "minimal" | "summary",
+) {
+  const preview = page.locator('img[alt="分享卡预览"]');
+  const naturalWidth = await preview.evaluate(
+    (el) => (el as HTMLImageElement).naturalWidth,
+  );
+  const naturalHeight = await preview.evaluate(
+    (el) => (el as HTMLImageElement).naturalHeight,
+  );
+  expect(naturalWidth).toBe(1200);
+  expect(naturalHeight).toBe(1800);
+
+  const card = page.locator('[data-testid="reading-share-card"]').first();
+  const footer = page
+    .locator('[data-testid="reading-share-card"] footer')
+    .first();
+  const cardItems = card.locator('[data-testid="reading-share-card-item"]');
+  const cardBox = await card.boundingBox();
+  const footerBox = await footer.boundingBox();
+
+  expect(cardBox).not.toBeNull();
+  expect(footerBox).not.toBeNull();
+  await expect(cardItems).toHaveCount(cardCount);
+
+  if (cardBox && footerBox) {
+    expect(footerBox.x).toBeGreaterThanOrEqual(cardBox.x - 1);
+    expect(footerBox.x + footerBox.width).toBeLessThanOrEqual(
+      cardBox.x + cardBox.width + 1,
+    );
+    expect(footerBox.y + footerBox.height).toBeLessThanOrEqual(
+      cardBox.y + cardBox.height + 1,
+    );
+
+    for (const item of await cardItems.all()) {
+      const itemBox = await item.boundingBox();
+      expect(itemBox).not.toBeNull();
+      if (itemBox) {
+        expect(itemBox.x).toBeGreaterThanOrEqual(cardBox.x - 1);
+        expect(itemBox.x + itemBox.width).toBeLessThanOrEqual(
+          cardBox.x + cardBox.width + 1,
+        );
+        expect(itemBox.y).toBeGreaterThanOrEqual(cardBox.y - 1);
+        expect(itemBox.y + itemBox.height).toBeLessThanOrEqual(
+          footerBox.y + 1,
+        );
+      }
+    }
+
+    if (mode === "summary") {
+      const summary = card.locator('[data-testid="reading-share-summary"]');
+      const summaryBox = await summary.boundingBox();
+      expect(summaryBox).not.toBeNull();
+      if (summaryBox) {
+        expect(summaryBox.y).toBeGreaterThanOrEqual(cardBox.y - 1);
+        expect(summaryBox.y + summaryBox.height).toBeLessThanOrEqual(
+          footerBox.y + 1,
+        );
+      }
+
+      const summaryOverflow = await summary.evaluate((element) => ({
+        horizontal: element.scrollWidth > element.clientWidth,
+        vertical: element.scrollHeight > element.clientHeight,
+      }));
+      expect(summaryOverflow).toEqual({ horizontal: false, vertical: false });
+    } else {
+      const themes = card.locator('[data-testid="reading-share-themes"]').first();
+      const themesBox = await themes.boundingBox();
+      expect(themesBox).not.toBeNull();
+      if (themesBox) {
+        expect(themesBox.y + themesBox.height).toBeLessThanOrEqual(
+          footerBox.y + 1,
+        );
+      }
+    }
+  }
 }
 
 async function startQuickReading(page: Page, reading: StructuredReading) {
@@ -233,35 +349,40 @@ test.describe("share card feature", () => {
     await expect(shareButton).toBeFocused();
   });
 
-  for (const cardCount of [1, 3, 7, 10]) {
-    test(`keeps ${cardCount} card items and footer within the share card`, async ({
+  for (const cardCount of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    test(`keeps ${cardCount} card items and footer within the share card (minimal mode)`, async ({
       page,
     }) => {
-      const reading = createMockReading({ cards: undefined });
-      reading.cards = CARD_TEMPLATES.slice(0, cardCount).map(
-        (template, index) => ({
-          card_id: template.card_id,
-          name: template.name,
-          english_name: template.english_name,
-          orientation:
-            index % 2 === 0 ? ("upright" as const) : ("reversed" as const),
-          position_id: `pos-${index}`,
-          position: `位置 ${index + 1}`,
-          position_meaning: `位置 ${index + 1} 的含义`,
-          interpretation: `位置 ${index + 1} 的解读内容。`,
-        }),
-      );
-      reading.spread.positions = reading.cards.map((card) => ({
-        id: card.position_id,
-        name: card.position,
-        description: `${card.position} 描述`,
-      }));
+      const reading = createMockReadingWithCount(cardCount, {
+        safety_note: null,
+        confidence_note: null,
+      });
 
       await startQuickReading(page, reading);
       await page.getByRole("button", { name: "分享" }).click();
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+      await dialog.getByRole("button", { name: "生成图片" }).click();
 
+      const preview = dialog.locator('img[alt="分享卡预览"]');
+      await expect(preview).toBeVisible({ timeout: 15000 });
+
+      await assertShareCardLayout(page, cardCount, "minimal");
+    });
+  }
+
+  for (const cardCount of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    test(`keeps ${cardCount} card items and footer within the share card (normal summary mode)`, async ({
+      page,
+    }) => {
+      const reading = createMockReadingWithCount(cardCount, {
+        safety_note: null,
+      });
+
+      await startQuickReading(page, reading);
+      await page.getByRole("button", { name: "分享" }).click();
+
+      const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "解读摘要卡" }).click();
       page.once("dialog", (d) => d.accept());
       await dialog.getByRole("button", { name: "生成图片" }).click();
@@ -269,64 +390,72 @@ test.describe("share card feature", () => {
       const preview = dialog.locator('img[alt="分享卡预览"]');
       await expect(preview).toBeVisible({ timeout: 15000 });
 
-      const naturalWidth = await preview.evaluate(
-        (el) => (el as HTMLImageElement).naturalWidth,
-      );
-      const naturalHeight = await preview.evaluate(
-        (el) => (el as HTMLImageElement).naturalHeight,
-      );
-
-      expect(naturalWidth).toBe(1200);
-      expect(naturalHeight).toBe(1800);
-
-      // Verify the off-screen card keeps all key elements inside the 600x900 stage.
-      const card = page.locator('[data-testid="reading-share-card"]').first();
-      const footer = page
-        .locator('[data-testid="reading-share-card"] footer')
-        .first();
-      const cardItems = card.locator('[data-testid="reading-share-card-item"]');
-      const cardBox = await card.boundingBox();
-      const footerBox = await footer.boundingBox();
-
-      expect(cardBox).not.toBeNull();
-      expect(footerBox).not.toBeNull();
-      await expect(cardItems).toHaveCount(cardCount);
-
-      if (cardBox && footerBox) {
-        expect(footerBox.x).toBeGreaterThanOrEqual(cardBox.x - 1);
-        expect(footerBox.x + footerBox.width).toBeLessThanOrEqual(
-          cardBox.x + cardBox.width + 1,
-        );
-        expect(footerBox.y + footerBox.height).toBeLessThanOrEqual(
-          cardBox.y + cardBox.height + 1,
-        );
-
-        for (const item of await cardItems.all()) {
-          const itemBox = await item.boundingBox();
-          expect(itemBox).not.toBeNull();
-          if (itemBox) {
-            expect(itemBox.x).toBeGreaterThanOrEqual(cardBox.x - 1);
-            expect(itemBox.x + itemBox.width).toBeLessThanOrEqual(
-              cardBox.x + cardBox.width + 1,
-            );
-            expect(itemBox.y).toBeGreaterThanOrEqual(cardBox.y - 1);
-            expect(itemBox.y + itemBox.height).toBeLessThanOrEqual(
-              footerBox.y + 1,
-            );
-          }
-        }
-      }
+      await assertShareCardLayout(page, cardCount, "summary");
     });
   }
 
+  for (const cardCount of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    test(`keeps ${cardCount} card items and footer within the share card (compact summary with safety note)`, async ({
+      page,
+    }) => {
+      const fullSafetyNote = createSafetyNoteAtLength(
+        SHARE_SAFETY_NOTE_MAX_LENGTH,
+      );
+      const reading = createMockReadingWithCount(cardCount, {
+        safety_note: fullSafetyNote,
+      });
+
+      await startQuickReading(page, reading);
+      await page.getByRole("button", { name: "分享" }).click();
+
+      const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+      await dialog.getByRole("button", { name: "解读摘要卡" }).click();
+      page.once("dialog", (d) => d.accept());
+      await dialog.getByRole("button", { name: "生成图片" }).click();
+
+      const preview = dialog.locator('img[alt="分享卡预览"]');
+      await expect(preview).toBeVisible({ timeout: 15000 });
+
+      await assertShareCardLayout(page, cardCount, "summary");
+      await expect(
+        page
+          .locator('[data-testid="reading-share-safety-note-text"]')
+          .first(),
+      ).toHaveText(fullSafetyNote);
+    });
+  }
+
+  test("disables summary sharing when the safety note exceeds its complete-display budget", async ({
+    page,
+  }) => {
+    const reading = createMockReading({
+      safety_note: createSafetyNoteAtLength(
+        SHARE_SAFETY_NOTE_MAX_LENGTH + 1,
+      ),
+    });
+    await startQuickReading(page, reading);
+
+    await page.getByRole("button", { name: "分享" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+    const summaryButton = dialog.getByRole("button", { name: /解读摘要卡/ });
+
+    await expect(summaryButton).toBeDisabled();
+    await expect(summaryButton).toContainText(
+      "安全说明较长，为避免裁切，暂不支持分享摘要卡。可使用牌阵卡。",
+    );
+    await expect(dialog.getByRole("button", { name: "生成图片" })).toBeEnabled();
+  });
+
   test("keeps safety note visible with long synthesis", async ({ page }) => {
+    const fullSafetyNote =
+      "安全提醒：本解读仅供反思，不能替代医疗、法律或财务专业建议。请不要依据牌面自行调整药物、签署重要协议或作出高风险资金决定；如现实情况紧迫，请优先联系具备资质的专业人士，并让可信任的人陪你一起核对下一步。";
     const reading = createMockReading({
       synthesis:
         "这是一段非常长的综合解读文本，用于测试内容溢出时的安全边界。".repeat(
           20,
         ),
-      safety_note:
-        "安全提醒：本解读仅供反思，不能替代医疗、法律或财务专业建议。",
+      safety_note: fullSafetyNote,
     });
     await startQuickReading(page, reading);
 
@@ -348,7 +477,11 @@ test.describe("share card feature", () => {
         '[data-testid="reading-share-card"] [data-testid="reading-share-safety-note"]',
       )
       .first();
+    const safetyNoteText = safetyNote.locator(
+      '[data-testid="reading-share-safety-note-text"]',
+    );
     await expect(safetyNote).toBeVisible();
+    await expect(safetyNoteText).toHaveText(fullSafetyNote);
     await expect(
       card.locator('[data-testid="reading-share-guidance"]'),
     ).toHaveCount(0);
@@ -356,10 +489,15 @@ test.describe("share card feature", () => {
     const cardBox = await card.boundingBox();
     const summaryBox = await summary.boundingBox();
     const safetyBox = await safetyNote.boundingBox();
+    const safetyTextOverflow = await safetyNoteText.evaluate((element) => ({
+      horizontal: element.scrollWidth > element.clientWidth,
+      vertical: element.scrollHeight > element.clientHeight,
+    }));
 
     expect(cardBox).not.toBeNull();
     expect(summaryBox).not.toBeNull();
     expect(safetyBox).not.toBeNull();
+    expect(safetyTextOverflow).toEqual({ horizontal: false, vertical: false });
 
     if (cardBox && summaryBox && safetyBox) {
       expect(safetyBox.y).toBeGreaterThanOrEqual(cardBox.y - 1);

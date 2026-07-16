@@ -7,6 +7,7 @@ import {
   SHARE_CARD_HEIGHT,
   SHARE_CARD_WIDTH,
   SHARE_FIXED_COPY,
+  type ShareMode,
 } from "./constants";
 import type { ShareCardModel } from "./share-model";
 import { truncateByCharBudget, truncateLinesByBudget } from "./share-image";
@@ -24,70 +25,129 @@ function formatExportedDate(isoString: string): string {
   }).format(date);
 }
 
-function CardGrid({ model }: { model: ShareCardModel }) {
+interface CardLayout {
+  rows: number[];
+  width: number;
+  gap: number;
+  rowGap: number;
+}
+
+function getCardLayout(
+  count: number,
+  mode: ShareMode,
+  compactSummary: boolean,
+): CardLayout {
+  if (mode === "minimal") {
+    switch (count) {
+      case 1:
+        return { rows: [1], width: 240, gap: 0, rowGap: 0 };
+      case 2:
+        return { rows: [2], width: 175, gap: 16, rowGap: 0 };
+      case 3:
+        return { rows: [3], width: 145, gap: 14, rowGap: 0 };
+      case 4:
+        return { rows: [2, 2], width: 122, gap: 14, rowGap: 10 };
+      case 5:
+        return { rows: [3, 2], width: 122, gap: 14, rowGap: 10 };
+      case 6:
+        return { rows: [3, 3], width: 122, gap: 14, rowGap: 10 };
+      case 7:
+        return { rows: [4, 3], width: 102, gap: 12, rowGap: 8 };
+      case 8:
+        return { rows: [4, 4], width: 102, gap: 12, rowGap: 8 };
+      case 9:
+        return { rows: [3, 3, 3], width: 85, gap: 10, rowGap: 8 };
+      case 10:
+        return { rows: [5, 5], width: 86, gap: 10, rowGap: 6 };
+    }
+  }
+
+  if (compactSummary) {
+    switch (count) {
+      case 1:
+        return { rows: [1], width: 115, gap: 0, rowGap: 0 };
+      case 2:
+        return { rows: [2], width: 88, gap: 12, rowGap: 0 };
+      case 3:
+        return { rows: [3], width: 74, gap: 10, rowGap: 0 };
+      case 4:
+        return { rows: [2, 2], width: 58, gap: 8, rowGap: 5 };
+      case 5:
+        return { rows: [3, 2], width: 56, gap: 8, rowGap: 5 };
+      case 6:
+        return { rows: [3, 3], width: 54, gap: 8, rowGap: 5 };
+      case 7:
+        return { rows: [4, 3], width: 52, gap: 6, rowGap: 4 };
+      case 8:
+        return { rows: [4, 4], width: 50, gap: 6, rowGap: 4 };
+      case 9:
+        return { rows: [5, 4], width: 48, gap: 5, rowGap: 4 };
+      case 10:
+        return { rows: [5, 5], width: 46, gap: 5, rowGap: 4 };
+    }
+  }
+
+  switch (count) {
+    case 1:
+      return { rows: [1], width: 130, gap: 0, rowGap: 0 };
+    case 2:
+      return { rows: [2], width: 100, gap: 14, rowGap: 0 };
+    case 3:
+      return { rows: [3], width: 84, gap: 10, rowGap: 0 };
+    case 4:
+      return { rows: [2, 2], width: 64, gap: 10, rowGap: 5 };
+    case 5:
+      return { rows: [3, 2], width: 62, gap: 8, rowGap: 5 };
+    case 6:
+      return { rows: [3, 3], width: 60, gap: 8, rowGap: 5 };
+    case 7:
+      return { rows: [4, 3], width: 58, gap: 6, rowGap: 4 };
+    case 8:
+      return { rows: [4, 4], width: 56, gap: 6, rowGap: 4 };
+    case 9:
+      return { rows: [5, 4], width: 54, gap: 5, rowGap: 4 };
+    case 10:
+      return { rows: [5, 5], width: 52, gap: 5, rowGap: 4 };
+  }
+
+  return { rows: [count], width: 52, gap: 5, rowGap: 0 };
+}
+
+function CardGrid({
+  model,
+  compactSummary = false,
+}: {
+  model: ShareCardModel;
+  compactSummary?: boolean;
+}) {
   const { cards, mode } = model;
   const count = cards.length;
+  const layout = getCardLayout(count, mode, compactSummary);
 
-  if (count === 1) {
-    return (
-      <div className="flex items-center justify-center">
-        <CardFigure
-          card={cards[0]}
-          size={mode === "summary" ? "summaryLarge" : "large"}
-          showPositionLabel
-        />
-      </div>
-    );
-  }
-
-  if (count <= 3) {
-    return (
-      <div
-        className={cn(
-          "flex items-start justify-center",
-          mode === "summary" ? "gap-3" : "gap-4",
-        )}
-      >
-        {cards.map((card) => (
-          <CardFigure
-            key={card.positionId}
-            card={card}
-            size={mode === "summary" ? "summaryMedium" : "medium"}
-            showPositionLabel
-          />
-        ))}
-      </div>
-    );
-  }
-
-  const isCompact = count >= 8;
-  const cols = count <= 6 ? 3 : count === 7 ? 4 : 5;
-  const size =
-    mode === "summary"
-      ? isCompact
-        ? "compact"
-        : "dense"
-      : isCompact
-        ? "dense"
-        : "small";
+  const rows = layout.rows.map((rowCount, rowIndex) => {
+    const start = layout.rows
+      .slice(0, rowIndex)
+      .reduce((sum, prevCount) => sum + prevCount, 0);
+    return cards.slice(start, start + rowCount);
+  });
 
   return (
-    <div
-      className={cn(
-        "grid justify-center",
-        isCompact ? "gap-x-2 gap-y-1" : "gap-3",
-      )}
-      style={{
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      }}
-    >
-      {cards.map((card) => (
-        <CardFigure
-          key={card.positionId}
-          card={card}
-          size={size}
-          showPositionLabel
-        />
+    <div className="flex flex-col items-center" style={{ gap: layout.rowGap }}>
+      {rows.map((rowCards, rowIndex) => (
+        <div
+          key={rowIndex}
+          className="flex items-start justify-center"
+          style={{ gap: layout.gap }}
+        >
+          {rowCards.map((card) => (
+            <CardFigure
+              key={card.positionId}
+              card={card}
+              width={layout.width}
+              showPositionLabel
+            />
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -95,33 +155,25 @@ function CardGrid({ model }: { model: ShareCardModel }) {
 
 interface CardFigureProps {
   card: ShareCardModel["cards"][number];
-  size:
-    | "large"
-    | "medium"
-    | "summaryLarge"
-    | "summaryMedium"
-    | "small"
-    | "dense"
-    | "compact";
+  width: number;
   showPositionLabel: boolean;
 }
 
-const SIZE_MAP = {
-  large: { width: 238, label: "text-[15px]" },
-  medium: { width: 142, label: "text-[13px]" },
-  summaryLarge: { width: 170, label: "text-[13px]" },
-  summaryMedium: { width: 118, label: "text-[11px]" },
-  small: { width: 92, label: "text-[10px]" },
-  dense: { width: 74, label: "text-[9px]" },
-  compact: { width: 62, label: "text-[8px]" },
-} as const;
+function getLabelClassName(width: number): string {
+  if (width >= 170) return "text-[15px]";
+  if (width >= 130) return "text-[13px]";
+  if (width >= 110) return "text-[11px]";
+  if (width >= 90) return "text-[10px]";
+  if (width >= 75) return "text-[9px]";
+  return "text-[8px]";
+}
 
-function CardFigure({ card, size, showPositionLabel }: CardFigureProps) {
-  const { width, label } = SIZE_MAP[size];
+function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
   const aspectRatio = 1 / 1.7;
   const height = Math.round(width / aspectRatio);
   const revealUrl = getRevealCardImageUrl(card.imageUrl);
-  const isDense = size === "dense" || size === "compact";
+  const label = getLabelClassName(width);
+  const isDense = width < 100;
 
   return (
     <div
@@ -193,6 +245,7 @@ function Themes({
 
   return (
     <div
+      data-testid="reading-share-themes"
       className={cn(
         "flex flex-col items-center",
         compact ? "gap-1.5" : "gap-2.5",
@@ -267,14 +320,12 @@ function TextSection({
   maxLines,
   fontSize = 15,
   lineHeight = 1.65,
-  important = false,
 }: {
   label: string;
   text: string;
   maxLines: number;
   fontSize?: number;
   lineHeight?: number;
-  important?: boolean;
 }) {
   const maxHeight = maxLines * fontSize * lineHeight;
   const charsPerLine = Math.floor(520 / fontSize);
@@ -282,19 +333,8 @@ function TextSection({
   const truncated = truncateByCharBudget(text, maxChars);
 
   return (
-    <div
-      className={cn(
-        "border-t border-paper-border/70 px-4 py-2.5 first:border-t-0",
-        important &&
-          "mx-2 mt-2 rounded-xl border border-safety/20 bg-safety-bg/40",
-      )}
-    >
-      <p
-        className={cn(
-          "mb-1 font-sans text-[9px] font-medium tracking-[0.15em]",
-          important ? "text-safety" : "text-text-muted",
-        )}
-      >
+    <div className="border-t border-paper-border/70 px-4 py-2.5 first:border-t-0">
+      <p className="mb-1 font-sans text-[9px] font-medium tracking-[0.15em] text-text-muted">
         {label}
       </p>
       <p
@@ -307,6 +347,26 @@ function TextSection({
         }}
       >
         {truncated}
+      </p>
+    </div>
+  );
+}
+
+function SafetySection({ text }: { text: string }) {
+  return (
+    <div
+      data-testid="reading-share-safety-note"
+      className="mx-2 mt-2 shrink-0 rounded-xl border border-safety/20 bg-safety-bg/40 px-4 py-2.5"
+    >
+      <p className="mb-1 font-sans text-[9px] font-medium tracking-[0.15em] text-safety">
+        安全提醒
+      </p>
+      <p
+        data-testid="reading-share-safety-note-text"
+        className="font-aether-serif text-text-body"
+        style={{ fontSize: 12, lineHeight: 1.45 }}
+      >
+        {text}
       </p>
     </div>
   );
@@ -422,9 +482,22 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
   } = model;
   const budget = getContentBudget(cards.length);
   const exportedDate = formatExportedDate(model.exportedAt);
+  const isHighCardCount = cards.length >= 8;
+
+  // Summary mode competes for vertical space with the card grid.
+  // Cap text aggressively so the summary box never needs overflow-hidden.
   const synthesisLines = safetyNote
-    ? Math.min(budget.maxSynthesisLines, 4)
-    : Math.min(budget.maxSynthesisLines, 7);
+    ? 1
+    : isHighCardCount
+      ? 2
+      : Math.min(budget.maxSynthesisLines, 3);
+  const questionLines = safetyNote
+    ? 1
+    : isHighCardCount
+      ? 1
+      : Math.min(budget.maxQuestionLines, 2);
+  const confidenceLines = 1;
+  const guidanceCount = safetyNote ? 0 : 1;
 
   return (
     <div
@@ -462,13 +535,13 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
               <div className="mt-3">
                 <QuestionBlock
                   question={question}
-                  maxLines={budget.maxQuestionLines}
+                  maxLines={questionLines}
                 />
               </div>
             )}
 
             <div className="mt-3 px-1">
-              <CardGrid model={model} />
+              <CardGrid model={model} compactSummary={Boolean(safetyNote)} />
             </div>
 
             <div className="mt-3">
@@ -480,16 +553,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
               className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-paper-border bg-paper-raised/60 shadow-[0_3px_12px_rgba(24,23,19,0.04)]"
             >
               {safetyNote && (
-                <div data-testid="reading-share-safety-note">
-                  <TextSection
-                    label="安全提醒"
-                    text={safetyNote}
-                    maxLines={3}
-                    important
-                    fontSize={13}
-                    lineHeight={1.5}
-                  />
-                </div>
+                <SafetySection text={safetyNote} />
               )}
 
               <TextSection
@@ -500,20 +564,17 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
                 lineHeight={1.55}
               />
 
-              {confidenceNote && (
+              {confidenceNote && !safetyNote && (
                 <TextSection
                   label="置信说明"
                   text={confidenceNote}
-                  maxLines={2}
+                  maxLines={confidenceLines}
                   fontSize={12}
                   lineHeight={1.5}
                 />
               )}
 
-              <GuidanceList
-                items={guidance}
-                maxCount={safetyNote ? 0 : Math.min(budget.maxGuidanceCount, 2)}
-              />
+              <GuidanceList items={guidance} maxCount={guidanceCount} />
             </div>
           </main>
         )}
