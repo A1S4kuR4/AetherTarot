@@ -61,6 +61,11 @@
 }
 
 /* ============================================================
+   Share Card Only Font
+   Loaded via <link> in layout.tsx: /fonts/aether-serif/aether-serif.css
+   ============================================================ */
+
+/* ============================================================
    Base Layer
    ============================================================ */
 @layer base {
@@ -513,5 +518,14 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+/* ============================================================
+   Utilities Layer
+   ============================================================ */
+@layer utilities {
+  .font-aether-serif {
+    font-family: "AetherSerif", "Noto Serif SC", "Source Han Serif SC", "Songti SC", ui-serif, serif;
   }
 }

@@ -30,6 +30,7 @@ import { LoadingState } from "./interpretation/LoadingState";
 import { ErrorState } from "./interpretation/ErrorState";
 import { SafetyIntercept } from "./interpretation/SafetyIntercept";
 import { SoberCheckGate } from "./interpretation/SoberCheckGate";
+import { ReadingShareDialog } from "@/components/share/ReadingShareDialog";
 import type { FeedbackLabel } from "./interpretation/constants";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
@@ -80,6 +81,8 @@ export default function InterpretationView() {
   >({});
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareDialogKey, setShareDialogKey] = useState(0);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -597,7 +600,27 @@ export default function InterpretationView() {
               confidenceNote={reading.confidence_note}
             />
 
-            <ReadingFooter onReset={handleResetReading} />
+            <ReadingFooter
+              onReset={handleResetReading}
+              onShare={
+                isCompletedReading
+                  ? () => {
+                      setShareDialogKey((k) => k + 1);
+                      setShowShareDialog(true);
+                    }
+                  : undefined
+              }
+            />
+
+            {isCompletedReading && reading ? (
+              <ReadingShareDialog
+                key={shareDialogKey}
+                reading={reading}
+                drawnCards={drawnCards}
+                open={showShareDialog}
+                onOpenChange={setShowShareDialog}
+              />
+            ) : null}
           </motion.div>
         )
       ) : null}

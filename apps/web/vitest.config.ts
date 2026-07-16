@@ -14,6 +14,7 @@ export default defineConfig({
       "src/server/**/*.spec.ts",
       "src/lib/**/*.spec.ts",
       "src/app/**/*.spec.ts",
+      "src/components/**/*.spec.ts",
       "../../packages/shared-types/src/**/*.spec.ts",
     ],
   },

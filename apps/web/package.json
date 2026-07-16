@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-share-font.js",
     "dev": "node ./scripts/run-next.cjs dev",
+    "prebuild": "node scripts/copy-share-font.js",
     "build": "node ./scripts/run-next.cjs build",
     "start": "node ./scripts/run-next.cjs start",
     "lint": "eslint",
@@ -21,6 +23,7 @@
     "@supabase/supabase-js": "^2.101.1",
     "@tanstack/react-virtual": "^3.14.2",
     "clsx": "^2.1.1",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.7.0",
     "motion": "^12.38.0",
     "next": "16.2.6",
@@ -32,6 +35,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@chinese-fonts/syst": "^3.0.0",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

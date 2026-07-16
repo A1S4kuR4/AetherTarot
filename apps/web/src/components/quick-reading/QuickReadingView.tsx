@@ -20,6 +20,7 @@ import {
   QUESTION_TYPE_LABELS,
 } from "@/components/reading/interpretation/constants";
 import { SingleCardAnalysisSection } from "./SingleCardAnalysisSection";
+import { ReadingShareDialog } from "@/components/share/ReadingShareDialog";
 
 import { getLeadSentence, uniqueStrings } from "@/components/reading/interpretation/utils";
 
@@ -43,6 +44,8 @@ export default function QuickReadingView() {
   } = useReading();
 
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareDialogKey, setShareDialogKey] = useState(0);
   const isQuickState = isQuickReadingState({
     agentProfile,
     selectedSpread,
@@ -54,6 +57,7 @@ export default function QuickReadingView() {
   const soberInput = isSoberGateCurrent ? soberGate.input : "";
   const isSoberCheckPassed = isSoberGateCurrent ? soberGate.isPassed : false;
   const isSoberInputValid = soberInput.trim().length >= 5;
+  const isCompletedReading = Boolean(reading && !reading.requires_followup);
 
   const trustPathCard = useMemo(() => {
     if (!reading || drawnCards.length === 0) {
@@ -260,7 +264,27 @@ export default function QuickReadingView() {
                 confidenceNote={reading.confidence_note}
               />
 
-              <ReadingFooter onReset={handleResetReading} />
+              <ReadingFooter
+                onReset={handleResetReading}
+                onShare={
+                  isCompletedReading
+                    ? () => {
+                        setShareDialogKey((k) => k + 1);
+                        setShowShareDialog(true);
+                      }
+                    : undefined
+                }
+              />
+
+              {isCompletedReading && reading ? (
+                <ReadingShareDialog
+                  key={shareDialogKey}
+                  reading={reading}
+                  drawnCards={drawnCards}
+                  open={showShareDialog}
+                  onOpenChange={setShowShareDialog}
+                />
+              ) : null}
             </motion.div>
           )
         ) : null}
