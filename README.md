@@ -31,8 +31,10 @@ AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验�
 - 通过 `/api/reading` 返回结构化 reading 输出
 - 对高风险或决策外包问题提供安全阻断与 sober-check 响应
 - 快速解读路径与完整仪式路径
+- 线下抽牌后手动录入实体牌面
 - 本地历史回放与账号级 completed reading 存储
 - 基于 `knowledge/wiki` 的塔罗百科浏览
+- 解读结果分享卡片（图片生成与系统分享，sober-check 下禁用摘要分享）
 - 通过服务端环境变量启用可选的 OpenAI-compatible LLM provider
 - 邀请制内测访问、额度控制、telemetry 与轻量反馈
 
@@ -72,9 +74,12 @@ AetherTarot/
 - `/`：入口与回访用户 journey
 - `/new`：问题输入与牌阵选择
 - `/ritual`：洗牌与抽牌交互
+- `/offline-draw`：线下洗牌后手动录入实体牌面
 - `/reveal`：牌面揭示
 - `/reading`：结构化解读结果页
-- `/history`：completed reading 回放
+- `/quick-reading`：单牌快速解读（lite profile 专用路径）
+- `/journey`：completed reading 历史回放主入口
+- `/history`：保留的历史列表页（非当前主叙事入口）
 - `/encyclopedia`：塔罗知识百科
 - `/login`：邀请制 Credentials 登录
 - `/admin`：admin 用户的内测观测台

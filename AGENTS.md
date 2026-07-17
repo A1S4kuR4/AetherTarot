@@ -94,6 +94,7 @@ AetherTarot Agent 是一个以**长上下文、深度推理、反思式塔罗解
 - 涉及 reading backend 状态建模、节点拆分、canonical context 组装、结构化字段流转或 `session_capsule` 接入时，优先使用 `.agents/skills/aethertarot-reading-state/SKILL.md`
 - 涉及 `session capsule`、历史摘要、长期记忆写入/读取、memory merge、thread/session 持久化边界时，优先使用 `.agents/skills/aethertarot-memory-persistence/SKILL.md`
 - 涉及危机、自伤、健康、法律、财务、关系操控、限制性输出或人工审核/安全升级时，优先使用 `.agents/skills/aethertarot-safety-escalation/SKILL.md`
+- 涉及 AetherTarot 服务器连接、归档发布、systemd 重启、IP/入口验收等生产部署操作时，优先使用 `.agents/skills/aethertarot-server-deploy/SKILL.md`
 - 涉及 `knowledge/raw/ -> knowledge/wiki/` 的 ingest、知识层 lint、source registry / index / log 同步时，优先使用 `.agents/skills/ingest-wiki/SKILL.md`
 - 若任务同时跨越状态、记忆、安全边界，可组合使用多个 skill，并同步检查相关 docs / ADR
 - 若任务属于通用工程实现且不完全落入上述业务域 skill，默认先使用 `.agents/skills/disciplined-typescript-engineer/SKILL.md`，再按需要叠加 domain-specific skills
