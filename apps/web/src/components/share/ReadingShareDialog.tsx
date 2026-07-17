@@ -15,6 +15,7 @@ import {
   type ShareMode,
 } from "./constants";
 import { ReadingShareCard } from "./ReadingShareCard";
+import { trackShareEvent } from "./share-analytics";
 import { buildShareCardModel } from "./share-model";
 import {
   blobToFile,
@@ -73,6 +74,7 @@ export function ReadingShareDialog({
   const [hasConfirmedSummary, setHasConfirmedSummary] = useState(false);
   const [generation, setGeneration] = useState<GenerationState>({ status: "idle" });
   const [completedAction, setCompletedAction] = useState<"shared" | "downloaded" | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -94,6 +96,7 @@ export function ReadingShareDialog({
     if (!open) return;
 
     returnFocusRef.current = document.activeElement as HTMLElement | null;
+    trackShareEvent("share_dialog_open", { cardCount: drawnCards.length });
 
     // Start loading early; generation awaits the same stylesheet promise.
     void ensureShareFontStylesheet().catch(() => {
@@ -105,7 +108,7 @@ export function ReadingShareDialog({
       titleRef.current?.focus();
     }, 50);
     return () => clearTimeout(timer);
-  }, [open]);
+  }, [open, drawnCards.length]);
 
   useEffect(() => {
     return () => {
@@ -113,12 +116,21 @@ export function ReadingShareDialog({
     };
   }, [cleanupGeneration]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 640px)");
+    const update = () => setIsDesktop(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
   const handleModeChange = useCallback(
     (nextMode: ShareMode) => {
       cleanupGeneration();
       setMode(nextMode);
       setGeneration({ status: "idle" });
       setCompletedAction(null);
+      trackShareEvent("share_mode_select", { mode: nextMode });
     },
     [cleanupGeneration],
   );
@@ -132,11 +144,8 @@ export function ReadingShareDialog({
     }
 
     if (mode === "summary" && !hasConfirmedSummary) {
-      const confirmed = window.confirm(
-        "图片将包含你的问题和解读内容，保存或发送后无法撤回。",
-      );
-      if (!confirmed) return;
-      setHasConfirmedSummary(true);
+      // The generate button stays disabled until the inline notice is checked.
+      return;
     }
 
     cleanupGeneration();
@@ -163,6 +172,10 @@ export function ReadingShareDialog({
       previewUrlRef.current = previewUrl;
       const file = blobToFile(blob, `aether-tarot-${mode}-share.png`);
       setGeneration({ status: "ready", blob, previewUrl, file });
+      trackShareEvent("share_image_generated", {
+        mode,
+        cardCount: drawnCards.length,
+      });
     } catch (error) {
       if (controller.signal.aborted) {
         return;
@@ -171,8 +184,9 @@ export function ReadingShareDialog({
       const message =
         error instanceof Error ? error.message : "图片生成失败，请重试。";
       setGeneration({ status: "error", message });
+      trackShareEvent("share_image_failed", { mode, error: message });
     }
-  }, [cleanupGeneration, hasConfirmedSummary, mode, summaryDisabledReason]);
+  }, [cleanupGeneration, drawnCards.length, hasConfirmedSummary, mode, summaryDisabledReason]);
 
   const handleShare = useCallback(async () => {
     if (generation.status !== "ready") return;
@@ -181,20 +195,23 @@ export function ReadingShareDialog({
       const shared = await shareImageFile(generation.file);
       if (shared) {
         setCompletedAction("shared");
+        trackShareEvent("share_completed", { mode });
       }
     } catch {
       // System share failed (e.g. no compatible target); fall back to download.
       downloadImageBlob(generation.blob, generation.file.name);
       setCompletedAction("downloaded");
+      trackShareEvent("share_downloaded", { mode });
     }
-  }, [generation]);
+  }, [generation, mode]);
 
   const handleDownload = useCallback(() => {
     if (generation.status !== "ready") return;
 
     downloadImageBlob(generation.blob, generation.file.name);
     setCompletedAction("downloaded");
-  }, [generation]);
+    trackShareEvent("share_downloaded", { mode });
+  }, [generation, mode]);
 
   const handleClose = useCallback(() => {
     cleanupGeneration();
@@ -241,13 +258,19 @@ export function ReadingShareDialog({
             aria-hidden="true"
           />
 
-          {/* Sheet */}
+          {/* Sheet on mobile, centered modal on desktop.
+              Centering uses inset-0 + m-auto (no CSS transform) so it never
+              conflicts with the motion transform animations. */}
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={isDesktop ? { opacity: 0, scale: 0.96, y: 12 } : { y: "100%" }}
+            animate={isDesktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.96, y: 12 } : { y: "100%" }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-0 bottom-0 z-[101] max-h-[90dvh] overflow-y-auto rounded-t-3xl border-t border-paper-border bg-paper-raised shadow-2xl"
+            className={cn(
+              "fixed z-[101] overflow-y-auto border-paper-border bg-paper-raised shadow-2xl",
+              "inset-x-0 bottom-0 max-h-[90dvh] rounded-t-3xl border-t",
+              "sm:inset-0 sm:m-auto sm:h-fit sm:w-full sm:max-w-md sm:max-h-[85vh] sm:rounded-3xl sm:border",
+            )}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -309,6 +332,22 @@ export function ReadingShareDialog({
                     );
                   })}
                 </div>
+              )}
+
+              {/* Inline privacy confirmation for summary mode (replaces a
+                  blocking window.confirm). */}
+              {mode === "summary"
+                && !summaryDisabledReason
+                && generation.status !== "ready" && (
+                <label className="mb-5 flex cursor-pointer items-start gap-2.5 rounded-xl border border-paper-border bg-paper px-3.5 py-3 text-xs leading-relaxed text-text-muted">
+                  <input
+                    type="checkbox"
+                    checked={hasConfirmedSummary}
+                    onChange={(event) => setHasConfirmedSummary(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-terracotta"
+                  />
+                  我明白图片将包含我的问题和解读内容，保存或发送后无法撤回。
+                </label>
               )}
 
               {/* Live preview — the card doubles as the generation source,
@@ -378,6 +417,7 @@ export function ReadingShareDialog({
                     disabled={
                       generation.status === "generating"
                       || (mode === "summary" && Boolean(summaryDisabledReason))
+                      || (mode === "summary" && !hasConfirmedSummary)
                     }
                     onClick={handleGenerate}
                     className="btn-primary min-h-12 w-full"

@@ -153,6 +153,39 @@ function CardGrid({
   );
 }
 
+// At 8+ cards the summary-mode grid shrinks card faces below recognition
+// (≤56px). A compact text list keeps every position legible and returns
+// vertical space to the reading text. Minimal mode is unaffected.
+function CompactCardList({ cards }: { cards: ShareCardModel["cards"] }) {
+  return (
+    <div
+      data-testid="reading-share-card-list"
+      className="grid grid-cols-2 gap-x-4 gap-y-1.5"
+    >
+      {cards.map((card) => (
+        <div
+          key={card.positionId}
+          data-testid="reading-share-card-item"
+          className="flex items-baseline gap-1.5 text-[11px] leading-snug"
+        >
+          <span className="shrink-0 font-sans text-text-muted">
+            {card.position}
+          </span>
+          <span className="truncate font-aether-serif text-text-accent">
+            {card.name}
+            <span className="ml-1 text-text-muted">
+              ·{" "}
+              {card.orientation === "reversed"
+                ? SHARE_FIXED_COPY.positionReversed
+                : SHARE_FIXED_COPY.positionUpright}
+            </span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface CardFigureProps {
   card: ShareCardModel["cards"][number];
   width: number;
@@ -460,9 +493,17 @@ function ShareFooter({
       <p className="font-aether-serif text-[12px] italic tracking-[0.08em] text-text-muted">
         {SHARE_FIXED_COPY.footerSlogan}
       </p>
-      {mode === "summary" && (
+      {mode === "summary" ? (
+        // Summary vertical space is tight; keep the URL on the date line so
+        // the footer height (and the summary box budget) stays unchanged.
         <p className="mt-1 font-sans text-[8px] tracking-[0.08em] text-text-muted/80">
           {SHARE_FIXED_COPY.exportedLabel} {exportedDate}
+          <span className="mx-1.5 text-text-muted/50">·</span>
+          {SHARE_FIXED_COPY.brandUrl}
+        </p>
+      ) : (
+        <p className="mt-1.5 font-sans text-[9px] font-medium tracking-[0.22em] text-text-muted/70">
+          {SHARE_FIXED_COPY.brandUrl}
         </p>
       )}
     </footer>
@@ -486,18 +527,15 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
 
   // Summary mode competes for vertical space with the card grid.
   // Cap text aggressively so the summary box never needs overflow-hidden.
+  // At 8+ cards the grid becomes a compact text list, freeing space for text.
   const synthesisLines = safetyNote
     ? 1
-    : isHighCardCount
-      ? 2
-      : Math.min(budget.maxSynthesisLines, 3);
+    : Math.min(budget.maxSynthesisLines, isHighCardCount ? 4 : 3);
   const questionLines = safetyNote
     ? 1
-    : isHighCardCount
-      ? 1
-      : Math.min(budget.maxQuestionLines, 2);
+    : Math.min(budget.maxQuestionLines, 2);
   const confidenceLines = 1;
-  const guidanceCount = safetyNote ? 0 : 1;
+  const guidanceCount = safetyNote ? 0 : isHighCardCount ? 2 : 1;
 
   return (
     <div
@@ -541,7 +579,11 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
             )}
 
             <div className="mt-3 px-1">
-              <CardGrid model={model} compactSummary={Boolean(safetyNote)} />
+              {isHighCardCount ? (
+                <CompactCardList cards={cards} />
+              ) : (
+                <CardGrid model={model} compactSummary={Boolean(safetyNote)} />
+              )}
             </div>
 
             <div className="mt-3">

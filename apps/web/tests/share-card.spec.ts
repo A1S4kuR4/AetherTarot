@@ -365,6 +365,26 @@ test.describe("share card feature", () => {
     await expect(card).toContainText("我现在最该注意什么？");
   });
 
+  test("requires inline confirmation before generating a summary card", async ({
+    page,
+  }) => {
+    const reading = createMockReading();
+    await startQuickReading(page, reading);
+
+    await page.getByRole("button", { name: "分享" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+    await dialog.getByRole("button", { name: "解读摘要卡" }).click();
+
+    const generateButton = dialog.getByRole("button", { name: "生成图片" });
+    await expect(generateButton).toBeDisabled();
+
+    await dialog
+      .getByRole("checkbox", { name: /我明白图片将包含/ })
+      .check();
+    await expect(generateButton).toBeEnabled();
+  });
+
   test("returns focus to the share button after closing the dialog", async ({
     page,
   }) => {
@@ -418,7 +438,9 @@ test.describe("share card feature", () => {
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "解读摘要卡" }).click();
-      page.once("dialog", (d) => d.accept());
+      await dialog
+        .getByRole("checkbox", { name: /我明白图片将包含/ })
+        .check();
       await dialog.getByRole("button", { name: "生成图片" }).click();
 
       const preview = dialog.locator('img[alt="分享卡预览"]');
@@ -444,7 +466,9 @@ test.describe("share card feature", () => {
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "解读摘要卡" }).click();
-      page.once("dialog", (d) => d.accept());
+      await dialog
+        .getByRole("checkbox", { name: /我明白图片将包含/ })
+        .check();
       await dialog.getByRole("button", { name: "生成图片" }).click();
 
       const preview = dialog.locator('img[alt="分享卡预览"]');
@@ -497,7 +521,9 @@ test.describe("share card feature", () => {
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await dialog.getByRole("button", { name: "解读摘要卡" }).click();
-    page.once("dialog", (d) => d.accept());
+    await dialog
+      .getByRole("checkbox", { name: /我明白图片将包含/ })
+      .check();
     await dialog.getByRole("button", { name: "生成图片" }).click();
 
     const preview = dialog.locator('img[alt="分享卡预览"]');

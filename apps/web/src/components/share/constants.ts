@@ -34,6 +34,7 @@ export function getContentBudget(cardCount: number): ContentBudget {
 export const SHARE_FIXED_COPY = {
   brand: "灵语塔罗",
   brandEnglish: "AetherTarot",
+  brandUrl: "aethertarot.cn",
   spreadLabel: "牌阵",
   positionUpright: "正位",
   positionReversed: "逆位",
