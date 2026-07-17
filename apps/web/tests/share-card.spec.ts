@@ -256,9 +256,24 @@ test.describe("share card feature", () => {
     const reading = createMockReading();
     await startQuickReading(page, reading);
 
-    await expect(page.getByRole("button", { name: "分享" })).toBeVisible({
+    await expect(page.getByRole("button", { name: "分享", exact: true })).toBeVisible({
       timeout: 10000,
     });
+  });
+
+  test("opens the share dialog from the in-content prompt", async ({
+    page,
+  }) => {
+    const reading = createMockReading();
+    await startQuickReading(page, reading);
+
+    await page
+      .getByRole("button", { name: "分享这次解读" })
+      .click();
+
+    await expect(
+      page.getByRole("dialog", { name: "分享这张解读" }),
+    ).toBeVisible();
   });
 
   test("share button is hidden when reading requires follow-up", async ({
@@ -271,7 +286,7 @@ test.describe("share card feature", () => {
     });
     await startQuickReading(page, reading);
 
-    await expect(page.getByRole("button", { name: "分享" })).toBeHidden({
+    await expect(page.getByRole("button", { name: "分享", exact: true })).toBeHidden({
       timeout: 10000,
     });
   });
@@ -290,10 +305,10 @@ test.describe("share card feature", () => {
       .fill("我需要先确认自己的真实底线。");
     await page.getByRole("button", { name: "确认并解开牌面" }).click();
 
-    await expect(page.getByRole("button", { name: "分享" })).toBeVisible({
+    await expect(page.getByRole("button", { name: "分享", exact: true })).toBeVisible({
       timeout: 10000,
     });
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await expect(dialog).toBeVisible();
@@ -311,7 +326,7 @@ test.describe("share card feature", () => {
     const reading = createMockReading();
     await startQuickReading(page, reading);
 
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await expect(dialog).toBeVisible();
@@ -335,7 +350,7 @@ test.describe("share card feature", () => {
     const reading = createMockReading();
     await startQuickReading(page, reading);
 
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await expect(dialog).toBeVisible();
@@ -371,7 +386,7 @@ test.describe("share card feature", () => {
     const reading = createMockReading();
     await startQuickReading(page, reading);
 
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await dialog.getByRole("button", { name: "解读摘要卡" }).click();
@@ -385,13 +400,37 @@ test.describe("share card feature", () => {
     await expect(generateButton).toBeEnabled();
   });
 
+  test("traps Tab focus inside the dialog", async ({ page }) => {
+    const reading = createMockReading();
+    await startQuickReading(page, reading);
+
+    await page.getByRole("button", { name: "分享", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+    await expect(dialog).toBeVisible();
+
+    // Focus starts on the dialog title (tabIndex=-1); Tab moves to the
+    // first focusable control.
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByRole("button", { name: /牌阵卡/ })).toBeFocused();
+
+    // Shift+Tab from the first control wraps to the last one.
+    await page.keyboard.press("Shift+Tab");
+    await expect(
+      dialog.getByRole("button", { name: "取消" }),
+    ).toBeFocused();
+
+    // Tab from the last control wraps back to the first.
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByRole("button", { name: /牌阵卡/ })).toBeFocused();
+  });
+
   test("returns focus to the share button after closing the dialog", async ({
     page,
   }) => {
     const reading = createMockReading();
     await startQuickReading(page, reading);
 
-    const shareButton = page.getByRole("button", { name: "分享" });
+    const shareButton = page.getByRole("button", { name: "分享", exact: true });
     await shareButton.click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
@@ -413,7 +452,7 @@ test.describe("share card feature", () => {
       });
 
       await startQuickReading(page, reading);
-      await page.getByRole("button", { name: "分享" }).click();
+      await page.getByRole("button", { name: "分享", exact: true }).click();
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "生成图片" }).click();
@@ -434,7 +473,7 @@ test.describe("share card feature", () => {
       });
 
       await startQuickReading(page, reading);
-      await page.getByRole("button", { name: "分享" }).click();
+      await page.getByRole("button", { name: "分享", exact: true }).click();
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "解读摘要卡" }).click();
@@ -462,7 +501,7 @@ test.describe("share card feature", () => {
       });
 
       await startQuickReading(page, reading);
-      await page.getByRole("button", { name: "分享" }).click();
+      await page.getByRole("button", { name: "分享", exact: true }).click();
 
       const dialog = page.getByRole("dialog", { name: "分享这张解读" });
       await dialog.getByRole("button", { name: "解读摘要卡" }).click();
@@ -493,7 +532,7 @@ test.describe("share card feature", () => {
     });
     await startQuickReading(page, reading);
 
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     const summaryButton = dialog.getByRole("button", { name: /解读摘要卡/ });
@@ -517,7 +556,7 @@ test.describe("share card feature", () => {
     });
     await startQuickReading(page, reading);
 
-    await page.getByRole("button", { name: "分享" }).click();
+    await page.getByRole("button", { name: "分享", exact: true }).click();
 
     const dialog = page.getByRole("dialog", { name: "分享这张解读" });
     await dialog.getByRole("button", { name: "解读摘要卡" }).click();

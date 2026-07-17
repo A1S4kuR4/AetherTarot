@@ -209,6 +209,8 @@ export async function generateShareImage(
     fontEmbedCSS: fontEmbedCSS ?? undefined,
   };
 
+  // Note: toBlob cannot be cancelled mid-flight. The signal checks above only
+  // prevent starting new phases; a late result is ignored by the caller.
   const blob = await withTimeout(
     toBlob(node, htmlToImageOptions),
     GENERATION_TIMEOUT_MS,
@@ -226,15 +228,20 @@ export function blobToFile(blob: Blob, fileName = "aether-tarot-share.png"): Fil
   return new File([blob], fileName, { type: blob.type || "image/png" });
 }
 
+let canShareFilesCache: boolean | null = null;
+
 export function canShareFiles(): boolean {
+  if (canShareFilesCache !== null) {
+    return canShareFilesCache;
+  }
   if (typeof navigator === "undefined") {
     return false;
   }
 
-  return (
+  canShareFilesCache =
     typeof navigator.canShare === "function" &&
-    navigator.canShare({ files: [new File([], "", { type: "image/png" })] })
-  );
+    navigator.canShare({ files: [new File([], "", { type: "image/png" })] });
+  return canShareFilesCache;
 }
 
 /**

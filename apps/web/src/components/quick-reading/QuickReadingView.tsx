@@ -21,6 +21,7 @@ import {
 } from "@/components/reading/interpretation/constants";
 import { SingleCardAnalysisSection } from "./SingleCardAnalysisSection";
 import { ReadingShareDialog } from "@/components/share/ReadingShareDialog";
+import { SharePrompt } from "@/components/reading/interpretation/SharePrompt";
 
 import { getLeadSentence, uniqueStrings } from "@/components/reading/interpretation/utils";
 
@@ -121,6 +122,11 @@ export default function QuickReadingView() {
   const handleResetReading = () => {
     resetReading();
     router.push("/");
+  };
+
+  const openShareDialog = () => {
+    setShareDialogKey((k) => k + 1);
+    setShowShareDialog(true);
   };
 
   useEffect(() => {
@@ -259,6 +265,10 @@ export default function QuickReadingView() {
                 presentationMode={reading.presentation_mode}
               />
 
+              {isCompletedReading ? (
+                <SharePrompt onShare={openShareDialog} />
+              ) : null}
+
               <BoundaryNote
                 safetyNote={reading.safety_note}
                 confidenceNote={reading.confidence_note}
@@ -266,14 +276,7 @@ export default function QuickReadingView() {
 
               <ReadingFooter
                 onReset={handleResetReading}
-                onShare={
-                  isCompletedReading
-                    ? () => {
-                        setShareDialogKey((k) => k + 1);
-                        setShowShareDialog(true);
-                      }
-                    : undefined
-                }
+                onShare={isCompletedReading ? openShareDialog : undefined}
               />
 
               {isCompletedReading && reading ? (

@@ -16,6 +16,10 @@ interface ReadingShareCardProps {
   model: ShareCardModel;
 }
 
+// Usable text width inside card sections: card 600 − main px-8×2 − section px-4×2.
+// Used to estimate chars-per-line for CJK text (≈1em per grapheme).
+const TEXT_CONTAINER_WIDTH = 504;
+
 function formatExportedDate(isoString: string): string {
   const date = new Date(isoString);
   return new Intl.DateTimeFormat("zh-CN", {
@@ -323,7 +327,7 @@ function QuestionBlock({
   const lineHeight = 1.5;
   const fontSize = 16;
   const maxHeight = maxLines * fontSize * lineHeight;
-  const charsPerLine = Math.floor(480 / fontSize);
+  const charsPerLine = Math.floor(TEXT_CONTAINER_WIDTH / fontSize);
   const truncated = truncateByCharBudget(question, maxLines * charsPerLine);
 
   return (
@@ -361,7 +365,7 @@ function TextSection({
   lineHeight?: number;
 }) {
   const maxHeight = maxLines * fontSize * lineHeight;
-  const charsPerLine = Math.floor(520 / fontSize);
+  const charsPerLine = Math.floor(TEXT_CONTAINER_WIDTH / fontSize);
   const maxChars = maxLines * charsPerLine;
   const truncated = truncateByCharBudget(text, maxChars);
 

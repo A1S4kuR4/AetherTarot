@@ -31,6 +31,7 @@ import { ErrorState } from "./interpretation/ErrorState";
 import { SafetyIntercept } from "./interpretation/SafetyIntercept";
 import { SoberCheckGate } from "./interpretation/SoberCheckGate";
 import { ReadingShareDialog } from "@/components/share/ReadingShareDialog";
+import { SharePrompt } from "./interpretation/SharePrompt";
 import type { FeedbackLabel } from "./interpretation/constants";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
@@ -225,6 +226,11 @@ export default function InterpretationView() {
   const handleResetReading = () => {
     resetReading();
     router.push("/");
+  };
+
+  const openShareDialog = () => {
+    setShareDialogKey((k) => k + 1);
+    setShowShareDialog(true);
   };
 
   const handleSaveNotes = async () => {
@@ -548,6 +554,10 @@ export default function InterpretationView() {
               presentationMode={reading.presentation_mode}
             />
 
+            {isCompletedReading ? (
+              <SharePrompt onShare={openShareDialog} />
+            ) : null}
+
             {!isInitialAwaitingFollowup && reading.follow_up_questions.length > 0 ? (
               <FollowupSection
                 readingId={reading.reading_id}
@@ -602,14 +612,7 @@ export default function InterpretationView() {
 
             <ReadingFooter
               onReset={handleResetReading}
-              onShare={
-                isCompletedReading
-                  ? () => {
-                      setShareDialogKey((k) => k + 1);
-                      setShowShareDialog(true);
-                    }
-                  : undefined
-              }
+              onShare={isCompletedReading ? openShareDialog : undefined}
             />
 
             {isCompletedReading && reading ? (

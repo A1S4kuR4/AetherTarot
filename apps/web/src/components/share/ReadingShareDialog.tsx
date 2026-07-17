@@ -76,6 +76,7 @@ export function ReadingShareDialog({
   const [completedAction, setCompletedAction] = useState<"shared" | "downloaded" | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -227,6 +228,33 @@ export function ReadingShareDialog({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         handleClose();
+        return;
+      }
+
+      // Focus trap: keep Tab/Shift+Tab cycling inside the sheet so the
+      // aria-modal claim holds. The title (tabIndex=-1) is not in the Tab
+      // order, so an unknown active element restarts from the edges.
+      if (event.key === "Tab" && sheetRef.current) {
+        const focusable = Array.from(
+          sheetRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusable.length === 0) return;
+
+        const activeIndex = focusable.indexOf(
+          document.activeElement as HTMLElement,
+        );
+        if (event.shiftKey && activeIndex <= 0) {
+          event.preventDefault();
+          focusable[focusable.length - 1].focus();
+        } else if (
+          !event.shiftKey
+          && (activeIndex === -1 || activeIndex === focusable.length - 1)
+        ) {
+          event.preventDefault();
+          focusable[0].focus();
+        }
       }
     };
 
@@ -266,6 +294,7 @@ export function ReadingShareDialog({
             animate={isDesktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
             exit={isDesktop ? { opacity: 0, scale: 0.96, y: 12 } : { y: "100%" }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            ref={sheetRef}
             className={cn(
               "fixed z-[101] overflow-y-auto border-paper-border bg-paper-raised shadow-2xl",
               "inset-x-0 bottom-0 max-h-[90dvh] rounded-t-3xl border-t",
@@ -380,17 +409,24 @@ export function ReadingShareDialog({
                 </div>
               </div>
 
-              {/* Generated image preview */}
+              {/* Generated image preview — click to inspect the full-size
+                  image (e.g. text truncation) in a new tab. */}
               {generation.status === "ready" && (
                 <div className="mb-5 flex justify-center">
-                  <div className="overflow-hidden rounded-xl border border-paper-border shadow-lg">
+                  <a
+                    href={generation.previewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="点击查看原图"
+                    className="cursor-zoom-in overflow-hidden rounded-xl border border-paper-border shadow-lg"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={generation.previewUrl}
                       alt="分享卡预览"
                       className="max-h-[50dvh] w-auto object-contain"
                     />
-                  </div>
+                  </a>
                 </div>
               )}
 
