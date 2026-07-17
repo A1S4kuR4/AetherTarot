@@ -331,6 +331,40 @@ test.describe("share card feature", () => {
     expect(naturalHeight).toBe(1800);
   });
 
+  test("shows a live card preview before generation", async ({ page }) => {
+    const reading = createMockReading();
+    await startQuickReading(page, reading);
+
+    await page.getByRole("button", { name: "分享" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "分享这张解读" });
+    await expect(dialog).toBeVisible();
+
+    // The card is rendered inside the dialog before any generation happens.
+    const card = dialog.locator('[data-testid="reading-share-card"]');
+    await card.scrollIntoViewIfNeeded();
+    await expect(card).toBeVisible();
+
+    const cardBox = await card.boundingBox();
+    const viewport = page.viewportSize();
+    expect(cardBox).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    if (cardBox && viewport) {
+      // Scaled-down preview: inside the viewport, near the expected size.
+      // The sheet scrolls on short viewports; allow a few px of scroll/sub-pixel slack.
+      expect(cardBox.x).toBeGreaterThanOrEqual(0);
+      expect(cardBox.y).toBeGreaterThanOrEqual(0);
+      expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(viewport.width + 8);
+      expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(viewport.height + 8);
+      expect(cardBox.width).toBeGreaterThan(150);
+      expect(cardBox.width).toBeLessThan(300);
+    }
+
+    // Switching modes updates the live preview (summary shows the question).
+    await dialog.getByRole("button", { name: "解读摘要卡" }).click();
+    await expect(card).toContainText("我现在最该注意什么？");
+  });
+
   test("returns focus to the share button after closing the dialog", async ({
     page,
   }) => {

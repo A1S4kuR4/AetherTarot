@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import type { DrawnCard, StructuredReading } from "@aethertarot/shared-types";
@@ -41,6 +41,12 @@ type GenerationState =
   | { status: "ready"; blob: Blob; previewUrl: string; file: File }
   | { status: "error"; message: string };
 
+// Live preview scale: the card stays at full size for image generation;
+// only its wrapper is scaled down for display.
+const PREVIEW_SCALE = 340 / SHARE_CARD_HEIGHT;
+const PREVIEW_WIDTH = SHARE_CARD_WIDTH * PREVIEW_SCALE;
+const PREVIEW_HEIGHT = SHARE_CARD_HEIGHT * PREVIEW_SCALE;
+
 function getSummaryDisabledReason(reading: StructuredReading): string | null {
   if (reading.sober_check) {
     return "本次解读包含现实决策提醒，暂不支持分享完整解读。";
@@ -66,6 +72,7 @@ export function ReadingShareDialog({
   const [mode, setMode] = useState<ShareMode>("minimal");
   const [hasConfirmedSummary, setHasConfirmedSummary] = useState(false);
   const [generation, setGeneration] = useState<GenerationState>({ status: "idle" });
+  const [completedAction, setCompletedAction] = useState<"shared" | "downloaded" | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -111,6 +118,7 @@ export function ReadingShareDialog({
       cleanupGeneration();
       setMode(nextMode);
       setGeneration({ status: "idle" });
+      setCompletedAction(null);
     },
     [cleanupGeneration],
   );
@@ -170,22 +178,28 @@ export function ReadingShareDialog({
     if (generation.status !== "ready") return;
 
     try {
-      if (canShareFiles()) {
-        await shareImageFile(generation.file);
-      } else {
-        downloadImageBlob(generation.blob, generation.file.name);
+      const shared = await shareImageFile(generation.file);
+      if (shared) {
+        setCompletedAction("shared");
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        return;
-      }
+    } catch {
+      // System share failed (e.g. no compatible target); fall back to download.
       downloadImageBlob(generation.blob, generation.file.name);
+      setCompletedAction("downloaded");
     }
+  }, [generation]);
+
+  const handleDownload = useCallback(() => {
+    if (generation.status !== "ready") return;
+
+    downloadImageBlob(generation.blob, generation.file.name);
+    setCompletedAction("downloaded");
   }, [generation]);
 
   const handleClose = useCallback(() => {
     cleanupGeneration();
     setGeneration({ status: "idle" });
+    setCompletedAction(null);
     onOpenChange(false);
     returnFocusRef.current?.focus?.();
   }, [cleanupGeneration, onOpenChange]);
@@ -203,7 +217,10 @@ export function ReadingShareDialog({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, handleClose]);
 
-  const model = buildShareCardModel({ reading, drawnCards, mode });
+  const model = useMemo(
+    () => buildShareCardModel({ reading, drawnCards, mode }),
+    [reading, drawnCards, mode],
+  );
   const titleId = `share-title-${id}`;
   const descId = `share-desc-${id}`;
 
@@ -294,7 +311,37 @@ export function ReadingShareDialog({
                 </div>
               )}
 
-              {/* Preview */}
+              {/* Live preview — the card doubles as the generation source,
+                  so what the user sees here is what gets exported. It stays
+                  mounted after generation (moved off-screen) because layout
+                  assertions and the generated image both rely on this DOM. */}
+              <div
+                className={
+                  generation.status === "ready"
+                    ? "pointer-events-none fixed left-[-10000px] top-0 overflow-hidden"
+                    : "mb-5 flex justify-center"
+                }
+              >
+                <div
+                  className="overflow-hidden rounded-xl border border-paper-border shadow-md"
+                  style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }}
+                >
+                  <div
+                    style={{
+                      width: SHARE_CARD_WIDTH,
+                      height: SHARE_CARD_HEIGHT,
+                      transform: `scale(${PREVIEW_SCALE})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <div ref={cardRef}>
+                      <ReadingShareCard model={model} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Generated image preview */}
               {generation.status === "ready" && (
                 <div className="mb-5 flex justify-center">
                   <div className="overflow-hidden rounded-xl border border-paper-border shadow-lg">
@@ -312,6 +359,14 @@ export function ReadingShareDialog({
               {generation.status === "error" && (
                 <div className="mb-5 rounded-xl border border-error/20 bg-error/5 p-4 text-sm text-error">
                   {generation.message}
+                </div>
+              )}
+
+              {/* Success feedback */}
+              {completedAction && (
+                <div className="mb-5 flex items-center gap-2 rounded-xl border border-success/20 bg-success/5 p-4 text-sm text-success">
+                  <LegacyIcon name="check_circle" className="text-[16px]" />
+                  {completedAction === "shared" ? "图片已分享。" : "图片已保存。"}
                 </div>
               )}
 
@@ -351,11 +406,7 @@ export function ReadingShareDialog({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (generation.status === "ready") {
-                          downloadImageBlob(generation.blob, generation.file.name);
-                        }
-                      }}
+                      onClick={handleDownload}
                       className="btn-secondary min-h-12 w-full"
                     >
                       <LegacyIcon name="download" className="text-[16px]" />
@@ -365,11 +416,7 @@ export function ReadingShareDialog({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (generation.status === "ready") {
-                        downloadImageBlob(generation.blob, generation.file.name);
-                      }
-                    }}
+                    onClick={handleDownload}
                     className="btn-primary min-h-12 w-full"
                   >
                     <LegacyIcon name="download" className="text-[16px]" />
@@ -382,26 +429,11 @@ export function ReadingShareDialog({
                   onClick={handleClose}
                   className="btn-ghost min-h-12 w-full"
                 >
-                  取消
+                  {generation.status === "ready" ? "完成" : "取消"}
                 </button>
               </div>
             </div>
           </motion.div>
-
-          {/* Off-screen card stage */}
-          <div
-            className="pointer-events-none fixed z-0 overflow-hidden"
-            style={{
-              left: -10000,
-              top: 0,
-              width: SHARE_CARD_WIDTH,
-              height: SHARE_CARD_HEIGHT,
-            }}
-          >
-            <div ref={cardRef}>
-              <ReadingShareCard model={model} />
-            </div>
-          </div>
         </>
       )}
     </AnimatePresence>,

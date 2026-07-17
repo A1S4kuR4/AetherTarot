@@ -237,7 +237,12 @@ export function canShareFiles(): boolean {
   );
 }
 
-export async function shareImageFile(file: File): Promise<void> {
+/**
+ * Shares the image via the system share sheet.
+ * Returns true when the share completed, false when the user cancelled it.
+ * Throws ShareImageError when sharing is unsupported or failed.
+ */
+export async function shareImageFile(file: File): Promise<boolean> {
   if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
     throw new ShareImageError("当前浏览器不支持系统分享");
   }
@@ -248,9 +253,10 @@ export async function shareImageFile(file: File): Promise<void> {
       text: "看看我的塔罗解读",
       files: [file],
     });
+    return true;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return;
+      return false;
     }
     throw new ShareImageError("分享失败，请尝试下载图片");
   }
