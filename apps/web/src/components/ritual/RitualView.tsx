@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import {
+  motion,
+  useReducedMotion,
+  type TargetAndTransition,
+  type Transition,
+} from "motion/react";
 import { useRouter } from "next/navigation";
 import type { DrawnCard, TarotCard } from "@aethertarot/shared-types";
 import { CARD_BACK_IMAGE } from "@/constants";
@@ -16,6 +21,30 @@ import CardImage from "@/components/ui/CardImage";
 
 const DRAW_ANIMATION_MS = 1050;
 const VISIBLE_DECK_CARD_COUNT = 22;
+
+const INTRO_STAGGER_MS = 50;
+const INTRO_FLIGHT_MS = 480;
+const INTRO_FAN_STAGGER_MS = 12;
+const INTRO_FAN_SETTLE_MS = 650;
+const INTRO_FLY_TOTAL_MS =
+  (VISIBLE_DECK_CARD_COUNT - 1) * INTRO_STAGGER_MS + INTRO_FLIGHT_MS + 60;
+const INTRO_FAN_TOTAL_MS =
+  VISIBLE_DECK_CARD_COUNT * INTRO_FAN_STAGGER_MS + INTRO_FAN_SETTLE_MS;
+
+type IntroPhase = "flying" | "fanning" | "done";
+
+type ShufflePhase = "idle" | "gathering" | "splitting" | "riffling" | "refanning";
+
+const SHUFFLE_GATHER_MS = 400;
+const SHUFFLE_SPLIT_MS = 200;
+const SHUFFLE_RIFFLE_MS = 420;
+const SHUFFLE_REFAN_MS = 650;
+const RIFFLE_HALF_COUNT = VISIBLE_DECK_CARD_COUNT / 2;
+
+const pseudoRandom = (seed: number) => {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+};
 
 interface RectSnapshot {
   left: number;
@@ -40,6 +69,7 @@ export default function RitualView() {
   const { question, selectedSpread, completeRitual, isHydrated } = useReading();
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [shufflePhase, setShufflePhase] = useState<ShufflePhase>("idle");
   const [isDrawing, setIsDrawing] = useState(false);
   const [deck, setDeck] = useState<TarotCard[]>(() => shuffleTarotDeck());
   const [isRevealing, setIsRevealing] = useState(false);
@@ -47,6 +77,9 @@ export default function RitualView() {
   const [drawOverlay, setDrawOverlay] = useState<DrawOverlayState | null>(null);
   const [hoveredDeckIndex, setHoveredDeckIndex] = useState<number | null>(null);
   const [extractingDeckIndex, setExtractingDeckIndex] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const [rawIntroPhase, setIntroPhase] = useState<IntroPhase>("flying");
+  const introPhase: IntroPhase = shouldReduceMotion ? "done" : rawIntroPhase;
   const drawnCardsRef = useRef<DrawnCard[]>([]);
   const deckRef = useRef<TarotCard[]>(deck);
   const revealScheduledRef = useRef(false);
@@ -89,29 +122,68 @@ export default function RitualView() {
     }
   }, [isHydrated, question, router, selectedSpread]);
 
+  useEffect(() => {
+    if (!isHydrated || !selectedSpread || !question.trim()) {
+      return;
+    }
+
+    if (introPhase === "flying") {
+      const timer = window.setTimeout(
+        () => setIntroPhase("fanning"),
+        INTRO_FLY_TOTAL_MS,
+      );
+      return () => window.clearTimeout(timer);
+    }
+
+    if (introPhase === "fanning") {
+      const timer = window.setTimeout(
+        () => setIntroPhase("done"),
+        INTRO_FAN_TOTAL_MS,
+      );
+      return () => window.clearTimeout(timer);
+    }
+  }, [introPhase, isHydrated, question, selectedSpread]);
+
   if (!isHydrated || !selectedSpread || !question.trim()) {
     return null;
   }
 
   const isComplete = drawnCards.length === selectedSpread.positions.length;
-  const canDraw = !isShuffling && !isDrawing && !isComplete && deck.length > 0;
+  const introComplete = introPhase === "done";
+  const canDraw = introComplete && !isShuffling && !isDrawing && !isComplete && deck.length > 0;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
   const nextPosition = selectedSpread.positions[drawnCards.length] ?? null;
 
   const handleShuffle = async () => {
-    if (isShuffling || isRevealing) return;
+    if (isShuffling || isRevealing || !introComplete) return;
     setIsShuffling(true);
     revealScheduledRef.current = false;
     setIsRevealing(false);
 
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 1250);
-    });
+    if (shouldReduceMotion) {
+      await new Promise((resolve) => window.setTimeout(resolve, 350));
+    } else {
+      setShufflePhase("gathering");
+      await new Promise((resolve) => window.setTimeout(resolve, SHUFFLE_GATHER_MS));
+      setShufflePhase("splitting");
+      await new Promise((resolve) => window.setTimeout(resolve, SHUFFLE_SPLIT_MS));
+      setShufflePhase("riffling");
+      await new Promise((resolve) => window.setTimeout(resolve, SHUFFLE_RIFFLE_MS));
+      setShufflePhase("refanning");
+    }
 
     setDeck(() => {
       const nextDeck = shuffleTarotDeck();
       deckRef.current = nextDeck;
       return nextDeck;
     });
+
+    if (!shouldReduceMotion) {
+      await new Promise((resolve) => window.setTimeout(resolve, SHUFFLE_REFAN_MS));
+      setShufflePhase("idle");
+    }
+
     setIsShuffling(false);
   };
 
@@ -120,6 +192,7 @@ export default function RitualView() {
     const currentDeck = deckRef.current;
 
     if (
+      !introComplete ||
       isShuffling ||
       isDrawing ||
       currentDrawnCards.length >= selectedSpread.positions.length ||
@@ -231,7 +304,14 @@ export default function RitualView() {
   };
 
   return (
-    <section className="ritual-view-stage relative flex min-h-[calc(100dvh-4rem)] w-full flex-col items-center justify-between overflow-x-hidden px-4 py-2 md:px-6 md:py-3 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
+    <section
+      className="ritual-view-stage relative flex min-h-[calc(100dvh-4rem)] w-full flex-col items-center justify-between overflow-x-hidden px-4 py-2 md:px-6 md:py-3 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden"
+      onClick={() => {
+        if (introPhase !== "done") {
+          setIntroPhase("done");
+        }
+      }}
+    >
       {drawOverlay ? (
         <motion.div
           key={drawOverlay.key}
@@ -289,7 +369,12 @@ export default function RitualView() {
           </div>
         </motion.div>
       ) : null}
-            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center pt-3 md:pt-5">
+            <div
+        className={cn(
+          "relative z-10 flex w-full max-w-3xl flex-col items-center text-center pt-3 md:pt-5 transition-opacity duration-700",
+          introPhase === "flying" ? "opacity-0" : "opacity-100",
+        )}
+      >
         <div className="inline-flex items-center gap-2 rounded-full border border-midnight-border/60 bg-midnight-panel/80 px-4 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.2)] backdrop-blur-md">
           <span
             className={cn(
@@ -308,7 +393,10 @@ export default function RitualView() {
 
       <div
         data-testid="ritual-position-track"
-        className="relative z-60 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-1 hide-scrollbar md:snap-none md:overflow-visible mt-2 mb-4 md:mt-3 md:mb-6"
+        className={cn(
+          "relative z-60 w-full snap-x snap-mandatory overflow-x-auto px-1 pb-1 hide-scrollbar md:snap-none md:overflow-visible mt-2 mb-4 md:mt-3 md:mb-6 transition-opacity duration-700",
+          introPhase === "flying" ? "opacity-0" : "opacity-100",
+        )}
       >
         <div className="mx-auto flex w-max min-w-full flex-nowrap items-end justify-start gap-6 md:w-full md:flex-wrap md:justify-center md:gap-16">
           {selectedSpread.positions.map((position) => {
@@ -354,11 +442,16 @@ export default function RitualView() {
         </div>
       </div>
 
-      <div className="relative z-50 mb-6 md:mb-8 flex flex-wrap justify-center gap-4">
+      <div
+        className={cn(
+          "relative z-50 mb-6 md:mb-8 flex flex-wrap justify-center gap-4 transition-opacity duration-700",
+          introPhase === "flying" ? "opacity-0" : "opacity-100",
+        )}
+      >
         <button
           type="button"
           onClick={handleShuffle}
-          disabled={isShuffling || isComplete}
+          disabled={isShuffling || isComplete || !introComplete}
           className="btn-ritual"
         >
           <LegacyIcon
@@ -396,18 +489,86 @@ export default function RitualView() {
         />
         {Array.from({ length: Math.min(deck.length, VISIBLE_DECK_CARD_COUNT) }).map((_, index) => {
           const baseAngle = (index / VISIBLE_DECK_CARD_COUNT) * 360;
-          const cutDirection = index % 2 === 0 ? 1 : -1;
-          const packetOffset = index % 4;
-          const shuffleX = cutDirection * (42 + packetOffset * 12);
-          const shuffleY = -24 + packetOffset * 14;
-          
+
           const isExtracting = extractingDeckIndex === index;
           const isBeingFlown = drawOverlay !== null && extractingDeckIndex === index;
           const isHovered = hoveredDeckIndex === index;
 
+          // Intro flight/pile params (deterministic per index)
+          const randA = pseudoRandom(index + 1);
+          const randB = pseudoRandom(index + 101);
+          const randC = pseudoRandom(index + 202);
+          const flyX = (randA - 0.5) * viewportWidth * 0.72;
+          const flyY = -(viewportHeight * (0.9 + randB * 0.3));
+          const flyRotate = baseAngle + (randC - 0.5) * 540;
+          const pileX = (randC - 0.5) * 3;
+          const pileY = -index * 0.5;
+          const pileRotate = (randB - 0.5) * 5;
+
           // Radial offsets
           const popOffset = isExtracting ? 36 : isHovered ? 20 : 0;
           const scaleVal = isExtracting ? 1.12 : isHovered ? 1.04 : 1;
+
+          // Shuffle riffle params: pile splits into halves, halves interleave back
+          const isFirstHalf = index < RIFFLE_HALF_COUNT;
+          const riffleOrder = isFirstHalf
+            ? index * 2
+            : (index - RIFFLE_HALF_COUNT) * 2 + 1;
+          const splitX = (isFirstHalf ? -1 : 1) * 96;
+          const splitY = pileY - 30;
+          const splitRotate = pileRotate + (isFirstHalf ? -10 : 10);
+          const landX = pileX + (isFirstHalf ? -8 : 8);
+          const landRotate = pileRotate * 0.6;
+
+          let motionTarget: TargetAndTransition;
+          let motionTransition: Transition;
+
+          if (introPhase === "flying") {
+            motionTarget = { x: pileX, y: pileY, rotate: pileRotate, scale: 1, opacity: 1 };
+            motionTransition = {
+              duration: INTRO_FLIGHT_MS / 1000,
+              delay: index * (INTRO_STAGGER_MS / 1000),
+              ease: [0.16, 1, 0.3, 1],
+            };
+          } else if (introPhase === "fanning") {
+            motionTarget = { x: 0, y: 0, rotate: baseAngle, scale: 1, opacity: 1 };
+            motionTransition = {
+              type: "spring",
+              stiffness: 140,
+              damping: 17,
+              delay: index * (INTRO_FAN_STAGGER_MS / 1000),
+            };
+          } else if (shufflePhase === "gathering") {
+            motionTarget = { x: pileX, y: pileY, rotate: pileRotate, scale: 1, opacity: 1 };
+            motionTransition = { type: "spring", stiffness: 170, damping: 21, delay: index * 0.004 };
+          } else if (shufflePhase === "splitting") {
+            motionTarget = { x: splitX, y: splitY, rotate: splitRotate, scale: 1, opacity: 1 };
+            motionTransition = { type: "spring", stiffness: 180, damping: 20, delay: 0 };
+          } else if (shufflePhase === "riffling") {
+            motionTarget = { x: landX, y: pileY, rotate: landRotate, scale: 1, opacity: 1 };
+            motionTransition = { type: "spring", stiffness: 220, damping: 22, delay: riffleOrder * 0.007 };
+          } else if (shufflePhase === "refanning") {
+            motionTarget = { x: 0, y: 0, rotate: baseAngle, scale: 1, opacity: 1 };
+            motionTransition = { type: "spring", stiffness: 140, damping: 17, delay: index * 0.01 };
+          } else if (isShuffling) {
+            // Reduced-motion shuffle: hold the fan still while the deck order swaps.
+            motionTarget = { x: 0, y: 0, rotate: baseAngle, scale: 1, opacity: 1 };
+            motionTransition = { duration: 0 };
+          } else {
+            motionTarget = {
+              rotate: baseAngle,
+              x: popOffset ? Math.sin(baseAngle * (Math.PI / 180)) * popOffset : 0,
+              y: popOffset ? -Math.cos(baseAngle * (Math.PI / 180)) * popOffset : 0,
+              scale: scaleVal,
+              opacity: isBeingFlown ? 0 : 1,
+            };
+            motionTransition = {
+              duration: isExtracting ? 0.2 : 0.8,
+              delay: 0,
+              ease: "easeOut",
+              type: "spring",
+            };
+          }
 
           return (
             <motion.button
@@ -416,49 +577,39 @@ export default function RitualView() {
               aria-label="从牌堆抽牌"
               data-testid="deck-card"
               data-deck-index={index}
-              initial={{ rotate: baseAngle }}
-              animate={
-                isShuffling
-                  ? {
-                      rotate: [
-                        baseAngle,
-                        baseAngle + cutDirection * (18 + packetOffset * 4),
-                        baseAngle - cutDirection * (34 + packetOffset * 7),
-                        baseAngle + 360,
-                      ],
-                      x: [0, shuffleX, -shuffleX * 0.72, 0],
-                      y: [0, shuffleY, 26 - packetOffset * 5, 0],
-                      scale: [1, 1.08, 0.94, 1],
-                      opacity: 1,
-                    }
-                  : { 
-                      rotate: baseAngle, 
-                      x: popOffset ? Math.sin(baseAngle * (Math.PI / 180)) * popOffset : 0,
-                      y: popOffset ? -Math.cos(baseAngle * (Math.PI / 180)) * popOffset : 0,
-                      scale: scaleVal,
-                      opacity: isBeingFlown ? 0 : 1,
-                    }
+              initial={
+                introPhase === "flying"
+                  ? { x: flyX, y: flyY, rotate: flyRotate, scale: 1.06, opacity: 0 }
+                  : false
               }
-              transition={{
-                duration: isShuffling ? 1.15 : isExtracting ? 0.2 : 0.8,
-                delay: isShuffling ? (index % 7) * 0.018 : 0,
-                ease: isShuffling ? "easeInOut" : "easeOut",
-                type: isShuffling ? "tween" : "spring",
-              }}
+              animate={motionTarget}
+              transition={motionTransition}
               className="deck-card absolute w-[90px] aspect-[1/1.7] cursor-pointer rounded-card-md border border-midnight-border bg-midnight-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.28)] will-change-transform md:w-[120px]"
               style={{
                 transformOrigin: "center 150px",
                 transform: `rotate(${baseAngle}deg)`,
                 top: "0px",
-                zIndex: isExtracting ? 90 : isHovered ? 80 : isShuffling ? 10 : 10 + index,
+                zIndex: isExtracting
+                  ? 90
+                  : isHovered
+                    ? 80
+                    : shufflePhase === "riffling"
+                      ? 10 + riffleOrder
+                      : 10 + index,
               }}
-              onPointerEnter={() => setHoveredDeckIndex(index)}
+              onPointerEnter={() => {
+                if (!introComplete) return;
+                setHoveredDeckIndex(index);
+              }}
               onPointerLeave={() => {
                 setHoveredDeckIndex((currentIndex) =>
                   currentIndex === index ? null : currentIndex,
                 );
               }}
-              onFocus={() => setHoveredDeckIndex(index)}
+              onFocus={() => {
+                if (!introComplete) return;
+                setHoveredDeckIndex(index);
+              }}
               onBlur={() => {
                 setHoveredDeckIndex((currentIndex) =>
                   currentIndex === index ? null : currentIndex,
@@ -479,7 +630,7 @@ export default function RitualView() {
                   rotate: baseAngle,
                 });
               }}
-              disabled={!canDraw}
+              disabled={introComplete && !canDraw}
             >
               <div className="h-full w-full overflow-hidden rounded-[12px] border border-midnight-border-subtle bg-midnight-elevated">
                 <CardImage
@@ -501,7 +652,12 @@ export default function RitualView() {
         })}
       </div>
 
-      <div className="relative z-40 mx-auto w-full max-w-xl text-center pb-1">
+      <div
+        className={cn(
+          "relative z-40 mx-auto w-full max-w-xl text-center pb-1 transition-opacity duration-700",
+          introPhase === "flying" ? "opacity-0" : "opacity-100",
+        )}
+      >
         <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-midnight-border/50 bg-midnight-panel/60 px-4 py-1 text-xs text-text-inverse-muted shadow-sm backdrop-blur-sm">
           <LegacyIcon name="info" className="text-xs text-indigo-light shrink-0" />
           <span className="truncate">
@@ -511,6 +667,12 @@ export default function RitualView() {
           </span>
         </div>
       </div>
+
+      {introPhase !== "done" ? (
+        <span className="pointer-events-none absolute bottom-1 right-3 z-[110] animate-pulse font-sans text-[11px] tracking-wide text-text-inverse-muted/50">
+          点击任意处跳过入场
+        </span>
+      ) : null}
     </section>
   );
 }
