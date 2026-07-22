@@ -1253,27 +1253,41 @@ test.describe("AetherTarot smoke flow", () => {
     await expectDocumentFitsViewport(page);
   });
 
-  test("keeps the mobile ritual CTA reachable after choosing a spread", async ({
+  test("pins the mobile ritual CTA to the viewport bottom", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoAppRoute(page, "/new");
 
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
-    const startButton = page.getByRole("button", { name: /^长按开始仪式$/ });
-    const quickButton = page.getByRole("button", { name: "快速解读" });
+    const mobileCta = page.getByTestId("mobile-ritual-cta");
+    const startButton = mobileCta.getByRole("button", { name: /^长按开始仪式$/ });
+    const quickButton = mobileCta.getByRole("button", { name: "快速解读" });
 
+    const expectCtaPinnedToViewportBottom = async () => {
+      const metrics = await mobileCta.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+
+        return {
+          bottom: rect.bottom,
+          position: getComputedStyle(element).position,
+          viewportHeight: window.innerHeight,
+        };
+      });
+
+      expect(metrics.position).toBe("fixed");
+      expect(Math.abs(metrics.viewportHeight - metrics.bottom)).toBeLessThanOrEqual(1);
+    };
+
+    await expect(mobileCta).toBeVisible();
     await expect(startButton).toBeVisible();
     await expect(startButton).toBeDisabled();
+    await expectCtaPinnedToViewportBottom();
     const deepModeButton = page.getByRole("button", { name: /深度塔罗师/i });
     await expect(deepModeButton).toBeVisible();
     await expect(page.getByText("深度分析", { exact: true })).toBeVisible();
-    await startButton.scrollIntoViewIfNeeded();
-    await expect(startButton).toBeInViewport();
     await expect(quickButton).toBeVisible();
     await expect(quickButton).toBeDisabled();
-    await quickButton.scrollIntoViewIfNeeded();
-    await expect(quickButton).toBeInViewport();
 
     await input.fill("我现在最需要看清什么？");
     await deepModeButton.click();
@@ -1281,12 +1295,20 @@ test.describe("AetherTarot smoke flow", () => {
     await page.getByRole("button", { name: /圣三角/i }).click();
 
     await expect(startButton).toBeEnabled();
-    await startButton.scrollIntoViewIfNeeded();
-    await expect(startButton).toBeInViewport();
     await expect(quickButton).toBeEnabled();
-    await quickButton.scrollIntoViewIfNeeded();
-    await expect(quickButton).toBeInViewport();
+    await expectCtaPinnedToViewportBottom();
     await expectNoHorizontalOverflow(page);
+
+    const offlineDrawButton = page.getByRole("button", { name: /线下录入/i });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(offlineDrawButton).toBeInViewport();
+
+    const [ctaTop, lastSettingBottom] = await Promise.all([
+      mobileCta.evaluate((element) => element.getBoundingClientRect().top),
+      offlineDrawButton.evaluate((element) => element.getBoundingClientRect().bottom),
+    ]);
+
+    expect(lastSettingBottom).toBeLessThanOrEqual(ctaTop + 1);
   });
 
   test("opens and closes the mobile drawer and keeps the home entry usable", async ({

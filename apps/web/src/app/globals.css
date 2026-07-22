@@ -418,7 +418,7 @@
     }
   }
 
-  /* ---- Mobile sticky CTA bar (hidden on lg+) ---- */
+  /* ---- Mobile sticky CTA bar (desktop keeps the inline action controls) ---- */
   .ritual-cta-bar {
     position: fixed;
     bottom: 0;

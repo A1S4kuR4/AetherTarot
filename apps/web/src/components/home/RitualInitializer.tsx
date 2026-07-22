@@ -396,6 +396,84 @@ export default function RitualInitializer() {
   const quickButtonLabel =
     navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "快速解读";
 
+  const renderActionButtons = () => (
+    <div className="flex w-full flex-row items-stretch gap-2.5">
+      <div className="relative flex-1">
+        <div
+          className="pointer-events-none absolute inset-0 rounded-xl transition-all duration-300"
+          style={{
+            boxShadow: isPressing
+              ? `0 0 ${28 + progress * 0.45}px rgba(214, 107, 61, ${0.4 + progress * 0.005})`
+              : "0 0 16px rgba(214, 107, 61, 0.22)",
+          }}
+        />
+
+        <motion.button
+          type="button"
+          onMouseDown={startPress}
+          onMouseUp={() => stopPress()}
+          onMouseLeave={() => stopPress()}
+          onTouchStart={startPress}
+          onTouchEnd={() => stopPress()}
+          disabled={startButtonDisabled}
+          className={cn(
+            "btn-primary relative w-full min-h-11 select-none overflow-hidden px-6 py-2.5 text-sm transition-all",
+            isPressing && "shadow-inner border-terracotta/90",
+          )}
+          animate={{
+            scale: isPressing ? [0.97, 0.985, 0.97] : 1,
+          }}
+          transition={{
+            repeat: isPressing ? Infinity : 0,
+            duration: 0.4,
+          }}
+        >
+          <div
+            className="absolute inset-y-0 left-0 rounded-l-xl bg-gradient-to-r from-terracotta via-amber-500 to-amber-300 opacity-95 transition-all duration-100 ease-linear"
+            style={{
+              width: `${progress}%`,
+            }}
+          />
+
+          {isPressing && progress > 2 && progress < 98 ? (
+            <div
+              className="pointer-events-none absolute top-0 bottom-0 transition-all duration-100 ease-linear"
+              style={{ left: `calc(${progress}% - 24px)` }}
+            >
+              <div className="absolute top-1 -right-2 h-2 w-2 rounded-full bg-amber-200/90 blur-[1px] animate-ping" />
+              <div className="absolute top-3 -right-4 h-3 w-3 rounded-full bg-amber-300/80 blur-sm" />
+              <div className="absolute top-1/2 -right-1 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white/95 blur-sm" />
+              <div className="absolute bottom-3 -right-5 h-2.5 w-2.5 rounded-full bg-terracotta-light/90 blur-sm" />
+              <div className="absolute bottom-1 -right-3 h-2 w-2 rounded-full bg-amber-200/80 blur-[1px] animate-pulse" />
+            </div>
+          ) : null}
+
+          {isPressing ? (
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.25),transparent_60%)] animate-pulse" />
+          ) : null}
+
+          <span
+            className={cn(
+              "relative z-10 font-serif tracking-wide transition-all duration-200",
+              isPressing && "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)] font-medium",
+            )}
+          >
+            {startButtonLabel}
+          </span>
+        </motion.button>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => requestStart("quick")}
+        disabled={quickButtonDisabled}
+        className="min-h-11 rounded-xl border border-midnight-border bg-midnight-panel px-4 py-2.5 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {quickButtonLabel}
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex w-full max-w-[1500px] flex-col gap-3 text-left lg:h-full lg:overflow-hidden">
       {/* Hidden SVG Filter for Stippled Edge Turbulence */}
@@ -679,86 +757,8 @@ export default function RitualInitializer() {
           </div>
 
           {/* Action Buttons with Stippled Ember Edge Long Press Effect */}
-          <div className="shrink-0 pt-1">
-            <div className="flex flex-col items-stretch gap-2.5 sm:flex-row">
-              <div className="relative flex-1">
-                {/* Dynamic Energy Halo Outer Ring */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-xl transition-all duration-300"
-                  style={{
-                    boxShadow: isPressing
-                      ? `0 0 ${28 + progress * 0.45}px rgba(214, 107, 61, ${0.4 + progress * 0.005})`
-                      : "0 0 16px rgba(214, 107, 61, 0.22)",
-                  }}
-                />
-
-                <motion.button
-                  type="button"
-                  onMouseDown={startPress}
-                  onMouseUp={() => stopPress()}
-                  onMouseLeave={() => stopPress()}
-                  onTouchStart={startPress}
-                  onTouchEnd={() => stopPress()}
-                  disabled={startButtonDisabled}
-                  className={cn(
-                    "btn-primary relative w-full min-h-11 select-none overflow-hidden px-6 py-2.5 text-sm transition-all",
-                    isPressing && "shadow-inner border-terracotta/90",
-                  )}
-                  animate={{
-                    scale: isPressing ? [0.97, 0.985, 0.97] : 1,
-                  }}
-                  transition={{
-                    repeat: isPressing ? Infinity : 0,
-                    duration: 0.4,
-                  }}
-                >
-                  {/* Liquid Amber Fill Progress Bar */}
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-l-xl bg-gradient-to-r from-terracotta via-amber-500 to-amber-300 opacity-95 transition-all duration-100 ease-linear"
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-
-                  {/* Stippled Ember Particles Cluster at Advancing Edge */}
-                  {isPressing && progress > 2 && progress < 98 ? (
-                    <div
-                      className="pointer-events-none absolute top-0 bottom-0 transition-all duration-100 ease-linear"
-                      style={{ left: `calc(${progress}% - 24px)` }}
-                    >
-                      <div className="absolute top-1 -right-2 h-2 w-2 rounded-full bg-amber-200/90 blur-[1px] animate-ping" />
-                      <div className="absolute top-3 -right-4 h-3 w-3 rounded-full bg-amber-300/80 blur-sm" />
-                      <div className="absolute top-1/2 -right-1 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white/95 blur-sm" />
-                      <div className="absolute bottom-3 -right-5 h-2.5 w-2.5 rounded-full bg-terracotta-light/90 blur-sm" />
-                      <div className="absolute bottom-1 -right-3 h-2 w-2 rounded-full bg-amber-200/80 blur-[1px] animate-pulse" />
-                    </div>
-                  ) : null}
-
-                  {/* Shimmer Sparkle Effect Overlay when Pressing */}
-                  {isPressing ? (
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.25),transparent_60%)] animate-pulse" />
-                  ) : null}
-
-                  <span
-                    className={cn(
-                      "relative z-10 font-serif tracking-wide transition-all duration-200",
-                      isPressing && "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)] font-medium",
-                    )}
-                  >
-                    {startButtonLabel}
-                  </span>
-                </motion.button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => requestStart("quick")}
-                disabled={quickButtonDisabled}
-                className="min-h-11 rounded-xl border border-midnight-border bg-midnight-panel px-4 py-2.5 text-sm font-medium text-text-inverse-muted transition hover:border-terracotta/30 hover:text-text-inverse disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                {quickButtonLabel}
-              </button>
-            </div>
+          <div className="hidden shrink-0 pt-1 lg:block">
+            {renderActionButtons()}
           </div>
         </motion.section>
 
@@ -906,6 +906,10 @@ export default function RitualInitializer() {
             </div>
           </div>
         </motion.aside>
+      </div>
+
+      <div data-testid="mobile-ritual-cta" className="ritual-cta-bar">
+        {renderActionButtons()}
       </div>
 
       {/* Major Decision Boundary Modal */}
