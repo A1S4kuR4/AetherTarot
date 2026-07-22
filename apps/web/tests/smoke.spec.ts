@@ -475,6 +475,8 @@ async function drawCards(
   let currentCount = await getSelectedCount(page, count);
   const drawButton = page.getByRole("button", { name: /抽取一张牌/i });
 
+  await expect(drawButton).toBeEnabled({ timeout: 5000 });
+
   while (currentCount < count) {
     if (attempts > count * 6) {
       throw new Error(
