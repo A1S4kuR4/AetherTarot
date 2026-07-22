@@ -33,9 +33,9 @@ const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
 const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
-const READING_REQUEST_TIMEOUT_MS = 45_000;
+const READING_REQUEST_TIMEOUT_MS = 130_000;
 const READING_REQUEST_TIMEOUT_MESSAGE =
-  "解读生成等待超时。请检查网络后重新尝试；刚才的牌阵还在，可以直接重试。";
+  "解读生成等待超时。请检查网络后重新尝试；刚才的牌阵还在，重试不会重复扣除次数。";
 const EMPTY_SOBER_GATE: SoberGateState = {
   readingId: null,
   input: "",
@@ -232,6 +232,10 @@ function clearActiveReadingDraft() {
   }
 }
 
+function createReadingRequestId() {
+  return crypto.randomUUID();
+}
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
@@ -248,6 +252,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
   const interpretInFlightRef = useRef(false);
   const interpretSignatureRef = useRef<string | null>(null);
+  const initialRequestIdRef = useRef<string | null>(null);
+  const finalRequestIdentityRef = useRef<{ signature: string; requestId: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -309,6 +315,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           const restoredDraft = readActiveReadingDraft();
 
           if (restoredDraft) {
+            initialRequestIdRef.current = restoredDraft.requestId ?? createReadingRequestId();
+            finalRequestIdentityRef.current = null;
             setQuestionState(restoredDraft.question);
             setSelectedSpreadState(restoredDraft.selectedSpread);
             setAgentProfileState(restoredDraft.agentProfile);
@@ -349,9 +357,12 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      const requestId = initialRequestIdRef.current ?? createReadingRequestId();
+      initialRequestIdRef.current = requestId;
       sessionStorage.setItem(
         READING_DRAFT_STORAGE_KEY,
         JSON.stringify(buildReadingDraftSnapshot({
+          requestId,
           question,
           selectedSpread,
           agentProfile,
@@ -397,6 +408,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const clearGeneratedState = () => {
     interpretSignatureRef.current = null;
+    initialRequestIdRef.current = null;
+    finalRequestIdentityRef.current = null;
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
@@ -450,6 +463,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const completeRitual = (cards: DrawnCard[]) => {
     interpretSignatureRef.current = null;
+    initialRequestIdRef.current = createReadingRequestId();
+    finalRequestIdentityRef.current = null;
     setDrawnCards(cards);
     setReading(null);
     setErrorMessage(null);
@@ -468,8 +483,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-      const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const requestDrawnCards = toRequestDrawnCards(drawnCards);
+    const requestId = initialRequestIdRef.current ?? createReadingRequestId();
+    initialRequestIdRef.current = requestId;
     const requestSignature = JSON.stringify({
+      request_id: requestId,
       question: question.trim(),
       spreadId: selectedSpread.id,
       drawnCards: requestDrawnCards,
@@ -498,6 +516,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          request_id: requestId,
           question,
           spreadId: selectedSpread.id,
           drawnCards: requestDrawnCards,
@@ -575,6 +594,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       prior_session_capsule: continuitySource?.capsule ?? null,
     });
 
+    const requestId = finalRequestIdentityRef.current?.signature === requestSignature
+      ? finalRequestIdentityRef.current.requestId
+      : createReadingRequestId();
+    finalRequestIdentityRef.current = { signature: requestSignature, requestId };
+
     if (interpretSignatureRef.current === requestSignature) {
       return false;
     }
@@ -594,6 +618,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          request_id: requestId,
           question,
           spreadId: selectedSpread.id,
           drawnCards: requestDrawnCards,
@@ -654,6 +679,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     interpretSignatureRef.current = null;
+    initialRequestIdRef.current = null;
+    finalRequestIdentityRef.current = null;
     const canonicalEntry = normalizeHistoryEntry(historyEntry);
     const spread = findSpreadById(canonicalEntry.spreadId) ?? null;
     const reconstructedCards: DrawnCard[] = canonicalEntry.drawnCards
@@ -693,6 +720,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     interpretSignatureRef.current = null;
+    initialRequestIdRef.current = null;
+    finalRequestIdentityRef.current = null;
     setQuestionState("");
     setSelectedSpreadState(null);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);
@@ -714,6 +743,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const resetReading = () => {
     interpretSignatureRef.current = null;
+    initialRequestIdRef.current = null;
+    finalRequestIdentityRef.current = null;
     setQuestionState("");
     setSelectedSpreadState(null);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);

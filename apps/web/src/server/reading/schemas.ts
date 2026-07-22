@@ -141,6 +141,7 @@ export const restoredStructuredReadingSchema: z.ZodType<StructuredReading> = z.o
 
 export const readingRequestPayloadSchema = z
   .object({
+    request_id: z.string().uuid("request_id 必须是有效的 UUID。").optional(),
     question: z
       .string()
       .trim()

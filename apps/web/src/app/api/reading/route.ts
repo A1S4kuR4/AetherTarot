@@ -1,6 +1,10 @@
 import { ZodError } from "zod";
 import { createHash } from "node:crypto";
-import type { ReadingErrorPayload, ReadingRequestPayload } from "@aethertarot/shared-types";
+import type {
+  ReadingErrorPayload,
+  ReadingRequestPayload,
+  StructuredReading,
+} from "@aethertarot/shared-types";
 import { getClientIpHash } from "@/server/beta/ip";
 import {
   getReadingProviderName,
@@ -12,7 +16,7 @@ import {
   resolvePublicFeatureActor,
   type PublicFeatureActor,
 } from "@/server/beta/access";
-import { consumeReadingQuota } from "@/server/beta/quota";
+import { consumeReadingQuota, refundReadingQuota } from "@/server/beta/quota";
 import { readBoundedJsonBody } from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { readingRequestPayloadSchema } from "@/server/reading/schemas";
@@ -40,6 +44,10 @@ interface ReadingRouteDependencies {
     ipHash: string;
     config?: BetaOpsConfig;
   }) => Promise<void>;
+  refundQuota: (input: {
+    actor: PublicFeatureActor;
+    ipHash: string;
+  }) => Promise<void>;
   generateReading: typeof generateStructuredReading;
   collectUsage: typeof collectLlmUsage;
   recordEvent: (input: ReadingEventInput) => Promise<void>;
@@ -50,13 +58,22 @@ const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   getProviderName: getReadingProviderName,
   requireAccess: () => resolvePublicFeatureActor(),
   consumeQuota: consumeReadingQuota,
+  refundQuota: refundReadingQuota,
   generateReading: generateStructuredReading,
   collectUsage: collectLlmUsage,
   recordEvent: recordReadingEvent,
 };
-type ReadingGenerationResult = Awaited<ReturnType<typeof collectLlmUsage<Awaited<ReturnType<typeof generateStructuredReading>>>>>;
+type ReadingResponseSnapshot = {
+  payload: StructuredReading | ReadingErrorPayload;
+  status: number;
+};
+type ReadingRequestExecution = {
+  payloadHash: string;
+  expiresAt: number;
+  promise: Promise<ReadingResponseSnapshot>;
+};
 
-const inFlightReadingGenerations = new Map<string, Promise<ReadingGenerationResult>>();
+const readingRequestExecutions = new Map<string, ReadingRequestExecution>();
 
 function buildErrorResponse(
   code: ReadingErrorPayload["error"]["code"],
@@ -66,7 +83,20 @@ function buildErrorResponse(
   referral_links?: string[],
   details?: Record<string, unknown>,
 ) {
-  const payload: ReadingErrorPayload = {
+  return Response.json(
+    buildErrorPayload(code, message, intercept_reason, referral_links, details),
+    { status },
+  );
+}
+
+function buildErrorPayload(
+  code: ReadingErrorPayload["error"]["code"],
+  message: string,
+  intercept_reason?: string,
+  referral_links?: string[],
+  details?: Record<string, unknown>,
+): ReadingErrorPayload {
+  return {
     error: {
       code,
       message,
@@ -75,8 +105,6 @@ function buildErrorResponse(
       referral_links,
     },
   };
-
-  return Response.json(payload, { status });
 }
 
 function getEventBase({
@@ -100,11 +128,12 @@ function getEventBase({
     phase: parsedPayload?.phase ?? "initial",
     spreadId: parsedPayload?.spreadId ?? null,
     initialReadingId: parsedPayload?.initial_reading?.reading_id ?? null,
+    requestId: parsedPayload?.request_id ?? null,
     durationMs: Date.now() - startedAt,
   };
 }
 
-function buildGenerationKey({
+function buildRequestIdentity({
   payload,
   actor,
   ipHash,
@@ -114,29 +143,196 @@ function buildGenerationKey({
   ipHash: string;
 }) {
   const subject = actor.userId ?? actor.email ?? `anonymous:${ipHash}`;
-  const hash = createHash("sha256")
+  const payloadHash = createHash("sha256")
     .update(JSON.stringify(payload))
     .digest("hex");
 
-  return `${subject}:${hash}`;
+  return {
+    key: `${subject}:${payload.request_id}`,
+    payloadHash,
+  };
 }
 
-async function runSingleFlightGeneration(
-  key: string,
-  generate: () => Promise<ReadingGenerationResult>,
-) {
-  const existing = inFlightReadingGenerations.get(key);
+function getBeijingDayEnd(now = Date.now()) {
+  const local = new Date(now + 8 * 60 * 60 * 1000);
+  return Date.UTC(
+    local.getUTCFullYear(),
+    local.getUTCMonth(),
+    local.getUTCDate() + 1,
+  ) - 8 * 60 * 60 * 1000;
+}
+
+function removeExpiredReadingRequests(now = Date.now()) {
+  for (const [key, execution] of readingRequestExecutions) {
+    if (execution.expiresAt <= now) {
+      readingRequestExecutions.delete(key);
+    }
+  }
+}
+
+async function runIdempotentReadingRequest({
+  key,
+  payloadHash,
+  execute,
+}: {
+  key: string;
+  payloadHash: string;
+  execute: () => Promise<ReadingResponseSnapshot>;
+}) {
+  removeExpiredReadingRequests();
+  const existing = readingRequestExecutions.get(key);
 
   if (existing) {
-    return existing;
+    if (existing.payloadHash !== payloadHash) {
+      return {
+        status: 409,
+        payload: buildErrorPayload(
+          "invalid_request",
+          "request_id 已用于不同的 reading 请求。",
+        ),
+      } satisfies ReadingResponseSnapshot;
+    }
+
+    return existing.promise;
   }
 
-  const promise = generate().finally(() => {
-    inFlightReadingGenerations.delete(key);
-  });
+  const execution: ReadingRequestExecution = {
+    payloadHash,
+    expiresAt: Number.POSITIVE_INFINITY,
+    promise: Promise.resolve().then(execute),
+  };
+  readingRequestExecutions.set(key, execution);
+  void execution.promise.then((snapshot) => {
+    if (snapshot.status === 200) {
+      execution.expiresAt = getBeijingDayEnd();
+      return;
+    }
 
-  inFlightReadingGenerations.set(key, promise);
-  return promise;
+    if (readingRequestExecutions.get(key) === execution) {
+      readingRequestExecutions.delete(key);
+    }
+  }, () => {
+    if (readingRequestExecutions.get(key) === execution) {
+      readingRequestExecutions.delete(key);
+    }
+  });
+  return execution.promise;
+}
+
+async function executeReadingRequest({
+  deps,
+  parsedPayload,
+  actor,
+  ipHash,
+  provider,
+  startedAt,
+  recordEvent,
+}: {
+  deps: ReadingRouteDependencies;
+  parsedPayload: ReadingRequestPayload;
+  actor: PublicFeatureActor;
+  ipHash: string;
+  provider: string;
+  startedAt: number;
+  recordEvent: (input: ReadingEventInput) => Promise<void>;
+}): Promise<ReadingResponseSnapshot> {
+  let quotaConsumed = false;
+
+  try {
+    await deps.consumeQuota({ actor, ipHash });
+    quotaConsumed = true;
+    const { result: reading, calls } = await deps.collectUsage(() =>
+      deps.generateReading(parsedPayload)
+    );
+    const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
+
+    await recordEvent({
+      ...getEventBase({
+        parsedPayload,
+        actor,
+        ipHash,
+        provider,
+        startedAt,
+      }),
+      readingId: reading.reading_id,
+      status: "success",
+      errorCode: null,
+      llmDurationMs: usageSummary.llmDurationMs,
+      promptTokens: usageSummary.promptTokens,
+      completionTokens: usageSummary.completionTokens,
+      totalTokens: usageSummary.totalTokens,
+      estimatedCostUsd: usageSummary.estimatedCostUsd,
+      completedInitial: reading.reading_phase === "initial" && !reading.requires_followup,
+      completedFinal: reading.reading_phase === "final",
+    });
+
+    return { payload: reading, status: 200 };
+  } catch (error) {
+    const unwrappedError = unwrapLlmUsageError(error);
+    const usageSummary = summarizeLlmCalls(unwrappedError.calls);
+    const actualError = unwrappedError.cause;
+
+    if (quotaConsumed) {
+      try {
+        await deps.refundQuota({ actor, ipHash });
+      } catch (refundError) {
+        console.warn("[quota] failed to refund reading quota", {
+          message: refundError instanceof Error ? refundError.message : "unknown error",
+        });
+      }
+    }
+
+    let code: ReadingErrorPayload["error"]["code"] = "generation_failed";
+    let message = "解读生成失败，请稍后再试。";
+    let status = 500;
+    let interceptReason: string | undefined;
+    let referralLinks: string[] | undefined;
+    let details: Record<string, unknown> | undefined;
+
+    if (actualError instanceof ZodError) {
+      code = "invalid_request";
+      message = actualError.issues[0]?.message ?? "请求参数无效。";
+      status = 400;
+    } else if (isReadingServiceError(actualError)) {
+      code = actualError.code;
+      message = actualError.message;
+      status = actualError.status;
+      interceptReason = actualError.intercept_reason;
+      referralLinks = actualError.referral_links;
+      details = actualError.details;
+    }
+
+    await recordEvent({
+      ...getEventBase({
+        parsedPayload,
+        actor,
+        ipHash,
+        provider,
+        startedAt,
+      }),
+      readingId: null,
+      status: "failure",
+      errorCode: code,
+      llmDurationMs: usageSummary.llmDurationMs,
+      promptTokens: usageSummary.promptTokens,
+      completionTokens: usageSummary.completionTokens,
+      totalTokens: usageSummary.totalTokens,
+      estimatedCostUsd: usageSummary.estimatedCostUsd,
+      completedInitial: false,
+      completedFinal: false,
+    });
+
+    return {
+      payload: buildErrorPayload(
+        code,
+        message,
+        interceptReason,
+        referralLinks,
+        details,
+      ),
+      status,
+    };
+  }
 }
 
 export async function handleReadingPost(
@@ -198,93 +394,64 @@ export async function handleReadingPost(
   try {
     parsedPayload = readingRequestPayloadSchema.parse(payload);
     actor = await deps.requireAccess();
-    await deps.consumeQuota({ actor, ipHash });
-    const generationKey = buildGenerationKey({
-      payload: parsedPayload,
-      actor,
-      ipHash,
-    });
-    const { result: reading, calls } = await runSingleFlightGeneration(
-      generationKey,
-      () => deps.collectUsage(() => deps.generateReading(parsedPayload as ReadingRequestPayload)),
-    );
-    const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
+  } catch (error) {
+    const code = error instanceof ZodError
+      ? "invalid_request"
+      : isReadingServiceError(error)
+        ? error.code
+        : "generation_failed";
+    const message = error instanceof ZodError
+      ? error.issues[0]?.message ?? "请求参数无效。"
+      : isReadingServiceError(error)
+        ? error.message
+        : "解读生成失败，请稍后再试。";
+    const status = error instanceof ZodError
+      ? 400
+      : isReadingServiceError(error)
+        ? error.status
+        : 500;
 
     await recordEvent({
-      ...getEventBase({
-        parsedPayload,
-        actor,
-        ipHash,
-        provider,
-        startedAt,
-      }),
-      readingId: reading.reading_id,
-      status: "success",
-      errorCode: null,
-      llmDurationMs: usageSummary.llmDurationMs,
-      promptTokens: usageSummary.promptTokens,
-      completionTokens: usageSummary.completionTokens,
-      totalTokens: usageSummary.totalTokens,
-      estimatedCostUsd: usageSummary.estimatedCostUsd,
-      completedInitial: reading.reading_phase === "initial" && !reading.requires_followup,
-      completedFinal: reading.reading_phase === "final",
+      ...getEventBase({ parsedPayload, actor, ipHash, provider, startedAt }),
+      readingId: null,
+      status: "failure",
+      errorCode: code,
+      llmDurationMs: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      estimatedCostUsd: 0,
+      completedInitial: false,
+      completedFinal: false,
     });
 
-    return Response.json(reading);
-  } catch (error) {
-    const unwrappedError = unwrapLlmUsageError(error);
-    const usageSummary = summarizeLlmCalls(unwrappedError.calls);
-    const actualError = unwrappedError.cause;
-
-    const recordFailure = async (
-      code: ReadingErrorPayload["error"]["code"],
-    ) => {
-      await recordEvent({
-        ...getEventBase({
-          parsedPayload,
-          actor,
-          ipHash,
-          provider,
-          startedAt,
-        }),
-        readingId: null,
-        status: "failure",
-        errorCode: code,
-        llmDurationMs: usageSummary.llmDurationMs,
-        promptTokens: usageSummary.promptTokens,
-        completionTokens: usageSummary.completionTokens,
-        totalTokens: usageSummary.totalTokens,
-        estimatedCostUsd: usageSummary.estimatedCostUsd,
-        completedInitial: false,
-        completedFinal: false,
-      });
-    };
-
-    if (actualError instanceof ZodError) {
-      const firstIssue = actualError.issues[0]?.message ?? "请求参数无效。";
-      await recordFailure("invalid_request");
-      return buildErrorResponse("invalid_request", firstIssue, 400);
-    }
-
-    if (isReadingServiceError(actualError)) {
-      await recordFailure(actualError.code);
-      return buildErrorResponse(
-        actualError.code,
-        actualError.message,
-        actualError.status,
-        actualError.intercept_reason,
-        actualError.referral_links,
-        actualError.details,
-      );
-    }
-
-    await recordFailure("generation_failed");
     return buildErrorResponse(
-      "generation_failed",
-      "解读生成失败，请稍后再试。",
-      500,
+      code,
+      message,
+      status,
+      isReadingServiceError(error) ? error.intercept_reason : undefined,
+      isReadingServiceError(error) ? error.referral_links : undefined,
+      isReadingServiceError(error) ? error.details : undefined,
     );
   }
+
+  const execute = () => executeReadingRequest({
+    deps,
+    parsedPayload,
+    actor,
+    ipHash,
+    provider,
+    startedAt,
+    recordEvent,
+  });
+  const snapshot = parsedPayload.request_id
+    ? await runIdempotentReadingRequest({
+      ...buildRequestIdentity({ payload: parsedPayload, actor, ipHash }),
+      execute,
+    })
+    : await execute();
+
+  return Response.json(snapshot.payload, { status: snapshot.status });
 }
 
 export async function POST(request: Request) {

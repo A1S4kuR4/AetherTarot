@@ -41,6 +41,7 @@ const drawnCards: DrawnCard[] = [
     isReversed: false,
   },
 ];
+const requestId = "00000000-0000-4000-8000-000000000001";
 
 describe("reading draft storage", () => {
   it("uses a stable session storage key", () => {
@@ -49,6 +50,7 @@ describe("reading draft storage", () => {
 
   it("serializes only the active reading draft fields needed after reload", () => {
     const snapshot = buildReadingDraftSnapshot({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",
@@ -58,6 +60,7 @@ describe("reading draft storage", () => {
 
     expect(snapshot).toEqual({
       version: 1,
+      requestId,
       question: "我最近在工作上需要看清什么？",
       spreadId: "single",
       agentProfile: "lite",
@@ -74,6 +77,7 @@ describe("reading draft storage", () => {
 
   it("restores spread and card objects from a saved active draft", () => {
     const snapshot = buildReadingDraftSnapshot({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",
@@ -87,6 +91,7 @@ describe("reading draft storage", () => {
     });
 
     expect(restored).toEqual({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",
@@ -97,6 +102,7 @@ describe("reading draft storage", () => {
 
   it("rejects incomplete or stale active draft data", () => {
     const baseSnapshot = buildReadingDraftSnapshot({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",
@@ -133,6 +139,7 @@ describe("reading draft storage", () => {
 
   it("restores legacy agent_profile aliases from drafts", () => {
     const baseSnapshot = buildReadingDraftSnapshot({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",
@@ -153,6 +160,7 @@ describe("reading draft storage", () => {
 
   it("safely falls back to standard for unknown agent_profile draft values", () => {
     const baseSnapshot = buildReadingDraftSnapshot({
+      requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",

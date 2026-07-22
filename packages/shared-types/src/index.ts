@@ -133,6 +133,7 @@ export interface FollowupAnswer {
 }
 
 export interface ReadingRequestPayload {
+  request_id?: string;
   question: string;
   spreadId: string;
   drawnCards: ReadingRequestCardInput[];

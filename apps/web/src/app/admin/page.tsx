@@ -201,7 +201,7 @@ function AdminSummaryView({
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-muted">
               <CheckCircle2 className="h-5 w-5 text-terracotta/80" />
             </div>
-            <h2 className="font-serif text-2xl font-medium text-ink">成功 / 失败</h2>
+            <h2 className="font-serif text-2xl font-medium text-ink">请求成功 / 失败</h2>
           </div>
           
           <div className="space-y-4 text-sm">
@@ -222,6 +222,9 @@ function AdminSummaryView({
           </div>
           
           <div className="mt-6 border-t border-paper-border/60 pt-6">
+            <p className="mb-3 text-xs leading-relaxed text-text-muted">
+              Reading 与百科的幂等请求合计；不等同于用户完成的 reading 数。
+            </p>
             <p className="mb-4 text-xs font-medium uppercase tracking-wider text-text-muted">失败状态分布</p>
             <KeyValueList items={summary.failureByCode} dictionary={ERROR_CODE_LABELS} />
           </div>

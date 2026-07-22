@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   consumeEncyclopediaQuota,
   consumeReadingQuota,
+  refundReadingQuota,
   shouldBypassRequestQuota,
 } from "@/server/beta/quota";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -71,5 +72,48 @@ describe("reading quota", () => {
       p_anonymous_daily_limit: 1,
       p_ip_minute_limit: 6,
     });
+  });
+
+  it("refunds an authenticated reading daily quota reservation", async () => {
+    const rpc = vi.fn(async () => ({ data: { refunded: true }, error: null }));
+    createAdminClientMock.mockReturnValue({ rpc } as unknown as ReturnType<typeof createAdminClient>);
+    const tester = buildTester("tester");
+
+    await expect(refundReadingQuota({
+      actor: tester,
+      ipHash: "ip-hash",
+    })).resolves.toBeUndefined();
+
+    expect(rpc).toHaveBeenCalledWith("refund_reading_daily_quota", {
+      p_user_id: tester.userId,
+      p_ip_hash: "ip-hash",
+    });
+  });
+
+  it("refunds an anonymous reading quota by its IP subject", async () => {
+    const rpc = vi.fn(async () => ({ data: { refunded: true }, error: null }));
+    createAdminClientMock.mockReturnValue({ rpc } as unknown as ReturnType<typeof createAdminClient>);
+
+    await expect(refundReadingQuota({
+      actor: ANONYMOUS,
+      ipHash: "ip-hash",
+    })).resolves.toBeUndefined();
+
+    expect(rpc).toHaveBeenCalledWith("refund_reading_daily_quota", {
+      p_user_id: null,
+      p_ip_hash: "ip-hash",
+    });
+  });
+
+  it("does not refund quota for an admin who bypasses consumption", async () => {
+    const rpc = vi.fn();
+    createAdminClientMock.mockReturnValue({ rpc } as unknown as ReturnType<typeof createAdminClient>);
+
+    await expect(refundReadingQuota({
+      actor: buildTester("admin"),
+      ipHash: "ip-hash",
+    })).resolves.toBeUndefined();
+
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

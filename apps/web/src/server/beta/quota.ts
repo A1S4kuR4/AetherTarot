@@ -134,6 +134,38 @@ export async function consumeReadingQuota({
   );
 }
 
+export async function refundReadingQuota({
+  actor,
+  ipHash,
+}: Omit<ConsumeReadingQuotaInput, "config">) {
+  if (isAuthenticatedTester(actor) && shouldBypassRequestQuota(actor)) {
+    return;
+  }
+
+  const adminClient = createAdminClient();
+
+  if (!adminClient) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "内测配额退款未配置 Supabase service role key。",
+      503,
+    );
+  }
+
+  const { error } = await adminClient.rpc("refund_reading_daily_quota", {
+    p_user_id: actor.userId,
+    p_ip_hash: ipHash,
+  });
+
+  if (error) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      "内测配额退款失败。",
+      503,
+    );
+  }
+}
+
 export async function consumeEncyclopediaQuota({
   actor,
   ipHash,

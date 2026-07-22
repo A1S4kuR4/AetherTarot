@@ -186,6 +186,7 @@ export interface Database {
           spread_id: string | null;
           reading_id: string | null;
           initial_reading_id: string | null;
+          request_id: string | null;
           status: "success" | "failure";
           error_code: string | null;
           duration_ms: number;
@@ -208,6 +209,7 @@ export interface Database {
           spread_id?: string | null;
           reading_id?: string | null;
           initial_reading_id?: string | null;
+          request_id?: string | null;
           status: "success" | "failure";
           error_code?: string | null;
           duration_ms?: number;
@@ -230,6 +232,7 @@ export interface Database {
           spread_id?: string | null;
           reading_id?: string | null;
           initial_reading_id?: string | null;
+          request_id?: string | null;
           status?: "success" | "failure";
           error_code?: string | null;
           duration_ms?: number;
@@ -394,6 +397,13 @@ export interface Database {
           p_ip_hash: string;
           p_user_daily_limit: number;
           p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
+      refund_reading_daily_quota: {
+        Args: {
+          p_user_id: string | null;
+          p_ip_hash: string;
         };
         Returns: Json;
       };

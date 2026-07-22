@@ -34,6 +34,7 @@ function buildDependencies(overrides: RouteDependencies = {}) {
     getProviderName: () => "llm",
     requireAccess: vi.fn(async () => TESTER),
     consumeQuota: vi.fn(async () => undefined),
+    refundQuota: vi.fn(async () => undefined),
     generateReading: vi.fn((payload) => runReadingGraph(payload)),
     collectUsage: vi.fn(async (callback) => ({
       result: await callback(),
@@ -121,6 +122,7 @@ describe("reading route beta access and quota", () => {
     expect(response.status).toBe(429);
     expect(payload.error?.code).toBe("rate_limited");
     expect(deps.generateReading).not.toHaveBeenCalled();
+    expect(deps.refundQuota).not.toHaveBeenCalled();
   });
 
   it("rejects anonymous daily quota before calling the provider", async () => {
@@ -210,6 +212,7 @@ describe("reading route beta access and quota", () => {
 
     expect(response.status).toBe(429);
     expect(payload.error?.code).toBe("token_limit_exceeded");
+    expect(deps.refundQuota).toHaveBeenCalledTimes(1);
   });
 
   it("keeps successful StructuredReading payloads unchanged", async () => {
@@ -287,6 +290,7 @@ describe("reading route beta access and quota", () => {
   it("shares one provider generation for concurrent duplicate requests", async () => {
     const payload = {
       ...buildSinglePayload("我现在最需要看清什么？"),
+      request_id: "00000000-0000-4000-8000-000000000001",
       agent_profile: "lite",
     };
     let releaseGeneration: () => void = () => undefined;
@@ -320,5 +324,88 @@ describe("reading route beta access and quota", () => {
 
     expect(readings[0]).toMatchObject({ question: payload.question });
     expect(readings[1]).toMatchObject({ question: payload.question });
+    expect(deps.consumeQuota).toHaveBeenCalledTimes(1);
+    expect(deps.recordEvent).toHaveBeenCalledTimes(1);
+    expect(deps.refundQuota).not.toHaveBeenCalled();
+  });
+
+  it("replays a completed request without consuming quota or recording another event", async () => {
+    const requestPayload = {
+      ...buildSinglePayload("我现在最需要看清什么？"),
+      request_id: "00000000-0000-4000-8000-000000000002",
+      agent_profile: "lite",
+    };
+    const deps = buildDependencies();
+
+    const firstResponse = await handleReadingPost(buildRequest(requestPayload), deps);
+    const firstReading = await firstResponse.json();
+    const secondResponse = await handleReadingPost(buildRequest(requestPayload), deps);
+    const secondReading = await secondResponse.json();
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(secondReading).toEqual(firstReading);
+    expect(deps.consumeQuota).toHaveBeenCalledTimes(1);
+    expect(deps.generateReading).toHaveBeenCalledTimes(1);
+    expect(deps.recordEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects reuse of one request_id for a different payload", async () => {
+    const requestId = "00000000-0000-4000-8000-000000000003";
+    const deps = buildDependencies();
+    const firstResponse = await handleReadingPost(buildRequest({
+      ...buildSinglePayload("第一个问题"),
+      request_id: requestId,
+      agent_profile: "lite",
+    }), deps);
+    const secondResponse = await handleReadingPost(buildRequest({
+      ...buildSinglePayload("另一个问题"),
+      request_id: requestId,
+      agent_profile: "lite",
+    }), deps);
+    const secondPayload = await readJson(secondResponse);
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(409);
+    expect(secondPayload.error?.code).toBe("invalid_request");
+    expect(deps.consumeQuota).toHaveBeenCalledTimes(1);
+    expect(deps.generateReading).toHaveBeenCalledTimes(1);
+    expect(deps.recordEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("refunds a failed generation and allows the same request to retry", async () => {
+    const requestPayload = {
+      ...buildSinglePayload("失败后重试"),
+      request_id: "00000000-0000-4000-8000-000000000004",
+      agent_profile: "lite",
+    };
+    let attempts = 0;
+    const deps = buildDependencies({
+      generateReading: vi.fn(async (payload) => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new Error("temporary provider failure");
+        }
+        return runReadingGraph(payload);
+      }),
+    });
+
+    const failedResponse = await handleReadingPost(buildRequest(requestPayload), deps);
+    const retryResponse = await handleReadingPost(buildRequest(requestPayload), deps);
+
+    expect(failedResponse.status).toBe(500);
+    expect(retryResponse.status).toBe(200);
+    expect(deps.consumeQuota).toHaveBeenCalledTimes(2);
+    expect(deps.refundQuota).toHaveBeenCalledTimes(1);
+    expect(deps.generateReading).toHaveBeenCalledTimes(2);
+    expect(deps.recordEvent).toHaveBeenCalledTimes(2);
+    expect(deps.recordEvent).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      requestId: requestPayload.request_id,
+      status: "failure",
+    }));
+    expect(deps.recordEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      requestId: requestPayload.request_id,
+      status: "success",
+    }));
   });
 });

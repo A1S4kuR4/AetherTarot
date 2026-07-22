@@ -12,6 +12,7 @@ export interface ReadingEventInput {
   spreadId: string | null;
   readingId: string | null;
   initialReadingId: string | null;
+  requestId: string | null;
   status: "success" | "failure";
   errorCode: string | null;
   durationMs: number;
@@ -40,6 +41,7 @@ export async function recordReadingEvent(input: ReadingEventInput) {
     spread_id: input.spreadId,
     reading_id: input.readingId,
     initial_reading_id: input.initialReadingId,
+    request_id: input.requestId,
     status: input.status,
     error_code: input.errorCode,
     duration_ms: input.durationMs,

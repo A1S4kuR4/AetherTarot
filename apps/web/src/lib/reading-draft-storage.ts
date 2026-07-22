@@ -12,6 +12,7 @@ export const READING_DRAFT_STORAGE_KEY = "aether_tarot_active_reading_v1";
 
 export interface ReadingDraftSnapshot {
   version: 1;
+  requestId: string;
   question: string;
   spreadId: string;
   agentProfile: AgentProfile;
@@ -20,6 +21,7 @@ export interface ReadingDraftSnapshot {
 }
 
 export interface RestoredReadingDraft {
+  requestId: string | null;
   question: string;
   selectedSpread: Spread;
   agentProfile: AgentProfile;
@@ -33,6 +35,7 @@ interface ParseReadingDraftOptions {
 }
 
 const DRAW_SOURCES = new Set<DrawSource>(["digital_random", "offline_manual"]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -63,12 +66,14 @@ function parseDrawnCard(value: unknown): ReadingRequestCardInput | null {
 }
 
 export function buildReadingDraftSnapshot({
+  requestId,
   question,
   selectedSpread,
   agentProfile,
   drawSource,
   drawnCards,
 }: {
+  requestId: string;
   question: string;
   selectedSpread: Spread;
   agentProfile: AgentProfile;
@@ -77,6 +82,7 @@ export function buildReadingDraftSnapshot({
 }): ReadingDraftSnapshot {
   return {
     version: 1,
+    requestId,
     question: question.trim(),
     spreadId: selectedSpread.id,
     agentProfile,
@@ -110,6 +116,9 @@ export function parseReadingDraftSnapshot(
   }
 
   const question = typeof parsed.question === "string" ? parsed.question.trim() : "";
+  const requestId = typeof parsed.requestId === "string" && UUID_PATTERN.test(parsed.requestId)
+    ? parsed.requestId
+    : null;
   const spreadId = typeof parsed.spreadId === "string" ? parsed.spreadId : "";
   const agentProfile = parsed.agentProfile;
   const drawSource = parsed.drawSource;
@@ -158,6 +167,7 @@ export function parseReadingDraftSnapshot(
   }
 
   return {
+    requestId,
     question,
     selectedSpread,
     agentProfile: restoreAgentProfile(agentProfile, (original, fallback) => {
