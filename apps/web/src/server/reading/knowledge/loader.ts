@@ -1,6 +1,6 @@
 import "server-only";
 
-import { existsSync, promises as fs } from "node:fs";
+import { promises as fs } from "node:fs";
 import type { Dirent } from "node:fs";
 import path from "node:path";
 import type {
