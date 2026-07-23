@@ -59,8 +59,9 @@ describe("reading draft storage", () => {
     });
 
     expect(snapshot).toEqual({
-      version: 1,
+      version: 2,
       requestId,
+      threadId: requestId,
       question: "我最近在工作上需要看清什么？",
       spreadId: "single",
       agentProfile: "lite",
@@ -92,6 +93,7 @@ describe("reading draft storage", () => {
 
     expect(restored).toEqual({
       requestId,
+      threadId: requestId,
       question: "我最近在工作上需要看清什么？",
       selectedSpread: spread,
       agentProfile: "lite",

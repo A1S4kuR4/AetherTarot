@@ -961,7 +961,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByText(/接下来一周我应该把重点放在哪里？/)).toBeVisible();
     await expect(page.getByPlaceholder("今天，你想向内心询问什么？")).toHaveValue("");
 
-    await page.getByRole("button", { name: /清除这条延续线/i }).click();
+    await page.getByRole("button", { name: /停止延续/i }).click();
     await expect(page.getByText(/延续中的线索/)).toBeHidden();
   });
 
@@ -1129,7 +1129,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "串联在一起的故事" })).toBeHidden();
   });
 
-  test("keeps the start button disabled until question and spread are both valid", async ({
+  test("keeps the start button disabled until the question is non-empty, with 单牌启示 preselected", async ({
     page,
   }) => {
     await seedRecentCareerHistory(page);
@@ -1139,16 +1139,21 @@ test.describe("AetherTarot smoke flow", () => {
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
 
     await expect(startButton).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: /单牌启示/i }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     await input.fill("我的职业方向还有什么需要看清？");
     await expect(input).toHaveValue("我的职业方向还有什么需要看清？");
     await expect(page.getByText("重复主题提醒")).toBeVisible();
     await expect(
-      page.getByText("上一次：我的职业方向接下来该看清什么？"),
+      page.getByText(/最近问过相近的职业议题：我的职业方向接下来该看清什么？/),
     ).toBeVisible();
-    await expect(startButton).toBeDisabled();
+    await expect(startButton).toBeEnabled();
 
-    await page.getByRole("button", { name: /圣三角/i }).click();
+    const triangleSpread = page.getByRole("button", { name: /圣三角/i });
+    await triangleSpread.click();
+    await expect(triangleSpread).toHaveAttribute("aria-pressed", "true");
     await expect(startButton).toBeEnabled();
 
     await input.fill("   ");
@@ -1236,11 +1241,20 @@ test.describe("AetherTarot smoke flow", () => {
     for (const viewport of [
       { width: 1920, height: 1080 },
       { width: 1366, height: 768 },
+      { width: 1024, height: 768 },
     ]) {
       await page.setViewportSize(viewport);
       await gotoAppRoute(page, "/new");
       await expectDocumentFitsViewport(page);
       await expectRitualInitializerControlsInViewport(page);
+
+      // The 3-column grid must not overflow horizontally (clipped by overflow-hidden).
+      const settingsColumn = page.locator("aside", {
+        has: page.getByRole("heading", { name: "阅读设置" }),
+      });
+      const settingsBox = await settingsColumn.boundingBox();
+      expect(settingsBox).not.toBeNull();
+      expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(viewport.width + 2);
     }
 
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
@@ -1439,11 +1453,13 @@ test.describe("AetherTarot smoke flow", () => {
 
     await expect(page).toHaveURL(/\/ritual\/draw$/);
     await expectDocumentFitsViewport(page);
-    await expect(page.getByRole("heading", { name: "仪式" })).toBeInViewport();
+    await expect(
+      page.getByRole("heading", { name: "仪式 · 单牌启示", exact: true }),
+    ).toBeInViewport();
     await expect(page.getByRole("button", { name: "洗牌" })).toBeInViewport();
     await expect(page.getByRole("button", { name: "抽取一张牌" })).toBeInViewport();
     await expect(page.locator(".deck-card").first()).toBeInViewport();
-    await expect(page.getByText(/你已选择 0 \/ 1 张牌/)).toBeInViewport();
+    await expect(page.getByText("(0/1)", { exact: true })).toBeInViewport();
   });
 
   test("keeps encyclopedia browsing in a desktop workspace and resets detail scroll on card change", async ({
@@ -1538,7 +1554,7 @@ test.describe("AetherTarot smoke flow", () => {
     await gotoAppRoute(page, "/reading");
     await expect(page).toHaveURL(/\/$/);
 
-    await gotoAppRoute(page, "/ritual");
+    await gotoAppRoute(page, "/ritual/draw");
     await expect(page).toHaveURL(/\/$/);
   });
 

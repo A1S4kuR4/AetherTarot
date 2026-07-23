@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
+import { findCardById, findSpreadById, getAllSpreads } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
   DrawSource,
@@ -33,6 +33,9 @@ const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
 const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
+const allSpreads = getAllSpreads();
+const DEFAULT_SPREAD: Spread | null =
+  allSpreads.find((spread) => spread.id === "single") ?? allSpreads[0] ?? null;
 const READING_REQUEST_TIMEOUT_MS = 130_000;
 const READING_REQUEST_TIMEOUT_MESSAGE =
   "解读生成等待超时。请检查网络后重新尝试；刚才的牌阵还在，重试不会重复扣除次数。";
@@ -50,6 +53,7 @@ type SoberGateState = {
 
 export type ContinuitySource = {
   readingId: string;
+  threadId: string;
   capsule: string;
   question: string;
   spreadName: string;
@@ -83,6 +87,7 @@ type ReadingContextValue = {
   selectHistoryReading: (reading: ReadingHistoryEntry) => void;
   continueFromHistoryReading: (reading: ReadingHistoryEntry) => boolean;
   clearContinuitySource: () => void;
+  clearContinuityMemory: () => Promise<boolean>;
   resetReading: () => void;
   updateHistoryNotes: (id: string, notes: string) => Promise<void>;
 };
@@ -152,13 +157,17 @@ function normalizeHistoryEntries(entries: ReadingHistoryEntry[]) {
   return entries.map(normalizeHistoryEntry);
 }
 
-function buildContinuitySource(reading: StructuredReading): ContinuitySource | null {
+function buildContinuitySource(
+  entry: ReadingHistoryEntry,
+): ContinuitySource | null {
+  const reading = entry.reading;
   if (!reading.session_capsule) {
     return null;
   }
 
   return {
     readingId: reading.reading_id,
+    threadId: entry.threadId ?? crypto.randomUUID(),
     capsule: reading.session_capsule,
     question: reading.question,
     spreadName: reading.spread.name,
@@ -238,7 +247,7 @@ function createReadingRequestId() {
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [question, setQuestionState] = useState("");
-  const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(null);
+  const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(DEFAULT_SPREAD);
   const [agentProfile, setAgentProfileState] = useState<AgentProfile>(DEFAULT_AGENT_PROFILE);
   const [drawSource, setDrawSourceState] = useState<DrawSource>(DEFAULT_DRAW_SOURCE);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
@@ -254,6 +263,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretSignatureRef = useRef<string | null>(null);
   const initialRequestIdRef = useRef<string | null>(null);
   const finalRequestIdentityRef = useRef<{ signature: string; requestId: string } | null>(null);
+  const activeThreadIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -316,6 +326,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
           if (restoredDraft) {
             initialRequestIdRef.current = restoredDraft.requestId ?? createReadingRequestId();
+            activeThreadIdRef.current =
+              restoredDraft.threadId ?? crypto.randomUUID();
             finalRequestIdentityRef.current = null;
             setQuestionState(restoredDraft.question);
             setSelectedSpreadState(restoredDraft.selectedSpread);
@@ -358,11 +370,14 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
     try {
       const requestId = initialRequestIdRef.current ?? createReadingRequestId();
+      const threadId = activeThreadIdRef.current ?? crypto.randomUUID();
       initialRequestIdRef.current = requestId;
+      activeThreadIdRef.current = threadId;
       sessionStorage.setItem(
         READING_DRAFT_STORAGE_KEY,
         JSON.stringify(buildReadingDraftSnapshot({
           requestId,
+          threadId,
           question,
           selectedSpread,
           agentProfile,
@@ -389,6 +404,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       drawSource,
       drawnCards: requestDrawnCards,
       reading: canonicalReading,
+      threadId: activeThreadIdRef.current ?? undefined,
     };
 
     setHistory((current) => {
@@ -410,6 +426,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = null;
     initialRequestIdRef.current = null;
     finalRequestIdentityRef.current = null;
+    activeThreadIdRef.current = null;
     setDrawnCards([]);
     setReading(null);
     setErrorMessage(null);
@@ -444,6 +461,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     }
 
     clearGeneratedState();
+    activeThreadIdRef.current =
+      continuitySource?.threadId ?? crypto.randomUUID();
     return true;
   };
 
@@ -458,12 +477,14 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setDrawSourceState(DEFAULT_DRAW_SOURCE);
     setContinuitySource(null);
     clearGeneratedState();
+    activeThreadIdRef.current = crypto.randomUUID();
     return true;
   };
 
   const completeRitual = (cards: DrawnCard[]) => {
     interpretSignatureRef.current = null;
     initialRequestIdRef.current = createReadingRequestId();
+    activeThreadIdRef.current ??= continuitySource?.threadId ?? crypto.randomUUID();
     finalRequestIdentityRef.current = null;
     setDrawnCards(cards);
     setReading(null);
@@ -494,6 +515,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       agent_profile: agentProfile,
       phase: "initial",
       draw_source: drawSource,
+      thread_id: activeThreadIdRef.current,
       prior_session_capsule: continuitySource?.capsule ?? null,
     });
 
@@ -523,6 +545,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           agent_profile: agentProfile,
           phase: "initial",
           draw_source: drawSource,
+          thread_id: activeThreadIdRef.current,
           prior_session_capsule: continuitySource?.capsule ?? null,
         }),
         timeoutMs: READING_REQUEST_TIMEOUT_MS,
@@ -589,6 +612,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       agent_profile: initialReading.agent_profile,
       phase: "final",
       draw_source: drawSource,
+      thread_id: activeThreadIdRef.current,
       initial_reading_id: initialReading.reading_id,
       followup_answers: answers,
       prior_session_capsule: continuitySource?.capsule ?? null,
@@ -625,8 +649,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           agent_profile: initialReading.agent_profile,
           phase: "final",
           draw_source: drawSource,
+          thread_id: activeThreadIdRef.current,
           prior_session_capsule: continuitySource?.capsule ?? null,
-          initial_reading: initialReading,
+          initial_reading_id: initialReading.reading_id,
           followup_answers: answers,
         }),
         timeoutMs: READING_REQUEST_TIMEOUT_MS,
@@ -682,6 +707,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     initialRequestIdRef.current = null;
     finalRequestIdentityRef.current = null;
     const canonicalEntry = normalizeHistoryEntry(historyEntry);
+    activeThreadIdRef.current = canonicalEntry.threadId ?? null;
     const spread = findSpreadById(canonicalEntry.spreadId) ?? null;
     const reconstructedCards: DrawnCard[] = canonicalEntry.drawnCards
       .map((savedCard) => {
@@ -713,7 +739,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const continueFromHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     const canonicalEntry = normalizeHistoryEntry(historyEntry);
-    const nextContinuitySource = buildContinuitySource(canonicalEntry.reading);
+    const nextContinuitySource = buildContinuitySource(canonicalEntry);
 
     if (!nextContinuitySource) {
       return false;
@@ -722,8 +748,9 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     interpretSignatureRef.current = null;
     initialRequestIdRef.current = null;
     finalRequestIdentityRef.current = null;
+    activeThreadIdRef.current = nextContinuitySource.threadId;
     setQuestionState("");
-    setSelectedSpreadState(null);
+    setSelectedSpreadState(DEFAULT_SPREAD);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);
     setDrawSourceState(DEFAULT_DRAW_SOURCE);
     setDrawnCards([]);
@@ -741,12 +768,29 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setContinuitySource(null);
   };
 
+  const clearContinuityMemory = async () => {
+    const threadId = continuitySource?.threadId;
+    if (!threadId) {
+      return true;
+    }
+    try {
+      const response = await fetch(
+        `/api/reading/threads/${encodeURIComponent(threadId)}`,
+        { method: "DELETE" },
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
   const resetReading = () => {
     interpretSignatureRef.current = null;
     initialRequestIdRef.current = null;
     finalRequestIdentityRef.current = null;
+    activeThreadIdRef.current = null;
     setQuestionState("");
-    setSelectedSpreadState(null);
+    setSelectedSpreadState(DEFAULT_SPREAD);
     setAgentProfileState(DEFAULT_AGENT_PROFILE);
     setDrawSourceState(DEFAULT_DRAW_SOURCE);
     setDrawnCards([]);
@@ -806,6 +850,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         selectHistoryReading,
         continueFromHistoryReading,
         clearContinuitySource,
+        clearContinuityMemory,
         resetReading,
         updateHistoryNotes,
       }}

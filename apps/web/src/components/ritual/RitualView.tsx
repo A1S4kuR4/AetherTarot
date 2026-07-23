@@ -382,9 +382,9 @@ export default function RitualView() {
               isComplete ? "bg-success" : "bg-indigo",
             )}
           />
-          <span className="font-serif text-sm font-medium tracking-wide text-text-inverse">
+          <h1 className="font-serif text-sm font-medium tracking-wide text-text-inverse">
             仪式 · {selectedSpread.name}
-          </span>
+          </h1>
           <span className="font-sans text-xs font-medium text-text-inverse-muted/70">
             ({drawnCards.length}/{selectedSpread.positions.length})
           </span>

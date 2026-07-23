@@ -11,8 +11,9 @@ import { restoreAgentProfile } from "@aethertarot/shared-types";
 export const READING_DRAFT_STORAGE_KEY = "aether_tarot_active_reading_v1";
 
 export interface ReadingDraftSnapshot {
-  version: 1;
+  version: 2;
   requestId: string;
+  threadId: string;
   question: string;
   spreadId: string;
   agentProfile: AgentProfile;
@@ -22,6 +23,7 @@ export interface ReadingDraftSnapshot {
 
 export interface RestoredReadingDraft {
   requestId: string | null;
+  threadId: string | null;
   question: string;
   selectedSpread: Spread;
   agentProfile: AgentProfile;
@@ -67,6 +69,7 @@ function parseDrawnCard(value: unknown): ReadingRequestCardInput | null {
 
 export function buildReadingDraftSnapshot({
   requestId,
+  threadId,
   question,
   selectedSpread,
   agentProfile,
@@ -74,6 +77,7 @@ export function buildReadingDraftSnapshot({
   drawnCards,
 }: {
   requestId: string;
+  threadId?: string;
   question: string;
   selectedSpread: Spread;
   agentProfile: AgentProfile;
@@ -81,8 +85,9 @@ export function buildReadingDraftSnapshot({
   drawnCards: DrawnCard[];
 }): ReadingDraftSnapshot {
   return {
-    version: 1,
+    version: 2,
     requestId,
+    threadId: threadId ?? requestId,
     question: question.trim(),
     spreadId: selectedSpread.id,
     agentProfile,
@@ -119,12 +124,15 @@ export function parseReadingDraftSnapshot(
   const requestId = typeof parsed.requestId === "string" && UUID_PATTERN.test(parsed.requestId)
     ? parsed.requestId
     : null;
+  const threadId = typeof parsed.threadId === "string" && UUID_PATTERN.test(parsed.threadId)
+    ? parsed.threadId
+    : null;
   const spreadId = typeof parsed.spreadId === "string" ? parsed.spreadId : "";
   const agentProfile = parsed.agentProfile;
   const drawSource = parsed.drawSource;
 
   if (
-    parsed.version !== 1 ||
+    (parsed.version !== 1 && parsed.version !== 2) ||
     !question ||
     !spreadId ||
     !DRAW_SOURCES.has(drawSource as DrawSource) ||
@@ -168,6 +176,7 @@ export function parseReadingDraftSnapshot(
 
   return {
     requestId,
+    threadId,
     question,
     selectedSpread,
     agentProfile: restoreAgentProfile(agentProfile, (original, fallback) => {

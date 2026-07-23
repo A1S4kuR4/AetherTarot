@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
@@ -234,6 +235,7 @@ function findRecentRepeatedTheme(
 
 export default function RitualInitializer() {
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
   const {
     question,
@@ -247,6 +249,7 @@ export default function RitualInitializer() {
     setAgentProfile,
     setDrawSource,
     clearContinuitySource,
+    clearContinuityMemory,
     startRitual,
   } = useReading();
 
@@ -263,6 +266,8 @@ export default function RitualInitializer() {
   const [decisionBoundaryAcknowledged, setDecisionBoundaryAcknowledged] = useState(false);
   const [pendingStartMode, setPendingStartMode] = useState<"ritual" | "quick" | null>(null);
   const [navigationMode, setNavigationMode] = useState<"ritual" | "quick" | null>(null);
+  const [isClearingMemory, setIsClearingMemory] = useState(false);
+  const [memoryClearMessage, setMemoryClearMessage] = useState<string | null>(null);
 
   const trimmedQuestion = question.trim();
   const isNavigationPending = navigationMode !== null || isQuickDrawing;
@@ -415,9 +420,11 @@ export default function RitualInitializer() {
           onMouseLeave={() => stopPress()}
           onTouchStart={startPress}
           onTouchEnd={() => stopPress()}
+          onTouchCancel={() => stopPress()}
+          onContextMenu={(event) => event.preventDefault()}
           disabled={startButtonDisabled}
           className={cn(
-            "btn-primary relative w-full min-h-11 select-none overflow-hidden px-6 py-2.5 text-sm transition-all",
+            "btn-primary relative w-full min-h-11 select-none touch-none overflow-hidden px-6 py-2.5 text-sm transition-all",
             isPressing && "shadow-inner border-terracotta/90",
           )}
           animate={{
@@ -505,16 +512,43 @@ export default function RitualInitializer() {
                     </p>
                   </div>
                   <p className="line-clamp-1 text-xs leading-relaxed text-text-inverse">
-                    你正在延续「{continuitySource.spreadName}」中的一条线索。
+                    你正在延续「{continuitySource.spreadName}」：{continuitySource.question}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={clearContinuitySource}
-                  className="shrink-0 rounded-full border border-midnight-border bg-midnight-panel px-2.5 py-1 text-[11px] font-medium text-text-inverse-muted transition hover:border-terracotta/25 hover:text-text-inverse"
-                >
-                  清除
-                </button>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={clearContinuitySource}
+                    className="rounded-full border border-midnight-border bg-midnight-panel px-2.5 py-1 text-[11px] font-medium text-text-inverse-muted transition hover:border-terracotta/25 hover:text-text-inverse"
+                  >
+                    停止延续
+                  </button>
+                  {sessionStatus === "authenticated" ? (
+                    <button
+                      type="button"
+                      disabled={isClearingMemory}
+                      onClick={async () => {
+                        setIsClearingMemory(true);
+                        setMemoryClearMessage(null);
+                        const cleared = await clearContinuityMemory();
+                        setMemoryClearMessage(
+                          cleared
+                            ? "这条线的服务端记忆已清除；当前摘要仍可用于本次延续。"
+                            : "暂时无法清除，请稍后再试。",
+                        );
+                        setIsClearingMemory(false);
+                      }}
+                      className="text-[10px] text-text-inverse-muted underline decoration-dotted underline-offset-2 transition hover:text-text-inverse disabled:opacity-50"
+                    >
+                      {isClearingMemory ? "正在清除…" : "清除这条线的记忆"}
+                    </button>
+                  ) : null}
+                  {memoryClearMessage ? (
+                    <span className="max-w-52 text-right text-[10px] leading-snug text-text-inverse-muted">
+                      {memoryClearMessage}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </motion.div>
           ) : null}
@@ -542,7 +576,7 @@ export default function RitualInitializer() {
       ) : null}
 
       {/* 3-Column Grid with Surface Hierarchy */}
-      <div className="grid min-w-0 gap-3 lg:h-full lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(280px,0.85fr)_minmax(460px,1.45fr)_minmax(250px,0.78fr)] lg:grid-rows-1 xl:grid-cols-[minmax(300px,0.9fr)_minmax(520px,1.5fr)_minmax(270px,0.8fr)]">
+      <div className="grid min-w-0 gap-3 lg:h-full lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(280px,0.85fr)_minmax(420px,1.45fr)_minmax(250px,0.78fr)] lg:grid-rows-1 xl:grid-cols-[minmax(300px,0.9fr)_minmax(520px,1.5fr)_minmax(270px,0.8fr)]">
         
         {/* COLUMN 1: CHOOSE YOUR SPREAD (选择牌阵) - Enlarged Cards */}
         <motion.section
