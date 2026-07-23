@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type {
   EncyclopediaQueryResponse,
+  ReadingErrorPayload,
   TarotCard,
 } from "@aethertarot/shared-types";
 import LegacyIcon from "@/components/ui/LegacyIcon";
@@ -13,17 +14,21 @@ type QueryState =
   | { status: "idle"; data?: undefined; error?: undefined }
   | { status: "loading"; data?: EncyclopediaQueryResponse; error?: undefined }
   | { status: "success"; data: EncyclopediaQueryResponse; error?: undefined }
-  | { status: "error"; data?: EncyclopediaQueryResponse; error: string };
-
-async function readErrorMessage(response: Response) {
-  try {
-    const payload = (await response.json()) as {
-      error?: { message?: string };
+  | { status: "error"; data?: EncyclopediaQueryResponse; error: string }
+  | {
+      status: "safety_intercept";
+      data?: EncyclopediaQueryResponse;
+      reason: string;
+      referralLinks: string[];
     };
 
-    return payload.error?.message ?? "百科问答暂时不可用。";
+async function readErrorPayload(response: Response) {
+  try {
+    const payload = (await response.json()) as ReadingErrorPayload;
+
+    return payload.error;
   } catch {
-    return "百科问答暂时不可用。";
+    return null;
   }
 }
 
@@ -60,7 +65,21 @@ export default function EncyclopediaQuestionPanel({
       });
 
       if (!response.ok) {
-        throw new Error(await readErrorMessage(response));
+        const errorPayload = await readErrorPayload(response);
+
+        if (errorPayload?.code === "safety_intercept") {
+          setQueryState({
+            status: "safety_intercept",
+            reason:
+              errorPayload.intercept_reason
+              ?? errorPayload.message
+              ?? "这次问题需要先回到现实安全与支持。",
+            referralLinks: errorPayload.referral_links ?? [],
+          });
+          return;
+        }
+
+        throw new Error(errorPayload?.message ?? "百科问答暂时不可用。");
       }
 
       const data = (await response.json()) as EncyclopediaQueryResponse;
@@ -145,6 +164,34 @@ export default function EncyclopediaQuestionPanel({
       {queryState.status === "error" ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {queryState.error}
+        </div>
+      ) : null}
+
+      {queryState.status === "safety_intercept" ? (
+        <div
+          data-testid="encyclopedia-safety-intercept"
+          className="space-y-3 rounded-2xl border border-red-900/30 bg-red-950/10 px-4 py-4 text-sm text-red-200"
+        >
+          <div className="flex items-center gap-2 font-medium text-red-300">
+            <LegacyIcon name="gavel" className="text-lg" />
+            <span>现实安全优先</span>
+          </div>
+          <p className="leading-relaxed">{queryState.reason}</p>
+          {queryState.referralLinks.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {queryState.referralLinks.map((link) => (
+                <a
+                  key={link}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-xs text-red-300 underline hover:text-red-200"
+                >
+                  {link}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

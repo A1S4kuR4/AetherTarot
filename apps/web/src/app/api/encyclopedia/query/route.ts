@@ -29,6 +29,10 @@ import {
   recordEncyclopediaEvent,
   type EncyclopediaEventInput,
 } from "@/server/observability/encyclopedia-events";
+import {
+  assertSafetyAllowsGeneration,
+  assessSafetyText,
+} from "@/server/safety/policy";
 
 export const runtime = "nodejs";
 const MAX_ENCYCLOPEDIA_REQUEST_BYTES = 8 * 1024;
@@ -61,12 +65,16 @@ function buildErrorResponse(
   message: string,
   status: number,
   details?: Record<string, unknown>,
+  interceptReason?: string,
+  referralLinks?: string[],
 ) {
   const payload: ReadingErrorPayload = {
     error: {
       code,
       message,
       details,
+      intercept_reason: interceptReason,
+      referral_links: referralLinks,
     },
   };
 
@@ -151,6 +159,7 @@ export async function handleEncyclopediaQueryPost(
       );
     }
     actor = await deps.requireAccess();
+    assertSafetyAllowsGeneration(assessSafetyText(parsedPayload.query));
     await deps.consumeQuota({ actor, ipHash });
     const { result, calls } = await deps.collectUsage(() =>
       deps.generateAnswer(parsedPayload as EncyclopediaQueryRequest)
@@ -204,6 +213,8 @@ export async function handleEncyclopediaQueryPost(
         actualError.message,
         actualError.status,
         actualError.details,
+        actualError.intercept_reason,
+        actualError.referral_links,
       );
     }
 

@@ -4,10 +4,31 @@ import type {
   ReadingRequestPayload,
   StructuredReading,
 } from "@aethertarot/shared-types";
-import { runReadingGraph } from "@/server/reading/graph";
+import {
+  runReadingGraphWithDiagnostics,
+  type ReadingGraphDiagnostics,
+  type RunReadingGraphOptions,
+} from "@/server/reading/graph";
+
+export type ReadingServiceOptions = Pick<
+  RunReadingGraphOptions,
+  "initialReading" | "memoryUserId" | "sessionMemoryStore"
+>;
+
+export async function generateStructuredReadingWithDiagnostics(
+  payload: ReadingRequestPayload,
+  options?: ReadingServiceOptions,
+): Promise<ReadingGraphDiagnostics> {
+  return runReadingGraphWithDiagnostics(payload, options);
+}
 
 export async function generateStructuredReading(
   payload: ReadingRequestPayload,
+  options?: ReadingServiceOptions,
 ): Promise<StructuredReading> {
-  return runReadingGraph(payload);
+  const diagnostics = await generateStructuredReadingWithDiagnostics(
+    payload,
+    options,
+  );
+  return diagnostics.reading;
 }

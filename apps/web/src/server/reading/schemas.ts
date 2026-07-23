@@ -2,6 +2,7 @@ import {
   normalizeAgentProfile,
   restoreAgentProfile,
   type AgentProfile,
+  type ReadingGroundingClaimPath,
   type StructuredReading,
 } from "@aethertarot/shared-types";
 import { z } from "zod";
@@ -105,6 +106,24 @@ const readingCardResultSchema = z.object({
   interpretation: z.string().min(1),
 });
 
+const groundingSourceSchema = z.object({
+  ref: z.string().min(1),
+  kind: z.enum(["wiki", "authority_card"]),
+  title: z.string().min(1),
+  card_id: z.string().min(1),
+  orientation: z.enum(["upright", "reversed", "unknown"]),
+  chunk_id: z.string().min(1),
+  source_ids: z.array(z.string().min(1)),
+});
+
+const groundingClaimSchema = z.object({
+  path: z.custom<ReadingGroundingClaimPath>(
+    (value) => typeof value === "string"
+      && /^(?:cards\.\d+\.interpretation|synthesis)$/.test(value),
+  ),
+  source_refs: z.array(z.string().min(1)).min(1),
+});
+
 const structuredReadingShape = {
   reading_id: z.string().min(1),
   locale: z.string().min(1),
@@ -125,6 +144,12 @@ const structuredReadingShape = {
   session_capsule: z.string().min(1).nullable(),
   sober_check: z.string().min(1).nullable().optional(),
   presentation_mode: z.enum(["standard", "void_narrative", "sober_anchor"]).optional(),
+  grounding: z.object({
+    version: z.literal(1),
+    status: z.enum(["grounded", "degraded"]),
+    sources: z.array(groundingSourceSchema).min(1),
+    claims: z.array(groundingClaimSchema).min(1),
+  }).optional(),
 };
 
 /** Strict schema for current provider output and API request snapshots. */
@@ -161,7 +186,10 @@ export const readingRequestPayloadSchema = z
     phase: readingPhaseSchema.default("initial"),
     draw_source: drawSourceSchema.default("digital_random"),
     prior_session_capsule: z.string().trim().min(1).max(280).nullable().optional(),
-    initial_reading: z.lazy(() => structuredReadingSchema).optional(),
+    initial_reading_id: z.string().trim().min(1).max(128).optional(),
+    initial_reading: z
+      .object({ reading_id: z.string().trim().min(1).max(128) })
+      .optional(),
     followup_answers: z.array(followupAnswerSchema).optional(),
   })
   .superRefine((payload, context) => {
@@ -169,11 +197,23 @@ export const readingRequestPayloadSchema = z
       return;
     }
 
-    if (!payload.initial_reading) {
+    if (!payload.initial_reading_id && !payload.initial_reading) {
       context.addIssue({
         code: "custom",
-        message: "phase 为 final 时必须提供 initial_reading。",
-        path: ["initial_reading"],
+        message: "phase 为 final 时必须提供 initial_reading_id。",
+        path: ["initial_reading_id"],
+      });
+    }
+
+    if (
+      payload.initial_reading_id
+      && payload.initial_reading
+      && payload.initial_reading_id !== payload.initial_reading.reading_id
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "initial_reading_id 与 legacy initial_reading.reading_id 不一致。",
+        path: ["initial_reading_id"],
       });
     }
 

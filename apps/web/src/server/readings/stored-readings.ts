@@ -22,6 +22,7 @@ const storedReadingHistoryEntrySchema: z.ZodType<ReadingHistoryEntry> = z
     drawSource: drawSourceSchema.optional(),
     drawnCards: z.array(readingRequestCardInputSchema).min(1),
     reading: restoredStructuredReadingSchema,
+    threadId: z.string().trim().min(1).max(128).optional(),
     user_notes: z.string().max(MAX_STORED_READING_NOTES_LENGTH).optional(),
   })
   .superRefine((entry, context) => {
@@ -64,6 +65,7 @@ function buildStoredReadingRow(userId: string, entry: ReadingHistoryEntry) {
     drawn_cards: entry.drawnCards as unknown as Json,
     reading: entry.reading as unknown as Json,
     user_notes: entry.user_notes ?? null,
+    thread_id: entry.threadId ?? null,
   };
 }
 
@@ -128,7 +130,7 @@ export async function listStoredReadings(
 
   const { data, error } = await adminClient
     .from("stored_readings")
-    .select("id, reading_id, created_at, spread_id, draw_source, drawn_cards, reading, user_notes")
+    .select("id, reading_id, created_at, spread_id, draw_source, drawn_cards, reading, user_notes, thread_id")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(normalizeStoredReadingsLimit(options.limit));
@@ -151,6 +153,7 @@ export async function listStoredReadings(
       drawSource: row.draw_source ?? undefined,
       drawnCards: row.drawn_cards,
       reading: row.reading,
+      threadId: row.thread_id ?? undefined,
       user_notes: row.user_notes ?? undefined,
     });
 

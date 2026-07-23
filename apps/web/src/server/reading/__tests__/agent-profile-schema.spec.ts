@@ -105,11 +105,11 @@ describe("agent profile schemas", () => {
   });
 
   it.each(["professional", "expert-v2", undefined])(
-    "rejects non-canonical nested final profile %j",
+    "ignores non-ID fields in a legacy final snapshot %j",
     (nestedProfile) => {
       const initialReading = buildStructuredReading(nestedProfile);
 
-      expect(readingRequestPayloadSchema.safeParse({
+      const result = readingRequestPayloadSchema.safeParse({
         question: "我现在需要看清什么？",
         spreadId: "single",
         drawnCards: [{ positionId: "focus", cardId: "star", isReversed: false }],
@@ -117,7 +117,13 @@ describe("agent profile schemas", () => {
         phase: "final",
         initial_reading: initialReading,
         followup_answers: [{ question: "你最想先确认什么？", answer: "现实反馈。" }],
-      }).success).toBe(false);
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.initial_reading).toEqual({
+          reading_id: initialReading.reading_id,
+        });
+      }
     },
   );
 

@@ -16,7 +16,12 @@ type PlaceholderReadingDraft = Pick<
   | "reflective_guidance"
   | "follow_up_questions"
   | "confidence_note"
->;
+> & {
+  grounding_claims?: Array<{
+    path: `cards.${number}.interpretation` | "synthesis";
+    source_refs: string[];
+  }>;
+};
 
 const QUESTION_TYPE_LENSES: Record<QuestionType, string> = {
   relationship: "关系节奏与边界",
@@ -208,16 +213,21 @@ export interface ReadingPrompt {
 
 interface KnowledgeGroundingChunk {
   id: string;
+  ref: string;
+  kind: "wiki" | "authority_card";
   title: string;
   content: string;
   source: string;
-  source_id: string;
+  source_ids: string[];
+  card: string;
+  orientation: "upright" | "reversed" | "unknown";
+  spread?: string;
   score: number;
   confidence: "low" | "medium" | "high";
 }
 
 interface KnowledgeGroundingContext {
-  status: "retrieved" | "none";
+  status: "retrieved" | "degraded" | "none";
   chunks: KnowledgeGroundingChunk[];
 }
 
@@ -337,15 +347,18 @@ function formatKnowledgeGroundingForPrompt(
   }
 
   return [
-    "Knowledge grounding status: retrieved",
-    "Use these local AetherTarot knowledge wiki chunks as the card-meaning grounding. Do not invent additional sources.",
-    ...knowledgeGrounding.chunks.slice(0, 5).map((chunk, index) =>
+    `Knowledge grounding status: ${knowledgeGrounding.status}`,
+    "Use these server-controlled grounding claims as the card-meaning grounding. Do not invent refs or sources.",
+    ...knowledgeGrounding.chunks.slice(0, 12).map((chunk, index) =>
       [
         `Chunk ${index + 1}:`,
+        `- ref: ${chunk.ref}`,
         `- id: ${chunk.id}`,
         `- title: ${chunk.title}`,
-        `- source: ${chunk.source}`,
-        `- source_id: ${chunk.source_id}`,
+        `- kind: ${chunk.kind}`,
+        `- card_id: ${chunk.card}`,
+        `- orientation: ${chunk.orientation}`,
+        `- source_ids: ${chunk.source_ids.join(", ") || "none"}`,
         `- confidence: ${chunk.confidence}`,
         `- content: ${chunk.content}`,
       ].join("\n"),
@@ -357,7 +370,7 @@ function findGroundingChunkForCard(
   knowledgeGrounding: KnowledgeGroundingContext | undefined,
   drawnCard: DrawnCard,
 ) {
-  if (!knowledgeGrounding || knowledgeGrounding.status !== "retrieved") {
+  if (!knowledgeGrounding || knowledgeGrounding.status === "none") {
     return null;
   }
 
@@ -365,10 +378,13 @@ function findGroundingChunkForCard(
 
   return knowledgeGrounding.chunks.find(
     (chunk) =>
-      chunk.title.includes(drawnCard.card.name)
-      && (chunk.title.includes(orientation) || chunk.content.includes(orientation)),
+      chunk.card === drawnCard.card.id
+      && (
+        chunk.orientation === (drawnCard.isReversed ? "reversed" : "upright")
+        || chunk.orientation === "unknown"
+      ),
   ) ?? knowledgeGrounding.chunks.find((chunk) =>
-    chunk.title.includes(drawnCard.card.name),
+    chunk.card === drawnCard.card.id,
   ) ?? null;
 }
 
@@ -381,13 +397,35 @@ function buildGroundingConfidenceNote(
 
   if (knowledgeGrounding.status === "retrieved" && knowledgeGrounding.chunks.length > 0) {
     const sources = uniqueStrings(
-      knowledgeGrounding.chunks.map((chunk) => chunk.source_id),
+      knowledgeGrounding.chunks.flatMap((chunk) => chunk.source_ids),
     ).join("、");
 
     return `本轮牌义已参考本地知识库检索片段（source_id: ${sources}）；未出现在片段中的内容不会被包装成知识库结论。`;
   }
 
   return "本地知识库没有返回足够可靠的牌义片段；这次解读会降级为基于牌面、牌阵位置与一般反思框架的非断言式整理。";
+}
+
+function buildDraftGroundingClaims(
+  drawnCards: Array<{ card: { id: string } }>,
+  knowledgeGrounding: KnowledgeGroundingContext | undefined,
+) {
+  if (!knowledgeGrounding || knowledgeGrounding.status === "none") {
+    return [];
+  }
+  const cardClaims = drawnCards.flatMap((drawnCard, index) => {
+    const refs = knowledgeGrounding.chunks
+      .filter((chunk) => chunk.card === drawnCard.card.id)
+      .map((chunk) => chunk.ref)
+      .slice(0, 2);
+    return refs.length > 0
+      ? [{ path: `cards.${index}.interpretation` as const, source_refs: refs }]
+      : [];
+  });
+  const synthesisRefs = [...new Set(cardClaims.flatMap((claim) => claim.source_refs))];
+  return synthesisRefs.length > 0
+    ? [...cardClaims, { path: "synthesis" as const, source_refs: synthesisRefs }]
+    : cardClaims;
 }
 
 function getKeywords(drawnCard: DrawnCard) {
@@ -930,6 +968,7 @@ function buildOutputContract({
     "- reflective_guidance",
     "- follow_up_questions",
     "- confidence_note",
+    "- grounding_claims",
     "Do not return metadata such as reading_id, locale, question_type, reading_phase, requires_followup, spread, safety_note, session_capsule, sober_check, or presentation_mode.",
     "cards must be an array aligned with the authority drawn card order.",
     "Each card item must include: card_id, name, english_name, orientation, position_id, position, position_meaning, interpretation.",
@@ -944,6 +983,9 @@ function buildOutputContract({
     "Constructive tension must not become deterministic prophecy, third-party mind-reading, professional advice, or a command to make a major decision.",
     "If you return more than one follow_up_questions item, each question must be materially distinct.",
     "confidence_note: one short sentence that preserves uncertainty and avoids certainty claims.",
+    "grounding_claims: cite server-provided refs for every cards[i].interpretation and for synthesis.",
+    "Each grounding_claims item must be { path, source_refs }; path is exactly cards.<zero-based-index>.interpretation or synthesis.",
+    "A card interpretation may cite only refs whose card_id matches that card. Never invent a ref.",
   ].join("\n");
 }
 
@@ -1031,6 +1073,7 @@ export function buildPlaceholderInitialReadingDraft({
       "这是第一阶段初读，更适合作为牌面主轴与解释方向；用户补充只能帮助收束，不应把它改写成绝对结论。",
       buildGroundingConfidenceNote(knowledgeGrounding),
     ].filter(Boolean).join(" "),
+    grounding_claims: buildDraftGroundingClaims(drawnCards, knowledgeGrounding),
   };
 }
 
@@ -1107,6 +1150,12 @@ export function buildPlaceholderFinalReadingDraft({
       "这是第二阶段整合深读。它延续第一阶段的牌面主轴，并结合你的补充信息做校正；它仍然不是对未来的确定承诺。",
       buildGroundingConfidenceNote(knowledgeGrounding),
     ].filter(Boolean).join(" "),
+    grounding_claims: buildDraftGroundingClaims(
+      initialReading.cards.map((card) => ({
+        card: { id: card.card_id },
+      })),
+      knowledgeGrounding,
+    ),
   };
 }
 

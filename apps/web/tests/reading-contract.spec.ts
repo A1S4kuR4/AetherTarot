@@ -11,7 +11,8 @@ type ReadingPayload = {
   agent_profile?: "lite" | "standard" | "sober";
   phase?: "initial" | "final";
   prior_session_capsule?: string | null;
-  initial_reading?: ReadingBody;
+  initial_reading_id?: string;
+  initial_reading?: { reading_id: string };
   followup_answers?: Array<{ question: string; answer: string }>;
 };
 
@@ -210,7 +211,7 @@ test.describe("reading API contract smoke", () => {
       data: {
         ...buildHolyTrianglePayload(),
         phase: "final",
-        initial_reading: initial,
+        initial_reading_id: initial.reading_id,
         followup_answers: buildFollowupAnswers(initial),
       },
     });
@@ -273,7 +274,7 @@ test.describe("reading API contract smoke", () => {
 
     expect(response.status()).toBe(200);
     const body = (await response.json()) as ReadingBody;
-    expect(body.sober_check).toMatch(/最真实的顾虑或底线计划/);
+    expect(body.sober_check).toMatch(/最真实的顾虑.*底线计划/);
     expect(body.presentation_mode).toBe("sober_anchor");
   });
 

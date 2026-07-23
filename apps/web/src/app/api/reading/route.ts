@@ -20,7 +20,23 @@ import { consumeReadingQuota, refundReadingQuota } from "@/server/beta/quota";
 import { readBoundedJsonBody } from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { readingRequestPayloadSchema } from "@/server/reading/schemas";
-import { generateStructuredReading } from "@/server/reading/service";
+import {
+  generateStructuredReadingWithDiagnostics,
+  type ReadingServiceOptions,
+} from "@/server/reading/service";
+import type { ReadingGraphDiagnostics } from "@/server/reading/graph";
+import {
+  getDefaultReadingRuntimeStores,
+  getReadingSubjectKey,
+  type InitialReadingSnapshot,
+  type InitialReadingSnapshotStore,
+  type ReadingRequestExecutionStore,
+} from "@/server/reading/runtime-persistence";
+import { ReadingServiceError } from "@/server/reading/errors";
+import {
+  toPersistedReadingTraceV2,
+  type ReadingRunTrace,
+} from "@/server/reading/trace";
 import {
   collectLlmUsage,
   summarizeLlmCalls,
@@ -48,9 +64,14 @@ interface ReadingRouteDependencies {
     actor: PublicFeatureActor;
     ipHash: string;
   }) => Promise<void>;
-  generateReading: typeof generateStructuredReading;
+  generateReading: (
+    payload: ReadingRequestPayload,
+    options?: ReadingServiceOptions,
+  ) => Promise<StructuredReading | ReadingGraphDiagnostics>;
   collectUsage: typeof collectLlmUsage;
   recordEvent: (input: ReadingEventInput) => Promise<void>;
+  executionStore?: ReadingRequestExecutionStore;
+  snapshotStore?: InitialReadingSnapshotStore;
 }
 
 const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
@@ -59,7 +80,7 @@ const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   requireAccess: () => resolvePublicFeatureActor(),
   consumeQuota: consumeReadingQuota,
   refundQuota: refundReadingQuota,
-  generateReading: generateStructuredReading,
+  generateReading: generateStructuredReadingWithDiagnostics,
   collectUsage: collectLlmUsage,
   recordEvent: recordReadingEvent,
 };
@@ -67,13 +88,6 @@ type ReadingResponseSnapshot = {
   payload: StructuredReading | ReadingErrorPayload;
   status: number;
 };
-type ReadingRequestExecution = {
-  payloadHash: string;
-  expiresAt: number;
-  promise: Promise<ReadingResponseSnapshot>;
-};
-
-const readingRequestExecutions = new Map<string, ReadingRequestExecution>();
 
 function buildErrorResponse(
   code: ReadingErrorPayload["error"]["code"],
@@ -127,7 +141,10 @@ function getEventBase({
     provider,
     phase: parsedPayload?.phase ?? "initial",
     spreadId: parsedPayload?.spreadId ?? null,
-    initialReadingId: parsedPayload?.initial_reading?.reading_id ?? null,
+    initialReadingId:
+      parsedPayload?.initial_reading_id
+      ?? parsedPayload?.initial_reading?.reading_id
+      ?? null,
     requestId: parsedPayload?.request_id ?? null,
     durationMs: Date.now() - startedAt,
   };
@@ -142,81 +159,72 @@ function buildRequestIdentity({
   actor: PublicFeatureActor;
   ipHash: string;
 }) {
-  const subject = actor.userId ?? actor.email ?? `anonymous:${ipHash}`;
+  const subjectKey = getReadingSubjectKey({
+    userId: actor.userId,
+    email: actor.email,
+    ipHash,
+  });
+  const effectivePayload = {
+    ...payload,
+    initial_reading: undefined,
+    initial_reading_id:
+      payload.initial_reading_id ?? payload.initial_reading?.reading_id,
+    prior_session_capsule:
+      payload.phase === "final" ? undefined : payload.prior_session_capsule,
+  };
   const payloadHash = createHash("sha256")
-    .update(JSON.stringify(payload))
+    .update(JSON.stringify(effectivePayload))
     .digest("hex");
 
   return {
-    key: `${subject}:${payload.request_id}`,
+    subjectKey,
     payloadHash,
   };
 }
 
-function getBeijingDayEnd(now = Date.now()) {
-  const local = new Date(now + 8 * 60 * 60 * 1000);
-  return Date.UTC(
-    local.getUTCFullYear(),
-    local.getUTCMonth(),
-    local.getUTCDate() + 1,
-  ) - 8 * 60 * 60 * 1000;
+function getInitialReadingId(payload: ReadingRequestPayload) {
+  return payload.initial_reading_id ?? payload.initial_reading?.reading_id;
 }
 
-function removeExpiredReadingRequests(now = Date.now()) {
-  for (const [key, execution] of readingRequestExecutions) {
-    if (execution.expiresAt <= now) {
-      readingRequestExecutions.delete(key);
-    }
+function sameJson(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function validateFinalSnapshot(
+  payload: ReadingRequestPayload,
+  snapshot: InitialReadingSnapshot,
+) {
+  const expectedQuestions = snapshot.followUpQuestions;
+  const receivedAnswers = payload.followup_answers ?? [];
+  const matches = (
+    payload.question === snapshot.question
+    && payload.spreadId === snapshot.spreadId
+    && sameJson(payload.drawnCards, snapshot.drawnCards)
+    && (payload.agent_profile ?? "standard") === snapshot.agentProfile
+    && (payload.draw_source ?? "digital_random") === snapshot.drawSource
+    && (payload.thread_id ?? null) === snapshot.threadId
+    && receivedAnswers.length === expectedQuestions.length
+    && receivedAnswers.every(
+      (answer, index) => answer.question === expectedQuestions[index],
+    )
+  );
+
+  if (!matches) {
+    throw new ReadingServiceError(
+      "invalid_request",
+      "Final 请求与服务端保存的 initial reading 不一致。",
+      400,
+    );
   }
 }
 
-async function runIdempotentReadingRequest({
-  key,
-  payloadHash,
-  execute,
-}: {
-  key: string;
-  payloadHash: string;
-  execute: () => Promise<ReadingResponseSnapshot>;
-}) {
-  removeExpiredReadingRequests();
-  const existing = readingRequestExecutions.get(key);
-
-  if (existing) {
-    if (existing.payloadHash !== payloadHash) {
-      return {
-        status: 409,
-        payload: buildErrorPayload(
-          "invalid_request",
-          "request_id 已用于不同的 reading 请求。",
-        ),
-      } satisfies ReadingResponseSnapshot;
-    }
-
-    return existing.promise;
+function normalizeGenerationResult(
+  value: StructuredReading | ReadingGraphDiagnostics,
+): { reading: StructuredReading; trace?: ReadingRunTrace } {
+  if ("reading" in value && "trace" in value) {
+    return { reading: value.reading, trace: value.trace };
   }
-
-  const execution: ReadingRequestExecution = {
-    payloadHash,
-    expiresAt: Number.POSITIVE_INFINITY,
-    promise: Promise.resolve().then(execute),
-  };
-  readingRequestExecutions.set(key, execution);
-  void execution.promise.then((snapshot) => {
-    if (snapshot.status === 200) {
-      execution.expiresAt = getBeijingDayEnd();
-      return;
-    }
-
-    if (readingRequestExecutions.get(key) === execution) {
-      readingRequestExecutions.delete(key);
-    }
-  }, () => {
-    if (readingRequestExecutions.get(key) === execution) {
-      readingRequestExecutions.delete(key);
-    }
-  });
-  return execution.promise;
+  return { reading: value };
 }
 
 async function executeReadingRequest({
@@ -227,6 +235,9 @@ async function executeReadingRequest({
   provider,
   startedAt,
   recordEvent,
+  subjectKey,
+  snapshotStore,
+  initialSnapshot,
 }: {
   deps: ReadingRouteDependencies;
   parsedPayload: ReadingRequestPayload;
@@ -235,16 +246,54 @@ async function executeReadingRequest({
   provider: string;
   startedAt: number;
   recordEvent: (input: ReadingEventInput) => Promise<void>;
+  subjectKey: string;
+  snapshotStore: InitialReadingSnapshotStore;
+  initialSnapshot?: InitialReadingSnapshot;
 }): Promise<ReadingResponseSnapshot> {
   let quotaConsumed = false;
+  let trace: ReadingRunTrace | undefined;
 
   try {
     await deps.consumeQuota({ actor, ipHash });
     quotaConsumed = true;
-    const { result: reading, calls } = await deps.collectUsage(() =>
-      deps.generateReading(parsedPayload)
+    const { result, calls } = await deps.collectUsage(() =>
+      deps.generateReading(parsedPayload, {
+        initialReading: initialSnapshot?.initialReading,
+        memoryUserId: actor.userId ?? undefined,
+      })
     );
+    const generated = normalizeGenerationResult(result);
+    const reading = generated.reading;
+    trace = generated.trace;
     const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
+
+    if (
+      reading.reading_phase === "initial"
+      && reading.requires_followup
+    ) {
+      try {
+        await snapshotStore.save({
+          subjectKey,
+          initialReadingId: reading.reading_id,
+          requestId: parsedPayload.request_id ?? crypto.randomUUID(),
+          question: parsedPayload.question,
+          spreadId: parsedPayload.spreadId,
+          drawnCards: parsedPayload.drawnCards,
+          agentProfile: parsedPayload.agent_profile ?? "standard",
+          drawSource: parsedPayload.draw_source ?? "digital_random",
+          threadId: parsedPayload.thread_id ?? null,
+          continuityContext: parsedPayload.prior_session_capsule ?? null,
+          initialReading: reading,
+          followUpQuestions: reading.follow_up_questions,
+        });
+      } catch {
+        throw new ReadingServiceError(
+          "provider_unavailable",
+          "初始解读暂时无法安全保存，请稍后重试。",
+          503,
+        );
+      }
+    }
 
     await recordEvent({
       ...getEventBase({
@@ -264,6 +313,7 @@ async function executeReadingRequest({
       estimatedCostUsd: usageSummary.estimatedCostUsd,
       completedInitial: reading.reading_phase === "initial" && !reading.requires_followup,
       completedFinal: reading.reading_phase === "final",
+      agentTrace: trace ? toPersistedReadingTraceV2(trace) : null,
     });
 
     return { payload: reading, status: 200 };
@@ -271,6 +321,9 @@ async function executeReadingRequest({
     const unwrappedError = unwrapLlmUsageError(error);
     const usageSummary = summarizeLlmCalls(unwrappedError.calls);
     const actualError = unwrappedError.cause;
+    if (isReadingServiceError(actualError)) {
+      trace = actualError.diagnosticTrace;
+    }
 
     if (quotaConsumed) {
       try {
@@ -320,6 +373,7 @@ async function executeReadingRequest({
       estimatedCostUsd: usageSummary.estimatedCostUsd,
       completedInitial: false,
       completedFinal: false,
+      agentTrace: trace ? toPersistedReadingTraceV2(trace) : null,
     });
 
     return {
@@ -355,7 +409,14 @@ export async function handleReadingPost(
       return;
     }
 
-    await deps.recordEvent(input);
+    try {
+      await deps.recordEvent(input);
+    } catch (error) {
+      console.warn("[observability] reading event persistence failed", {
+        code: "reading_event_write_failed",
+        message: error instanceof Error ? error.message : "unknown",
+      });
+    }
   };
 
   try {
@@ -435,7 +496,129 @@ export async function handleReadingPost(
     );
   }
 
-  const execute = () => executeReadingRequest({
+  let runtimeStores: ReturnType<typeof getDefaultReadingRuntimeStores>;
+  try {
+    const defaults = getDefaultReadingRuntimeStores({
+      forceInMemory: shouldSkipBetaOps,
+    });
+    runtimeStores = {
+      executionStore: dependencies.executionStore ?? defaults.executionStore,
+      snapshotStore: dependencies.snapshotStore ?? defaults.snapshotStore,
+    };
+  } catch {
+    return buildErrorResponse(
+      "provider_unavailable",
+      "Reading 持久化服务暂时不可用，请稍后重试。",
+      503,
+    );
+  }
+
+  const identity = buildRequestIdentity({
+    payload: parsedPayload,
+    actor,
+    ipHash,
+  });
+  const operationRequestId = parsedPayload.request_id ?? crypto.randomUUID();
+  let leaseOwner: string | undefined;
+
+  if (parsedPayload.request_id) {
+    let claim = await runtimeStores.executionStore.claim({
+      ...identity,
+      requestId: parsedPayload.request_id,
+    });
+    if (claim.status === "wait") {
+      claim = await runtimeStores.executionStore.waitForResult({
+        ...identity,
+        requestId: parsedPayload.request_id,
+      });
+    }
+    if (claim.status === "conflict") {
+      return buildErrorResponse(
+        "invalid_request",
+        "request_id 已用于不同的 reading 请求。",
+        409,
+      );
+    }
+    if (claim.status === "replay") {
+      return Response.json(claim.response.payload, {
+        status: claim.response.status,
+      });
+    }
+    if (claim.status === "wait") {
+      return buildErrorResponse(
+        "provider_unavailable",
+        "同一 Reading 请求仍在处理中，请稍后使用相同 request_id 重试。",
+        503,
+      );
+    }
+    leaseOwner = claim.leaseOwner;
+  }
+
+  let initialSnapshot: InitialReadingSnapshot | undefined;
+  const initialReadingId = getInitialReadingId(parsedPayload);
+  if (parsedPayload.phase === "final") {
+    if (!initialReadingId) {
+      return buildErrorResponse(
+        "invalid_request",
+        "phase 为 final 时必须提供 initial_reading_id。",
+        400,
+      );
+    }
+    try {
+      const claim = await runtimeStores.snapshotStore.claim({
+        subjectKey: identity.subjectKey,
+        initialReadingId,
+        requestId: operationRequestId,
+      });
+      if (claim.status !== "claimed") {
+        if (leaseOwner && parsedPayload.request_id) {
+          await runtimeStores.executionStore.release({
+            subjectKey: identity.subjectKey,
+            requestId: parsedPayload.request_id,
+            leaseOwner,
+          });
+        }
+        return buildErrorResponse(
+          "invalid_request",
+          claim.status === "busy"
+            ? "这份 initial reading 正由另一个 Final 请求处理。"
+            : "initial reading 不存在、已过期或已完成。",
+          claim.status === "busy" ? 409 : 400,
+        );
+      }
+      initialSnapshot = claim.snapshot;
+      validateFinalSnapshot(parsedPayload, initialSnapshot);
+      parsedPayload = {
+        ...parsedPayload,
+        initial_reading: { reading_id: initialSnapshot.initialReadingId },
+        initial_reading_id: initialSnapshot.initialReadingId,
+        prior_session_capsule: initialSnapshot.continuityContext,
+      };
+    } catch (error) {
+      await runtimeStores.snapshotStore.release({
+        subjectKey: identity.subjectKey,
+        initialReadingId,
+        requestId: operationRequestId,
+      }).catch(() => undefined);
+      if (leaseOwner && parsedPayload.request_id) {
+        await runtimeStores.executionStore.release({
+          subjectKey: identity.subjectKey,
+          requestId: parsedPayload.request_id,
+          leaseOwner,
+        }).catch(() => undefined);
+      }
+      if (isReadingServiceError(error)) {
+        return buildErrorResponse(error.code, error.message, error.status);
+      }
+      return buildErrorResponse(
+        "provider_unavailable",
+        "initial reading 暂时无法读取，请稍后重试。",
+        503,
+      );
+    }
+  }
+
+  const snapshot = await executeReadingRequest({
     deps,
     parsedPayload,
     actor,
@@ -443,13 +626,46 @@ export async function handleReadingPost(
     provider,
     startedAt,
     recordEvent,
+    subjectKey: identity.subjectKey,
+    snapshotStore: runtimeStores.snapshotStore,
+    initialSnapshot,
   });
-  const snapshot = parsedPayload.request_id
-    ? await runIdempotentReadingRequest({
-      ...buildRequestIdentity({ payload: parsedPayload, actor, ipHash }),
-      execute,
-    })
-    : await execute();
+
+  if (snapshot.status === 200 && leaseOwner && parsedPayload.request_id) {
+    try {
+      await runtimeStores.executionStore.complete({
+        subjectKey: identity.subjectKey,
+        requestId: parsedPayload.request_id,
+        leaseOwner,
+        response: snapshot,
+      });
+    } catch {
+      return buildErrorResponse(
+        "provider_unavailable",
+        "Reading 结果暂时无法安全保存，请使用相同 request_id 重试。",
+        503,
+      );
+    }
+  } else if (snapshot.status !== 200 && leaseOwner && parsedPayload.request_id) {
+    await runtimeStores.executionStore.release({
+      subjectKey: identity.subjectKey,
+      requestId: parsedPayload.request_id,
+      leaseOwner,
+    }).catch(() => undefined);
+  }
+
+  if (initialSnapshot) {
+    const input = {
+      subjectKey: identity.subjectKey,
+      initialReadingId: initialSnapshot.initialReadingId,
+      requestId: operationRequestId,
+    };
+    if (snapshot.status === 200) {
+      await runtimeStores.snapshotStore.consume(input).catch(() => undefined);
+    } else {
+      await runtimeStores.snapshotStore.release(input).catch(() => undefined);
+    }
+  }
 
   return Response.json(snapshot.payload, { status: snapshot.status });
 }

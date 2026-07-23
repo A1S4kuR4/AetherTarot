@@ -4,6 +4,7 @@ import { ReadingServiceError } from "@/server/reading/errors";
 import { runReadingGraph } from "@/server/reading/graph";
 import { buildSinglePayload } from "@/server/reading/__tests__/fixtures";
 import type { AuthenticatedTester, PublicFeatureActor } from "@/server/beta/access";
+import { createInMemoryReadingRuntimeStores } from "@/server/reading/runtime-persistence";
 
 const TESTER: AuthenticatedTester = {
   userId: "00000000-0000-0000-0000-000000000001",
@@ -29,18 +30,22 @@ function buildRequest(body: unknown) {
 }
 
 function buildDependencies(overrides: RouteDependencies = {}) {
+  const runtimeStores = createInMemoryReadingRuntimeStores();
   return {
     getIpHash: () => "ip-hash",
     getProviderName: () => "llm",
     requireAccess: vi.fn(async () => TESTER),
     consumeQuota: vi.fn(async () => undefined),
     refundQuota: vi.fn(async () => undefined),
-    generateReading: vi.fn((payload) => runReadingGraph(payload)),
+    generateReading: vi.fn((payload, options) =>
+      runReadingGraph(payload, options)
+    ),
     collectUsage: vi.fn(async (callback) => ({
       result: await callback(),
       calls: [],
     })),
     recordEvent: vi.fn(async () => undefined),
+    ...runtimeStores,
     ...overrides,
   };
 }
@@ -407,5 +412,75 @@ describe("reading route beta access and quota", () => {
       requestId: requestPayload.request_id,
       status: "success",
     }));
+  });
+
+  it("restores Final input from the server snapshot and ignores legacy body text", async () => {
+    const deps = buildDependencies();
+    const initialRequest = {
+      ...buildSinglePayload("我该怎样稳住现在的节奏？"),
+      request_id: "00000000-0000-4000-8000-000000000101",
+      thread_id: "00000000-0000-4000-8000-000000000201",
+      agent_profile: "standard",
+    };
+    const initialResponse = await handleReadingPost(
+      buildRequest(initialRequest),
+      deps,
+    );
+    const initial = await initialResponse.json();
+    expect(initialResponse.status).toBe(200);
+    expect(initial.requires_followup).toBe(true);
+
+    const finalResponse = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "00000000-0000-4000-8000-000000000102",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      initial_reading: {
+        reading_id: initial.reading_id,
+        synthesis: "客户端注入的正文绝不能进入 Final。",
+      },
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我会先观察一周。",
+      })),
+    }), deps);
+    const finalReading = await finalResponse.json();
+
+    expect(finalResponse.status).toBe(200);
+    expect(finalReading.reading_phase).toBe("final");
+    expect(finalReading.initial_reading_id).toBe(initial.reading_id);
+    const finalCall = vi.mocked(deps.generateReading).mock.calls.at(-1);
+    expect(finalCall?.[1]?.initialReading?.synthesis).toBe(initial.synthesis);
+    expect(JSON.stringify(finalCall)).not.toContain("客户端注入");
+  });
+
+  it("rejects a Final request whose follow-up questions differ from the snapshot", async () => {
+    const deps = buildDependencies();
+    const initialRequest = {
+      ...buildSinglePayload("我需要补充看清什么？"),
+      request_id: "00000000-0000-4000-8000-000000000103",
+      thread_id: "00000000-0000-4000-8000-000000000203",
+      agent_profile: "standard",
+    };
+    const initialResponse = await handleReadingPost(
+      buildRequest(initialRequest),
+      deps,
+    );
+    const initial = await initialResponse.json();
+
+    const finalResponse = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "00000000-0000-4000-8000-000000000104",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      followup_answers: initial.follow_up_questions.map(() => ({
+        question: "篡改后的追问",
+        answer: "答案",
+      })),
+    }), deps);
+
+    expect(finalResponse.status).toBe(400);
+    expect(deps.consumeQuota).toHaveBeenCalledTimes(1);
+    expect(deps.generateReading).toHaveBeenCalledTimes(1);
   });
 });

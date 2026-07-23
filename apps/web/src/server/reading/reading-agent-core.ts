@@ -17,7 +17,7 @@ export type AgentAction =
   | { type: "retrieve_knowledge"; reason: string; query: string }
   | { type: "safety_stop"; reason: string };
 
-export type GroundingStatus = "none" | "retrieved";
+export type GroundingStatus = "none" | "retrieved" | "degraded";
 
 export interface AgentActionTrace {
   step: number;
@@ -53,6 +53,7 @@ export interface ReadingAgentDecisionContext {
   question: string;
   questionType: QuestionType;
   threadId?: string;
+  continuityRequested?: boolean;
   phase: ReadingPhase;
   spread: Spread;
   drawnCards: DrawnCard[];
@@ -127,6 +128,7 @@ export function defaultReadingAgentDecider({
   question,
   questionType,
   threadId,
+  continuityRequested,
   drawnCards,
   frictionResult,
   agentState,
@@ -146,15 +148,33 @@ export function defaultReadingAgentDecider({
     };
   }
 
-  const hasObservation = agentState.observations.length > 0;
   const hasMemoryObservation = agentState.observations.some(
     (observation) => observation.source === "get_session_memory",
   );
+  const hasKnowledgeObservation = agentState.observations.some(
+    (observation) => observation.source === "retrieve_tarot_knowledge",
+  );
 
-  if (!hasObservation && KNOWLEDGE_RETRIEVAL_PATTERN.test(question)) {
+  if (
+    threadId
+    && !hasMemoryObservation
+    && (
+      continuityRequested
+      || THREAD_MEMORY_FOLLOWUP_PATTERN.test(question.trim())
+    )
+  ) {
+    return {
+      type: "get_session_memory",
+      reason: "当前问题像同一 thread 内的追问，先读取短期 thread memory 再回答。",
+    };
+  }
+
+  if (!hasKnowledgeObservation) {
     return {
       type: "retrieve_knowledge",
-      reason: "用户正在询问具体牌义、正逆位或组合含义，先通过知识工具边界收集可替换的依据。",
+      reason: KNOWLEDGE_RETRIEVAL_PATTERN.test(question)
+        ? "用户正在询问具体牌义；正式解读必须先批量取得全部牌面的最小知识依据。"
+        : "所有正式解读都必须先批量取得每张牌的最小知识依据。",
       query: buildKnowledgeQuery({
         question,
         questionType,
@@ -163,20 +183,9 @@ export function defaultReadingAgentDecider({
     };
   }
 
-  if (
-    threadId
-    && !hasMemoryObservation
-    && THREAD_MEMORY_FOLLOWUP_PATTERN.test(question.trim())
-  ) {
-    return {
-      type: "get_session_memory",
-      reason: "当前问题像同一 thread 内的追问，先读取短期 thread memory 再回答。",
-    };
-  }
-
   return {
     type: "final_answer",
-    reason: hasObservation
+    reason: agentState.observations.length > 0
       ? "已有工具观察，进入结构化解读生成。"
       : "当前问题、牌阵与抽牌信息已足够进入结构化解读生成。",
   };
@@ -214,10 +223,12 @@ export function createKnowledgeRetrievalInput({
   action,
   questionType,
   drawnCards,
+  spread,
 }: {
   action: Extract<AgentAction, { type: "retrieve_knowledge" }>;
   questionType: QuestionType;
   drawnCards: DrawnCard[];
+  spread: Spread;
 }): RetrieveTarotKnowledgeInput {
   const primaryCard = inferPrimaryCard(drawnCards);
 
@@ -228,6 +239,12 @@ export function createKnowledgeRetrievalInput({
       : undefined,
     topic: questionType,
     query: action.query,
+    spreadId: spread.id,
+    cards: drawnCards.map((drawnCard) => ({
+      cardId: drawnCard.card.id,
+      orientation: drawnCard.isReversed ? "reversed" : "upright",
+      positionId: drawnCard.positionId,
+    })),
   };
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { findSpreadById, getAllCards } from "@aethertarot/domain-tarot";
 import {
   runReadingGraph,
   runReadingGraphWithDiagnostics,
@@ -18,17 +19,41 @@ import { createReadingToolRegistry } from "@/server/reading/tools";
 import { drawCardsServerSideTool } from "@/server/reading/tools/draw-cards-server-side";
 import type { ReadingToolDefinition } from "@/server/reading/tools/types";
 
+function expectCompleteCardGrounding(reading: {
+  cards: unknown[];
+  grounding?: {
+    sources: unknown[];
+    claims: Array<{ path: string; source_refs: string[] }>;
+  };
+}) {
+  expect(reading.grounding).toBeDefined();
+  expect(reading.grounding?.sources.length).toBeLessThanOrEqual(12);
+  expect(
+    reading.grounding?.claims.filter((claim) =>
+      claim.path.startsWith("cards.") && claim.source_refs.length > 0
+    ),
+  ).toHaveLength(reading.cards.length);
+  expect(
+    reading.grounding?.claims.find((claim) => claim.path === "synthesis")
+      ?.source_refs.length,
+  ).toBeGreaterThan(0);
+}
+
 describe("reading graph contract hardening", () => {
-  it("runs the agent decider and enters final_answer directly when the reading has enough context", async () => {
+  it("runs minimum grounding before final_answer when the reading has enough context", async () => {
     const result = await runReadingGraphWithDiagnostics(
       buildHolyTrianglePayload("我想从职业成长角度理解这组三张牌。"),
     );
 
     expect(result.reading.synthesis).toBeTruthy();
-    expect(result.agentState.agent_step_count).toBe(1);
+    expect(result.agentState.agent_step_count).toBe(2);
     expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
+      "retrieve_knowledge",
       "final_answer",
     ]);
+    expect(result.reading.grounding?.claims.filter(
+      (claim) => claim.path.startsWith("cards."),
+    )).toHaveLength(result.reading.cards.length);
     expect(result.agentState.pending_clarification).toBeUndefined();
   });
 
@@ -48,7 +73,14 @@ describe("reading graph contract hardening", () => {
 
   it("retrieves grounded knowledge for concrete reversed card meaning questions before final answer", async () => {
     const result = await runReadingGraphWithDiagnostics(
-      buildSinglePayload("倒吊人逆位在职业问题中代表什么？"),
+      {
+        ...buildSinglePayload("倒吊人逆位在职业问题中代表什么？"),
+        drawnCards: [{
+          positionId: "focus",
+          cardId: "hanged-man",
+          isReversed: true,
+        }],
+      },
     );
 
     expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
@@ -104,7 +136,7 @@ describe("reading graph contract hardening", () => {
     });
     expect(result.trace.final_answer_grounding).toMatchObject({
       grounding_status: "retrieved",
-      unsupported_claim_check: "not_checked",
+      unsupported_claim_check: "passed",
     });
   });
 
@@ -124,11 +156,12 @@ describe("reading graph contract hardening", () => {
         ...buildSinglePayload("那我是不是应该马上投简历？"),
         thread_id: "career-thread",
       },
-      { sessionMemoryStore },
+      { sessionMemoryStore, memoryUserId: "test-user" },
     );
 
     expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
       "get_session_memory",
+      "retrieve_knowledge",
       "final_answer",
     ]);
     expect(result.agentState.observations[0]).toMatchObject({
@@ -143,10 +176,11 @@ describe("reading graph contract hardening", () => {
     });
     expect(result.agentState.tool_calls.map((toolCall) => toolCall.tool_name)).toEqual([
       "get_session_memory",
-      "write_session_memory",
+      "retrieve_tarot_knowledge",
     ]);
     expect(result.trace.agent_steps.map((step) => step.node)).toEqual([
       "get_session_memory",
+      "retrieve_knowledge",
       "final_answer",
     ]);
     expect(result.trace.agent_steps[0]?.output_summary).toMatchObject({
@@ -156,7 +190,7 @@ describe("reading graph contract hardening", () => {
     });
     expect(result.trace.tool_calls.map((toolCall) => toolCall.tool_name)).toEqual([
       "get_session_memory",
-      "write_session_memory",
+      "retrieve_tarot_knowledge",
     ]);
   });
 
@@ -165,13 +199,20 @@ describe("reading graph contract hardening", () => {
     "so should i apply now",
     "then should i apply now",
   ])("routes clear English should-i follow-up through memory: %s", async (question) => {
-    const result = await runReadingGraphWithDiagnostics({
-      ...buildSinglePayload(question),
-      thread_id: `english-followup-${question.replace(/\s+/g, "-")}`,
-    });
+    const result = await runReadingGraphWithDiagnostics(
+      {
+        ...buildSinglePayload(question),
+        thread_id: `english-followup-${question.replace(/\s+/g, "-")}`,
+      },
+      {
+        sessionMemoryStore: createInMemorySessionMemoryStore(),
+        memoryUserId: "test-user",
+      },
+    );
 
     expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
       "get_session_memory",
+      "retrieve_knowledge",
       "final_answer",
     ]);
     expect(result.agentState.tool_calls[0]).toMatchObject({
@@ -190,6 +231,7 @@ describe("reading graph contract hardening", () => {
     });
 
     expect(result.agentState.agent_actions.map((action) => action.type)).toEqual([
+      "retrieve_knowledge",
       "final_answer",
     ]);
     expect(result.agentState.tool_calls.map((toolCall) => toolCall.tool_name)).not.toContain(
@@ -234,7 +276,7 @@ describe("reading graph contract hardening", () => {
         reason: "no_thread_id",
       },
     });
-    expect(result.agentState.grounding_status).toBe("none");
+    expect(result.agentState.grounding_status).not.toBe("none");
     expect(result.agentState.tool_calls.map((toolCall) => toolCall.tool_name)).not.toContain(
       "get_session_memory",
     );
@@ -365,6 +407,7 @@ describe("reading graph contract hardening", () => {
 
     expect(second.agentState.agent_actions.map((action) => action.type)).toEqual([
       "get_session_memory",
+      "retrieve_knowledge",
       "final_answer",
     ]);
     expect(second.agentState.tool_calls[0]).toMatchObject({
@@ -390,6 +433,68 @@ describe("reading graph contract hardening", () => {
     ).rejects.toMatchObject({
       code: "safety_intercept",
     });
+  });
+
+  it("rejects forged provider citation refs and deterministically repairs the affected claims", async () => {
+    const forgedText = "这段正文声称引用了不存在的知识来源。";
+    const provider = new TestReadingProvider({
+      initial: (draft) => ({
+        ...draft,
+        cards: draft.cards.map((card) => ({
+          ...card,
+          interpretation: forgedText,
+        })),
+        synthesis: forgedText,
+        grounding_claims: [
+          ...draft.cards.map((_, index) => ({
+            path: `cards.${index}.interpretation` as `cards.${number}.interpretation`,
+            source_refs: ["FORGED-SOURCE"],
+          })),
+          { path: "synthesis", source_refs: ["FORGED-SOURCE"] },
+        ],
+      }),
+    });
+    const result = await runReadingGraph(
+      buildHolyTrianglePayload("请解释这组三张牌的职业含义。"),
+      { provider },
+    );
+    const visible = [
+      ...result.cards.map((card) => card.interpretation),
+      result.synthesis,
+    ].join("\n");
+
+    expect(result.grounding?.status).toBe("degraded");
+    expect(result.grounding?.claims.flatMap((claim) => claim.source_refs))
+      .not.toContain("FORGED-SOURCE");
+    expect(result.grounding?.sources.map((source) => source.ref))
+      .not.toContain("FORGED-SOURCE");
+    expect(visible).not.toContain(forgedText);
+    expectCompleteCardGrounding(result);
+  });
+
+  it("covers every card in seven-card and ten-card formal readings within the 12-source cap", async () => {
+    const sevenCardReading = await runReadingGraph({
+      ...buildSevenCardPayload("请从职业决策角度分析这组七张牌。"),
+      agent_profile: "sober",
+    });
+    const celticCross = findSpreadById("celtic-cross");
+    if (!celticCross) {
+      throw new Error("Missing canonical celtic-cross spread.");
+    }
+    const cards = getAllCards().slice(0, celticCross.positions.length);
+    const tenCardReading = await runReadingGraph({
+      question: "请从自我成长角度分析这组十张牌。",
+      spreadId: celticCross.id,
+      drawnCards: celticCross.positions.map((position, index) => ({
+        positionId: position.id,
+        cardId: cards[index].id,
+        isReversed: index % 2 === 1,
+      })),
+      agent_profile: "standard",
+    });
+
+    expectCompleteCardGrounding(sevenCardReading);
+    expectCompleteCardGrounding(tenCardReading);
   });
 
   it("caps repeated retrieve decisions at max_agent_steps and degrades to final_answer", async () => {
@@ -473,7 +578,7 @@ describe("reading graph contract hardening", () => {
       "final_answer",
     ]);
     expect(result.trace.agent_steps.at(-1)?.output_summary).toMatchObject({
-      grounding_status: "none",
+      grounding_status: "degraded",
       used_source_ids: [],
     });
   });
@@ -514,7 +619,7 @@ describe("reading graph contract hardening", () => {
       ...result.reading.reflective_guidance,
     ].join("\n");
 
-    expect(result.agentState.grounding_status).toBe("none");
+    expect(result.agentState.grounding_status).toBe("degraded");
     expect(result.agentState.observations[0]).toMatchObject({
       confidence: "none",
       content: {
@@ -528,7 +633,7 @@ describe("reading graph contract hardening", () => {
     );
     expect(result.trace.retrieval_sources).toEqual([]);
     expect(result.trace.final_answer_grounding).toMatchObject({
-      grounding_status: "none",
+      grounding_status: "degraded",
       used_source_ids: [],
       retrieved_chunk_count: 0,
     });
@@ -616,6 +721,7 @@ describe("reading graph contract hardening", () => {
         status: "failed",
       });
       expect(error.diagnosticTrace?.agent_steps.map((step) => step.node)).toEqual([
+        "retrieve_knowledge",
         "final_answer",
       ]);
     }
@@ -736,6 +842,7 @@ describe("reading graph contract hardening", () => {
     expect(reading.requires_followup).toBe(false);
     expect(reading.follow_up_questions).toEqual([]);
     expect(reading.session_capsule).toMatch(/本轮问题：/);
+    expectCompleteCardGrounding(reading);
   });
 
   it("requires follow-up for standard and sober initial readings", async () => {
@@ -751,6 +858,8 @@ describe("reading graph contract hardening", () => {
     expect(soberReading.requires_followup).toBe(true);
     expect(soberReading.follow_up_questions).toHaveLength(2);
     expect(soberReading.session_capsule).toBeNull();
+    expectCompleteCardGrounding(standardReading);
+    expectCompleteCardGrounding(soberReading);
   });
 
   it("returns a non-empty session capsule for completed final readings", async () => {
@@ -764,6 +873,7 @@ describe("reading graph contract hardening", () => {
 
     expect(final.session_capsule).toMatch(/核心主题：/);
     expect(final.session_capsule).toMatch(/边界提醒：/);
+    expectCompleteCardGrounding(final);
   });
 
   it("formats completed session capsules as compact summaries without identity fields", async () => {

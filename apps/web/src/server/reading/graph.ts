@@ -49,6 +49,7 @@ import {
   sanitizeIncomingSessionCapsule,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
+import { reviewReadingGeneratedContent } from "@/server/safety/output-validator";
 import { executeReadingTool } from "@/server/reading/tools/executor";
 import {
   readingToolRegistry,
@@ -73,6 +74,10 @@ import type {
   ReadingKnowledgeGrounding,
   ReadingProvider,
 } from "@/server/reading/types";
+import {
+  buildMinimumReadingGrounding,
+  finalizeReadingGrounding,
+} from "@/server/reading/grounding";
 
 const ReadingGraphState = new StateSchema({
   payload: z.custom<ReadingRequestPayload>(),
@@ -82,6 +87,8 @@ const ReadingGraphState = new StateSchema({
   agentDecider: z.custom<ReadingAgentDecider>().optional(),
   toolRegistry: z.custom<ReadingToolRegistry>().optional(),
   sessionMemoryStore: z.custom<SessionMemoryStore>().optional(),
+  memoryUserId: z.string().optional(),
+  initialReadingOverride: z.custom<StructuredReading>().optional(),
   maxAgentSteps: z.number().int().positive().optional(),
   question: z.string().optional(),
   threadId: z.string().optional(),
@@ -101,6 +108,7 @@ const ReadingGraphState = new StateSchema({
   toolCalls: z.custom<ToolCallAuditEntry[]>().optional(),
   pendingClarification: z.custom<PendingClarification>().optional(),
   groundingStatus: z.custom<GroundingStatus>().optional(),
+  knowledgeGrounding: z.custom<ReadingKnowledgeGrounding>().optional(),
   sessionMemory: z.custom<SessionMemory>().nullable().optional(),
   draft: z.custom<ReadingDraft>().optional(),
   reading: z.custom<StructuredReading>().optional(),
@@ -109,6 +117,18 @@ const ReadingGraphState = new StateSchema({
 type ReadingGraphNode = GraphNode<typeof ReadingGraphState>;
 const MAX_SESSION_CAPSULE_LENGTH = 280;
 const DEFAULT_MAX_AGENT_STEPS = 3;
+
+function getMemoryUserId(state: {
+  memoryUserId?: string;
+  sessionMemoryStore?: SessionMemoryStore;
+}) {
+  if (state.memoryUserId) {
+    return state.memoryUserId;
+  }
+  return state.sessionMemoryStore && process.env.NODE_ENV !== "production"
+    ? "test-user"
+    : undefined;
+}
 
 interface ReadingGraphAgentFields {
   maxAgentSteps?: number;
@@ -271,22 +291,14 @@ function hasKnowledgeObservation(state: ReadingGraphAgentFields) {
 }
 
 function buildKnowledgeGrounding(
-  state: ReadingGraphAgentFields,
+  state: ReadingGraphAgentFields & {
+    knowledgeGrounding?: ReadingKnowledgeGrounding;
+  },
 ): ReadingKnowledgeGrounding {
-  const retrievedOutputs = (state.observations ?? [])
-    .map((observation) => observation.content)
-    .filter(isRetrieveTarotKnowledgeOutput)
-    .filter((output) => output.groundingStatus === "retrieved");
-  const chunks = retrievedOutputs.flatMap((output) => output.chunks);
-
-  if (chunks.length === 0) {
-    return { status: "none", chunks: [] };
+  if (state.knowledgeGrounding) {
+    return state.knowledgeGrounding;
   }
-
-  return {
-    status: "retrieved",
-    chunks,
-  };
+  return { status: "none", chunks: [] };
 }
 
 function getSessionMemoryFromObservations(
@@ -672,6 +684,10 @@ function buildSessionCapsule({
 
 const classifyQuestionNode: ReadingGraphNode = (state) => {
   const question = state.payload.question.trim();
+  const legacyInitialReading =
+    process.env.NODE_ENV === "test"
+      ? structuredReadingSchema.safeParse(state.payload.initial_reading)
+      : null;
 
   return {
     question,
@@ -679,7 +695,9 @@ const classifyQuestionNode: ReadingGraphNode = (state) => {
     questionType: classifyQuestion(question),
     agentProfile: state.payload.agent_profile ?? "standard",
     phase: state.payload.phase ?? "initial",
-    initialReading: state.payload.initial_reading,
+    initialReading:
+      state.initialReadingOverride
+      ?? (legacyInitialReading?.success ? legacyInitialReading.data : undefined),
     followupAnswers: state.payload.followup_answers,
     priorSessionCapsule: sanitizeIncomingSessionCapsule(
       state.payload.prior_session_capsule ?? null,
@@ -735,6 +753,7 @@ const agentDeciderNode: ReadingGraphNode = async (state) => {
       question: requireStateValue(state.question, "question"),
       questionType: requireStateValue(state.questionType, "questionType"),
       threadId: state.threadId,
+      continuityRequested: Boolean(state.priorSessionCapsule),
       phase: requireStateValue(state.phase, "phase"),
       spread: requireStateValue(state.spread, "spread"),
       drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
@@ -790,6 +809,7 @@ const retrieveKnowledgeNode: ReadingGraphNode = async (state) => {
     action,
     questionType: requireStateValue(state.questionType, "questionType"),
     drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
+    spread: requireStateValue(state.spread, "spread"),
   });
   const execution = await executeReadingTool<RetrieveTarotKnowledgeOutput>({
     toolName: "retrieve_tarot_knowledge",
@@ -836,16 +856,17 @@ const getSessionMemoryNode: ReadingGraphNode = async (state) => {
   }
 
   const threadId = state.threadId;
+  const memoryUserId = getMemoryUserId(state);
 
-  if (!threadId) {
+  if (!threadId || !memoryUserId) {
     const skippedOutput = {
       toolName: "get_session_memory",
       skipped: true,
-      reason: "no_thread_id",
+      reason: threadId ? "no_user_scope" : "no_thread_id",
       output: {
         memory: null,
         skipped: true,
-        reason: "no_thread_id",
+        reason: threadId ? "no_user_scope" : "no_thread_id",
       },
     };
 
@@ -868,6 +889,7 @@ const getSessionMemoryNode: ReadingGraphNode = async (state) => {
     input: { threadId },
     context: {
       threadId,
+      userId: memoryUserId,
       permissions: ["public", "session"],
       stateSnapshot: getAgentState(state),
       sessionMemoryStore: state.sessionMemoryStore,
@@ -1059,6 +1081,75 @@ const buildStructuredReadingNode: ReadingGraphNode = (state) => {
   return { reading };
 };
 
+const ensureMinimumGroundingNode: ReadingGraphNode = async (state) => {
+  const drawnCards = requireStateValue(state.drawnCards, "drawnCards");
+  const spread = requireStateValue(state.spread, "spread");
+  const existingOutput = [...(state.observations ?? [])]
+    .reverse()
+    .map((observation) => observation.content)
+    .find(isRetrieveTarotKnowledgeOutput);
+  let output = existingOutput;
+  let toolCalls = state.toolCalls ?? [];
+  let observations = state.observations ?? [];
+
+  if (!output) {
+    const action: Extract<AgentAction, { type: "retrieve_knowledge" }> = {
+      type: "retrieve_knowledge",
+      reason: "服务端强制 grounding 守卫补齐正式解读所需的逐牌依据。",
+      query: requireStateValue(state.question, "question"),
+    };
+    const input = createKnowledgeRetrievalInput({
+      action,
+      questionType: requireStateValue(state.questionType, "questionType"),
+      drawnCards,
+      spread,
+    });
+    const execution = await executeReadingTool<RetrieveTarotKnowledgeOutput>({
+      toolName: "retrieve_tarot_knowledge",
+      input,
+      context: {
+        permissions: ["public", "session"],
+        stateSnapshot: getAgentState(state),
+      },
+      registry: state.toolRegistry ?? readingToolRegistry,
+      decisionReason: action.reason,
+      step: (state.agentStepCount ?? 0) + 1,
+    });
+    output = execution.result.output;
+    toolCalls = [...toolCalls, execution.auditEntry];
+    observations = [
+      ...observations,
+      {
+        source: "retrieve_tarot_knowledge",
+        content: output ?? { error: execution.result.error },
+        confidence: output?.groundingStatus ?? "error",
+      },
+    ];
+  }
+
+  const knowledgeGrounding = buildMinimumReadingGrounding({
+    output,
+    drawnCards,
+    spread,
+  });
+  return {
+    knowledgeGrounding,
+    groundingStatus: knowledgeGrounding.status,
+    observations,
+    toolCalls,
+  };
+};
+
+const validateGeneratedContentNode: ReadingGraphNode = (state) => {
+  const review = reviewReadingGeneratedContent(
+    requireStateValue(state.reading, "reading"),
+  );
+
+  return {
+    reading: structuredReadingSchema.parse(review.output) as StructuredReading,
+  };
+};
+
 const applySafetyReviewNode: ReadingGraphNode = (state) => {
   const reviewedReading = structuredReadingSchema.parse(
     applySafetyReview({
@@ -1074,6 +1165,16 @@ const applySafetyReviewNode: ReadingGraphNode = (state) => {
     }) as StructuredReading,
   };
 };
+
+const finalizeGroundingNode: ReadingGraphNode = (state) => ({
+  reading: structuredReadingSchema.parse(finalizeReadingGrounding({
+    reading: requireStateValue(state.reading, "reading"),
+    draft: requireStateValue(state.draft, "draft"),
+    grounding: requireStateValue(state.knowledgeGrounding, "knowledgeGrounding"),
+    drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
+    spread: requireStateValue(state.spread, "spread"),
+  })) as StructuredReading,
+});
 
 const attachSessionCapsuleNode: ReadingGraphNode = (state) => {
   const reading = requireStateValue(state.reading, "reading");
@@ -1102,16 +1203,27 @@ const attachSessionCapsuleNode: ReadingGraphNode = (state) => {
 
 const writeSessionMemoryNode: ReadingGraphNode = async (state) => {
   const threadId = state.threadId;
+  const memoryUserId = getMemoryUserId(state);
 
-  if (!threadId) {
+  if (!threadId || !memoryUserId) {
     return {};
   }
 
   const reading = requireStateValue(state.reading, "reading");
+  const isCompletedReading = reading.reading_phase === "final"
+    || (
+      reading.reading_phase === "initial"
+      && reading.agent_profile === "lite"
+      && !reading.requires_followup
+    );
+  if (!isCompletedReading) {
+    return {};
+  }
   const execution = await executeReadingTool<WriteSessionMemoryOutput>({
     toolName: "write_session_memory",
     input: {
       threadId,
+      userId: memoryUserId,
       patch: buildSessionMemoryPatch(reading),
     },
     context: {
@@ -1143,10 +1255,13 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addNode("get_session_memory", getSessionMemoryNode)
   .addNode("request_clarification", requestClarificationNode)
   .addNode("safety_stop", safetyStopNode)
+  .addNode("ensure_minimum_grounding", ensureMinimumGroundingNode)
   .addNode("generate_draft", generateDraftNode)
   .addNode("validate_draft_contract", validateDraftContractNode)
   .addNode("build_structured_reading", buildStructuredReadingNode)
+  .addNode("validate_generated_content", validateGeneratedContentNode)
   .addNode("apply_safety_review", applySafetyReviewNode)
+  .addNode("finalize_grounding", finalizeGroundingNode)
   .addNode("attach_session_capsule", attachSessionCapsuleNode)
   .addNode("write_session_memory", writeSessionMemoryNode)
   .addEdge(START, "classify_question")
@@ -1155,29 +1270,34 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addEdge("validate_final_phase", "analyze_intent_friction")
   .addEdge("analyze_intent_friction", "agent_decider")
   .addConditionalEdges("agent_decider", routeAgentAction, {
-    final_answer: "generate_draft",
+    final_answer: "ensure_minimum_grounding",
     get_session_memory: "get_session_memory",
     request_clarification: "request_clarification",
     retrieve_knowledge: "retrieve_knowledge",
     safety_stop: "safety_stop",
   })
+  .addEdge("ensure_minimum_grounding", "generate_draft")
   .addEdge("retrieve_knowledge", "agent_decider")
   .addEdge("get_session_memory", "agent_decider")
   .addEdge("request_clarification", END)
   .addEdge("safety_stop", END)
   .addEdge("generate_draft", "validate_draft_contract")
   .addEdge("validate_draft_contract", "build_structured_reading")
-  .addEdge("build_structured_reading", "apply_safety_review")
-  .addEdge("apply_safety_review", "attach_session_capsule")
+  .addEdge("build_structured_reading", "validate_generated_content")
+  .addEdge("validate_generated_content", "apply_safety_review")
+  .addEdge("apply_safety_review", "finalize_grounding")
+  .addEdge("finalize_grounding", "attach_session_capsule")
   .addEdge("attach_session_capsule", "write_session_memory")
   .addEdge("write_session_memory", END)
   .compile();
 
-interface RunReadingGraphOptions {
+export interface RunReadingGraphOptions {
   provider?: ReadingProvider;
   agentDecider?: ReadingAgentDecider;
   toolRegistry?: ReadingToolRegistry;
   sessionMemoryStore?: SessionMemoryStore;
+  memoryUserId?: string;
+  initialReading?: StructuredReading;
   maxAgentSteps?: number;
 }
 
@@ -1203,6 +1323,8 @@ export async function runReadingGraphWithDiagnostics(
       agentDecider: options?.agentDecider,
       toolRegistry: options?.toolRegistry,
       sessionMemoryStore: options?.sessionMemoryStore,
+      memoryUserId: options?.memoryUserId,
+      initialReadingOverride: options?.initialReading,
       maxAgentSteps: options?.maxAgentSteps ?? DEFAULT_MAX_AGENT_STEPS,
     });
     return {

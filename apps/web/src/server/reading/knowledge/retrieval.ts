@@ -178,7 +178,7 @@ function scoreChunk({
   let score = 0;
 
   if (targetCardIds.length > 0 && chunk.card) {
-    score += chunkMatchesTargetCard(chunk, targetCardIds) ? 80 : -20;
+    score += chunkMatchesTargetCard(chunk, targetCardIds) ? 100 : -40;
   }
 
   if (orientation && orientation !== "unknown") {
@@ -193,11 +193,82 @@ function scoreChunk({
     score += 18;
   }
 
+  if (chunk.has_inline_source) {
+    score += 4;
+  }
+
   score += scoreText(chunk.title, queryTerms, 6);
   score += scoreText((chunk.tags ?? []).join(" "), queryTerms, 5);
   score += scoreText(chunk.content, queryTerms, 2);
 
   return score;
+}
+
+export interface MinimumGroundingCardTarget {
+  cardId: string;
+  orientation: TarotKnowledgeOrientation;
+  positionId: string;
+}
+
+export function retrieveMinimumGroundingChunks({
+  chunks,
+  query,
+  cards,
+  spreadId,
+  topic,
+  limit = 12,
+}: {
+  chunks: TarotKnowledgeChunk[];
+  query: string;
+  cards: MinimumGroundingCardTarget[];
+  spreadId?: string;
+  topic?: string;
+  limit?: number;
+}) {
+  const selected: ScoredTarotKnowledgeChunk[] = [];
+  const selectedIds = new Set<string>();
+  const add = (chunk: ScoredTarotKnowledgeChunk | undefined) => {
+    if (chunk && !selectedIds.has(chunk.id) && selected.length < limit) {
+      selected.push(chunk);
+      selectedIds.add(chunk.id);
+    }
+  };
+
+  for (const card of cards) {
+    add(retrieveTarotKnowledgeChunks({
+      chunks,
+      query,
+      card: card.cardId,
+      orientation: card.orientation,
+      topic,
+      topK: 1,
+    })[0]);
+  }
+
+  if (spreadId && selected.length < limit) {
+    const spreadChunk = chunks
+      .filter((chunk) => chunk.spread === spreadId)
+      .map((chunk) => ({
+        ...chunk,
+        score: 70 + (chunk.has_inline_source ? 4 : 0),
+        confidence: "medium" as const,
+      }))
+      .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))[0];
+    add(spreadChunk);
+  }
+
+  if (selected.length < limit) {
+    for (const chunk of retrieveTarotKnowledgeChunks({
+      chunks,
+      query,
+      topic,
+      topK: limit,
+    })) {
+      add(chunk);
+    }
+  }
+
+  return selected;
 }
 
 function toConfidence(score: number): ScoredTarotKnowledgeChunk["confidence"] {
@@ -229,7 +300,10 @@ export function retrieveTarotKnowledgeChunks({
 }) {
   const queryTerms = extractQueryTerms(query);
   const queryCardIds = detectCardsFromQuery(query);
-  const targetCardIds = queryCardIds.length > 0 ? queryCardIds : card ? [card] : [];
+  // An explicit target is authoritative for batched per-card grounding. The
+  // user's question may mention a different card (often the first card in the
+  // spread), which must not redirect every batch item to that card.
+  const targetCardIds = card ? [card] : queryCardIds;
   const targetOrientation = inferOrientationFromQuery(query, orientation);
   const targetTopic = normalizeTopic(topic) ?? normalizeTopic(query);
 

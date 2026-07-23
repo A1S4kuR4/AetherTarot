@@ -11,14 +11,14 @@ import type {
 } from "@aethertarot/shared-types";
 import { ReadingServiceError } from "@/server/reading/errors";
 import {
+  OpenAiCompatibleTransport,
+  resolveLlmProviderConfig,
+  type LlmProviderConfig,
+} from "@/server/llm/openai-compatible-transport";
+import {
   databaseLlmTokenGate,
   type LlmTokenGate,
 } from "@/server/beta/token-budget";
-import {
-  calculateLlmCostUsd,
-  estimateTokenCount,
-  recordLlmCall,
-} from "@/server/observability/llm-usage";
 import type {
   FinalReadingContext,
   HydratedReadingContext,
@@ -26,16 +26,8 @@ import type {
   ReadingProvider,
 } from "@/server/reading/types";
 
-export interface LlmProviderConfig {
-  apiKey?: string;
-  baseUrl: string;
-  model: string;
-  thinkingMode?: "enabled" | "disabled";
-  responseFormat?: "json_object";
-  temperature: number;
-  timeoutMs: number;
-  maxOutputTokens: number;
-}
+export { resolveLlmProviderConfig };
+export type { LlmProviderConfig };
 
 type FetchImplementation = typeof fetch;
 
@@ -77,20 +69,6 @@ function asNonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : null;
-}
-
-function resolveEnvReference(value: string | null, env: NodeJS.ProcessEnv) {
-  if (!value) {
-    return null;
-  }
-
-  const reference = value.match(/^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/);
-
-  if (!reference) {
-    return value;
-  }
-
-  return asNonEmptyString(env[reference[1] ?? reference[2]]);
 }
 
 function collectInterpretationText(value: unknown): string[] {
@@ -140,122 +118,6 @@ function normalizeCardInterpretation(record: JsonRecord) {
   return null;
 }
 
-function parseTemperature(value: string | undefined) {
-  if (!value) {
-    return 0.3;
-  }
-
-  const parsed = Number(value);
-
-  if (!Number.isFinite(parsed)) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "AETHERTAROT_LLM_TEMPERATURE 必须是合法数字。",
-      503,
-    );
-  }
-
-  return parsed;
-}
-
-function parseTimeoutMs(value: string | undefined) {
-  if (!value) {
-    return 120_000;
-  }
-
-  const parsed = Number(value);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "AETHERTAROT_LLM_TIMEOUT_MS 必须是大于 0 的合法数字。",
-      503,
-    );
-  }
-
-  return parsed;
-}
-
-function parseMaxOutputTokens(value: string | undefined) {
-  if (!value) {
-    return 3200;
-  }
-
-  const parsed = Number(value);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "AETHERTAROT_LLM_MAX_OUTPUT_TOKENS 必须是大于 0 的整数。",
-      503,
-    );
-  }
-
-  return parsed;
-}
-
-function parseThinkingMode(value: string | undefined) {
-  if (!value) {
-    return undefined;
-  }
-
-  if (value === "enabled" || value === "disabled") {
-    return value;
-  }
-
-  throw new ReadingServiceError(
-    "provider_unavailable",
-    "AETHERTAROT_LLM_THINKING_MODE 必须是 enabled 或 disabled。",
-    503,
-  );
-}
-
-function parseResponseFormat(value: string | undefined) {
-  if (!value) {
-    return undefined;
-  }
-
-  if (value === "json_object") {
-    return value;
-  }
-
-  throw new ReadingServiceError(
-    "provider_unavailable",
-    "AETHERTAROT_LLM_RESPONSE_FORMAT 必须是 json_object。",
-    503,
-  );
-}
-
-export function resolveLlmProviderConfig(
-  env: NodeJS.ProcessEnv = process.env,
-): LlmProviderConfig {
-  const baseUrl = asNonEmptyString(env.AETHERTAROT_LLM_BASE_URL);
-  const model = asNonEmptyString(env.AETHERTAROT_LLM_MODEL);
-
-  if (!baseUrl || !model) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "llm provider 需要配置 AETHERTAROT_LLM_BASE_URL 和 AETHERTAROT_LLM_MODEL。",
-      503,
-    );
-  }
-
-  return {
-    apiKey:
-      resolveEnvReference(
-        asNonEmptyString(env.AETHERTAROT_LLM_API_KEY),
-        env,
-      ) ?? undefined,
-    baseUrl: baseUrl.replace(/\/+$/, ""),
-    model,
-    thinkingMode: parseThinkingMode(env.AETHERTAROT_LLM_THINKING_MODE),
-    responseFormat: parseResponseFormat(env.AETHERTAROT_LLM_RESPONSE_FORMAT),
-    temperature: parseTemperature(env.AETHERTAROT_LLM_TEMPERATURE),
-    timeoutMs: parseTimeoutMs(env.AETHERTAROT_LLM_TIMEOUT_MS),
-    maxOutputTokens: parseMaxOutputTokens(env.AETHERTAROT_LLM_MAX_OUTPUT_TOKENS),
-  };
-}
-
 function buildAuthorityCards(context: HydratedReadingContext): ReadingCardResult[] {
   return context.drawnCards.map((drawnCard) => {
     const position = context.spread.positions.find(
@@ -274,145 +136,6 @@ function buildAuthorityCards(context: HydratedReadingContext): ReadingCardResult
       interpretation: "",
     };
   });
-}
-
-function extractJsonCandidate(rawText: string) {
-  const trimmed = rawText.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-
-  if (fenced?.[1]) {
-    return fenced[1].trim();
-  }
-
-  return trimmed;
-}
-
-function parseJsonRecord(rawText: string): JsonRecord {
-  const candidate = extractJsonCandidate(rawText);
-
-  try {
-    const parsed = JSON.parse(candidate);
-
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("not-object");
-    }
-
-    return parsed as JsonRecord;
-  } catch {
-    const start = candidate.indexOf("{");
-    const end = candidate.lastIndexOf("}");
-
-    if (start >= 0 && end > start) {
-      const sliced = candidate.slice(start, end + 1);
-      const parsed = JSON.parse(sliced);
-
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as JsonRecord;
-      }
-    }
-
-    throw new ReadingServiceError(
-      "generation_failed",
-      "llm provider 返回的内容不是合法 JSON 对象。",
-      500,
-    );
-  }
-}
-
-function extractMessageText(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    throw new ReadingServiceError(
-      "generation_failed",
-      "llm provider 返回了不可解析的响应。",
-      500,
-    );
-  }
-
-  const choices = (payload as { choices?: unknown }).choices;
-
-  if (!Array.isArray(choices) || choices.length === 0) {
-    throw new ReadingServiceError(
-      "generation_failed",
-      "llm provider 响应缺少 choices。",
-      500,
-    );
-  }
-
-  const content = (choices[0] as { message?: { content?: unknown } })?.message?.content;
-
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (Array.isArray(content)) {
-    const joined = content
-      .map((item) => {
-        if (typeof item === "string") {
-          return item;
-        }
-
-        if (item && typeof item === "object" && "text" in item) {
-          return typeof item.text === "string" ? item.text : "";
-        }
-
-        return "";
-      })
-      .join("");
-
-    if (joined.trim()) {
-      return joined;
-    }
-  }
-
-  throw new ReadingServiceError(
-    "generation_failed",
-    "llm provider 响应缺少可解析的 message.content。",
-    500,
-  );
-}
-
-function extractFinishReason(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const choices = (payload as { choices?: unknown }).choices;
-
-  if (!Array.isArray(choices) || choices.length === 0) {
-    return null;
-  }
-
-  const finishReason = (choices[0] as { finish_reason?: unknown }).finish_reason;
-  return typeof finishReason === "string" ? finishReason : null;
-}
-
-function extractUsage(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const usage = (payload as { usage?: unknown }).usage;
-
-  if (!usage || typeof usage !== "object") {
-    return null;
-  }
-
-  const record = usage as Record<string, unknown>;
-  const promptTokens = Number(record.prompt_tokens);
-  const completionTokens = Number(record.completion_tokens);
-  const totalTokens = Number(record.total_tokens);
-
-  if (!Number.isFinite(promptTokens) || !Number.isFinite(completionTokens)) {
-    return null;
-  }
-
-  return {
-    promptTokens: Math.max(0, Math.round(promptTokens)),
-    completionTokens: Math.max(0, Math.round(completionTokens)),
-    totalTokens: Number.isFinite(totalTokens)
-      ? Math.max(0, Math.round(totalTokens))
-      : Math.max(0, Math.round(promptTokens + completionTokens)),
-  };
 }
 
 function normalizeStringArray({
@@ -457,6 +180,34 @@ function normalizeStringArray({
   }
 
   return normalized;
+}
+
+function normalizeGroundingClaims(value: unknown): ReadingDraft["grounding_claims"] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const claims: NonNullable<ReadingDraft["grounding_claims"]> = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      continue;
+    }
+    const record = item as JsonRecord;
+    const path = asNonEmptyString(record.path);
+    if (!path || !/^(?:cards\.\d+\.interpretation|synthesis)$/.test(path)) {
+      continue;
+    }
+    const sourceRefs = Array.isArray(record.source_refs)
+      ? [...new Set(record.source_refs.map(asNonEmptyString).filter((ref): ref is string => Boolean(ref)))]
+      : [];
+    if (sourceRefs.length > 0) {
+      claims.push({
+        path: path as `cards.${number}.interpretation` | "synthesis",
+        source_refs: sourceRefs,
+      });
+    }
+  }
+  return claims;
 }
 
 function normalizeCards({
@@ -630,213 +381,37 @@ export function normalizeReadingDraft({
       max: followupBounds.max,
     }),
     confidence_note: confidenceNote,
+    grounding_claims: normalizeGroundingClaims(record.grounding_claims),
   };
 }
 
 export class LlmReadingProvider implements ReadingProvider {
+  private readonly transport: OpenAiCompatibleTransport;
+
   constructor(
     private readonly config: LlmProviderConfig,
-    private readonly fetchImplementation: FetchImplementation = fetch,
-    private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
-  ) {}
+    fetchImplementation: FetchImplementation = fetch,
+    tokenGate: LlmTokenGate = databaseLlmTokenGate,
+  ) {
+    this.transport = new OpenAiCompatibleTransport(
+      config,
+      fetchImplementation,
+      tokenGate,
+    );
+  }
 
-  private async requestDraft(
+  private requestDraft(
     prompt: { system: string; user: string },
     maxOutputTokens: number,
   ) {
-    const promptText = `${prompt.system}\n${prompt.user}`;
-    const reservation = await this.tokenGate.reserve({
+    return this.transport.request({
       source: "reading",
-      promptText,
+      prompt,
       maxOutputTokens,
-    });
-    let response: Response;
-    const startedAt = Date.now();
-    const abortController = new AbortController();
-    const timeoutHandle = setTimeout(
-      () => abortController.abort(),
-      this.config.timeoutMs,
-    );
-    let reservationSettled = false;
-
-    const settleReservation = async (actualTokens?: number) => {
-      if (reservationSettled) {
-        return;
-      }
-
-      reservationSettled = true;
-      await this.tokenGate.settle({ reservation, actualTokens });
-    };
-
-    const recordCall = ({
-      success,
-      httpStatus,
-      outputText = "",
-      errorCode,
-      usage,
-    }: {
-      success: boolean;
-      httpStatus?: number;
-      outputText?: string;
-      errorCode?: string;
-      usage?: ReturnType<typeof extractUsage> | null;
-    }) => {
-      const promptTokens = usage?.promptTokens ?? estimateTokenCount(promptText);
-      const completionTokens = usage?.completionTokens ?? estimateTokenCount(outputText);
-      const totalTokens = usage?.totalTokens ?? promptTokens + completionTokens;
-
-      recordLlmCall({
-        provider: "llm",
-        model: this.config.model,
-        success,
-        durationMs: Date.now() - startedAt,
-        httpStatus,
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        estimatedCostUsd: calculateLlmCostUsd({
-          promptTokens,
-          completionTokens,
-        }),
-        errorCode,
-      });
-
-      return totalTokens;
-    };
-
-    try {
-      response = await this.fetchImplementation(
-        `${this.config.baseUrl}/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(this.config.apiKey
-              ? { Authorization: `Bearer ${this.config.apiKey}` }
-              : {}),
-          },
-          body: JSON.stringify({
-            model: this.config.model,
-            ...(this.config.thinkingMode
-              ? { thinking: { type: this.config.thinkingMode } }
-              : {}),
-            ...(this.config.responseFormat
-              ? { response_format: { type: this.config.responseFormat } }
-              : {}),
-            temperature: this.config.temperature,
-            max_tokens: maxOutputTokens,
-            stream: false,
-            messages: [
-              { role: "system", content: prompt.system },
-              { role: "user", content: prompt.user },
-            ],
-          }),
-          signal: abortController.signal,
-        },
-      );
-    } catch (error) {
-      clearTimeout(timeoutHandle);
-
-      if (error instanceof Error && error.name === "AbortError") {
-        recordCall({ success: false, errorCode: "timeout" });
-        await settleReservation();
-        throw new ReadingServiceError(
-          "provider_unavailable",
-          "llm provider 请求超时，请稍后再试。",
-          503,
-        );
-      }
-
-      recordCall({ success: false, errorCode: "fetch_failed" });
-      await settleReservation();
-      throw new ReadingServiceError(
-        "provider_unavailable",
-        "llm provider 当前不可用，请检查本地 API 是否已启动。",
-        503,
-      );
-    }
-
-    clearTimeout(timeoutHandle);
-
-    if (!response.ok) {
-      recordCall({
-        success: false,
-        httpStatus: response.status,
-        errorCode: `http_${response.status}`,
-      });
-      await settleReservation();
-      throw new ReadingServiceError(
-        "provider_unavailable",
-        `llm provider 请求失败（HTTP ${response.status}）。`,
-        503,
-      );
-    }
-
-    let payload: unknown;
-
-    try {
-      payload = await response.json();
-    } catch {
-      recordCall({
-        success: false,
-        httpStatus: response.status,
-        errorCode: "invalid_json",
-      });
-      await settleReservation();
-      throw new ReadingServiceError(
-        "generation_failed",
-        "llm provider 返回的响应不是合法 JSON。",
-        500,
-      );
-    }
-
-    const usage = extractUsage(payload);
-    let messageText = "";
-
-    if (extractFinishReason(payload) === "length") {
-      try {
-        messageText = extractMessageText(payload);
-      } catch {
-        // The finish reason is authoritative even when content is absent.
-      }
-
-      const totalTokens = recordCall({
-        success: false,
-        httpStatus: response.status,
-        outputText: messageText,
-        errorCode: "output_truncated",
-        usage,
-      });
-      await settleReservation(usage || messageText ? totalTokens : undefined);
-      throw new ReadingServiceError(
-        "generation_failed",
+      parse: (payload) => payload,
+      truncatedMessage:
         "llm provider 输出达到长度上限，解读未完整生成，请稍后重试或减少牌数。",
-        500,
-      );
-    }
-
-    try {
-      messageText = extractMessageText(payload);
-      const parsed = parseJsonRecord(messageText);
-      const totalTokens = recordCall({
-        success: true,
-        httpStatus: response.status,
-        outputText: messageText,
-        usage,
-      });
-      await settleReservation(totalTokens);
-      return parsed;
-    } catch (error) {
-      const totalTokens = recordCall({
-        success: false,
-        httpStatus: response.status,
-        outputText: messageText,
-        errorCode: "invalid_provider_payload",
-        usage,
-      });
-      await settleReservation(usage || messageText ? totalTokens : undefined);
-      throw error;
-    }
+    });
   }
 
   async generateInitialRead(context: HydratedReadingContext) {
@@ -877,7 +452,7 @@ export class LlmReadingProvider implements ReadingProvider {
 }
 
 export function createLlmReadingProviderFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Partial<NodeJS.ProcessEnv> = process.env,
   fetchImplementation: FetchImplementation = fetch,
   tokenGate: LlmTokenGate = databaseLlmTokenGate,
 ) {

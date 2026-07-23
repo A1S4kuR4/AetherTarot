@@ -15,6 +15,8 @@ export const getSessionMemoryInputSchema = z.object({
 
 export const getSessionMemoryOutputSchema = z.object({
   memory: sessionMemorySchema.nullable(),
+  skipped: z.boolean().optional(),
+  reason: z.enum(["no_user_scope"]).optional(),
 });
 
 export type GetSessionMemoryInput = z.infer<typeof getSessionMemoryInputSchema>;
@@ -26,8 +28,10 @@ export const writeSessionMemoryInputSchema = z.object({
 });
 
 export const writeSessionMemoryOutputSchema = z.object({
-  memory: sessionMemorySchema,
+  memory: sessionMemorySchema.nullable(),
   updated: z.boolean(),
+  skipped: z.boolean().optional(),
+  reason: z.enum(["no_user_scope"]).optional(),
 });
 
 export type WriteSessionMemoryInput = {
@@ -47,13 +51,29 @@ export const getSessionMemoryTool: ReadingToolDefinition<
   riskLevel: "medium",
   inputSchema: getSessionMemoryInputSchema,
   outputSchema: getSessionMemoryOutputSchema,
-  timeoutMs: 500,
+  timeoutMs: 1_500,
   traceable: true,
   async run(input, context) {
     const store = context.sessionMemoryStore ?? defaultSessionMemoryStore;
+    const userId = context.userId
+      ?? (
+        context.sessionMemoryStore && process.env.NODE_ENV !== "production"
+          ? "test-user"
+          : undefined
+      );
+    if (!userId) {
+      return {
+        memory: null,
+        skipped: true,
+        reason: "no_user_scope",
+      };
+    }
 
     return {
-      memory: await store.get(input.threadId),
+      memory: await store.get({
+        userId,
+        threadId: input.threadId,
+      }),
     };
   },
 };
@@ -69,11 +89,28 @@ export const writeSessionMemoryTool: ReadingToolDefinition<
   riskLevel: "medium",
   inputSchema: writeSessionMemoryInputSchema,
   outputSchema: writeSessionMemoryOutputSchema,
-  timeoutMs: 500,
+  timeoutMs: 1_500,
   traceable: true,
   async run(input, context) {
     const store = context.sessionMemoryStore ?? defaultSessionMemoryStore;
-    const memory = await store.upsert(input.threadId, {
+    const userId = context.userId
+      ?? (
+        context.sessionMemoryStore && process.env.NODE_ENV !== "production"
+          ? "test-user"
+          : undefined
+      );
+    if (!userId) {
+      return {
+        memory: null,
+        updated: false,
+        skipped: true,
+        reason: "no_user_scope",
+      };
+    }
+    const memory = await store.upsert({
+      userId,
+      threadId: input.threadId,
+    }, {
       ...input.patch,
       thread_id: input.threadId,
       updated_at: input.patch.updated_at ?? context.now ?? new Date().toISOString(),

@@ -16,20 +16,30 @@ export type ReadingDraft = Pick<
   | "reflective_guidance"
   | "follow_up_questions"
   | "confidence_note"
->;
+> & {
+  grounding_claims?: Array<{
+    path: `cards.${number}.interpretation` | "synthesis";
+    source_refs: string[];
+  }>;
+};
 
 export interface ReadingKnowledgeGroundingChunk {
   id: string;
   title: string;
   content: string;
   source: string;
-  source_id: string;
+  source_ids: string[];
+  ref: string;
+  kind: "wiki" | "authority_card";
+  card: string;
+  orientation: "upright" | "reversed" | "unknown";
+  spread?: string;
   score: number;
   confidence: "low" | "medium" | "high";
 }
 
 export interface ReadingKnowledgeGrounding {
-  status: "retrieved" | "none";
+  status: "retrieved" | "degraded" | "none";
   chunks: ReadingKnowledgeGroundingChunk[];
 }
 

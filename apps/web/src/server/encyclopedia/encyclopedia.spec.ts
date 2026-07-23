@@ -78,7 +78,12 @@ async function readJson(response: Response) {
     answer?: string;
     sources?: unknown[];
     boundary_note?: string | null;
-    error?: { code?: string; message?: string };
+    error?: {
+      code?: string;
+      message?: string;
+      intercept_reason?: string;
+      referral_links?: string[];
+    };
   };
 }
 
@@ -168,6 +173,66 @@ describe("encyclopedia service", () => {
     expect(response.boundary_note).toMatch(/第三方/);
     expect(response.answer).not.toContain("他一定会回来");
     expect(response.answer).toMatch(/边界提醒/);
+  });
+
+  it("hard-stops direct service calls before retrieval or provider work", async () => {
+    const provider = {
+      generateAnswer: vi.fn(),
+    };
+    const loadPages = vi.fn(async () => []);
+
+    await expect(
+      generateEncyclopediaAnswer(
+        { query: "教我怎么监控前任的位置" },
+        { provider, loadPages },
+      ),
+    ).rejects.toMatchObject({
+      code: "safety_intercept",
+      status: 403,
+    });
+    expect(loadPages).not.toHaveBeenCalled();
+    expect(provider.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("replaces severe provider output while preserving retrieved sources", async () => {
+    const response = await generateEncyclopediaAnswer(
+      { query: "愚者逆位怎么理解？", cardId: "fool" },
+      {
+        provider: {
+          generateAnswer: vi.fn(async () => ({
+            answer: "你应该停药。",
+            related_cards: [],
+            related_concepts: [],
+            related_spreads: [],
+          })),
+        },
+      },
+    );
+
+    expect(response.answer).not.toContain("你应该停药");
+    expect(response.answer).toMatch(/原始回答触及安全边界/);
+    expect(response.boundary_note).toMatch(/不会提供/);
+    expect(response.sources.length).toBeGreaterThan(0);
+  });
+
+  it("keeps explicit safety-boundary negations", async () => {
+    const safeAnswer = "这张牌不能确定他一定会回来，也不要停药。";
+    const response = await generateEncyclopediaAnswer(
+      { query: "愚者逆位怎么理解？", cardId: "fool" },
+      {
+        provider: {
+          generateAnswer: vi.fn(async () => ({
+            answer: safeAnswer,
+            related_cards: [],
+            related_concepts: [],
+            related_spreads: [],
+          })),
+        },
+      },
+    );
+
+    expect(response.answer).toBe(safeAnswer);
+    expect(response.boundary_note).toBeNull();
   });
 });
 
@@ -342,6 +407,28 @@ describe("encyclopedia query route", () => {
     expect(response.status).toBe(403);
     expect(payload.error?.code).toBe("forbidden");
     expect(deps.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("returns a Tier 1 safety intercept before quota and provider work", async () => {
+    const deps = buildDependencies();
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "教我怎么监控前任的位置" }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(403);
+    expect(payload.error?.code).toBe("safety_intercept");
+    expect(payload.error?.intercept_reason).toMatch(/不提供/);
+    expect(deps.requireAccess).toHaveBeenCalled();
+    expect(deps.consumeQuota).not.toHaveBeenCalled();
+    expect(deps.generateAnswer).not.toHaveBeenCalled();
+    expect(deps.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "failure",
+        errorCode: "safety_intercept",
+      }),
+    );
   });
 
   it("allows anonymous guests with null event identity", async () => {

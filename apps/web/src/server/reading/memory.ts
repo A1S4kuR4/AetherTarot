@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SessionMemory } from "@aethertarot/shared-types";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/database.types";
 
 export const sessionMemoryCardSchema = z.object({
   id: z.string().trim().min(1),
@@ -27,10 +29,19 @@ export const sessionMemoryPatchSchema = sessionMemoryObjectSchema.partial();
 
 export type SessionMemoryPatch = Partial<SessionMemory>;
 
+export type SessionMemoryScope = {
+  userId: string;
+  threadId: string;
+};
+type SessionMemoryScopeInput = SessionMemoryScope | string;
+
 export type SessionMemoryStore = {
-  get(threadId: string): Promise<SessionMemory | null>;
-  upsert(threadId: string, patch: SessionMemoryPatch): Promise<SessionMemory>;
-  clear?(threadId?: string): Promise<void>;
+  get(scope: SessionMemoryScopeInput): Promise<SessionMemory | null>;
+  upsert(
+    scope: SessionMemoryScopeInput,
+    patch: SessionMemoryPatch,
+  ): Promise<SessionMemory>;
+  clear?(scope: SessionMemoryScopeInput): Promise<void>;
 };
 
 function uniqueStrings(values: string[] | undefined) {
@@ -58,45 +69,127 @@ function mergeCards(
   return [...cardsByKey.values()];
 }
 
+export function mergeSessionMemory(
+  scope: SessionMemoryScope,
+  existing: SessionMemory | null,
+  patch: SessionMemoryPatch,
+): SessionMemory {
+  return sessionMemorySchema.parse({
+    thread_id: scope.threadId,
+    summary: patch.summary ?? existing?.summary,
+    topics: mergeStrings(existing?.topics, patch.topics).slice(-12),
+    cards: mergeCards(existing?.cards, patch.cards).slice(-20),
+    stated_constraints: mergeStrings(
+      existing?.stated_constraints,
+      patch.stated_constraints,
+    ).slice(-8),
+    open_questions: patch.open_questions ?? existing?.open_questions ?? [],
+    last_advice_summary:
+      patch.last_advice_summary ?? existing?.last_advice_summary,
+    updated_at: patch.updated_at ?? new Date().toISOString(),
+  });
+}
+
 export function createInMemorySessionMemoryStore(): SessionMemoryStore {
-  const memoryByThreadId = new Map<string, SessionMemory>();
+  const memoryByScope = new Map<string, SessionMemory>();
+  const normalizeScope = (scope: SessionMemoryScopeInput): SessionMemoryScope =>
+    typeof scope === "string"
+      ? { userId: "test-user", threadId: scope }
+      : scope;
+  const getKey = (scope: SessionMemoryScopeInput) => {
+    const normalized = normalizeScope(scope);
+    return `${normalized.userId}:${normalized.threadId}`;
+  };
 
   return {
-    async get(threadId) {
-      return memoryByThreadId.get(threadId) ?? null;
+    async get(scope) {
+      return memoryByScope.get(getKey(scope)) ?? null;
     },
 
-    async upsert(threadId, patch) {
-      const existing = memoryByThreadId.get(threadId);
-      const updatedAt = patch.updated_at ?? new Date().toISOString();
-      const merged = sessionMemorySchema.parse({
-        thread_id: threadId,
-        summary: patch.summary ?? existing?.summary,
-        topics: mergeStrings(existing?.topics, patch.topics),
-        cards: mergeCards(existing?.cards, patch.cards),
-        stated_constraints: mergeStrings(
-          existing?.stated_constraints,
-          patch.stated_constraints,
-        ),
-        open_questions: mergeStrings(existing?.open_questions, patch.open_questions),
-        last_advice_summary:
-          patch.last_advice_summary ?? existing?.last_advice_summary,
-        updated_at: updatedAt,
-      });
+    async upsert(scope, patch) {
+      const key = getKey(scope);
+      const merged = mergeSessionMemory(
+        normalizeScope(scope),
+        memoryByScope.get(key) ?? null,
+        patch,
+      );
 
-      memoryByThreadId.set(threadId, merged);
+      memoryByScope.set(key, merged);
       return merged;
     },
 
-    async clear(threadId) {
-      if (threadId) {
-        memoryByThreadId.delete(threadId);
-        return;
-      }
-
-      memoryByThreadId.clear();
+    async clear(scope) {
+      memoryByScope.delete(getKey(scope));
     },
   };
 }
 
-export const defaultSessionMemoryStore = createInMemorySessionMemoryStore();
+function requireAdminClient() {
+  const adminClient = createAdminClient();
+  if (!adminClient) {
+    throw new Error("persistent_store_unavailable");
+  }
+  return adminClient;
+}
+
+export function createSupabaseSessionMemoryStore(): SessionMemoryStore {
+  return {
+    async get(scope) {
+      if (typeof scope === "string") {
+        throw new Error("memory_scope_required");
+      }
+      const { data, error } = await requireAdminClient()
+        .from("reading_thread_memories")
+        .select("memory")
+        .eq("user_id", scope.userId)
+        .eq("thread_id", scope.threadId)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`memory_read_failed:${error.code}`);
+      }
+
+      return data ? sessionMemorySchema.parse(data.memory) : null;
+    },
+
+    async upsert(scope, patch) {
+      if (typeof scope === "string") {
+        throw new Error("memory_scope_required");
+      }
+      const { data, error } = await requireAdminClient().rpc(
+        "merge_reading_thread_memory",
+        {
+          p_user_id: scope.userId,
+          p_thread_id: scope.threadId,
+          p_patch: patch as unknown as Json,
+        },
+      );
+
+      if (error) {
+        throw new Error(`memory_write_failed:${error.code}`);
+      }
+
+      const result = z
+        .object({ memory: sessionMemorySchema })
+        .parse(data);
+      return result.memory;
+    },
+
+    async clear(scope) {
+      if (typeof scope === "string") {
+        throw new Error("memory_scope_required");
+      }
+      const { error } = await requireAdminClient()
+        .from("reading_thread_memories")
+        .delete()
+        .eq("user_id", scope.userId)
+        .eq("thread_id", scope.threadId);
+
+      if (error) {
+        throw new Error(`memory_delete_failed:${error.code}`);
+      }
+    },
+  };
+}
+
+export const defaultSessionMemoryStore = createSupabaseSessionMemoryStore();

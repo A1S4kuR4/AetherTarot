@@ -142,7 +142,9 @@ export interface ReadingRequestPayload {
   phase?: ReadingPhase;
   draw_source?: DrawSource;
   prior_session_capsule?: string | null;
-  initial_reading?: StructuredReading;
+  initial_reading_id?: string;
+  /** @deprecated Only reading_id is accepted; the server ignores legacy body fields. */
+  initial_reading?: Pick<StructuredReading, "reading_id">;
   followup_answers?: FollowupAnswer[];
 }
 
@@ -176,6 +178,30 @@ export interface ReadingCardResult {
 
 export type PresentationMode = "standard" | "void_narrative" | "sober_anchor";
 
+export type ReadingGroundingClaimPath =
+  | `cards.${number}.interpretation`
+  | "synthesis";
+
+export interface ReadingGroundingSource {
+  ref: string;
+  kind: "wiki" | "authority_card";
+  title: string;
+  card_id: string;
+  orientation: "upright" | "reversed" | "unknown";
+  chunk_id: string;
+  source_ids: string[];
+}
+
+export interface ReadingGrounding {
+  version: 1;
+  status: "grounded" | "degraded";
+  sources: ReadingGroundingSource[];
+  claims: Array<{
+    path: ReadingGroundingClaimPath;
+    source_refs: string[];
+  }>;
+}
+
 export interface StructuredReading {
   reading_id: string;
   locale: string;
@@ -197,6 +223,7 @@ export interface StructuredReading {
   session_capsule: string | null;
   sober_check?: string | null;
   presentation_mode?: PresentationMode;
+  grounding?: ReadingGrounding;
 }
 
 export interface ReadingHistoryEntry {
@@ -206,6 +233,7 @@ export interface ReadingHistoryEntry {
   drawSource?: DrawSource;
   drawnCards: ReadingRequestCardInput[];
   reading: StructuredReading;
+  threadId?: string;
   user_notes?: string;
 }
 

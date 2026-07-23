@@ -143,6 +143,52 @@ export function EvidencePanel({
           </p>
         </div>
       </div>
+      {reading.grounding ? (
+        <details
+          data-testid="reading-grounding-sources"
+          className="rounded-2xl border border-paper-border bg-paper px-5 py-4"
+        >
+          <summary className="cursor-pointer text-sm font-medium text-ink">
+            牌义来源
+            <span className="ml-2 text-xs font-normal text-text-muted">
+              {reading.grounding.status === "degraded"
+                ? "部分使用运行时牌面资料"
+                : `${reading.grounding.sources.length} 条已校验来源`}
+            </span>
+          </summary>
+          <div className="mt-4 space-y-4">
+            {reading.cards.map((card, index) => {
+              const claim = reading.grounding?.claims.find(
+                (item) => item.path === `cards.${index}.interpretation`,
+              );
+              const sources = reading.grounding?.sources.filter((source) =>
+                claim?.source_refs.includes(source.ref)
+              ) ?? [];
+              return (
+                <div key={`grounding-${card.position_id}`} className="border-l-2 border-paper-border pl-3">
+                  <p className="text-sm font-medium text-ink">
+                    {card.position}：{card.name}
+                  </p>
+                  {sources.map((source) => (
+                    <p key={source.ref} className="mt-1 text-xs leading-relaxed text-text-muted">
+                      {source.title}
+                      {source.source_ids.length > 0
+                        ? ` · ${source.source_ids.join(" / ")}`
+                        : " · 权威运行时牌面资料"}
+                    </p>
+                  ))}
+                </div>
+              );
+            })}
+            <div className="border-l-2 border-paper-border pl-3">
+              <p className="text-sm font-medium text-ink">综合解读</p>
+              <p className="mt-1 text-xs leading-relaxed text-text-muted">
+                综合只使用上方已校验的逐牌来源；未验证引用不会展示。
+              </p>
+            </div>
+          </div>
+        </details>
+      ) : null}
     </CollapsibleSection>
   );
 }

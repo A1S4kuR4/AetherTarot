@@ -41,6 +41,12 @@ function normalize(value: string) {
   return value.toLowerCase().replace(/\s+/g, "");
 }
 
+function normalizeCardId(value: string) {
+  return normalize(value)
+    .replace(/[^a-z0-9\u4e00-\u9fa5]/g, "")
+    .replace(/^the/, "");
+}
+
 function unique(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
@@ -145,7 +151,10 @@ function toRetrievedSource(item: ScoredSection): EncyclopediaRetrievedSource {
     title: item.page.title,
     path: item.page.path,
     type: item.page.type,
-    source_ids: item.page.sourceIds,
+    source_ids: [...new Set([
+      ...item.page.sourceIds,
+      ...(item.section.sourceIds ?? []),
+    ])],
     excerpt: buildExcerpt(item.section.content),
     content,
   };
@@ -168,13 +177,19 @@ export function retrieveEncyclopediaSources({
 
   for (const page of pages) {
     const identityScore = scorePageIdentity(page, queryTerms, selectedCardTerms);
+    const exactCardScore = cardId && page.cardId
+      && normalizeCardId(cardId) === normalizeCardId(page.cardId)
+      ? 120
+      : 0;
 
-    for (const section of page.sections) {
+    for (const section of page.claims ?? page.sections) {
       const sectionScore =
-        identityScore
+        exactCardScore
+        + identityScore
         + scoreText(section.heading, queryTerms, 5)
         + scoreText(section.content, queryTerms, 2)
-        + scoreText(section.content, selectedCardTerms, 3);
+        + scoreText(section.content, selectedCardTerms, 3)
+        + ((section.sourceIds?.length ?? 0) > 0 ? 4 : 0);
 
       if (sectionScore > 0) {
         scoredSections.push({ page, section, score: sectionScore });
@@ -184,7 +199,13 @@ export function retrieveEncyclopediaSources({
 
   const byPage = new Map<string, ScoredSection>();
 
-  for (const item of scoredSections.sort((a, b) => b.score - a.score)) {
+  for (const item of scoredSections.sort((a, b) =>
+    b.score - a.score
+    || a.page.path.localeCompare(b.page.path)
+    || (a.section.claimId ?? a.section.heading).localeCompare(
+      b.section.claimId ?? b.section.heading,
+    )
+  )) {
     if (!byPage.has(item.page.path)) {
       byPage.set(item.page.path, item);
     }

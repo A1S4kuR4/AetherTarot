@@ -197,6 +197,8 @@ export interface Database {
           estimated_cost_usd: number;
           completed_initial: boolean;
           completed_final: boolean;
+          agent_trace: Json | null;
+          agent_trace_schema_version: number | null;
         };
         Insert: {
           id?: string;
@@ -220,6 +222,8 @@ export interface Database {
           estimated_cost_usd?: number;
           completed_initial?: boolean;
           completed_final?: boolean;
+          agent_trace?: Json | null;
+          agent_trace_schema_version?: number | null;
         };
         Update: {
           id?: string;
@@ -243,6 +247,8 @@ export interface Database {
           estimated_cost_usd?: number;
           completed_initial?: boolean;
           completed_final?: boolean;
+          agent_trace?: Json | null;
+          agent_trace_schema_version?: number | null;
         };
         Relationships: [];
       };
@@ -313,6 +319,8 @@ export interface Database {
           ip_hash: string;
           labels: string[];
           note: string | null;
+          replay_consent: boolean;
+          consent_version: string | null;
         };
         Insert: {
           id?: string;
@@ -323,6 +331,8 @@ export interface Database {
           ip_hash: string;
           labels: string[];
           note?: string | null;
+          replay_consent?: boolean;
+          consent_version?: string | null;
         };
         Update: {
           id?: string;
@@ -333,6 +343,8 @@ export interface Database {
           ip_hash?: string;
           labels?: string[];
           note?: string | null;
+          replay_consent?: boolean;
+          consent_version?: string | null;
         };
         Relationships: [];
       };
@@ -347,6 +359,7 @@ export interface Database {
           drawn_cards: Json;
           reading: Json;
           user_notes: string | null;
+          thread_id: string | null;
         };
         Insert: {
           id?: string;
@@ -358,6 +371,7 @@ export interface Database {
           drawn_cards?: Json;
           reading: Json;
           user_notes?: string | null;
+          thread_id?: string | null;
         };
         Update: {
           id?: string;
@@ -369,6 +383,136 @@ export interface Database {
           drawn_cards?: Json;
           reading?: Json;
           user_notes?: string | null;
+          thread_id?: string | null;
+        };
+        Relationships: [];
+      };
+      reading_thread_memories: {
+        Row: {
+          user_id: string;
+          thread_id: string;
+          memory: Json;
+          version: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          thread_id: string;
+          memory?: Json;
+          version?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          thread_id?: string;
+          memory?: Json;
+          version?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      reading_initial_snapshots: {
+        Row: {
+          id: string;
+          subject_key: string;
+          initial_reading_id: string;
+          request_id: string;
+          question: string;
+          spread_id: string;
+          drawn_cards: Json;
+          profile: Json;
+          draw_source: string;
+          thread_id: string | null;
+          continuity_context: string | null;
+          initial_reading: Json;
+          follow_up_questions: Json;
+          created_at: string;
+          expires_at: string;
+          claim_request_id: string | null;
+          claim_expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          subject_key: string;
+          initial_reading_id: string;
+          request_id: string;
+          question: string;
+          spread_id: string;
+          drawn_cards: Json;
+          profile: Json;
+          draw_source: string;
+          thread_id?: string | null;
+          continuity_context?: string | null;
+          initial_reading: Json;
+          follow_up_questions?: Json;
+          created_at?: string;
+          expires_at?: string;
+          claim_request_id?: string | null;
+          claim_expires_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          subject_key?: string;
+          initial_reading_id?: string;
+          request_id?: string;
+          question?: string;
+          spread_id?: string;
+          drawn_cards?: Json;
+          profile?: Json;
+          draw_source?: string;
+          thread_id?: string | null;
+          continuity_context?: string | null;
+          initial_reading?: Json;
+          follow_up_questions?: Json;
+          created_at?: string;
+          expires_at?: string;
+          claim_request_id?: string | null;
+          claim_expires_at?: string | null;
+        };
+        Relationships: [];
+      };
+      reading_request_executions: {
+        Row: {
+          subject_key: string;
+          request_id: string;
+          payload_hash: string;
+          status: "processing" | "succeeded";
+          lease_owner: string;
+          lease_expires_at: string;
+          response_status: number | null;
+          response_payload: Json | null;
+          created_at: string;
+          updated_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          subject_key: string;
+          request_id: string;
+          payload_hash: string;
+          status: "processing" | "succeeded";
+          lease_owner: string;
+          lease_expires_at: string;
+          response_status?: number | null;
+          response_payload?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          subject_key?: string;
+          request_id?: string;
+          payload_hash?: string;
+          status?: "processing" | "succeeded";
+          lease_owner?: string;
+          lease_expires_at?: string;
+          response_status?: number | null;
+          response_payload?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+          expires_at?: string;
         };
         Relationships: [];
       };
@@ -406,6 +550,67 @@ export interface Database {
           p_ip_hash: string;
         };
         Returns: Json;
+      };
+      merge_reading_thread_memory: {
+        Args: {
+          p_user_id: string;
+          p_thread_id: string;
+          p_patch: Json;
+        };
+        Returns: Json;
+      };
+      claim_reading_initial_snapshot: {
+        Args: {
+          p_subject_key: string;
+          p_initial_reading_id: string;
+          p_request_id: string;
+          p_lease_seconds?: number;
+        };
+        Returns: Json;
+      };
+      release_reading_initial_snapshot: {
+        Args: {
+          p_subject_key: string;
+          p_initial_reading_id: string;
+          p_request_id: string;
+        };
+        Returns: boolean;
+      };
+      consume_reading_initial_snapshot: {
+        Args: {
+          p_subject_key: string;
+          p_initial_reading_id: string;
+          p_request_id: string;
+        };
+        Returns: boolean;
+      };
+      claim_reading_request_execution: {
+        Args: {
+          p_subject_key: string;
+          p_request_id: string;
+          p_payload_hash: string;
+          p_lease_owner: string;
+          p_lease_seconds?: number;
+        };
+        Returns: Json;
+      };
+      complete_reading_request_execution: {
+        Args: {
+          p_subject_key: string;
+          p_request_id: string;
+          p_lease_owner: string;
+          p_response_status: number;
+          p_response_payload: Json;
+        };
+        Returns: boolean;
+      };
+      release_reading_request_execution: {
+        Args: {
+          p_subject_key: string;
+          p_request_id: string;
+          p_lease_owner: string;
+        };
+        Returns: boolean;
       };
       consume_encyclopedia_quota: {
         Args: {

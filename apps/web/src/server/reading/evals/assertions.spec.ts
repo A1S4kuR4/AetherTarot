@@ -28,6 +28,9 @@ function buildTrace(overrides: Partial<ReadingRunTrace> = {}): ReadingRunTrace {
       used_source_ids: [],
       retrieved_chunk_count: 0,
       unsupported_claim_check: "not_checked",
+      grounded_card_count: 0,
+      degraded_source_count: 0,
+      citation_count: 0,
     },
     ...overrides,
   };
@@ -199,9 +202,9 @@ describe("reading eval assertions", () => {
         cards: [{ id: "star", orientation: "upright" }],
       },
       expected: {
-        action_path: ["get_session_memory", "final_answer"],
+        action_path: ["get_session_memory", "retrieve_knowledge", "final_answer"],
         should_get_memory: true,
-        should_retrieve: false,
+        should_retrieve: true,
         required_phrases: ["倒吊人逆位"],
       },
       runtime: {
@@ -211,7 +214,11 @@ describe("reading eval assertions", () => {
 
     expect(report.passed).toBe(true);
     expect(report.failures).toEqual([]);
-    expect(report.action_path).toEqual(["get_session_memory", "final_answer"]);
+    expect(report.action_path).toEqual([
+      "get_session_memory",
+      "retrieve_knowledge",
+      "final_answer",
+    ]);
     expect(report.tool_calls).toContain("get_session_memory");
   });
 

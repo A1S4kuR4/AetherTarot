@@ -26,7 +26,103 @@ export interface ReadingRunTrace {
   tool_calls: ToolCallTrace[];
   retrieval_sources: RetrievalSourceTrace[];
   final_answer_grounding?: FinalAnswerGroundingTrace;
+  safety?: {
+    policy_version: string;
+    rule_ids: string[];
+    action_type: string;
+  };
 }
+
+export const PERSISTED_READING_TRACE_SCHEMA_VERSION = 2;
+
+export interface PersistedReadingTraceV2 {
+  schema_version: 2;
+  run_id: string;
+  started_at: string;
+  ended_at?: string;
+  status: ReadingRunTraceStatus;
+  agent_steps: Array<{
+    step: number;
+    action_type: string;
+    observation_count: number;
+    tool_call_count: number;
+    grounding_status: string;
+    pending_clarification: boolean;
+  }>;
+  tool_calls: Array<{
+    tool_name: string;
+    step: number;
+    ok: boolean;
+    latency_ms: number;
+    error_code?: string;
+  }>;
+  grounding: {
+    status: string;
+    source_ids: string[];
+    chunk_ids: string[];
+    retrieved_chunk_count: number;
+    grounded_card_count: number;
+    degraded_source_count: number;
+    citation_count: number;
+  };
+  safety: {
+    policy_version: string;
+    rule_ids: string[];
+    action_type: string;
+  };
+}
+
+export function toPersistedReadingTraceV2(
+  trace: ReadingRunTrace,
+): PersistedReadingTraceV2 {
+  return {
+    schema_version: PERSISTED_READING_TRACE_SCHEMA_VERSION,
+    run_id: trace.run_id,
+    started_at: trace.started_at,
+    ended_at: trace.ended_at,
+    status: trace.status,
+    agent_steps: trace.agent_steps.map((step) => ({
+      step: step.step,
+      action_type: step.action_type ?? step.node,
+      observation_count: step.state_summary?.observation_count ?? 0,
+      tool_call_count: step.state_summary?.tool_call_count ?? 0,
+      grounding_status: step.state_summary?.grounding_status ?? "none",
+      pending_clarification:
+        step.state_summary?.pending_clarification ?? false,
+    })),
+    tool_calls: trace.tool_calls.map((toolCall) => ({
+      tool_name: toolCall.tool_name,
+      step: toolCall.step,
+      ok: toolCall.ok,
+      latency_ms: toolCall.latency_ms,
+      error_code: toolCall.error_code,
+    })),
+    grounding: {
+      status: trace.final_answer_grounding?.grounding_status ?? "none",
+      source_ids: [
+        ...new Set(trace.retrieval_sources.map((source) => source.source_id)),
+      ],
+      chunk_ids: [
+        ...new Set(trace.retrieval_sources.map((source) => source.chunk_id)),
+      ],
+      retrieved_chunk_count:
+        trace.final_answer_grounding?.retrieved_chunk_count ?? 0,
+      grounded_card_count:
+        trace.final_answer_grounding?.grounded_card_count ?? 0,
+      degraded_source_count:
+        trace.final_answer_grounding?.degraded_source_count ?? 0,
+      citation_count: trace.final_answer_grounding?.citation_count ?? 0,
+    },
+    safety: {
+      policy_version: trace.safety?.policy_version ?? "safety-rules-v1",
+      rule_ids: trace.safety?.rule_ids ?? [],
+      action_type: trace.safety?.action_type ?? "pass",
+    },
+  };
+}
+
+/** @deprecated Trace persistence now emits the V2 redacted schema. */
+export const toPersistedReadingTraceV1 = toPersistedReadingTraceV2;
 
 export interface AgentStepTrace {
   step: number;
@@ -62,6 +158,9 @@ export interface FinalAnswerGroundingTrace {
   used_source_ids: string[];
   retrieved_chunk_count: number;
   unsupported_claim_check?: "not_checked" | "passed" | "failed";
+  grounded_card_count: number;
+  degraded_source_count: number;
+  citation_count: number;
 }
 
 export interface ReadingStepStateSummary {
@@ -104,14 +203,22 @@ function buildRetrievalSources(
   usedSourceIds: Set<string>,
 ): RetrievalSourceTrace[] {
   return getRetrieveOutputs(observations).flatMap((output) =>
-    output.chunks.map((chunk) => ({
-      source_id: chunk.source_id,
-      chunk_id: chunk.id,
-      title: chunk.title,
-      score: chunk.score,
-      confidence: chunk.confidence,
-      used_by_final_answer: usedSourceIds.has(chunk.source_id),
-    })),
+    output.chunks.flatMap((chunk) =>
+      (
+        chunk.source_ids?.length
+          ? chunk.source_ids
+          : chunk.source_id
+            ? [chunk.source_id]
+            : ["unregistered"]
+      ).map((sourceId) => ({
+        source_id: sourceId,
+        chunk_id: chunk.id,
+        title: chunk.title,
+        score: chunk.score,
+        confidence: chunk.confidence,
+        used_by_final_answer: usedSourceIds.has(sourceId),
+      }))
+    ),
   );
 }
 
@@ -121,16 +228,35 @@ function buildFinalAnswerGrounding(
   const retrievedChunks = getRetrieveOutputs(state.observations ?? [])
     .filter((output) => output.groundingStatus === "retrieved")
     .flatMap((output) => output.chunks);
+  const publicGrounding = state.reading?.grounding;
   const usedSourceIds = Array.from(
-    new Set(retrievedChunks.map((chunk) => chunk.source_id)),
+    new Set(
+      publicGrounding?.sources.flatMap((source) => source.source_ids) ?? [],
+    ),
   );
-  const hasRetrievedChunks = retrievedChunks.length > 0;
+  const publicGroundingStatus: GroundingStatus | undefined =
+    publicGrounding?.status === "grounded"
+      ? "retrieved"
+      : publicGrounding?.status === "degraded"
+        ? "degraded"
+        : undefined;
 
   return {
-    grounding_status: hasRetrievedChunks ? "retrieved" : state.groundingStatus ?? "none",
-    used_source_ids: hasRetrievedChunks ? usedSourceIds : [],
+    grounding_status:
+      publicGroundingStatus ?? state.groundingStatus ?? "none",
+    used_source_ids: usedSourceIds,
     retrieved_chunk_count: retrievedChunks.length,
-    unsupported_claim_check: "not_checked",
+    unsupported_claim_check: publicGrounding ? "passed" : "not_checked",
+    grounded_card_count: publicGrounding?.claims.filter(
+      (claim) => claim.path.startsWith("cards."),
+    ).length ?? 0,
+    degraded_source_count: publicGrounding?.sources.filter(
+      (source) => source.kind === "authority_card",
+    ).length ?? 0,
+    citation_count: publicGrounding?.claims.reduce(
+      (count, claim) => count + claim.source_refs.length,
+      0,
+    ) ?? 0,
   };
 }
 
@@ -324,5 +450,10 @@ export function buildReadingRunTrace(
     tool_calls: buildToolCalls(state.toolCalls ?? []),
     retrieval_sources: buildRetrievalSources(state.observations ?? [], usedSourceIds),
     final_answer_grounding: grounding,
+    safety: {
+      policy_version: state.frictionResult?.policy_version ?? "safety-rules-v1",
+      rule_ids: state.frictionResult?.rule_ids ?? [],
+      action_type: state.frictionResult?.type ?? "pass",
+    },
   };
 }
