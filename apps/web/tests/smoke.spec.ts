@@ -1536,7 +1536,7 @@ test.describe("AetherTarot smoke flow", () => {
     await gotoAppRoute(page, "/encyclopedia?card=not-real");
     await expect(page.getByRole("heading", { name: "愚者", exact: true })).toBeVisible();
     await page.getByRole("heading", { name: "深度百科" }).scrollIntoViewIfNeeded();
-    await expect(page.getByText("来源: 78W").first()).toBeVisible();
+    await expect(page.getByText("来源: 《78度的智慧》").first()).toBeVisible();
     await expect(page.locator("body")).not.toContainText(/\[[^\]]+\]\([^)]+\.md\)|\*\*/);
 
     await page.getByRole("heading", { name: "6. 关联与交叉引用" }).scrollIntoViewIfNeeded();
