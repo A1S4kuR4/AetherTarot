@@ -18,10 +18,11 @@ const feedbackLabelSchema = z.enum([
   "could_be_better",
 ]);
 
-const feedbackPayloadSchema = z.object({
+export const feedbackPayloadSchema = z.object({
   reading_id: z.string().trim().min(1),
   labels: z.array(feedbackLabelSchema).min(1).max(4),
   note: z.string().trim().max(1000).optional(),
+  replay_consent: z.boolean().optional().default(false),
 });
 
 function buildErrorResponse(code: string, message: string, status: number) {
@@ -65,6 +66,8 @@ export async function POST(request: Request) {
       ip_hash: getClientIpHash(request),
       labels: parsedPayload.labels,
       note: parsedPayload.note ?? null,
+      replay_consent: parsedPayload.replay_consent,
+      consent_version: parsedPayload.replay_consent ? "quality-replay-v1" : null,
     });
 
     if (error) {

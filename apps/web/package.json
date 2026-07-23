@@ -12,6 +12,9 @@
     "eval:reading": "vite-node --config vitest.config.ts src/server/reading/evals/runner.ts",
     "test:contract": "vitest run",
     "test:llm": "vitest run --config vitest.llm.config.ts",
+    "canary:llm": "vite-node --config vitest.config.ts scripts/run-llm-canary.ts",
+    "eval:export-feedback": "vite-node --config vitest.config.ts scripts/export-feedback-replay.ts",
+    "eval:review": "vite-node --config vitest.config.ts scripts/quality-review.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

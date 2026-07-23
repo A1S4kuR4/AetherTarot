@@ -9,8 +9,10 @@ interface FeedbackSectionProps {
   note: string;
   isSubmitted: boolean;
   error: string | null;
+  replayConsent: boolean;
   onToggleLabel: (value: FeedbackLabel) => void;
   onNoteChange: (value: string) => void;
+  onReplayConsentChange: (value: boolean) => void;
   onSubmit: () => void;
 }
 
@@ -19,8 +21,10 @@ export function FeedbackSection({
   note,
   isSubmitted,
   error,
+  replayConsent,
   onToggleLabel,
   onNoteChange,
+  onReplayConsentChange,
   onSubmit,
 }: FeedbackSectionProps) {
   return (
@@ -62,6 +66,18 @@ export function FeedbackSection({
         placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
         className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 disabled:opacity-70"
       />
+      <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-muted">
+        <input
+          type="checkbox"
+          checked={replayConsent}
+          disabled={isSubmitted}
+          onChange={(event) => onReplayConsentChange(event.target.checked)}
+          className="mt-1"
+        />
+        <span>
+          我同意将这次解读与反馈在去标识化后用于内部质量评估。默认不授权，也不会影响反馈提交。
+        </span>
+      </label>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-text-muted">
           {isSubmitted ? "反馈已记录，谢谢。" : error}

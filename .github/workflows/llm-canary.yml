@@ -1,0 +1,34 @@
+name: LLM Canary
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * 1"
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    environment: llm-canary
+    continue-on-error: true
+    timeout-minutes: 30
+    env:
+      AETHERTAROT_READING_PROVIDER: llm
+      AETHERTAROT_LLM_BASE_URL: ${{ secrets.AETHERTAROT_LLM_BASE_URL }}
+      AETHERTAROT_LLM_API_KEY: ${{ secrets.AETHERTAROT_LLM_API_KEY }}
+      AETHERTAROT_LLM_MODEL: ${{ secrets.AETHERTAROT_LLM_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run five-call canary
+        run: npm run canary:llm -w @aethertarot/web
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-canary-report
+          path: outputs/evals/llm-canary-report.json
+          retention-days: 30

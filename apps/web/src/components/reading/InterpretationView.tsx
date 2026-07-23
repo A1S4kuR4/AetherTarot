@@ -77,6 +77,9 @@ export default function InterpretationView() {
   const [feedbackNotesByReadingId, setFeedbackNotesByReadingId] = useState<
     Record<string, string>
   >({});
+  const [feedbackConsentByReadingId, setFeedbackConsentByReadingId] = useState<
+    Record<string, boolean>
+  >({});
   const [submittedFeedbackByReadingId, setSubmittedFeedbackByReadingId] = useState<
     Record<string, boolean>
   >({});
@@ -124,6 +127,9 @@ export default function InterpretationView() {
   const activeFeedbackNote = activeReadingId
     ? feedbackNotesByReadingId[activeReadingId] ?? ""
     : "";
+  const activeFeedbackConsent = activeReadingId
+    ? feedbackConsentByReadingId[activeReadingId] ?? false
+    : false;
   const hasSubmittedFeedback = activeReadingId
     ? submittedFeedbackByReadingId[activeReadingId] === true
     : false;
@@ -335,6 +341,16 @@ export default function InterpretationView() {
     }));
   };
 
+  const handleFeedbackConsentChange = (value: boolean) => {
+    if (!activeReadingId || hasSubmittedFeedback) {
+      return;
+    }
+    setFeedbackConsentByReadingId((current) => ({
+      ...current,
+      [activeReadingId]: value,
+    }));
+  };
+
   const handleSubmitFeedback = async () => {
     if (!activeReadingId || activeFeedbackLabels.length === 0) {
       return;
@@ -351,7 +367,8 @@ export default function InterpretationView() {
         body: JSON.stringify({
           reading_id: activeReadingId,
           labels: activeFeedbackLabels,
-          note: activeFeedbackNote.trim() || undefined,
+            note: activeFeedbackNote.trim() || undefined,
+            replay_consent: activeFeedbackConsent,
         }),
       });
 
@@ -375,7 +392,7 @@ export default function InterpretationView() {
       return;
     }
 
-    if (!selectedSpread) {
+    if (!selectedSpread || !question.trim()) {
       router.replace("/");
       return;
     }
@@ -397,6 +414,7 @@ export default function InterpretationView() {
     interpretReading,
     isHydrated,
     isLoading,
+    question,
     reading,
     router,
     safetyIntercept,
@@ -586,8 +604,10 @@ export default function InterpretationView() {
                 note={activeFeedbackNote}
                 isSubmitted={hasSubmittedFeedback}
                 error={feedbackError}
+                replayConsent={activeFeedbackConsent}
                 onToggleLabel={toggleFeedbackLabel}
                 onNoteChange={handleFeedbackNoteChange}
+                onReplayConsentChange={handleFeedbackConsentChange}
                 onSubmit={() => void handleSubmitFeedback()}
               />
             ) : null}
