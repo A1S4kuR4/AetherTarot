@@ -57,7 +57,7 @@ const initialSnapshotRowSchema = z.object({
   continuity_context: z.string().nullable(),
   initial_reading: structuredReadingSchema,
   follow_up_questions: z.array(z.string().min(1)),
-  expires_at: z.string().datetime(),
+  expires_at: z.string().datetime({ offset: true }),
 });
 
 function parseInitialSnapshot(value: unknown): InitialReadingSnapshot {

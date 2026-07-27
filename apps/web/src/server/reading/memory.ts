@@ -19,7 +19,7 @@ const sessionMemoryObjectSchema = z.object({
   stated_constraints: z.array(z.string().trim().min(1)).default([]),
   open_questions: z.array(z.string().trim().min(1)).default([]),
   last_advice_summary: z.string().trim().min(1).optional(),
-  updated_at: z.string().datetime(),
+  updated_at: z.string().datetime({ offset: true }),
 });
 
 export const sessionMemorySchema: z.ZodType<SessionMemory> =
