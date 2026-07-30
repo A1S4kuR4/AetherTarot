@@ -96,6 +96,10 @@ AetherTarot Agent 是一个以**长上下文、深度推理、反思式塔罗解
 - 涉及危机、自伤、健康、法律、财务、关系操控、限制性输出或人工审核/安全升级时，优先使用 `.agents/skills/aethertarot-safety-escalation/SKILL.md`
 - 涉及 AetherTarot 服务器连接、归档发布、systemd 重启、IP/入口验收等生产部署操作时，优先使用 `.agents/skills/aethertarot-server-deploy/SKILL.md`
 - 涉及 `knowledge/raw/ -> knowledge/wiki/` 的 ingest、知识层 lint、source registry / index / log 同步时，优先使用 `.agents/skills/ingest-wiki/SKILL.md`
+- 涉及 Web UI / UX 的设计、重设计、评审、视觉打磨、响应式适配或交互动效时，优先使用 `.agents/skills/impeccable/SKILL.md`；现有 `DESIGN.md` 与 `docs/10-product/ux-risk-status.md` 是项目视觉与体验边界的上位依据，除非用户明确要求重设计，否则不得由通用 aesthetic preset 覆盖
+- 涉及界面规范审计时使用 `.agents/skills/web-design-guidelines/SKILL.md`；涉及 WCAG、键盘/焦点、ARIA、屏幕阅读器或移动端辅助技术时叠加 `.agents/skills/accessibility-compliance/SKILL.md`
+- 涉及 Tailwind CSS v4 token、组件变体、主题或响应式组件体系时使用 `.agents/skills/tailwind-design-system/SKILL.md`；不得在没有明确重设计授权时替换 `DESIGN.md` 已确认的颜色、字体、间距与双表面语言
+- 运行 Impeccable 的可选联网脚本时设置 `DO_NOT_TRACK=1`；项目通过 `.impeccable/config.json` 关闭自动更新检查与编辑 Hook，任何重新开启都应先获得用户确认
 - 若任务同时跨越状态、记忆、安全边界，可组合使用多个 skill，并同步检查相关 docs / ADR
 - 若任务属于通用工程实现且不完全落入上述业务域 skill，默认先使用 `.agents/skills/disciplined-typescript-engineer/SKILL.md`，再按需要叠加 domain-specific skills
 

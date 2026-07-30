@@ -19,7 +19,7 @@ AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验�
 - `knowledge`：受治理的运行时塔罗知识，用于百科和检索路径。
 - `data`：应用消费的牌组与牌阵源数据。
 - `scripts`：仓库维护和资产校验脚本。
-- `.agents/skills`：可公开分享的 repo-local agent skills。
+- `.agents/skills`：可公开分享的 repo-local agent skills，包括 AetherTarot 业务边界技能与受 `DESIGN.md` 约束的 UI/设计工作流。
 
 本地计划、运维 work log、生成报告、scratch 文件、私有部署说明和长篇内部文档不会进入公开仓库。
 
