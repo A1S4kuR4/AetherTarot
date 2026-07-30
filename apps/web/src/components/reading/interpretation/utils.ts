@@ -2,6 +2,16 @@ export function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))];
 }
 
+export function getPreferredScrollBehavior(): ScrollBehavior {
+  if (
+    typeof window !== "undefined"
+    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return "auto";
+  }
+  return "smooth";
+}
+
 export function formatFallbackSentence(keywords: string[]): string {
   const valid = uniqueStrings(keywords);
   if (valid.length === 0) {

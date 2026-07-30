@@ -5,38 +5,36 @@ import type { ReadingNavItem } from "./constants";
 interface ReadingSidebarProps {
   spreadName: string;
   navItems: readonly ReadingNavItem[];
+  coreMessage?: string | null;
 }
 
-export function ReadingSidebar({ spreadName, navItems }: ReadingSidebarProps) {
+export function ReadingSidebar({ spreadName, navItems, coreMessage }: ReadingSidebarProps) {
   return (
-    <>
-      <div className="reading-card">
-        <p className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
-          阅读导航
+    <div>
+      <p className="font-serif text-lg text-ink">使用牌阵：{spreadName}</p>
+      {coreMessage ? (
+        <p className="mt-4 border-l-2 border-paper-border pl-3 font-serif text-[13px] leading-relaxed text-text-muted">
+          {coreMessage}
         </p>
-        <h4 className="mt-1 font-serif text-lg text-ink">使用牌阵：{spreadName}</h4>
-        <nav
-          className="mt-5 space-y-2"
-          aria-label="解读阅读导航"
-          data-testid="desktop-reading-nav"
-        >
+      ) : null}
+      <nav
+        className="mt-6"
+        aria-label="解读阅读导航"
+        data-testid="desktop-reading-nav"
+      >
+        <ul className="space-y-0.5">
           {navItems.map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              className="block rounded-full border border-paper-border bg-paper px-4 py-2.5 text-sm font-medium text-text-muted transition hover:border-terracotta/30 hover:text-terracotta"
-            >
-              {item.label}
-            </a>
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                className="-mx-2 flex min-h-[36px] items-center rounded-md px-2 text-[13px] font-medium text-text-muted transition-colors hover:text-text-accent"
+              >
+                {item.label}
+              </a>
+            </li>
           ))}
-        </nav>
-      </div>
-
-      <div className="rounded-xl border-l-2 border-terracotta/25 bg-terracotta/5 p-5">
-        <p className="font-serif text-sm leading-relaxed text-text-muted">
-          真理并不是被强行规定的结论，而是从你的处境中慢慢浮现的方向感。
-        </p>
-      </div>
-    </>
+        </ul>
+      </nav>
+    </div>
   );
 }

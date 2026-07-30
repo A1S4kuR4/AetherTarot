@@ -22,7 +22,10 @@
   /* Brand Accents */
   --color-terracotta: #C96442;
   --color-terracotta-hover: #B4572F;
+  --color-terracotta-ink: #A64C2E;
+  --color-terracotta-active: #9A4327;
   --color-indigo: #7170FF;
+  --color-indigo-ink: #4B499F;
   --color-indigo-muted: rgba(113, 112, 255, 0.16);
 
   /* Text — Light */
@@ -36,6 +39,7 @@
   --color-success: #58734F;
   --color-warning: #A36A1F;
   --color-safety: #B86A5B;
+  --color-safety-ink: #8C453A;
   --color-safety-bg: #FDF0ED;
   --color-error: #B4432C;
   --color-info: #DCE3F7;
@@ -71,6 +75,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -212,13 +217,18 @@
   /* ---- Buttons ---- */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2
-           bg-terracotta text-white
+           text-white
            px-5 py-3 rounded-xl
            font-sans text-sm font-medium tracking-wide
            transition-all duration-200
-           hover:bg-terracotta-hover hover:shadow-lg
+           hover:shadow-lg
            active:scale-[0.98]
            disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--color-terracotta-ink);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-terracotta-active);
   }
 
   .btn-secondary {

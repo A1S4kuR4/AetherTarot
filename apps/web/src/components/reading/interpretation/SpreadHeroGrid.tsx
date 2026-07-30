@@ -1,38 +1,58 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import CardImage from "@/components/ui/CardImage";
+import { cn } from "@/lib/utils";
+import { getSpreadLayout } from "./spreadLayout";
 import type { DrawnCard } from "@aethertarot/shared-types";
 
 interface SpreadHeroGridProps {
+  spreadId: string;
   drawnCards: DrawnCard[];
   positionNames: string[];
 }
 
-export function SpreadHeroGrid({ drawnCards, positionNames }: SpreadHeroGridProps) {
+const BASE_ITEM = "flex flex-col items-center";
+
+export function SpreadHeroGrid({
+  spreadId,
+  drawnCards,
+  positionNames,
+}: SpreadHeroGridProps) {
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const layout = getSpreadLayout(spreadId, drawnCards.length);
+
   return (
-    <section
-      data-testid="hero-spread-display"
-      className="my-2 md:my-6"
-    >
-      <div className="flex flex-wrap items-end justify-center gap-4 md:gap-5 lg:gap-6">
+    <section data-testid="hero-spread-display" aria-label="整组牌阵" className="my-2 md:my-4">
+      <ol className={cn("list-none", layout.container)}>
         {drawnCards.map((drawnCard, index) => {
           const position = positionNames[index] ?? `位置 ${index + 1}`;
+          const orientationLabel = drawnCard.isReversed ? "逆位" : "正位";
 
           return (
-            <motion.div
+            <motion.li
               key={`hero-${drawnCard.positionId}`}
-              initial={{ opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
-              className="flex w-[100px] flex-col items-center sm:w-[120px] md:w-[140px] lg:w-[150px]"
+              transition={{
+                duration: 0.45,
+                delay: shouldReduceMotion ? 0 : index * 0.08,
+                ease: "easeOut",
+              }}
+              className={cn(BASE_ITEM, layout.itemClass(index))}
             >
-              <div className="card-hero-glow aspect-[1/1.7] w-full overflow-hidden rounded-card-md border border-paper-border bg-paper-raised">
+              <div
+                className={cn(
+                  "card-hero-glow aspect-[1/1.7] w-full overflow-hidden rounded-card-md border border-paper-border bg-paper-raised",
+                  layout.isEmphasized(index) && "border-terracotta/25",
+                )}
+              >
                 <CardImage
                   src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                  alt={drawnCard.card.name}
-                  sizes="(min-width: 1024px) 150px, (min-width: 768px) 140px, (min-width: 640px) 120px, 100px"
+                  alt={`${drawnCard.card.name}，${position}，${orientationLabel}`}
+                  sizes="(min-width: 1024px) 160px, (min-width: 768px) 130px, 96px"
                   quality={75}
+                  loading={index === 0 ? "eager" : "lazy"}
                   isReversed={drawnCard.isReversed}
                 />
               </div>
@@ -42,13 +62,18 @@ export function SpreadHeroGrid({ drawnCards, positionNames }: SpreadHeroGridProp
               <p className="mt-0.5 text-center font-serif text-[13px] text-ink">
                 {drawnCard.card.name}
               </p>
-              <span className="mt-0.5 font-sans text-[10px] text-text-muted">
-                {drawnCard.isReversed ? "逆位" : "正位"}
+              <span
+                className={cn(
+                  "mt-0.5 font-sans text-[10px]",
+                  drawnCard.isReversed ? "text-indigo-ink" : "text-text-muted",
+                )}
+              >
+                {orientationLabel}
               </span>
-            </motion.div>
+            </motion.li>
           );
         })}
-      </div>
+      </ol>
     </section>
   );
 }

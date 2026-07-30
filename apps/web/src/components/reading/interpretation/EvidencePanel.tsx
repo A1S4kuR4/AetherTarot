@@ -1,6 +1,5 @@
 "use client";
 
-import LegacyIcon from "@/components/ui/LegacyIcon";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { QUESTION_TYPE_LABELS } from "./constants";
 import type { ContinuitySource } from "@/context/ReadingContext";
@@ -54,7 +53,7 @@ function summarizeMechanism(value: string | undefined) {
   );
   const trimmed = boundaryIndex > 12 ? slice.slice(0, boundaryIndex + 1).trim() : slice.trim();
 
-  return `${trimmed}...`;
+  return `${trimmed}…`;
 }
 
 export function EvidencePanel({
@@ -85,39 +84,24 @@ export function EvidencePanel({
   return (
     <CollapsibleSection
       id="reading-evidence"
-      kicker="背后的拆解逻辑"
       title="这个解读是怎么来的"
       defaultOpen={false}
       collapsedHint={collapsedHint}
-      className="border-terracotta/20 bg-paper-raised/70"
     >
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-          <div className="mb-3 flex items-center gap-2 text-terracotta">
-            <LegacyIcon name="edit_note" className="text-[18px]" />
-            <h3 className="font-serif text-lg text-ink">你的问题</h3>
-          </div>
-          <p className="text-sm leading-relaxed text-text-body">{question}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="chip-accent text-[10px]">
-              {QUESTION_TYPE_LABELS[reading.question_type]}
-            </span>
-            <span className="chip-warm text-[10px]">
-              {continuitySource ? "带延续线索" : "无延续线索"}
-            </span>
-          </div>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div>
+          <h3 className="font-serif text-lg text-ink">你的问题</h3>
+          <p className="mt-3 text-sm leading-relaxed text-text-body">{question}</p>
+          <p className="mt-3 text-xs leading-relaxed text-text-muted">
+            {QUESTION_TYPE_LABELS[reading.question_type]}
+            {continuitySource ? " · 带延续线索" : " · 无延续线索"}
+          </p>
         </div>
-        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-          <div className="mb-3 flex items-center gap-2 text-terracotta">
-            <LegacyIcon name="style" className="text-[18px]" />
-            <h3 className="font-serif text-lg text-ink">牌面线索</h3>
-          </div>
-          <div className="space-y-3">
+        <div>
+          <h3 className="font-serif text-lg text-ink">牌面线索</h3>
+          <ul className="mt-3 space-y-3">
             {trustPathCards.map((card) => (
-              <div
-                key={`trust-${card.position_id}`}
-                className="border-l-2 border-paper-border pl-3"
-              >
+              <li key={`trust-${card.position_id}`}>
                 <p className="text-sm font-medium text-ink">
                   {card.position}：{card.name}（{card.orientation === "reversed" ? "逆位" : "正位"}）
                 </p>
@@ -126,16 +110,13 @@ export function EvidencePanel({
                     {card.keywords.join(" / ")}
                   </p>
                 ) : null}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-        <div className="rounded-2xl border border-paper-border bg-paper px-5 py-4">
-          <div className="mb-3 flex items-center gap-2 text-terracotta">
-            <LegacyIcon name="account_tree" className="text-[18px]" />
-            <h3 className="font-serif text-lg text-ink">解读逻辑</h3>
-          </div>
-          <p className="text-sm leading-relaxed text-text-body">
+        <div>
+          <h3 className="font-serif text-lg text-ink">解读逻辑</h3>
+          <p className="mt-3 text-sm leading-relaxed text-text-body">
             {spreadExperience?.readingMechanism}
           </p>
           <p className="mt-2 text-sm leading-relaxed text-text-muted">
@@ -146,7 +127,7 @@ export function EvidencePanel({
       {reading.grounding ? (
         <details
           data-testid="reading-grounding-sources"
-          className="rounded-2xl border border-paper-border bg-paper px-5 py-4"
+          className="mt-8 border-t border-paper-border/60 pt-5"
         >
           <summary className="cursor-pointer text-sm font-medium text-ink">
             牌义来源

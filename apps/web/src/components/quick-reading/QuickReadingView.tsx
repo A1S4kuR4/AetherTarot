@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useReading } from "@/context/ReadingContext";
+import { cn } from "@/lib/utils";
 import { ReadingHero } from "@/components/reading/interpretation/ReadingHero";
-import { CoreMessageCard } from "@/components/reading/interpretation/CoreMessageCard";
+import { CoreMessage } from "@/components/reading/interpretation/CoreMessage";
 import { SynthesisSection } from "@/components/reading/interpretation/SynthesisSection";
 import { GuidanceSection } from "@/components/reading/interpretation/GuidanceSection";
 import { BoundaryNote } from "@/components/reading/interpretation/BoundaryNote";
@@ -47,6 +48,7 @@ export default function QuickReadingView() {
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareDialogKey, setShareDialogKey] = useState(0);
+  const shouldReduceMotion = useReducedMotion() ?? false;
   const isQuickState = isQuickReadingState({
     agentProfile,
     selectedSpread,
@@ -192,7 +194,17 @@ export default function QuickReadingView() {
   const readingCard = reading?.cards[0];
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-20 pt-20 sm:px-6 lg:pt-24">
+    <main
+      id="reading-main"
+      tabIndex={-1}
+      className="mx-auto max-w-3xl px-4 pb-20 pt-20 sm:px-6 lg:pt-24"
+    >
+      <a
+        href="#reading-main"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-3 focus-visible:top-3 focus-visible:z-[100] focus-visible:inline-flex focus-visible:min-h-11 focus-visible:items-center focus-visible:rounded-lg focus-visible:border focus-visible:border-paper-border focus-visible:bg-paper-raised focus-visible:px-4 focus-visible:py-2 focus-visible:font-sans focus-visible:text-sm focus-visible:font-medium focus-visible:text-ink focus-visible:shadow-lg"
+      >
+        跳到解读正文
+      </a>
       <div className="space-y-10">
         <ReadingHero
           phase={reading?.reading_phase ?? null}
@@ -235,16 +247,18 @@ export default function QuickReadingView() {
             />
           ) : (
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={shouldReduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
-              className="space-y-8"
+              className={cn(
+                "space-y-8",
+                reading.presentation_mode === "void_narrative" && "space-y-14",
+                reading.presentation_mode === "sober_anchor" &&
+                  "opacity-90 grayscale-[20%]",
+              )}
             >
               {coreQuickRead ? (
-                <CoreMessageCard
-                  quickRead={coreQuickRead}
-                  presentationMode={reading.presentation_mode}
-                />
+                <CoreMessage quickRead={coreQuickRead} />
               ) : null}
 
               {readingCard && drawnCard ? (
@@ -256,14 +270,10 @@ export default function QuickReadingView() {
 
               <SynthesisSection
                 synthesis={reading.synthesis}
-                presentationMode={reading.presentation_mode}
                 title="此处的故事"
               />
 
-              <GuidanceSection
-                guidance={reading.reflective_guidance}
-                presentationMode={reading.presentation_mode}
-              />
+              <GuidanceSection guidance={reading.reflective_guidance} />
 
               {isCompletedReading ? (
                 <SharePrompt onShare={openShareDialog} />

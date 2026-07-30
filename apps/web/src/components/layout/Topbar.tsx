@@ -34,6 +34,14 @@ export default function Topbar({
 
   return (
     <>
+      {pathname === "/reading" ? (
+        <a
+          href="#reading-main"
+          className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-3 focus-visible:top-3 focus-visible:z-[100] focus-visible:inline-flex focus-visible:min-h-11 focus-visible:items-center focus-visible:rounded-lg focus-visible:border focus-visible:border-paper-border focus-visible:bg-paper-raised focus-visible:px-4 focus-visible:py-2 focus-visible:font-sans focus-visible:text-sm focus-visible:font-medium focus-visible:text-ink focus-visible:shadow-lg"
+        >
+          跳到解读正文
+        </a>
+      ) : null}
       <nav
         className={cn(
           "fixed top-0 z-50 flex h-16 w-full items-center justify-between px-6 transition-colors duration-300 md:px-10",
@@ -46,7 +54,7 @@ export default function Topbar({
         <Link
           href="/"
           className={cn(
-            "font-serif text-xl font-semibold tracking-tight transition-colors",
+            "inline-flex min-h-11 items-center font-serif text-xl font-semibold tracking-tight transition-colors",
             isMidnight ? "text-text-inverse" : "text-ink",
           )}
         >

@@ -57,6 +57,7 @@ export default function Sidebar({
           isOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none translate-x-full",
         )}
         aria-hidden={!isOpen}
+        inert={!isOpen}
         onClick={(event) => event.stopPropagation()}
       >
         <button

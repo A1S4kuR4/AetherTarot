@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
 import CardImage from "@/components/ui/CardImage";
 import type { DrawnCard, ReadingCardResult } from "@aethertarot/shared-types";
 import { cn } from "@/lib/utils";
@@ -13,122 +12,94 @@ interface CardByCardSectionProps {
 
 export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectionProps) {
   return (
-    <section id="reading-cards" className="reading-card scroll-mt-32 space-y-5">
+    <section id="reading-cards" className="scroll-mt-32">
+      <h2 className="font-serif text-2xl text-ink md:text-[26px]">逐牌展开</h2>
       <div>
-        <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-          逐牌
-        </p>
-        <h2 className="mt-1 font-serif text-xl md:text-2xl text-ink">逐牌展开</h2>
-      </div>
-      <div className="space-y-5">
         {readingCards.map((card) => {
           const drawnCard = drawnCards.find(
             (item) => item.positionId === card.position_id,
           );
           const evidenceKeywords = drawnCard
             ? (
-              drawnCard.isReversed
-                ? drawnCard.card.reversedKeywords
-                : drawnCard.card.uprightKeywords
-            ).slice(0, 3)
+                drawnCard.isReversed
+                  ? drawnCard.card.reversedKeywords
+                  : drawnCard.card.uprightKeywords
+              ).slice(0, 3)
             : [];
 
           const isReversed = card.orientation === "reversed";
+          const orientationLabel = isReversed ? "逆位" : "正位";
 
           return (
-            <motion.article
+            <article
               key={`${card.position_id}-${card.card_id}`}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className={cn(
-                "rounded-2xl border bg-paper p-5 transition-all duration-200",
-                isReversed ? "border-indigo/15" : "border-paper-border"
-              )}
+              className="grid grid-cols-[92px_1fr] gap-x-4 gap-y-4 border-t border-paper-border/60 py-8 first:border-t-0 first:pt-6 sm:grid-cols-[140px_1fr] sm:gap-x-6 md:grid-cols-[160px_1fr] md:gap-x-8"
             >
-              <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                {drawnCard ? (
-                  <div className="mx-auto w-[140px] shrink-0 overflow-hidden rounded-card-md border border-paper-border shadow-sm md:mx-0 md:w-[180px]">
-                    <CardImage
-                      src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
-                      alt={drawnCard.card.name}
-                      sizes="(min-width: 768px) 180px, 140px"
-                      quality={75}
-                      isReversed={drawnCard.isReversed}
-                    />
-                  </div>
-                ) : null}
-                <div className="min-w-0 flex-1 space-y-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="chip-warm text-[10px]">{card.position}</span>
-                    <span className="font-sans text-[11px] font-medium text-text-muted">
-                      {card.orientation === "reversed" ? "逆位" : "正位"}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-xl text-ink">
-                      <Link
-                        href={`/encyclopedia?card=${encodeURIComponent(card.card_id)}`}
-                        className="underline-offset-4 transition hover:text-terracotta hover:underline"
-                      >
-                        {card.name}
-                      </Link>
-                    </h3>
-                    <p className="text-sm text-text-muted">{card.english_name}</p>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="border-l-2 border-paper-border pl-4">
-                      <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                        看到什么
-                      </h4>
-                      {evidenceKeywords.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {evidenceKeywords.map((keyword) => (
-                            <span
-                              key={`${card.position_id}-${keyword}`}
-                              className="rounded-full border border-paper-border bg-paper px-2 py-1 font-sans text-[11px] text-text-muted"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-2 font-sans text-xs text-text-muted">暂无线索</p>
-                      )}
-                    </div>
-                    <div className="border-l-2 border-terracotta/20 pl-4">
-                      <h4 className="font-sans text-[10px] font-medium uppercase tracking-wider text-text-muted opacity-80">
-                        它代表着...
-                      </h4>
-                      <p className="mt-2 font-sans text-sm leading-relaxed text-text-body">
-                        {card.position_meaning}
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "border-l-2 py-3 pl-4 pr-3 rounded-r-lg transition-colors duration-200",
-                      isReversed
-                        ? "border-indigo/30 bg-indigo/5"
-                        : "border-terracotta/30 bg-terracotta/5"
-                    )}
+              {drawnCard ? (
+                <div className="row-span-3 w-full overflow-hidden rounded-card-md border border-paper-border shadow-sm">
+                  <CardImage
+                    src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
+                    alt={`${drawnCard.card.name}，${card.position}，${orientationLabel}`}
+                    sizes="(min-width: 768px) 160px, (min-width: 640px) 140px, 92px"
+                    quality={75}
+                    isReversed={drawnCard.isReversed}
+                  />
+                </div>
+              ) : null}
+              <div className="min-w-0">
+                <p className="font-sans text-[13px] text-text-muted">
+                  {card.position}
+                  <span className="mx-1.5 text-paper-border">·</span>
+                  <span className={isReversed ? "text-indigo-ink" : undefined}>
+                    {orientationLabel}
+                  </span>
+                </p>
+                <h3 className="mt-1.5 font-serif text-xl text-ink">
+                  <Link
+                    href={`/encyclopedia?card=${encodeURIComponent(card.card_id)}`}
+                    className="inline-flex min-h-11 items-center underline-offset-4 transition-colors hover:text-text-accent hover:underline"
                   >
-                    <h4
-                      className={cn(
-                        "mb-2 font-sans text-[10px] font-medium uppercase tracking-wider opacity-80",
-                        isReversed ? "text-indigo" : "text-terracotta"
-                      )}
-                    >
-                      这意味着什么
-                    </h4>
-                    <p className="font-serif text-[17px] leading-[1.85] text-text-body">
-                      {card.interpretation}
-                    </p>
-                  </div>
+                    {card.name}
+                  </Link>
+                  <span className="ml-2 align-middle font-sans text-xs font-normal text-text-muted">
+                    {card.english_name}
+                  </span>
+                </h3>
+              </div>
+              <div className="min-w-0">
+                <h4
+                  className={cn(
+                    "font-sans text-[13px] font-semibold",
+                    isReversed ? "text-indigo-ink" : "text-text-accent",
+                  )}
+                >
+                  这意味着什么
+                </h4>
+                <p className="mt-2 font-serif text-[16px] leading-[1.85] text-text-body md:text-[17px]">
+                  {card.interpretation}
+                </p>
+              </div>
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2 sm:gap-6">
+                <div>
+                  <h4 className="font-sans text-[13px] font-semibold text-text-muted">
+                    看到什么
+                  </h4>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-text-muted">
+                    {evidenceKeywords.length > 0
+                      ? evidenceKeywords.join(" · ")
+                      : "暂无线索"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-sans text-[13px] font-semibold text-text-muted">
+                    它代表着…
+                  </h4>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-text-muted">
+                    {card.position_meaning}
+                  </p>
                 </div>
               </div>
-            </motion.article>
+            </article>
           );
         })}
       </div>

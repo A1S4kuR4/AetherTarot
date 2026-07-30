@@ -9,18 +9,20 @@ interface ReadingLayoutProps {
 
 export function ReadingLayout({ children, sidebar }: ReadingLayoutProps) {
   return (
-    <main
+    <div
+      id="reading-main"
+      tabIndex={-1}
       className={cn(
-        "mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-20 pt-20",
-        "sm:px-6 lg:flex-row lg:gap-12 lg:px-16 lg:pt-24",
+        "mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-20 pt-14",
+        "sm:px-6 lg:flex-row lg:gap-14 lg:px-16 lg:pt-20",
       )}
     >
-      <div className="flex-1 space-y-10" style={{ maxWidth: "760px" }}>
+      <div className="w-full max-w-[720px] flex-1 space-y-12">
         {children}
       </div>
-      <aside className="sticky top-24 hidden w-full space-y-6 self-start lg:block lg:w-72">
+      <aside className="sticky top-24 hidden w-full self-start lg:block lg:w-64">
         {sidebar}
       </aside>
-    </main>
+    </div>
   );
 }

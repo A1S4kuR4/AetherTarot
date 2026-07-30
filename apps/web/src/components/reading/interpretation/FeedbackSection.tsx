@@ -8,6 +8,7 @@ interface FeedbackSectionProps {
   labels: FeedbackLabel[];
   note: string;
   isSubmitted: boolean;
+  isSubmitting: boolean;
   error: string | null;
   replayConsent: boolean;
   onToggleLabel: (value: FeedbackLabel) => void;
@@ -20,6 +21,7 @@ export function FeedbackSection({
   labels,
   note,
   isSubmitted,
+  isSubmitting,
   error,
   replayConsent,
   onToggleLabel,
@@ -28,15 +30,9 @@ export function FeedbackSection({
   onSubmit,
 }: FeedbackSectionProps) {
   return (
-    <section
-      id="reading-feedback"
-      className="reading-card scroll-mt-32 bg-paper-raised"
-    >
-      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-        反馈
-      </p>
-      <h2 className="mt-1 font-serif text-2xl text-ink">这次解读给你的感觉</h2>
-      <div className="mt-5 flex flex-wrap gap-2">
+    <section id="reading-feedback" className="scroll-mt-32">
+      <h2 className="font-serif text-xl text-ink md:text-2xl">这次解读给你的感觉</h2>
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="反馈标签">
         {FEEDBACK_OPTIONS.map((option) => {
           const isSelected = labels.includes(option.value);
 
@@ -45,12 +41,13 @@ export function FeedbackSection({
               key={option.value}
               type="button"
               disabled={isSubmitted}
+              aria-pressed={isSelected}
               onClick={() => onToggleLabel(option.value)}
               className={cn(
-                "rounded-full border px-4 py-2 text-sm font-medium transition",
+                "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors",
                 isSelected
-                  ? "border-terracotta/40 bg-terracotta/10 text-terracotta"
-                  : "border-paper-border bg-paper text-text-body hover:bg-paper-muted",
+                  ? "border-terracotta/40 bg-terracotta/10 text-terracotta-ink"
+                  : "border-paper-border bg-paper-raised text-text-body hover:bg-paper-muted",
                 isSubmitted && "cursor-not-allowed opacity-70",
               )}
             >
@@ -60,15 +57,19 @@ export function FeedbackSection({
         })}
       </div>
       <textarea
+        name="feedback_note"
         value={note}
         onChange={(event) => onNoteChange(event.target.value)}
         disabled={isSubmitted}
+        autoComplete="off"
+        aria-label="反馈补充（可选）"
         placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
-        className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper p-4 font-serif text-base text-ink outline-none focus:border-terracotta/50 focus:ring-1 focus:ring-terracotta/50 disabled:opacity-70"
+        className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper-raised p-4 font-serif text-base text-ink outline-none focus-visible:border-terracotta/50 focus-visible:ring-2 focus-visible:ring-terracotta/40 disabled:opacity-70"
       />
       <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-muted">
         <input
           type="checkbox"
+          name="feedback_replay_consent"
           checked={replayConsent}
           disabled={isSubmitted}
           onChange={(event) => onReplayConsentChange(event.target.checked)}
@@ -79,16 +80,16 @@ export function FeedbackSection({
         </span>
       </label>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-text-muted">
-          {isSubmitted ? "反馈已记录，谢谢。" : error}
+        <p role="status" aria-live="polite" className={cn("text-sm", error && !isSubmitted ? "text-error" : "text-text-muted")}>
+          {isSubmitted ? "反馈已记录，谢谢。" : isSubmitting ? "正在提交…" : error}
         </p>
         <button
           type="button"
-          disabled={isSubmitted || labels.length === 0}
+          disabled={isSubmitted || isSubmitting || labels.length === 0}
           onClick={onSubmit}
           className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
         >
-          提交反馈
+          {isSubmitting ? "正在提交…" : "提交反馈"}
         </button>
       </div>
     </section>

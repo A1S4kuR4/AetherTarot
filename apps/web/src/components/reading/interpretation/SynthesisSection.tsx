@@ -1,34 +1,20 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { PresentationMode } from "@aethertarot/shared-types";
-
 interface SynthesisSectionProps {
   synthesis: string;
-  presentationMode?: PresentationMode;
-  kicker?: string;
   title?: string;
 }
 
 export function SynthesisSection({
   synthesis,
-  presentationMode,
-  kicker = "故事",
   title = "串联在一起的故事",
 }: SynthesisSectionProps) {
   return (
-    <section
-      id="reading-synthesis"
-      className={cn(
-        "reading-card scroll-mt-32",
-        presentationMode === "sober_anchor" && "border-paper-border bg-paper",
-      )}
-    >
-      <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
-        {kicker}
+    <section id="reading-synthesis" className="scroll-mt-32 border-t border-paper-border/70 pt-10">
+      <h2 className="font-serif text-2xl text-ink md:text-[26px]">{title}</h2>
+      <p className="mt-6 max-w-[44rem] font-serif text-[17px] leading-[1.9] text-text-body md:text-[18px]">
+        {synthesis}
       </p>
-      <h2 className="mt-1 font-serif text-2xl md:text-3xl text-ink">{title}</h2>
-      <p className="mt-4 font-serif text-[17px] leading-[1.85] text-text-body">{synthesis}</p>
     </section>
   );
 }

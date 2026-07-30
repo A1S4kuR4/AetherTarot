@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import CardImage from "@/components/ui/CardImage";
 import type { DrawnCard, ReadingCardResult } from "@aethertarot/shared-types";
 
@@ -14,6 +14,7 @@ export function SingleCardAnalysisSection({
   readingCard,
   drawnCard,
 }: SingleCardAnalysisSectionProps) {
+  const shouldReduceMotion = useReducedMotion() ?? false;
   const evidenceKeywords = (
     drawnCard.isReversed
       ? drawnCard.card.reversedKeywords
@@ -29,7 +30,7 @@ export function SingleCardAnalysisSection({
         <h2 className="mt-1 font-serif text-2xl text-ink">牌面解析</h2>
       </div>
       <motion.article
-        initial={{ opacity: 0, y: 30 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -56,7 +57,7 @@ export function SingleCardAnalysisSection({
               <h3 className="font-serif text-xl text-ink">
                 <Link
                   href={`/encyclopedia?card=${encodeURIComponent(readingCard.card_id)}`}
-                  className="underline-offset-4 transition hover:text-terracotta hover:underline"
+                  className="inline-flex min-h-11 items-center underline-offset-4 transition hover:text-terracotta hover:underline"
                 >
                   {readingCard.name}
                 </Link>

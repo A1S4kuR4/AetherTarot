@@ -301,7 +301,7 @@ test.describe("share card feature", () => {
 
     await expect(page.getByText("降温与检视")).toBeVisible();
     await page
-      .getByPlaceholder("我的真实顾虑 / 底线计划是...")
+      .getByPlaceholder("我的真实顾虑 / 底线计划是…")
       .fill("我需要先确认自己的真实底线。");
     await page.getByRole("button", { name: "确认并解开牌面" }).click();
 

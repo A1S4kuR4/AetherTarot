@@ -47,11 +47,13 @@ The product should feel like:
   Primary page background for reading-oriented pages.
 - **Terracotta Flame** (`#C96442`)  
   Primary call-to-action, key emphasis, selected interactive state.
+  Use **Terracotta Ink** (`#A64C2E`) for small text and primary-button fills on Paper; use `#9A4327` for its hover/active fill so white labels remain WCAG AA compliant.
 - **Night Veil** (`#0B0D12`)  
   Primary dark background for ritual/reveal pages.
 - **Moon Indigo** (`#7170FF`)  
   Secondary accent for progress, focus, active steps, and subtle magical energy.
   Use sparingly.
+  Use **Moon Indigo Ink** (`#4B499F`) when indigo carries small text such as reversed-orientation labels on Paper.
 
 ### Surface Colors
 - **Paper Raised** (`#FBF8F1`)  
@@ -90,6 +92,7 @@ The product should feel like:
   Caution, edge-case messaging, sensitive reading note.
 - **Safety Rose Clay** (`#B86A5B`)  
   Safety note highlight; softer than error red.
+  Use **Safety Ink** (`#8C453A`) for safety text on `#FDF0ED`; reserve the lighter rose clay for borders, icons, and decorative emphasis where 3:1 is sufficient.
 - **Error Ember** (`#B4432C`)  
   Only for actual system or form errors.
 - **Info Mist** (`#DCE3F7`)  
@@ -102,6 +105,7 @@ The product should feel like:
 - Moon Indigo is the structural/interactive accent.
 - Do not use both accents at equal intensity in the same small component.
 - On reading pages, prefer terracotta.
+- Brand accent base colors are decorative tokens; small text and text-bearing controls must use their `*-ink` variants on Paper surfaces.
 - On ritual/reveal pages, prefer indigo for progress and terracotta for decisive actions.
 - Avoid bright gold, neon purple, saturated cyan, or “fantasy game” palettes.
 
@@ -268,14 +272,12 @@ For encyclopedia/history.
 
 ### 4.3 Cards & Containers
 
-#### Reading Section Card
-Use for “问题聚焦 / 牌阵结构 / 综合解读 / 可执行建议 / safety note”.
-- Background: `#FBF8F1`
-- Border: `1px solid #E6E0D4`
-- Radius: 20px
-- Padding: 20–28px
-- Shadow: extremely soft, mostly ring-like
-- Heading often serif, body always highly readable
+#### Reading Sections & Bounded Cards
+Reading defaults to editorial longform on **Paper Mode**: use whitespace, typographic hierarchy, and quiet dividers to separate “问题聚焦 / 牌阵结构 / 逐牌展开 / 综合解读 / 可执行建议”. Do not wrap every reading section in a card.
+- Use a card only when the content genuinely needs a boundary: interactive input, saved state, disclosure, error/recovery, or safety friction such as `Sober Check` and `safety note`
+- Paper Mode cards use `#FBF8F1`, a `1px solid #E6E0D4` border, 16–20px radius, 20–28px padding, and an extremely soft shadow when elevation is necessary
+- Midnight Mode keeps bounded ritual controls on `#12151D` / `rgba(255,255,255,0.03)` surfaces with the cool border language below; it must not leak dark panel styling into the default reading document
+- Headings are usually serif; longform body copy must remain highly readable
 
 #### Dark Ritual Panel
 Use for shuffle stage, step panels, reveal overlays.
