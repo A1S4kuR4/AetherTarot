@@ -1,6 +1,12 @@
 import "server-only";
 
-import { ReadingServiceError } from "@/server/reading/errors";
+import {
+  ReadingGenerationError,
+  ReadingServiceError,
+  isReadingGenerationError,
+  type ReadingGenerationFailureSubtype,
+} from "@/server/reading/errors";
+import { recordLlmRawCompletion } from "@/server/observability/llm-raw-completions";
 import {
   databaseLlmTokenGate,
   type LlmTokenGate,
@@ -140,36 +146,110 @@ export function parseOpenAiJsonObject(rawText: string): JsonRecord {
   const candidate =
     trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1]?.trim()
     ?? trimmed;
+
+  if (!candidate) {
+    throw new ReadingGenerationError({
+      subtype: "empty_completion",
+      message: "llm provider 返回了空 completion。",
+      retryable: true,
+      invalidPayload: rawText,
+    });
+  }
+
+  const asObject = (value: unknown) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as JsonRecord;
+    }
+    return null;
+  };
+
   try {
-    const parsed = JSON.parse(candidate);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as JsonRecord;
+    const parsed = asObject(JSON.parse(candidate));
+    if (parsed) {
+      return parsed;
     }
   } catch {
-    const start = candidate.indexOf("{");
-    const end = candidate.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      const parsed = JSON.parse(candidate.slice(start, end + 1));
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as JsonRecord;
+    // A balanced object embedded in explanatory text is handled below.
+  }
+
+  if (candidate.startsWith("[") && candidate.endsWith("]")) {
+    throw new ReadingGenerationError({
+      subtype: "malformed_json",
+      message: "llm provider 返回的内容必须是 JSON 对象，不能是数组。",
+      retryable: true,
+      invalidPayload: rawText,
+    });
+  }
+
+  const objects: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < candidate.length; index += 1) {
+    const character = candidate[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (character === "{") {
+      if (depth === 0) {
+        start = index;
+      }
+      depth += 1;
+      continue;
+    }
+
+    if (character === "}" && depth > 0) {
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        objects.push(candidate.slice(start, index + 1));
+        start = -1;
       }
     }
   }
-  throw new ReadingServiceError(
-    "generation_failed",
-    "llm provider 返回的内容不是合法 JSON 对象。",
-    500,
-  );
+
+  if (objects.length === 1) {
+    try {
+      const parsed = asObject(JSON.parse(objects[0]));
+      if (parsed) {
+        return parsed;
+      }
+    } catch {
+      // Fall through to the classified error below.
+    }
+  }
+
+  throw new ReadingGenerationError({
+    subtype: "malformed_json",
+    message: "llm provider 返回的内容不是合法 JSON 对象。",
+    retryable: true,
+    invalidPayload: rawText,
+  });
 }
 
 function extractMessageText(payload: unknown) {
   const choices = (payload as { choices?: unknown } | null)?.choices;
   if (!Array.isArray(choices) || choices.length === 0) {
-    throw new ReadingServiceError(
-      "generation_failed",
-      "llm provider 响应缺少 choices。",
-      500,
-    );
+    throw new ReadingGenerationError({
+      subtype: "empty_completion",
+      message: "llm provider 响应缺少 choices。",
+      retryable: true,
+    });
   }
   const content = (choices[0] as { message?: { content?: unknown } }).message
     ?.content;
@@ -184,11 +264,11 @@ function extractMessageText(payload: unknown) {
     }).join("");
     if (joined.trim()) return joined;
   }
-  throw new ReadingServiceError(
-    "generation_failed",
-    "llm provider 响应缺少可解析的 message.content。",
-    500,
-  );
+  throw new ReadingGenerationError({
+    subtype: "empty_completion",
+    message: "llm provider 响应缺少可解析的 message.content。",
+    retryable: true,
+  });
 }
 
 function extractUsage(payload: unknown) {
@@ -223,7 +303,23 @@ export class OpenAiCompatibleTransport {
     maxOutputTokens: number;
     parse: (payload: JsonRecord) => T;
     truncatedMessage: string;
+    signal?: AbortSignal;
+    metric?: {
+      runId?: string;
+      stageId?: string;
+      attemptId?: string;
+      stage?: string;
+      attempt?: number;
+      kind?: "generate" | "retry" | "repair";
+    };
   }): Promise<T> {
+    if (input.signal?.aborted) {
+      throw new ReadingGenerationError({
+        subtype: "cancelled",
+        message: "Reading 请求已取消。",
+        retryable: false,
+      });
+    }
     const promptText = `${input.prompt.system}\n${input.prompt.user}`;
     const reservation = await this.tokenGate.reserve({
       source: input.source,
@@ -240,9 +336,10 @@ export class OpenAiCompatibleTransport {
     const record = (
       success: boolean,
       outputText = "",
-      errorCode?: string,
+      subtype?: ReadingGenerationFailureSubtype,
       httpStatus?: number,
       usage?: ReturnType<typeof extractUsage>,
+      errorCode?: string,
     ) => {
       const promptTokens = usage?.promptTokens ?? estimateTokenCount(promptText);
       const completionTokens =
@@ -252,6 +349,8 @@ export class OpenAiCompatibleTransport {
       recordLlmCall({
         provider: "llm",
         model: this.config.model,
+        ...input.metric,
+        subtype,
         success,
         durationMs: Date.now() - startedAt,
         httpStatus,
@@ -268,8 +367,18 @@ export class OpenAiCompatibleTransport {
     };
 
     const abortController = new AbortController();
+    let timedOut = false;
+    const cancelFromCaller = () => abortController.abort(input.signal?.reason);
+    if (input.signal?.aborted) {
+      cancelFromCaller();
+    } else {
+      input.signal?.addEventListener("abort", cancelFromCaller, { once: true });
+    }
     const timeout = setTimeout(
-      () => abortController.abort(),
+      () => {
+        timedOut = true;
+        abortController.abort();
+      },
       this.config.timeoutMs,
     );
     let response: Response;
@@ -305,41 +414,62 @@ export class OpenAiCompatibleTransport {
       );
     } catch (error) {
       clearTimeout(timeout);
-      const code =
-        error instanceof Error && error.name === "AbortError"
+      input.signal?.removeEventListener("abort", cancelFromCaller);
+      const wasCancelled = input.signal?.aborted && !timedOut;
+      const code = wasCancelled
+        ? "cancelled"
+        : timedOut || (error instanceof Error && error.name === "AbortError")
           ? "timeout"
-          : "fetch_failed";
+          : "transport_error";
       record(false, "", code);
       await settle();
-      throw new ReadingServiceError(
-        "provider_unavailable",
-        "llm provider 当前不可用，请稍后再试。",
-        503,
-      );
+      throw new ReadingGenerationError({
+        subtype: code,
+        message: wasCancelled
+          ? "Reading 请求已取消。"
+          : "llm provider 当前不可用，请稍后再试。",
+        retryable: !wasCancelled,
+      });
     }
     clearTimeout(timeout);
+    input.signal?.removeEventListener("abort", cancelFromCaller);
 
     if (!response.ok) {
-      record(false, "", `http_${response.status}`, response.status);
-      await settle();
-      throw new ReadingServiceError(
-        "provider_unavailable",
-        `llm provider 请求失败（HTTP ${response.status}）。`,
-        503,
+      record(
+        false,
+        "",
+        "provider_http_error",
+        response.status,
+        undefined,
+        `http_${response.status}`,
       );
+      await settle();
+      throw new ReadingGenerationError({
+        subtype: "provider_http_error",
+        message: `llm provider 请求失败（HTTP ${response.status}）。`,
+        retryable: response.status === 429 || response.status >= 500,
+        httpStatus: response.status,
+      });
     }
 
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
-      record(false, "", "invalid_json", response.status);
-      await settle();
-      throw new ReadingServiceError(
-        "generation_failed",
-        "llm provider 返回的响应不是合法 JSON。",
-        500,
+      record(
+        false,
+        "",
+        "malformed_json",
+        response.status,
+        undefined,
+        "invalid_json",
       );
+      await settle();
+      throw new ReadingGenerationError({
+        subtype: "malformed_json",
+        message: "llm provider 返回的响应不是合法 JSON。",
+        retryable: true,
+      });
     }
 
     const usage = extractUsage(payload);
@@ -358,37 +488,64 @@ export class OpenAiCompatibleTransport {
       } catch {
         // finish_reason remains authoritative.
       }
+      if (messageText) {
+        recordLlmRawCompletion({
+          run_id: input.metric?.runId,
+          stage_id: input.metric?.stageId,
+          attempt_id: input.metric?.attemptId,
+          stage: input.metric?.stage,
+          attempt: input.metric?.attempt,
+          kind: input.metric?.kind,
+          text: messageText,
+        });
+      }
       const total = record(
         false,
         messageText,
-        "output_truncated",
+        "truncated_output",
         response.status,
         usage,
+        "output_truncated",
       );
       await settle(usage || messageText ? total : undefined);
-      throw new ReadingServiceError(
-        "generation_failed",
-        input.truncatedMessage,
-        500,
-      );
+      throw new ReadingGenerationError({
+        subtype: "truncated_output",
+        message: input.truncatedMessage,
+        retryable: true,
+        invalidPayload: messageText,
+      });
     }
 
+    let result: T;
     try {
       messageText = extractMessageText(payload);
-      const result = input.parse(parseOpenAiJsonObject(messageText));
-      const total = record(true, messageText, undefined, response.status, usage);
-      await settle(total);
-      return result;
+      recordLlmRawCompletion({
+        run_id: input.metric?.runId,
+        stage_id: input.metric?.stageId,
+        attempt_id: input.metric?.attemptId,
+        stage: input.metric?.stage,
+        attempt: input.metric?.attempt,
+        kind: input.metric?.kind,
+        text: messageText,
+      });
+      result = input.parse(parseOpenAiJsonObject(messageText));
     } catch (error) {
+      const subtype = isReadingGenerationError(error)
+        ? error.subtype
+        : "schema_violation";
       const total = record(
         false,
         messageText,
-        "invalid_provider_payload",
+        subtype,
         response.status,
         usage,
+        subtype,
       );
       await settle(usage || messageText ? total : undefined);
       throw error;
     }
+    const total = record(true, messageText, undefined, response.status, usage);
+    await settle(total);
+    return result;
   }
 }

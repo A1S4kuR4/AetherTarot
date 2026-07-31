@@ -5,6 +5,13 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export interface LlmCallMetric {
   provider: "llm";
   model: string;
+  runId?: string;
+  stageId?: string;
+  attemptId?: string;
+  stage?: string;
+  attempt?: number;
+  kind?: "generate" | "retry" | "repair";
+  subtype?: string;
   success: boolean;
   durationMs: number;
   httpStatus?: number;
@@ -80,6 +87,10 @@ export function calculateLlmCostUsd(
 
 export function recordLlmCall(metric: LlmCallMetric) {
   llmUsageStorage.getStore()?.push(metric);
+}
+
+export function getCurrentLlmCalls() {
+  return llmUsageStorage.getStore() ?? [];
 }
 
 export async function collectLlmUsage<T>(callback: () => Promise<T>) {
