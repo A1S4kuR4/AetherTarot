@@ -115,7 +115,8 @@ describe("reading graph contract hardening", () => {
       result.agentState.max_agent_steps,
     );
     expect(result.agentState.grounding_status).toBe("retrieved");
-    expect(result.reading.confidence_note).toContain("本地知识库检索片段");
+    expect(result.reading.confidence_note).not.toMatch(/本地知识库|source_id/i);
+    expect(result.reading.grounding?.status).toBe("grounded");
     expect(result.reading.confidence_note).not.toContain("placeholder stub");
     expect(result.trace.status).toBe("success");
     expect(result.trace.agent_steps.map((step) => step.node)).toEqual([
@@ -435,6 +436,63 @@ describe("reading graph contract hardening", () => {
     });
   });
 
+  it("keeps grounded single-card prose natural and free of orchestration metadata", async () => {
+    const result = await runReadingGraph({
+      ...buildSinglePayload("我现在真正需要看清的情绪是什么？"),
+      drawnCards: [{
+        positionId: "focus",
+        cardId: "temperance",
+        isReversed: false,
+      }],
+    });
+    const visibleText = [
+      ...result.cards.map((card) => card.interpretation),
+      result.synthesis,
+      result.confidence_note ?? "",
+    ].join("\n");
+
+    expect(result.cards[0]?.interpretation).toContain("节制");
+    expect(result.synthesis).toContain("节制");
+    expect(visibleText).not.toMatch(
+      /本地知识库|source_id|第一阶段|独立初读|观察入口|裁定答案|一路带到/i,
+    );
+    expect(visibleText).not.toMatch(/(?:。|\.)\s*(?:。|\.)/u);
+    expectCompleteCardGrounding(result);
+  });
+
+  it("normalizes duplicate sentence endings before returning provider prose", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft) => ({
+        ...draft,
+        cards: draft.cards.map((card) => ({
+          ...card,
+          interpretation: `${card.interpretation}。。`,
+        })),
+        synthesis: `${draft.synthesis}。.`,
+      }),
+    });
+    const result = await runReadingGraph(
+      buildSinglePayload("我的情绪状态最近反复出现什么模式？"),
+      { provider },
+    );
+
+    expect(result.cards[0]?.interpretation).not.toMatch(/(?:。|\.)\s*(?:。|\.)/u);
+    expect(result.synthesis).not.toMatch(/(?:。|\.)\s*(?:。|\.)/u);
+  });
+
+  it("rejects provider prose that exposes internal orchestration", async () => {
+    const provider = new TestReadingProvider({
+      initial: (draft) => ({
+        ...draft,
+        synthesis: "这是第一阶段的独立初读。",
+      }),
+    });
+
+    await expect(
+      runReadingGraph(buildSinglePayload(), { provider }),
+    ).rejects.toMatchObject({ code: "generation_failed" });
+  });
+
   it("rejects forged provider citation refs and deterministically repairs the affected claims", async () => {
     const forgedText = "这段正文声称引用了不存在的知识来源。";
     const provider = new TestReadingProvider({
@@ -628,9 +686,8 @@ describe("reading graph contract hardening", () => {
       },
     });
     expect(visibleText).not.toMatch(/根据知识库明确表明|知识库明确表明/);
-    expect(result.reading.confidence_note).toContain(
-      "本地知识库没有返回足够可靠的牌义片段",
-    );
+    expect(result.reading.confidence_note).not.toMatch(/本地知识库|source_id/i);
+    expect(result.reading.grounding?.status).toBe("degraded");
     expect(result.trace.retrieval_sources).toEqual([]);
     expect(result.trace.final_answer_grounding).toMatchObject({
       grounding_status: "degraded",

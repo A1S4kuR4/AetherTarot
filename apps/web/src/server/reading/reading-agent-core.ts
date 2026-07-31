@@ -247,27 +247,3 @@ export function createKnowledgeRetrievalInput({
     })),
   };
 }
-
-export function applyGroundingNotice(
-  confidenceNote: string | null,
-  groundingStatus: GroundingStatus | undefined,
-  hasKnowledgeObservation = false,
-) {
-  if (!hasKnowledgeObservation) {
-    return confidenceNote;
-  }
-
-  const notice = groundingStatus === "retrieved"
-    ? "本次牌义依据已接入本地知识库检索片段；未检索到的内容不会被伪装成知识库结论。"
-    : "本地知识库没有返回足够可靠的牌义片段；本次解读只能基于当前牌面、牌阵位置与一般反思框架降级生成。";
-
-  if (!confidenceNote) {
-    return notice;
-  }
-
-  if (confidenceNote.includes(notice)) {
-    return confidenceNote;
-  }
-
-  return `${confidenceNote} ${notice}`;
-}

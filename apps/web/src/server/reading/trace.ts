@@ -8,6 +8,15 @@ import type {
   PendingClarification,
 } from "@/server/reading/reading-agent-core";
 import type { IntentFrictionResult } from "@/server/reading/safety";
+import type {
+  ReadingGenerationAttempt,
+  ReadingGenerationFailureSubtype,
+  ReadingGenerationStage,
+} from "@/server/reading/errors";
+import type {
+  ReadingGenerationMode,
+  ReadingGenerationPlan,
+} from "@/server/reading/generation-policy";
 import type { ToolCallAuditEntry } from "@/server/reading/tools";
 import { isRetrieveTarotKnowledgeOutput } from "@/server/reading/tools/retrieve-tarot-knowledge";
 
@@ -25,6 +34,7 @@ export interface ReadingRunTrace {
   agent_steps: AgentStepTrace[];
   tool_calls: ToolCallTrace[];
   retrieval_sources: RetrievalSourceTrace[];
+  generation?: ReadingGenerationTrace;
   final_answer_grounding?: FinalAnswerGroundingTrace;
   safety?: {
     policy_version: string;
@@ -33,10 +43,19 @@ export interface ReadingRunTrace {
   };
 }
 
-export const PERSISTED_READING_TRACE_SCHEMA_VERSION = 2;
+export interface ReadingGenerationTrace {
+  mode: ReadingGenerationMode;
+  stages: ReadingGenerationStage[];
+  max_requests: number;
+  attempts: ReadingGenerationAttempt[];
+  failure_stage?: ReadingGenerationStage;
+  failure_subtype?: ReadingGenerationFailureSubtype;
+}
 
-export interface PersistedReadingTraceV2 {
-  schema_version: 2;
+export const PERSISTED_READING_TRACE_SCHEMA_VERSION = 3;
+
+export interface PersistedReadingTraceV3 {
+  schema_version: 3;
   run_id: string;
   started_at: string;
   ended_at?: string;
@@ -70,11 +89,12 @@ export interface PersistedReadingTraceV2 {
     rule_ids: string[];
     action_type: string;
   };
+  generation?: ReadingGenerationTrace;
 }
 
-export function toPersistedReadingTraceV2(
+export function toPersistedReadingTraceV3(
   trace: ReadingRunTrace,
-): PersistedReadingTraceV2 {
+): PersistedReadingTraceV3 {
   return {
     schema_version: PERSISTED_READING_TRACE_SCHEMA_VERSION,
     run_id: trace.run_id,
@@ -118,11 +138,16 @@ export function toPersistedReadingTraceV2(
       rule_ids: trace.safety?.rule_ids ?? [],
       action_type: trace.safety?.action_type ?? "pass",
     },
+    generation: trace.generation,
   };
 }
 
-/** @deprecated Trace persistence now emits the V2 redacted schema. */
-export const toPersistedReadingTraceV1 = toPersistedReadingTraceV2;
+/** @deprecated Trace persistence now emits the V3 redacted schema. */
+export type PersistedReadingTraceV2 = PersistedReadingTraceV3;
+/** @deprecated Use toPersistedReadingTraceV3. */
+export const toPersistedReadingTraceV2 = toPersistedReadingTraceV3;
+/** @deprecated Trace persistence now emits the V3 redacted schema. */
+export const toPersistedReadingTraceV1 = toPersistedReadingTraceV3;
 
 export interface AgentStepTrace {
   step: number;
@@ -184,6 +209,12 @@ export interface ReadingTraceState {
   groundingStatus?: GroundingStatus;
   frictionResult?: IntentFrictionResult;
   reading?: StructuredReading;
+  generationMode?: ReadingGenerationMode;
+  generationPlan?: ReadingGenerationPlan;
+  generationStage?: ReadingGenerationStage;
+  generationAttempts?: ReadingGenerationAttempt[];
+  failureStage?: ReadingGenerationStage;
+  failureSubtype?: ReadingGenerationFailureSubtype;
 }
 
 interface BuildReadingRunTraceOptions {
@@ -449,6 +480,18 @@ export function buildReadingRunTrace(
     agent_steps: buildAgentSteps(state, grounding, endedAt),
     tool_calls: buildToolCalls(state.toolCalls ?? []),
     retrieval_sources: buildRetrievalSources(state.observations ?? [], usedSourceIds),
+    generation: state.generationMode
+      ? {
+          mode: state.generationMode,
+          stages: state.generationPlan?.stages ?? (
+            state.generationStage ? [state.generationStage] : []
+          ),
+          max_requests: state.generationPlan?.max_requests ?? 0,
+          attempts: state.generationAttempts ?? [],
+          failure_stage: state.failureStage,
+          failure_subtype: state.failureSubtype,
+        }
+      : undefined,
     final_answer_grounding: grounding,
     safety: {
       policy_version: state.frictionResult?.policy_version ?? "safety-rules-v1",

@@ -7,6 +7,16 @@ import type {
   SessionMemory,
   StructuredReading,
 } from "@aethertarot/shared-types";
+import type {
+  CardInsightDraft,
+  CompactReadingDraft,
+  FinalSynthesisDraft,
+  ReadingStageDraft,
+  SynthesisDraft,
+} from "@/server/reading/generation-contracts";
+import type {
+  ReadingGenerationStage,
+} from "@/server/reading/errors";
 
 export type ReadingDraft = Pick<
   StructuredReading,
@@ -59,7 +69,52 @@ export interface FinalReadingContext extends HydratedReadingContext {
   followupAnswers: FollowupAnswer[];
 }
 
+export interface ReadingGenerationCallOptions {
+  runId: string;
+  stageId: string;
+  attemptId: string;
+  stage: ReadingGenerationStage;
+  attempt: number;
+  kind: "generate" | "retry" | "repair";
+  signal?: AbortSignal;
+}
+
+export interface RepairStageRequest {
+  stage: ReadingGenerationStage;
+  context: HydratedReadingContext | FinalReadingContext;
+  invalidPayload?: unknown;
+  issues: string[];
+  cardInsights?: CardInsightDraft[];
+}
+
 export interface ReadingProvider {
-  generateInitialRead(context: HydratedReadingContext): Promise<ReadingDraft>;
-  generateFinalRead(context: FinalReadingContext): Promise<ReadingDraft>;
+  generateInitialRead(
+    context: HydratedReadingContext,
+    options?: ReadingGenerationCallOptions,
+  ): Promise<ReadingDraft>;
+  generateFinalRead(
+    context: FinalReadingContext,
+    options?: ReadingGenerationCallOptions,
+  ): Promise<ReadingDraft>;
+  generateCompactRead(
+    context: HydratedReadingContext,
+    options: ReadingGenerationCallOptions,
+  ): Promise<CompactReadingDraft>;
+  generateCardInsights(
+    context: HydratedReadingContext,
+    options: ReadingGenerationCallOptions,
+  ): Promise<CardInsightDraft[]>;
+  generateSynthesis(
+    context: HydratedReadingContext,
+    cardInsights: CardInsightDraft[],
+    options: ReadingGenerationCallOptions,
+  ): Promise<SynthesisDraft>;
+  refineFinalSynthesis(
+    context: FinalReadingContext,
+    options: ReadingGenerationCallOptions,
+  ): Promise<FinalSynthesisDraft>;
+  repairStage(
+    request: RepairStageRequest,
+    options: ReadingGenerationCallOptions,
+  ): Promise<ReadingStageDraft>;
 }

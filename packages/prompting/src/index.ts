@@ -78,7 +78,7 @@ const QUESTION_TYPE_FOLLOW_UP: Record<QuestionType, string[]> = {
   ],
   other: [
     "眼下最值得你继续追问的那条牌面线索，和现实中的哪件事最有关？",
-    "如果把这次初读当作一面镜子，你最先看见了自己哪一部分状态？",
+    "如果把这次牌面当作一面镜子，你最先看见了自己哪一部分状态？",
   ],
 };
 
@@ -185,13 +185,6 @@ export const readerModeStrategies: Record<AgentProfile, ReaderModeStrategy> = {
   },
 };
 
-const PROFILE_GUIDANCE: Record<AgentProfile, string> = {
-  lite: "这次先给出最重要的判断和一个可执行建议，不展开过多分支。",
-  standard: "这次用自然语言把牌面和你当前的现实处境联系起来，完整但不过重。",
-  sober:
-    "这次要把牌面启发与现实条件并排放置，区分事实、推测与期待，保留替代解释，避免把决定完全交给解读。",
-};
-
 function buildModeStrategyBlock(agentProfile: AgentProfile) {
   const strategy = readerModeStrategies[agentProfile];
 
@@ -209,6 +202,12 @@ function buildModeStrategyBlock(agentProfile: AgentProfile) {
 export interface ReadingPrompt {
   system: string;
   user: string;
+}
+
+export interface StagedCardInsight {
+  index: number;
+  interpretation: string;
+  evidence_refs?: string[];
 }
 
 interface KnowledgeGroundingChunk {
@@ -388,22 +387,166 @@ function findGroundingChunkForCard(
   ) ?? null;
 }
 
-function buildGroundingConfidenceNote(
+function stripSentenceEnding(value: string) {
+  return value.trim().replace(/[。！？.!?；;，,:：]+$/u, "");
+}
+
+function formatCompactRefCatalog(
   knowledgeGrounding: KnowledgeGroundingContext | undefined,
 ) {
-  if (!knowledgeGrounding) {
-    return null;
+  if (!knowledgeGrounding || knowledgeGrounding.status === "none") {
+    return "Allowed ref catalog: none";
+  }
+  return [
+    `Grounding status: ${knowledgeGrounding.status}`,
+    "Allowed ref catalog:",
+    ...knowledgeGrounding.chunks.slice(0, 12).map((chunk) =>
+      `- ${chunk.ref}: card_id=${chunk.card}; orientation=${chunk.orientation}`
+    ),
+  ].join("\n");
+}
+
+function formatStagedCardInsights(cardInsights: StagedCardInsight[]) {
+  return cardInsights.map((insight) =>
+    [
+      `- index: ${insight.index}`,
+      `  interpretation: ${insight.interpretation}`,
+      `  evidence_refs: ${insight.evidence_refs?.join(", ") || "none"}`,
+    ].join("\n")
+  ).join("\n");
+}
+
+function buildStagedVisibleProseRules() {
+  return [
+    "Return JSON only. Do not wrap in markdown fences.",
+    "All user-visible prose must be fluent natural Simplified Chinese (zh-CN).",
+    "Never expose provider, prompt, model, generation stages, internal orchestration, local knowledge wiki, chunk titles, source_id, or citation mechanics in user-visible prose.",
+    "Never claim certainty about future events or a third party's hidden feelings, thoughts, motives, or intent.",
+    "Do not give medical, legal, financial, manipulative, or deterministic major-decision advice.",
+    "Evidence refs are optional machine-only fields. Omit them in normal generation unless a stage-specific instruction requires them; never mention refs in prose.",
+  ].join("\n");
+}
+
+function buildSynthesisStageContract({
+  phase,
+  agentProfile,
+}: {
+  phase: "initial" | "final";
+  agentProfile: AgentProfile;
+}) {
+  const guidance = agentProfile === "lite"
+    ? "reflective_guidance must contain exactly 2 distinct items."
+    : "reflective_guidance must contain 3-4 distinct items.";
+  const followup = phase === "final"
+    ? "follow_up_questions must contain 0-1 extension question."
+    : agentProfile === "lite"
+      ? "follow_up_questions must contain 0-1 question."
+      : "follow_up_questions must contain 1-2 distinct questions.";
+  return [
+    "Allowed keys only: themes, synthesis, reflective_guidance, follow_up_questions, confidence_note, evidence_refs.",
+    "themes must contain 2-4 short, concrete, everyday-language labels.",
+    guidance,
+    followup,
+    "confidence_note must be one short reader-facing uncertainty boundary.",
+    "Synthesize the verified insights into a spread-level argument. Do not enumerate or retell cards one by one.",
+    "Include one constructive resistance point anchored to the verified insights or an unverified reality condition.",
+  ].join("\n");
+}
+
+function buildRepairStageContract({
+  stage,
+  agentProfile,
+  allowedIndices,
+  requiredThemes,
+}: {
+  stage: string;
+  agentProfile: AgentProfile;
+  allowedIndices: number[];
+  requiredThemes: string[];
+}) {
+  const cardInsights = allowedIndices.map((index) => ({
+    index,
+    interpretation: `完整非空解读 ${index + 1}`,
+  }));
+  const guidanceCount = agentProfile === "lite" ? 2 : 3;
+  const followupCount = stage === "final_synthesis"
+    ? 0
+    : agentProfile === "lite"
+      ? 0
+      : 1;
+  const synthesis = {
+    themes: ["具体主题一", "具体主题二"],
+    synthesis: "完整的牌阵级综合解读。",
+    reflective_guidance: Array.from(
+      { length: guidanceCount },
+      (_, index) => `互不重复的反思建议 ${index + 1}`,
+    ),
+    follow_up_questions: Array.from(
+      { length: followupCount },
+      (_, index) => `互不重复的追问 ${index + 1}？`,
+    ),
+    confidence_note: "结合现实信息继续核实。",
+  };
+
+  if (stage === "card_insights") {
+    return [
+      `Complete required JSON shape: ${JSON.stringify({ card_insights: cardInsights })}`,
+      `card_insights must contain exactly ${allowedIndices.length} complete items in the shown order.`,
+    ].join("\n");
+  }
+  if (stage === "compact") {
+    return [
+      `Complete required JSON shape: ${JSON.stringify({ card_insights: cardInsights, synthesis })}`,
+      "The top level must contain both card_insights and synthesis. synthesis must remain an object.",
+      buildSynthesisStageContract({ phase: "initial", agentProfile }),
+    ].join("\n");
+  }
+  if (stage === "synthesis") {
+    return [
+      `Complete required JSON shape: ${JSON.stringify(synthesis)}`,
+      buildSynthesisStageContract({ phase: "initial", agentProfile }),
+    ].join("\n");
+  }
+  if (stage === "final_synthesis") {
+    return [
+      `Complete required JSON shape: ${JSON.stringify(synthesis)}`,
+      buildSynthesisStageContract({ phase: "final", agentProfile }),
+      `Required Initial themes: ${JSON.stringify(requiredThemes)}`,
+      "At least one Required Initial theme must appear verbatim in themes or synthesis.",
+      "card_refinements is optional. If present, it must be a sparse array of complete {index, interpretation, evidence_refs?} objects.",
+    ].join("\n");
+  }
+  return "Return the complete repaired JSON object for the failed stage.";
+}
+
+function toChineseSentence(value: string) {
+  const normalized = stripSentenceEnding(value.replace(/\s+/g, " "));
+  return normalized ? `${normalized}。` : "";
+}
+
+function extractGroundingInsight(content: string, maxLength = 120) {
+  const normalized = content
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:因此|所以|由此)[，,\s]*/u, "");
+  const sentences = normalized.match(/[^。！？!?]+[。！？!?]?/gu) ?? [];
+  let excerpt = "";
+
+  for (const sentence of sentences) {
+    const candidate = `${excerpt}${sentence}`.trim();
+    if (candidate.length > maxLength) {
+      break;
+    }
+    excerpt = candidate;
   }
 
-  if (knowledgeGrounding.status === "retrieved" && knowledgeGrounding.chunks.length > 0) {
-    const sources = uniqueStrings(
-      knowledgeGrounding.chunks.flatMap((chunk) => chunk.source_ids),
-    ).join("、");
-
-    return `本轮牌义已参考本地知识库检索片段（source_id: ${sources}）；未出现在片段中的内容不会被包装成知识库结论。`;
+  if (!excerpt) {
+    excerpt = normalized.length > maxLength
+      ? `${normalized.slice(0, maxLength - 1).trimEnd()}…`
+      : normalized;
   }
 
-  return "本地知识库没有返回足够可靠的牌义片段；这次解读会降级为基于牌面、牌阵位置与一般反思框架的非断言式整理。";
+  return stripSentenceEnding(excerpt);
 }
 
 function buildDraftGroundingClaims(
@@ -446,11 +589,24 @@ function buildCardInterpretation(
   const orientation = drawnCard.isReversed ? "逆位" : "正位";
   const lens = QUESTION_TYPE_LENSES[questionType];
   const groundingChunk = findGroundingChunkForCard(knowledgeGrounding, drawnCard);
-  const groundingLine = groundingChunk
-    ? ` 本地知识库片段「${groundingChunk.title}」把这张牌的重点落在：${groundingChunk.content.replace(/\s+/g, " ").slice(0, 120)}。`
-    : "";
+  const groundingInsight = groundingChunk
+    ? extractGroundingInsight(groundingChunk.content)
+    : null;
+  const positionDescription = stripSentenceEnding(
+    position?.description ?? "此位置提示你留意当下的关键层面。",
+  );
 
-  return `${position?.name ?? "未知位置"} 出现 ${drawnCard.card.name}（${orientation}），把这个位置的关注点拉向 ${keywordSummary}。结合“${position?.description ?? "此位置提示你留意当下的关键层面。"}”，这张牌更像是在提醒你从 ${lens} 的角度，重新看见 ${drawnCard.card.description}${groundingLine}`;
+  return [
+    toChineseSentence(
+      `${position?.name ?? "未知位置"}出现${drawnCard.card.name}（${orientation}），把注意力带向${keywordSummary}`,
+    ),
+    toChineseSentence(
+      `结合“${positionDescription}”，这张牌提醒你从${lens}的角度重新看见${drawnCard.card.description}`,
+    ),
+    groundingInsight
+      ? toChineseSentence(`更具体地说，${groundingInsight}`)
+      : "",
+  ].join("");
 }
 
 function deriveThemes(questionType: QuestionType, drawnCards: DrawnCard[]) {
@@ -464,108 +620,34 @@ function deriveThemes(questionType: QuestionType, drawnCards: DrawnCard[]) {
   ]).slice(0, 4);
 }
 
-function getSpreadPositionName(spread: Spread, positionId: string, fallback: string) {
-  return spread.positions.find((position) => position.id === positionId)?.name ?? fallback;
-}
+function buildSpreadStory(spread: Spread, drawnCards: DrawnCard[]) {
+  const firstCard = drawnCards[0];
+  const lastCard = drawnCards.at(-1);
+  const firstPosition = spread.positions.find(
+    (position) => position.id === firstCard.positionId,
+  );
+  const lastPosition = lastCard
+    ? spread.positions.find((position) => position.id === lastCard.positionId)
+    : null;
 
-function buildSpreadSpecificInitialAxis(spread: Spread) {
-  switch (spread.id) {
-    case "single": {
-      const focus = getSpreadPositionName(spread, "focus", "核心指引");
-
-      return `${spread.name} 这次只保留「${focus}」这一处焦点，因此这张牌只能作为观察入口，不能被读成已经替用户裁定答案。`;
-    }
-    case "holy-triangle": {
-      const past = getSpreadPositionName(spread, "past", "过去");
-      const present = getSpreadPositionName(spread, "present", "现在");
-      const future = getSpreadPositionName(spread, "future", "潜在流向");
-
-      return `${spread.name} 这次应按「${past} -> ${present} -> ${future}」阅读，把牌面放回时间与因果路径中，而不是孤立挑出一张牌下结论。`;
-    }
-    case "four-aspects": {
-      const body = getSpreadPositionName(spread, "body", "身体层面");
-      const emotion = getSpreadPositionName(spread, "emotion", "情感层面");
-      const mind = getSpreadPositionName(spread, "mind", "心智层面");
-      const spirit = getSpreadPositionName(spread, "spirit", "精神层面");
-
-      return `${spread.name} 这次应分开看「${body} / ${emotion} / ${mind} / ${spirit}」，先保留层次差异，再判断哪一层支持行动、哪一层形成阻力。`;
-    }
-    case "seven-card": {
-      const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
-      const outcome = getSpreadPositionName(spread, "outcome", "结果");
-      const past = getSpreadPositionName(spread, "past", "过去");
-      const present = getSpreadPositionName(spread, "present", "现在");
-      const nearResult = getSpreadPositionName(spread, "near-result", "最近结果");
-      const environment = getSpreadPositionName(spread, "environment", "周遭能量");
-      const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
-
-      return `${spread.name} 这次应先抓住「${answer} -> ${outcome}」这条答案与结果主轴，再回看「${past} -> ${present} -> ${nearResult}」怎样把它一步步推出来，并分清「${environment}」的外部气候与「${hopesFears}」的主观投射是不是混在一起。`;
-    }
-    case "celtic-cross": {
-      const core = getSpreadPositionName(spread, "core", "核心");
-      const challenge = getSpreadPositionName(spread, "challenge", "挑战");
-      const conscious = getSpreadPositionName(spread, "conscious", "意识");
-      const unconscious = getSpreadPositionName(spread, "unconscious", "潜意识");
-      const environment = getSpreadPositionName(spread, "environment", "环境");
-      const outcome = getSpreadPositionName(spread, "outcome", "结果");
-
-      return `${spread.name} 这次应先守住「${core} / ${challenge}」，再对照「${conscious} / ${unconscious}」和「${environment} / ${outcome}」，避免把复杂牌阵压平成一句确定结论。`;
-    }
-    default:
-      return null;
+  if (!lastCard || drawnCards.length === 1) {
+    const keywords = getKeywords(firstCard).join("、") || "此刻最重要的线索";
+    return `${firstCard.card.name}把${firstPosition?.name ?? "核心位置"}的重点放在${keywords}上。`;
   }
-}
 
-function buildSpreadSpecificFinalAxis(spread: Spread) {
-  switch (spread.id) {
-    case "single": {
-      const focus = getSpreadPositionName(spread, "focus", "核心指引");
-
-      return `单牌的第二阶段仍以「${focus}」为入口；用户补充只能帮助校准这一处焦点，不能把单牌改写成确定裁决。`;
-    }
-    case "holy-triangle": {
-      const past = getSpreadPositionName(spread, "past", "过去");
-      const present = getSpreadPositionName(spread, "present", "现在");
-      const future = getSpreadPositionName(spread, "future", "潜在流向");
-
-      return `圣三角形的第二阶段仍要对照「${past} -> ${present} -> ${future}」是否连贯，避免让补充信息盖过时间与因果路径。`;
-    }
-    case "four-aspects": {
-      const body = getSpreadPositionName(spread, "body", "身体层面");
-      const emotion = getSpreadPositionName(spread, "emotion", "情感层面");
-      const mind = getSpreadPositionName(spread, "mind", "心智层面");
-      const spirit = getSpreadPositionName(spread, "spirit", "精神层面");
-
-      return `四个面向的第二阶段仍要让「${body} / ${emotion} / ${mind} / ${spirit}」彼此校准，而不是把某一层的感受直接升级成总答案。`;
-    }
-    case "seven-card": {
-      const answer = getSpreadPositionName(spread, "answer", "答案 / 当事人");
-      const outcome = getSpreadPositionName(spread, "outcome", "结果");
-      const environment = getSpreadPositionName(spread, "environment", "周遭能量");
-      const hopesFears = getSpreadPositionName(spread, "hopes-fears", "希望与恐惧");
-
-      return `七张牌的第二阶段仍要先对照「${answer} -> ${outcome}」是否更清楚，再用「${environment}」和「${hopesFears}」分辨外界现实与内在担心，避免把补充信息读成新的命令。`;
-    }
-    case "celtic-cross": {
-      const core = getSpreadPositionName(spread, "core", "核心");
-      const challenge = getSpreadPositionName(spread, "challenge", "挑战");
-      const self = getSpreadPositionName(spread, "self", "自我");
-      const environment = getSpreadPositionName(spread, "environment", "环境");
-      const outcome = getSpreadPositionName(spread, "outcome", "结果");
-
-      return `赛尔特十字的第二阶段仍要从「${core} / ${challenge}」出发，再核对「${self} / ${environment} / ${outcome}」是否互相支持，避免把复杂结构读成单一路径。`;
-    }
-    default:
-      return null;
-  }
+  const openingKeywords = getKeywords(firstCard).join("、") || "当前起点";
+  const closingKeywords = getKeywords(lastCard).join("、") || "接下来的方向";
+  return `${firstPosition?.name ?? "开端"}的${firstCard.card.name}先呈现${openingKeywords}，`
+    + `${lastPosition?.name ?? "收束"}的${lastCard.card.name}则把故事带向${closingKeywords}；`
+    + "其余位置帮助说明这股变化如何形成。";
 }
 
 function buildSpreadSpecificGuidance(spread: Spread, phase: "initial" | "final") {
   switch (spread.id) {
     case "single":
       return phase === "initial"
-        ? "先把单牌当作一个观察入口，而不是把它当成已经完成的答案。"
-        : "回看这张牌最稳定的提醒，再决定现实中要验证哪一个小信号。";
+        ? "记录这张牌最贴近现实的一个信号，并观察它是否持续出现。"
+        : "回看这张牌最稳定的提醒，再选择一个现实信号温和验证。";
     case "holy-triangle":
       return phase === "initial"
         ? "先观察过去、现在与潜在流向之间是否真的连成一条线。"
@@ -644,7 +726,7 @@ function buildConstructiveTension({
     case "self_growth":
       return `这个位置的阻力更安静：${anchor} 提醒你，理解自己不等于立刻给自己新的要求；先看见${condition}。`;
     case "decision":
-      return `这组牌留下的阻力很现实：${anchor} 不适合被读成直接裁决；先核实${condition}。`;
+      return `这组牌留下的阻力很现实：${anchor} 显示目前仍缺少足够依据，先核实${condition}。`;
     case "other":
       return `这处阻力来自 ${anchor}：它没有把问题收成单一结论，而是要求你分辨${condition}。`;
   }
@@ -677,15 +759,15 @@ function buildFinalConstructiveTension(
 
   switch (questionType) {
     case "relationship":
-      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充可以让关系图像更清楚，但不能把它改写成关系答案已经被证明。`;
+      return `${anchor}仍提醒你：关系图像可以变得更清楚，但对方的真实想法与未来走向仍需要现实互动来验证。`;
     case "career":
-      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能校准方向，却不能替现实反馈、资源约束和行动成本提前背书。`;
+      return `${anchor}让现实反馈、资源约束和行动成本继续成为不可跳过的条件。`;
     case "self_growth":
-      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能解释状态，却不应该变成新的自我苛责。`;
+      return `${anchor}帮助解释当前状态，但这份理解不需要变成新的自我苛责。`;
     case "decision":
-      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能缩小选择范围，但不能把牌面改写成直接裁决。`;
+      return `${anchor}可以帮助缩小选择范围，但关键条件与代价仍要由现实信息来确认。`;
     case "other":
-      return `第二阶段仍要保留 ${anchor} 的阻力：你的补充能减少模糊，却不能把尚未验证的部分提前说成结论。`;
+      return `${anchor}让模糊之处有所收束，同时也保留了仍待验证的部分。`;
   }
 }
 
@@ -720,9 +802,7 @@ function buildFinalExtensionQuestion(followupAnswers: FollowupAnswer[]) {
 }
 
 function buildInitialSynthesis(
-  question: string,
   questionType: QuestionType,
-  agentProfile: AgentProfile,
   spread: Spread,
   themes: string[],
   drawnCards: DrawnCard[],
@@ -730,36 +810,39 @@ function buildInitialSynthesis(
   sessionMemory: SessionMemoryContext,
 ) {
   const reversedCount = drawnCards.filter((drawnCard) => drawnCard.isReversed).length;
-  const opening = spread.positions[0]?.name ?? "开端";
-  const ending = spread.positions.at(-1)?.name ?? "收束";
-  const energyTone =
-    reversedCount === 0
+  const isSingleCard = drawnCards.length === 1;
+  const energyTone = isSingleCard
+    ? drawnCards[0]?.isReversed
+      ? "这股能量暂时更像向内收拢，适合先辨认卡住它的感受或表达方式。"
+      : "这股能量已经提供了一处可以被调用的内在资源。"
+    : reversedCount === 0
       ? "整组牌的能量相对顺流，说明你已经拥有一部分可被调用的资源。"
       : reversedCount >= Math.ceil(drawnCards.length / 2)
-        ? "逆位出现得更集中，说明真正需要处理的也许不是外部事件本身，而是内在节奏与表达方式。"
-      : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
+        ? "逆位出现得更集中，真正需要处理的也许不是外部事件本身，而是内在节奏与表达方式。"
+        : "这组牌里既有推进也有迟疑，提醒你在行动前先厘清真正的优先级。";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
   const memoryBridge = buildSessionMemoryBridge(sessionMemory);
-  const spreadAxis = buildSpreadSpecificInitialAxis(spread);
+  const spreadStory = buildSpreadStory(spread, drawnCards);
   const constructiveTension = buildConstructiveTension({
     questionType,
     spread,
     drawnCards,
   });
 
-  return `围绕“${question}”，这是第一阶段的独立初读。${spread.name}把焦点从 ${opening} 一路带到 ${ending}。${energyTone} ${spreadAxis ?? ""} 这次更值得关注的主轴是 ${themes.join("、")}。${constructiveTension} ${PROFILE_GUIDANCE[agentProfile]} ${memoryBridge ?? continuityBridge ?? "当前问题仍然比任何旧线索更重要。"} 与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。`;
+  return `${spreadStory}${energyTone}更值得关注的共同主轴是${themes.join("、")}。`
+    + constructiveTension
+    + `${memoryBridge ?? continuityBridge ?? "先以这次牌面和此刻的真实感受为准。"}`
+    + "与其急着确认单一答案，不如先看清哪些线索已经足够清楚，哪些部分还需要现实语境来收束。";
 }
 
 function buildFinalSynthesis({
-  question,
   questionType,
   initialReading,
   followupAnswers,
   priorSessionCapsule,
   sessionMemory,
 }: {
-  question: string;
   questionType: QuestionType;
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
@@ -767,19 +850,27 @@ function buildFinalSynthesis({
   sessionMemory: SessionMemoryContext;
 }) {
   const answerSummary = followupAnswers
-    .map((item) => `“${item.question}”你的回应是：${item.answer}`)
+    .map((item) => `“${summarizeFollowupAnswer(item.answer)}”`)
     .join("；");
   const primaryTheme = initialReading.themes[0] ?? "当前主轴";
+  const firstCard = initialReading.cards[0];
+  const lastCard = initialReading.cards.at(-1);
+  const cardStory = initialReading.cards.length === 1 || !lastCard
+    ? `${firstCard.name}仍把注意力放在${firstCard.position}所对应的现实层面。`
+    : `${firstCard.position}的${firstCard.name}与${lastCard.position}的${lastCard.name}`
+      + "共同说明了这条线索从何处开始，又会在哪个现实层面得到检验。";
 
   const continuityBridge = buildPriorSessionCapsuleBridge(priorSessionCapsule);
   const memoryBridge = buildSessionMemoryBridge(sessionMemory);
-  const spreadAxis = buildSpreadSpecificFinalAxis(initialReading.spread);
   const constructiveTension = buildFinalConstructiveTension(
     initialReading,
     questionType,
   );
 
-  return `围绕“${question}”，第二阶段不会推翻第一阶段的主轴，而是把它收束得更贴近现实。初读里最稳定的线索仍是 ${primaryTheme}。你的回答带来的校准是：${answerSummary}。这意味着综合解读不再只停留在牌面主轴本身，而是要把这些补充放回 ${primaryTheme} 里，分辨哪些已经是可观察事实，哪些仍是感受、担心或待验证条件。${spreadAxis ?? ""} ${constructiveTension} ${memoryBridge ?? continuityBridge ?? "上一轮线索若有存在，也只作为背景参照。"} 这组牌现在更像是在说：真正的重点不是立刻得到一个绝对结论，而是在已经显露的主题里，为下一步保留可验证的行动空间。`;
+  return `你补充的${answerSummary}让“${primaryTheme}”这条线索更具体。${cardStory}`
+    + `把这些信息放回${primaryTheme}里，更容易分辨哪些已经是可观察事实，哪些仍是感受、担心或待验证条件。`
+    + `${constructiveTension}${memoryBridge ?? continuityBridge ?? "仍以当前牌面与现实信息为主要参照。"}`
+    + "真正的重点不是立刻得到绝对结论，而是在已经显露的主题里，为下一步保留可验证的行动空间。";
 }
 
 function buildCards(
@@ -959,6 +1050,9 @@ function buildOutputContract({
     "All user-visible prose must be fluent natural Simplified Chinese (zh-CN).",
     "Never output pseudo-Chinese fragments, transliterated garbage tokens, or placeholder text.",
     "Never expose chain-of-thought, hidden reasoning, thinking preambles, analysis traces, or model self-identification.",
+    "Never mention provider, prompt, model, generation stages, initial/final phase mechanics, or internal orchestration in user-visible prose.",
+    "Never mention the local knowledge wiki, chunk titles, source_id, citation mechanics, or grounding_claims in user-visible prose; provenance belongs only in grounding_claims.",
+    "Express uncertainty as a natural reader-facing boundary, not as an explanation of internal policy or why the system cannot decide for the user.",
     "Do not fabricate hidden motives, private thoughts, or unverified feelings for any third party.",
     "If relationship tension is inferred, frame it as observable relational dynamics, communication patterns, or unmet needs, not as certainty about what the other person feels or intends.",
     "Allowed top-level keys only:",
@@ -982,7 +1076,7 @@ function buildOutputContract({
     "The constructive tension point must be anchored to a card, orientation, position meaning, spread relationship, or unverified reality condition.",
     "Constructive tension must not become deterministic prophecy, third-party mind-reading, professional advice, or a command to make a major decision.",
     "If you return more than one follow_up_questions item, each question must be materially distinct.",
-    "confidence_note: one short sentence that preserves uncertainty and avoids certainty claims.",
+    "confidence_note: one short reader-facing sentence that preserves uncertainty and avoids certainty claims; never put source or retrieval metadata here.",
     "grounding_claims: cite server-provided refs for every cards[i].interpretation and for synthesis.",
     "Each grounding_claims item must be { path, source_refs }; path is exactly cards.<zero-based-index>.interpretation or synthesis.",
     "A card interpretation may cite only refs whose card_id matches that card. Never invent a ref.",
@@ -1003,7 +1097,6 @@ function buildSafetyBoundarySummary() {
 }
 
 export function buildPlaceholderInitialReadingDraft({
-  question,
   questionType,
   agentProfile,
   spread,
@@ -1058,9 +1151,7 @@ export function buildPlaceholderInitialReadingDraft({
     cards,
     themes,
     synthesis: buildInitialSynthesis(
-      question,
       questionType,
-      agentProfile,
       spread,
       themes,
       drawnCards,
@@ -1069,16 +1160,13 @@ export function buildPlaceholderInitialReadingDraft({
     ),
     reflective_guidance: reflectiveGuidance,
     follow_up_questions: selectFollowUpQuestions(questionType, agentProfile, spread),
-    confidence_note: [
-      "这是第一阶段初读，更适合作为牌面主轴与解释方向；用户补充只能帮助收束，不应把它改写成绝对结论。",
-      buildGroundingConfidenceNote(knowledgeGrounding),
-    ].filter(Boolean).join(" "),
+    confidence_note:
+      "牌面提供的是当下的观察方向，仍需要结合你的现实感受与可验证信息来理解。",
     grounding_claims: buildDraftGroundingClaims(drawnCards, knowledgeGrounding),
   };
 }
 
 export function buildPlaceholderFinalReadingDraft({
-  question,
   questionType,
   agentProfile,
   initialReading,
@@ -1101,7 +1189,7 @@ export function buildPlaceholderFinalReadingDraft({
     questionType,
   );
   const primaryThemeLabel = initialReading.themes[0] ?? QUESTION_TYPE_LENSES[questionType];
-  const preserveTheme = `保留初读里的“${primaryThemeLabel}”作为观察主轴。`;
+  const preserveTheme = `继续把“${primaryThemeLabel}”作为主要观察线索。`;
   const factSplit = "把你补充的信息拆成事实、感受和推测三类，再决定下一步行动。";
   const lowRiskAction = "先选择一个低风险的小动作，验证牌面提示是否真的对应现实反馈。";
   const spreadFinalGuidance = buildSpreadSpecificGuidance(initialReading.spread, "final");
@@ -1137,7 +1225,6 @@ export function buildPlaceholderFinalReadingDraft({
     cards: initialReading.cards,
     themes: initialReading.themes,
     synthesis: buildFinalSynthesis({
-      question,
       questionType,
       initialReading,
       followupAnswers,
@@ -1146,10 +1233,8 @@ export function buildPlaceholderFinalReadingDraft({
     }),
     reflective_guidance: finalGuidance,
     follow_up_questions: [buildFinalExtensionQuestion(followupAnswers)],
-    confidence_note: [
-      "这是第二阶段整合深读。它延续第一阶段的牌面主轴，并结合你的补充信息做校正；它仍然不是对未来的确定承诺。",
-      buildGroundingConfidenceNote(knowledgeGrounding),
-    ].filter(Boolean).join(" "),
+    confidence_note:
+      "这次整合仍是反思线索，不是对未来的确定承诺；重要决定请继续以现实信息与个人边界为准。",
     grounding_claims: buildDraftGroundingClaims(
       initialReading.cards.map((card) => ({
         card: { id: card.card_id },
@@ -1238,11 +1323,14 @@ export function buildInitialReadingPrompt({
       formatSessionMemoryForPrompt(sessionMemory),
       "Initial reading requirements:",
       "- Build interpretations from card + position + orientation + question type.",
-      "- If knowledge grounding status is retrieved, base card-meaning claims on the retrieved chunks and cite only the provided source_id values inside confidence_note when needed.",
+      "- If knowledge grounding status is retrieved, base card-meaning claims on the retrieved chunks, paraphrase them naturally, and place refs only in grounding_claims.",
       "- If knowledge grounding status is none, do not claim the local knowledge wiki supports a specific meaning.",
       "- Identify 2-4 themes at the spread level, not just per-card fragments.",
       "- Themes should be plain, everyday language (avoid tarot jargon like elements or arcana). Keep them compact and insight-bearing; do not add headline wrappers.",
       "- Synthesis must summarize the spread arc, major tension, and realistic next orientation in accessible, conversational language (大白话); do not list cards one by one.",
+      spread.id === "single"
+        ? "- Single-card synthesis must stay with the one card and one position; never invent a journey, arc, or from-X-to-X transition."
+        : null,
       "- Preserve one constructive resistance point: name what the spread does not fully support, or what reality condition remains unverified.",
       "- Follow-up questions must be anchored to card tension, position semantics, or missing reality context.",
       "- Follow-up questions must be distinct from each other.",
@@ -1315,10 +1403,259 @@ export function buildFinalReadingPrompt({
       "- Keep card order and card identity aligned with the initial reading.",
       "- Use follow-up answers to narrow interpretation space, not to replace the card axis.",
       "- Keep the synthesis focused on the thematic axis, the clarified tension, and the next grounded reflection; avoid inflated summary packaging or repeated slogan-like labels.",
+      spread.id === "single"
+        ? "- Single-card synthesis must stay with the one card and one position; never invent a journey, arc, or from-X-to-X transition."
+        : null,
       "- Preserve one constructive resistance point from the initial spread; do not let the user's answers turn the reading into simple agreement.",
       "- Return at most one extension question, and it must not block the flow.",
       "- Do not rewrite the provided card names or position labels.",
       "- Do not state what the other person secretly feels, thinks, wants, or intends; if needed, describe the relational pattern from the querent's point of view.",
     ].join("\n\n"),
+  };
+}
+
+export function buildCardInsightsPrompt({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  drawnCards,
+  knowledgeGrounding,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+  knowledgeGrounding?: KnowledgeGroundingContext;
+}): ReadingPrompt {
+  return {
+    system: [
+      "You are AetherTarot's card-insight generation stage.",
+      "Interpret the authority cards without producing a spread synthesis.",
+      buildStagedVisibleProseRules(),
+      [
+        "Return exactly one top-level key: card_insights.",
+        "card_insights must contain exactly one item per authority card, in order.",
+        "Each item must contain index, interpretation, and optional evidence_refs.",
+        "index is zero-based and must exactly match authority order.",
+        "Keep each interpretation concise: 2-4 Chinese sentences and no more than about 180 Chinese characters.",
+        "Omit evidence_refs in normal generation. If included anyway, every evidence_ref must come from a chunk whose card_id exactly matches that authority card; never use a spread/concept/other-card ref.",
+        "Do not return card names, ids, position labels, orientation metadata, themes, guidance, questions, or confidence.",
+      ].join("\n"),
+    ].join("\n\n"),
+    user: [
+      `Question: ${question}`,
+      `Question type: ${questionType}`,
+      `Agent profile: ${agentProfile}`,
+      buildModeStrategyBlock(agentProfile),
+      buildSpreadPromptBias(spread, "initial"),
+      formatSpread(spread),
+      "Authority drawn cards:",
+      formatDrawnCards(spread, drawnCards),
+      "Card-meaning knowledge:",
+      formatKnowledgeGroundingForPrompt(knowledgeGrounding),
+      "For each card, connect card + position + orientation + question. Keep each interpretation self-contained and non-deterministic.",
+    ].join("\n\n"),
+  };
+}
+
+export function buildSynthesisPrompt({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  cardInsights,
+  priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  cardInsights: StagedCardInsight[];
+  priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
+}): ReadingPrompt {
+  return {
+    system: [
+      "You are AetherTarot's synthesis generation stage.",
+      "Use only the verified card insights and authority spread axes below. Do not regenerate cards.",
+      buildStagedVisibleProseRules(),
+      buildSynthesisStageContract({ phase: "initial", agentProfile }),
+    ].join("\n\n"),
+    user: [
+      `Question: ${question}`,
+      `Question type: ${questionType}`,
+      `Agent profile: ${agentProfile}`,
+      buildModeStrategyBlock(agentProfile),
+      buildSpreadPromptBias(spread, "initial"),
+      formatSpread(spread),
+      "Verified card insights:",
+      formatStagedCardInsights(cardInsights),
+      formatCompactRefCatalog(knowledgeGrounding),
+      priorSessionCapsule
+        ? `Prior session capsule (low priority only):\n${priorSessionCapsule}`
+        : null,
+      formatSessionMemoryForPrompt(sessionMemory),
+      spread.id === "single"
+        ? "Single-card synthesis must stay with one card and one position; never invent a journey or transition."
+        : "Explain the spread relationship without sequentially listing the cards.",
+    ].filter((item): item is string => Boolean(item)).join("\n\n"),
+  };
+}
+
+export function buildCompactReadingPrompt(input: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  drawnCards: DrawnCard[];
+  priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
+}): ReadingPrompt {
+  return {
+    system: [
+      "You are AetherTarot's compact reading generation stage for a Lite initial reading.",
+      buildStagedVisibleProseRules(),
+      [
+        "Return exactly two top-level keys: card_insights and synthesis.",
+        "card_insights follows the card-insight contract: exact zero-based indices, interpretation, optional evidence_refs; never copy card metadata.",
+        "Omit evidence_refs from card_insights in normal generation. If included anyway, use only refs whose card_id matches that authority card; never use a spread/concept/other-card ref.",
+        "synthesis is an object following the synthesis contract below.",
+        buildSynthesisStageContract({
+          phase: "initial",
+          agentProfile: input.agentProfile,
+        }),
+      ].join("\n"),
+    ].join("\n\n"),
+    user: [
+      `Question: ${input.question}`,
+      `Question type: ${input.questionType}`,
+      `Agent profile: ${input.agentProfile}`,
+      buildModeStrategyBlock(input.agentProfile),
+      buildSpreadPromptBias(input.spread, "initial"),
+      formatSpread(input.spread),
+      "Authority drawn cards:",
+      formatDrawnCards(input.spread, input.drawnCards),
+      "Card-meaning knowledge:",
+      formatKnowledgeGroundingForPrompt(input.knowledgeGrounding),
+      input.priorSessionCapsule
+        ? `Prior session capsule (low priority only):\n${input.priorSessionCapsule}`
+        : null,
+      formatSessionMemoryForPrompt(input.sessionMemory),
+      input.spread.id === "single"
+        ? "Keep the synthesis on the single card and its one position; do not invent an arc."
+        : "Keep the synthesis concise and spread-level; do not retell every card.",
+    ].filter((item): item is string => Boolean(item)).join("\n\n"),
+  };
+}
+
+export function buildFinalSynthesisRefinementPrompt({
+  question,
+  questionType,
+  agentProfile,
+  spread,
+  initialReading,
+  followupAnswers,
+  priorSessionCapsule,
+  sessionMemory,
+  knowledgeGrounding,
+}: {
+  question: string;
+  questionType: QuestionType;
+  agentProfile: AgentProfile;
+  spread: Spread;
+  initialReading: StructuredReading;
+  followupAnswers: FollowupAnswer[];
+  priorSessionCapsule: string | null;
+  sessionMemory?: SessionMemoryContext;
+  knowledgeGrounding?: KnowledgeGroundingContext;
+}): ReadingPrompt {
+  return {
+    system: [
+      "You are AetherTarot's final synthesis refinement stage.",
+      "Preserve the server-owned Initial reading axis and integrate the follow-up answers.",
+      buildStagedVisibleProseRules(),
+      buildSynthesisStageContract({ phase: "final", agentProfile }),
+      "You may optionally return card_refinements as a sparse list of only the locally changed cards. Each item is {index, interpretation, evidence_refs?}; indices must be unique and belong to the authority cards. Omit it unless follow-up answers materially change local card understanding.",
+      "Omit evidence_refs in normal generation. If included in a card_refinement anyway, every ref must belong to that same authority card.",
+    ].join("\n\n"),
+    user: [
+      `Question: ${question}`,
+      `Question type: ${questionType}`,
+      `Agent profile: ${agentProfile}`,
+      buildModeStrategyBlock(agentProfile),
+      buildSpreadPromptBias(spread, "final"),
+      formatSpread(spread),
+      "Server-owned Initial reading:",
+      formatInitialReading(initialReading),
+      "Follow-up answers:",
+      formatFollowupAnswers(followupAnswers),
+      formatCompactRefCatalog(knowledgeGrounding),
+      priorSessionCapsule
+        ? `Prior session capsule (low priority only):\n${priorSessionCapsule}`
+        : null,
+      formatSessionMemoryForPrompt(sessionMemory),
+      "Keep at least one Initial core theme verbatim in themes or synthesis. Use answers to narrow, not replace, the Initial axis.",
+    ].filter((item): item is string => Boolean(item)).join("\n\n"),
+  };
+}
+
+export function buildReadingStageRepairPrompt({
+  stage,
+  invalidPayload,
+  issues,
+  allowedIndices,
+  allowedRefs,
+  allowedRefsByIndex,
+  agentProfile,
+  requiredThemes = [],
+  cardInsights,
+}: {
+  stage: string;
+  invalidPayload: unknown;
+  issues: string[];
+  allowedIndices: number[];
+  allowedRefs: string[];
+  allowedRefsByIndex: Array<{ index: number; refs: string[] }>;
+  agentProfile: AgentProfile;
+  requiredThemes?: string[];
+  cardInsights?: StagedCardInsight[];
+}): ReadingPrompt {
+  const refBoundary = allowedRefsByIndex
+    .map(({ index, refs }) => `- index ${index}: ${refs.join(", ") || "none"}`)
+    .join("\n");
+  return {
+    system: [
+      "You are a constrained JSON contract repair step.",
+      "Repair only the supplied invalid payload. Do not perform a new open-ended tarot reading.",
+      buildStagedVisibleProseRules(),
+      `Failed stage: ${stage}`,
+      `Allowed indices: ${allowedIndices.join(", ") || "none"}`,
+      `Allowed refs: ${allowedRefs.join(", ") || "none"}`,
+      `Allowed card refs by index:\n${refBoundary || "- none"}`,
+      "For card_insights or card_refinements, refs are valid only for the same index. Omit evidence_refs when no valid same-card ref is available.",
+      buildRepairStageContract({
+        stage,
+        agentProfile,
+        allowedIndices,
+        requiredThemes,
+      }),
+      "Return the complete repaired object including every required sibling field. Never return only the field named by a validation issue.",
+      "Preserve every already-valid value from the supplied payload, remove disallowed keys, and change only what the issues require.",
+    ].join("\n\n"),
+    user: [
+      "Validation issues:",
+      ...issues.slice(0, 8).map((issue, index) => `${index + 1}. ${issue}`),
+      cardInsights?.length
+        ? `Verified card insights (immutable):\n${formatStagedCardInsights(cardInsights)}`
+        : null,
+      "Invalid payload:",
+      JSON.stringify(invalidPayload ?? null),
+    ].filter((item): item is string => Boolean(item)).join("\n"),
   };
 }

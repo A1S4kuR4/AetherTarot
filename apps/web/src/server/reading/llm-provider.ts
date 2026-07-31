@@ -1,8 +1,13 @@
 import "server-only";
 
 import {
+  buildCardInsightsPrompt,
+  buildCompactReadingPrompt,
   buildFinalReadingPrompt,
+  buildFinalSynthesisRefinementPrompt,
   buildInitialReadingPrompt,
+  buildReadingStageRepairPrompt,
+  buildSynthesisPrompt,
 } from "@aethertarot/prompting";
 import type {
   AgentProfile,
@@ -10,6 +15,13 @@ import type {
   ReadingPhase,
 } from "@aethertarot/shared-types";
 import { ReadingServiceError } from "@/server/reading/errors";
+import {
+  normalizeCardInsightsPayload,
+  normalizeCompactReadingPayload,
+  normalizeFinalSynthesisPayload,
+  normalizeSynthesisPayload,
+  type ReadingStageDraft,
+} from "@/server/reading/generation-contracts";
 import {
   OpenAiCompatibleTransport,
   resolveLlmProviderConfig,
@@ -23,7 +35,9 @@ import type {
   FinalReadingContext,
   HydratedReadingContext,
   ReadingDraft,
+  ReadingGenerationCallOptions,
   ReadingProvider,
+  RepairStageRequest,
 } from "@/server/reading/types";
 
 export { resolveLlmProviderConfig };
@@ -403,6 +417,7 @@ export class LlmReadingProvider implements ReadingProvider {
   private requestDraft(
     prompt: { system: string; user: string },
     maxOutputTokens: number,
+    options?: ReadingGenerationCallOptions,
   ) {
     return this.transport.request({
       source: "reading",
@@ -411,10 +426,35 @@ export class LlmReadingProvider implements ReadingProvider {
       parse: (payload) => payload,
       truncatedMessage:
         "llm provider 输出达到长度上限，解读未完整生成，请稍后重试或减少牌数。",
+      signal: options?.signal,
+      metric: options
+        ? {
+            runId: options.runId,
+            stageId: options.stageId,
+            attemptId: options.attemptId,
+            stage: options.stage,
+            attempt: options.attempt,
+            kind: options.kind,
+          }
+        : undefined,
     });
   }
 
-  async generateInitialRead(context: HydratedReadingContext) {
+  private maxTokens(context: HydratedReadingContext, ratio = 1) {
+    return Math.max(
+      600,
+      Math.round(resolveReadingMaxOutputTokens({
+        agentProfile: context.agentProfile,
+        cardCount: context.drawnCards.length,
+        configuredMaxOutputTokens: this.config.maxOutputTokens,
+      }) * ratio),
+    );
+  }
+
+  async generateInitialRead(
+    context: HydratedReadingContext,
+    options?: ReadingGenerationCallOptions,
+  ) {
     const maxOutputTokens = resolveReadingMaxOutputTokens({
       agentProfile: context.agentProfile,
       cardCount: context.drawnCards.length,
@@ -423,6 +463,7 @@ export class LlmReadingProvider implements ReadingProvider {
     const payload = await this.requestDraft(
       buildInitialReadingPrompt(context),
       maxOutputTokens,
+      options,
     );
 
     return normalizeReadingDraft({
@@ -432,7 +473,10 @@ export class LlmReadingProvider implements ReadingProvider {
     });
   }
 
-  async generateFinalRead(context: FinalReadingContext) {
+  async generateFinalRead(
+    context: FinalReadingContext,
+    options?: ReadingGenerationCallOptions,
+  ) {
     const maxOutputTokens = resolveReadingMaxOutputTokens({
       agentProfile: context.agentProfile,
       cardCount: context.drawnCards.length,
@@ -441,6 +485,7 @@ export class LlmReadingProvider implements ReadingProvider {
     const payload = await this.requestDraft(
       buildFinalReadingPrompt(context),
       maxOutputTokens,
+      options,
     );
 
     return normalizeReadingDraft({
@@ -448,6 +493,124 @@ export class LlmReadingProvider implements ReadingProvider {
       context,
       phase: "final",
     });
+  }
+
+  async generateCompactRead(
+    context: HydratedReadingContext,
+    options: ReadingGenerationCallOptions,
+  ) {
+    const payload = await this.requestDraft(
+      buildCompactReadingPrompt(context),
+      this.maxTokens(context, 0.9),
+      options,
+    );
+    return normalizeCompactReadingPayload({ payload, context });
+  }
+
+  async generateCardInsights(
+    context: HydratedReadingContext,
+    options: ReadingGenerationCallOptions,
+  ) {
+    const payload = await this.requestDraft(
+      buildCardInsightsPrompt(context),
+      this.maxTokens(context),
+      options,
+    );
+    return normalizeCardInsightsPayload({ payload, context });
+  }
+
+  async generateSynthesis(
+    context: HydratedReadingContext,
+    cardInsights: Parameters<typeof buildSynthesisPrompt>[0]["cardInsights"],
+    options: ReadingGenerationCallOptions,
+  ) {
+    const payload = await this.requestDraft(
+      buildSynthesisPrompt({ ...context, cardInsights }),
+      this.maxTokens(context, 0.65),
+      options,
+    );
+    return normalizeSynthesisPayload({
+      payload,
+      context,
+      phase: "initial",
+    });
+  }
+
+  async refineFinalSynthesis(
+    context: FinalReadingContext,
+    options: ReadingGenerationCallOptions,
+  ) {
+    const payload = await this.requestDraft(
+      buildFinalSynthesisRefinementPrompt(context),
+      this.maxTokens(context, 0.75),
+      options,
+    );
+    return normalizeFinalSynthesisPayload({
+      payload,
+      context,
+      initialReading: context.initialReading,
+    });
+  }
+
+  async repairStage(
+    request: RepairStageRequest,
+    options: ReadingGenerationCallOptions,
+  ): Promise<ReadingStageDraft> {
+    const context = request.context;
+    const payload = await this.requestDraft(
+      buildReadingStageRepairPrompt({
+        stage: request.stage,
+        invalidPayload: request.invalidPayload,
+        issues: request.issues,
+        allowedIndices: context.drawnCards.map((_, index) => index),
+        allowedRefs: context.knowledgeGrounding.chunks.map((chunk) => chunk.ref),
+        allowedRefsByIndex: context.drawnCards.map((drawnCard, index) => ({
+          index,
+          refs: context.knowledgeGrounding.chunks
+            .filter((chunk) => chunk.card === drawnCard.card.id)
+            .map((chunk) => chunk.ref),
+        })),
+        agentProfile: context.agentProfile,
+        requiredThemes:
+          "initialReading" in context ? context.initialReading.themes : [],
+        cardInsights: request.cardInsights,
+      }),
+      this.maxTokens(
+        context,
+        request.stage === "card_insights"
+          ? 1
+          : request.stage === "compact"
+            ? 0.9
+            : 0.75,
+      ),
+      options,
+    );
+
+    if (request.stage === "compact") {
+      return normalizeCompactReadingPayload({ payload, context });
+    }
+    if (request.stage === "card_insights") {
+      return normalizeCardInsightsPayload({ payload, context });
+    }
+    if (request.stage === "synthesis") {
+      return normalizeSynthesisPayload({
+        payload,
+        context,
+        phase: "initial",
+      });
+    }
+    if (request.stage === "final_synthesis" && "initialReading" in context) {
+      return normalizeFinalSynthesisPayload({
+        payload,
+        context,
+        initialReading: context.initialReading,
+      });
+    }
+    throw new ReadingServiceError(
+      "generation_failed",
+      `不支持修复 generation stage：${request.stage}。`,
+      500,
+    );
   }
 }
 

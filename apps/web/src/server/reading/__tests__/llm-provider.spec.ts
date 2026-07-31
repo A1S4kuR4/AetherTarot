@@ -44,6 +44,7 @@ function buildHydratedContext(): HydratedReadingContext {
     agentProfile: payload.agent_profile ?? "standard",
     spread,
     priorSessionCapsule: null,
+    sessionMemory: null,
     knowledgeGrounding: { status: "none", chunks: [] },
     drawnCards: payload.drawnCards.map((item) => {
       const card = findCardById(item.cardId);
@@ -82,12 +83,37 @@ describe("llm provider baseline", () => {
     expect(prompt.system).toMatch(/do not rewrite, translate, paraphrase/i);
     expect(prompt.system).toMatch(/Every card interpretation must be a non-empty Chinese string/);
     expect(prompt.system).toMatch(/Do not fabricate hidden motives, private thoughts, or unverified feelings for any third party/);
+    expect(prompt.system).toMatch(/provenance belongs only in grounding_claims/);
     expect(prompt.user).toMatch(/Authority drawn cards/);
     expect(prompt.user).toMatch(/Question: 我该如何看待当前的职业选择/);
     expect(prompt.user).toMatch(/Follow-up questions must be anchored/);
     expect(prompt.user).toMatch(/Follow-up questions must be distinct/);
     expect(prompt.user).toMatch(/Themes should be plain, everyday language/);
+    expect(prompt.user).toMatch(/place refs only in grounding_claims/);
+    expect(prompt.user).not.toMatch(/source_id values inside confidence_note/);
     expect(prompt.user).toMatch(/Do not state what the other person secretly feels/);
+  });
+
+  it("forbids invented position journeys in single-card synthesis", () => {
+    const context = buildHydratedContext();
+    const spread = findSpreadById("single");
+    const card = findCardById("temperance");
+
+    if (!spread || !card) {
+      throw new Error("single-card prompt fixture is unavailable");
+    }
+
+    const prompt = buildInitialReadingPrompt({
+      ...context,
+      spread,
+      drawnCards: [{
+        positionId: "focus",
+        card,
+        isReversed: false,
+      }],
+    });
+
+    expect(prompt.user).toMatch(/never invent a journey, arc, or from-X-to-X transition/i);
   });
 
   it("builds a final prompt that carries initial themes and follow-up answers forward", async () => {
@@ -95,6 +121,7 @@ describe("llm provider baseline", () => {
 
     expect(prompt.system).toMatch(/FINAL phase/);
     expect(prompt.system).toMatch(/Simplified Chinese/);
+    expect(prompt.system).toMatch(/never put source or retrieval metadata here/i);
     expect(prompt.user).toMatch(/Initial reading snapshot/);
     expect(prompt.user).toMatch(/Follow-up answers/);
     expect(prompt.user).toMatch(/Preserve the initial primary themes/);
@@ -347,8 +374,13 @@ describe("llm provider baseline", () => {
   it("calls an OpenAI-compatible chat completions endpoint and normalizes the final draft", async () => {
     const context = await buildFinalContext();
     const tokenGate = buildTokenGate();
-    const fetchMock = vi.fn(async () =>
-      new Response(
+    const fetchMock = vi.fn(async (
+      _input: RequestInfo | URL,
+      _init?: RequestInit,
+    ) => {
+      void _input;
+      void _init;
+      return new Response(
         JSON.stringify({
           choices: [
             {
@@ -358,11 +390,11 @@ describe("llm provider baseline", () => {
                   JSON.stringify({
                     cards: context.initialReading.cards.map((card) => ({
                       ...card,
-                      interpretation: `${card.name} 继续沿着初读主题收束。`,
+                      interpretation: `${card.name} 结合你的补充，让原有主题更贴近现实。`,
                     })),
                     themes: [...context.initialReading.themes, "额外主题"],
                     synthesis:
-                      "第二阶段会延续初读主题，并结合用户补充缩小解释空间。",
+                      "你补充的信息让原有主题更具体，也缩小了仍待验证的范围。",
                     reflective_guidance: [
                       "把新增信息拆成事实、感受和推测。",
                       "优先验证最关键的现实条件。",
@@ -372,7 +404,7 @@ describe("llm provider baseline", () => {
                       "经过这次补充后，你最愿意在现实中先验证哪一个小信号？",
                       "这条会被截断。",
                     ],
-                    confidence_note: "这仍然是带不确定性的整合深读。",
+                    confidence_note: "这些线索仍需要结合现实信息继续验证。",
                     safety_note: "should be ignored",
                   }) +
                   "\n```",
@@ -384,8 +416,8 @@ describe("llm provider baseline", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         },
-      ),
-    );
+      );
+    });
 
     const provider = new LlmReadingProvider(
       {

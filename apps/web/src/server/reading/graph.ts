@@ -22,7 +22,21 @@ import {
 } from "@langchain/langgraph";
 import { z } from "zod";
 import { classifyQuestion } from "@/server/reading/classifier";
-import { ReadingServiceError } from "@/server/reading/errors";
+import {
+  ReadingGenerationError,
+  ReadingServiceError,
+  isReadingGenerationError,
+  type ReadingGenerationAttempt,
+  type ReadingGenerationFailureSubtype,
+  type ReadingGenerationStage,
+} from "@/server/reading/errors";
+import {
+  buildReadingGenerationPlan,
+  generateReadingDraftWithPolicy,
+  resolveReadingGenerationMode,
+  type ReadingGenerationMode,
+  type ReadingGenerationPlan,
+} from "@/server/reading/generation-policy";
 import {
   extractLastAdviceSummary,
   GENERIC_LAST_ADVICE_FALLBACK,
@@ -30,7 +44,6 @@ import {
 import type { SessionMemoryStore } from "@/server/reading/memory";
 import { getReadingProvider } from "@/server/reading/provider";
 import {
-  applyGroundingNotice,
   buildAgentStateSnapshot,
   createKnowledgeRetrievalInput,
   defaultReadingAgentDecider,
@@ -78,11 +91,25 @@ import {
   buildMinimumReadingGrounding,
   finalizeReadingGrounding,
 } from "@/server/reading/grounding";
+import {
+  getCurrentLlmCalls,
+  summarizeLlmCalls,
+  type LlmCallMetric,
+} from "@/server/observability/llm-usage";
 
 const ReadingGraphState = new StateSchema({
   payload: z.custom<ReadingRequestPayload>(),
   runId: z.string().optional(),
   traceStartedAt: z.string().optional(),
+  abortSignal: z.custom<AbortSignal>().optional(),
+  generationMode: z.custom<ReadingGenerationMode>().optional(),
+  generationPlan: z.custom<ReadingGenerationPlan>().optional(),
+  generationStage: z.custom<ReadingGenerationStage>().optional(),
+  generationAttempts: z.custom<ReadingGenerationAttempt[]>().optional(),
+  stageUsage: z.custom<LlmCallMetric[]>().optional(),
+  totalUsage: z.custom<ReturnType<typeof summarizeLlmCalls>>().optional(),
+  failureStage: z.custom<ReadingGenerationStage>().optional(),
+  failureSubtype: z.custom<ReadingGenerationFailureSubtype>().optional(),
   provider: z.custom<ReadingProvider>().optional(),
   agentDecider: z.custom<ReadingAgentDecider>().optional(),
   toolRegistry: z.custom<ReadingToolRegistry>().optional(),
@@ -282,12 +309,6 @@ function attachOutputToLastAction(
   };
 
   return actions;
-}
-
-function hasKnowledgeObservation(state: ReadingGraphAgentFields) {
-  return (state.observations ?? []).some(
-    (observation) => observation.source === "retrieve_tarot_knowledge",
-  );
 }
 
 function buildKnowledgeGrounding(
@@ -622,6 +643,94 @@ function validateDraftFollowupContract({
       500,
     );
   }
+}
+
+const INTERNAL_PROSE_PATTERNS = [
+  /本地知识库(?:片段|检索片段|没有返回)/u,
+  /\bsource_?id\b/iu,
+  /\bgrounding_claims\b/iu,
+  /第一阶段(?:的)?(?:独立)?初读/u,
+  /第二阶段(?:不会推翻|仍要|整合深读)/u,
+  /替用户裁定答案|不能被读成已经替用户裁定答案/u,
+  /\b(?:provider|prompt)\b/iu,
+];
+
+function normalizeUserVisibleProse(value: string) {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/(?:。|\.)\s*(?:。|\.)+/gu, (match) =>
+      match.includes("。") ? "。" : "."
+    )
+    .trim();
+}
+
+function validateUserVisibleProse(value: string, field: string) {
+  if (INTERNAL_PROSE_PATTERNS.some((pattern) => pattern.test(value))) {
+    throw new ReadingServiceError(
+      "generation_failed",
+      `provider draft 的 ${field} 包含内部编排或来源元数据。`,
+      500,
+    );
+  }
+}
+
+function normalizeAndValidateDraftProse(
+  draft: ReadingDraft,
+  spread: Spread,
+) {
+  const cards = draft.cards.map((card, index) => {
+    const interpretation = normalizeUserVisibleProse(card.interpretation);
+    validateUserVisibleProse(interpretation, `cards.${index}.interpretation`);
+    return { ...card, interpretation };
+  });
+  const themes = draft.themes.map((theme, index) => {
+    const normalized = normalizeUserVisibleProse(theme);
+    validateUserVisibleProse(normalized, `themes.${index}`);
+    return normalized;
+  });
+  const synthesis = normalizeUserVisibleProse(draft.synthesis);
+  validateUserVisibleProse(synthesis, "synthesis");
+
+  if (
+    spread.id === "single"
+    && /一路带到|从\s*核心指引\s*(?:一路)?带到\s*核心指引/u.test(synthesis)
+  ) {
+    throw new ReadingServiceError(
+      "generation_failed",
+      "provider draft 的单牌 synthesis 包含虚构的位置路径。",
+      500,
+    );
+  }
+
+  const normalizeList = (values: string[], field: string) =>
+    values.map((value, index) => {
+      const normalized = normalizeUserVisibleProse(value);
+      validateUserVisibleProse(normalized, `${field}.${index}`);
+      return normalized;
+    });
+  const confidenceNote = draft.confidence_note
+    ? normalizeUserVisibleProse(draft.confidence_note)
+    : null;
+
+  if (confidenceNote) {
+    validateUserVisibleProse(confidenceNote, "confidence_note");
+  }
+
+  return {
+    ...draft,
+    cards,
+    themes,
+    synthesis,
+    reflective_guidance: normalizeList(
+      draft.reflective_guidance,
+      "reflective_guidance",
+    ),
+    follow_up_questions: normalizeList(
+      draft.follow_up_questions,
+      "follow_up_questions",
+    ),
+    confidence_note: confidenceNote,
+  } satisfies ReadingDraft;
 }
 
 function normalizeCapsuleLine(value: string, maxLength = 140) {
@@ -980,6 +1089,13 @@ const safetyStopNode: ReadingGraphNode = (state) => {
 const generateDraftNode: ReadingGraphNode = async (state) => {
   const provider = state.provider ?? getReadingProvider();
   const phase = requireStateValue(state.phase, "phase");
+  const generationMode = state.generationMode ?? resolveReadingGenerationMode();
+  const generationPlan = buildReadingGenerationPlan({
+    mode: generationMode,
+    phase,
+    agentProfile: requireStateValue(state.agentProfile, "agentProfile"),
+    cardCount: requireStateValue(state.drawnCards, "drawnCards").length,
+  });
   const baseContext = {
     question: requireStateValue(state.question, "question"),
     questionType: requireStateValue(state.questionType, "questionType"),
@@ -992,43 +1108,104 @@ const generateDraftNode: ReadingGraphNode = async (state) => {
     knowledgeGrounding: buildKnowledgeGrounding(state),
   };
 
-  if (phase === "final") {
-    try {
-      return {
-        draft: await provider.generateFinalRead({
+  try {
+    const context = phase === "final"
+      ? {
           ...baseContext,
           initialReading: requireStateValue(state.initialReading, "initialReading"),
           followupAnswers: requireStateValue(state.followupAnswers, "followupAnswers"),
-        }),
-      };
-    } catch (error) {
-      throwGenericFailureWithDiagnosticTrace(error, state);
-    }
-  }
-
-  try {
+        }
+      : baseContext;
+    const result = await generateReadingDraftWithPolicy({
+      provider,
+      context,
+      phase,
+      mode: generationMode,
+      runId: requireStateValue(state.runId, "runId"),
+      signal: state.abortSignal,
+    });
+    const stageUsage = getCurrentLlmCalls().filter(
+      (call) => call.runId === state.runId,
+    );
     return {
-      draft: await provider.generateInitialRead(baseContext),
+      draft: result.draft,
+      generationMode,
+      generationPlan: result.plan,
+      generationStage: result.plan.stages.at(-1),
+      generationAttempts: result.attempts,
+      stageUsage,
+      totalUsage: summarizeLlmCalls(stageUsage),
     };
   } catch (error) {
-    throwGenericFailureWithDiagnosticTrace(error, state);
+    if (isReadingGenerationError(error)) {
+      error.diagnosticTrace = buildTraceForGraphState(
+        {
+          ...state,
+          generationMode,
+          generationPlan,
+          generationStage: error.stage,
+          generationAttempts: error.attempts,
+          failureStage: error.stage,
+          failureSubtype: error.subtype,
+        },
+        "failed",
+      );
+      throw error;
+    }
+    throwGenericFailureWithDiagnosticTrace(error, {
+      ...state,
+      generationMode,
+      generationPlan,
+    });
   }
 };
 
 const validateDraftContractNode: ReadingGraphNode = (state) => {
   const draft = requireStateValue(state.draft, "draft");
+  try {
+    validateDraftCardsContract({
+      draft,
+      drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
+    });
+    validateDraftFollowupContract({
+      draft,
+      phase: requireStateValue(state.phase, "phase"),
+      agentProfile: requireStateValue(state.agentProfile, "agentProfile"),
+    });
 
-  validateDraftCardsContract({
-    draft,
-    drawnCards: requireStateValue(state.drawnCards, "drawnCards"),
-  });
-  validateDraftFollowupContract({
-    draft,
-    phase: requireStateValue(state.phase, "phase"),
-    agentProfile: requireStateValue(state.agentProfile, "agentProfile"),
-  });
-
-  return {};
+    return {
+      draft: normalizeAndValidateDraftProse(
+        draft,
+        requireStateValue(state.spread, "spread"),
+      ),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "draft contract failed";
+    const subtype: ReadingGenerationFailureSubtype =
+      /内部编排|来源元数据/u.test(message)
+        ? "prose_leakage"
+        : /虚构的位置路径/u.test(message)
+          ? "semantic_contradiction"
+          : /cards.*authority|顺序、identity|orientation/u.test(message)
+            ? "authority_mismatch"
+            : "schema_violation";
+    const generationError = isReadingGenerationError(error)
+      ? error
+      : new ReadingGenerationError({
+          subtype,
+          stage: state.generationStage ?? "monolithic",
+          message,
+          retryable: false,
+          issues: [message],
+          attempts: state.generationAttempts ?? [],
+        });
+    generationError.diagnosticTrace = buildTraceForGraphState({
+      ...state,
+      failureStage: generationError.stage,
+      failureSubtype: generationError.subtype,
+    }, "failed");
+    throw generationError;
+  }
 };
 
 const buildStructuredReadingNode: ReadingGraphNode = (state) => {
@@ -1068,11 +1245,7 @@ const buildStructuredReadingNode: ReadingGraphNode = (state) => {
     reflective_guidance: draft.reflective_guidance,
     follow_up_questions: draft.follow_up_questions,
     safety_note: null,
-    confidence_note: applyGroundingNotice(
-      draft.confidence_note,
-      state.groundingStatus,
-      hasKnowledgeObservation(state),
-    ),
+    confidence_note: draft.confidence_note,
     session_capsule: null,
     sober_check,
     presentation_mode,
@@ -1299,6 +1472,8 @@ export interface RunReadingGraphOptions {
   memoryUserId?: string;
   initialReading?: StructuredReading;
   maxAgentSteps?: number;
+  generationMode?: ReadingGenerationMode;
+  signal?: AbortSignal;
 }
 
 export interface ReadingGraphDiagnostics {
@@ -1319,6 +1494,9 @@ export async function runReadingGraphWithDiagnostics(
       payload,
       runId,
       traceStartedAt,
+      abortSignal: options?.signal,
+      generationMode:
+        options?.generationMode ?? resolveReadingGenerationMode(),
       provider: options?.provider,
       agentDecider: options?.agentDecider,
       toolRegistry: options?.toolRegistry,

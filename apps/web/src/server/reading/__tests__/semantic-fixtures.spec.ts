@@ -32,7 +32,8 @@ describe("reading semantic fixtures", () => {
     });
 
     expect(preservesPrimaryTheme(initial, final)).toBe(true);
-    expect(final.synthesis).toMatch(/第二阶段/);
+    expect(final.synthesis).toMatch(/你补充的/);
+    expect(final.synthesis).not.toMatch(/第一阶段|第二阶段|独立初读/);
   });
 
   it("makes the final reading visibly integrate follow-up answers", async () => {
@@ -136,7 +137,7 @@ describe("reading semantic fixtures", () => {
         "本轮问题：上一段关系会不会回头。核心主题：关系节奏、边界。边界提醒：不延续未验证的第三方意图。",
     });
 
-    expect(reading.synthesis).toMatch(/当前的职业选择/);
+    expect(reading.synthesis).toMatch(/行动方向|职业节奏|现实反馈/);
     expect(reading.synthesis).not.toMatch(/上一段关系会不会回头/);
   });
 
@@ -208,7 +209,7 @@ describe("reading semantic fixtures", () => {
     for (const testCase of cases) {
       const reading = await testCase.execute();
 
-      expect(reading.synthesis, testCase.profile).toMatch(/当前的职业选择/);
+      expect(reading.synthesis, testCase.profile).toMatch(/行动方向|职业节奏|现实反馈/);
       expect(reading.synthesis, testCase.profile).not.toMatch(/上一段关系会不会回头/);
       expect(hasSafeSessionCapsule(reading), testCase.profile).toBe(true);
       expect(hasCompactSessionCapsule(reading), testCase.profile).toBe(true);

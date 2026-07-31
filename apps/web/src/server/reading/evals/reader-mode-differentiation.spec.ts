@@ -102,9 +102,10 @@ describe("reader mode differentiation", () => {
     );
     const [quick, daily, deep] = readings;
 
-    // All modes keep the current question as the axis.
+    // All modes keep the career axis without mechanically restating the question.
     for (const reading of readings) {
-      expect(reading.synthesis).toMatch(/当前的职业选择/);
+      expect(reading.synthesis).toMatch(/职业节奏/);
+      expect(reading.synthesis).toMatch(/现实反馈|资源约束|行动成本/);
     }
 
     // Deep distinguishes fact / speculation / expectation.

@@ -12,6 +12,7 @@ import type {
   ReadingDraft,
   ReadingProvider,
 } from "@/server/reading/types";
+import { PlaceholderReadingProvider } from "@/server/reading/provider";
 
 export function buildSinglePayload(
   question = "我现在最该注意什么？",
@@ -200,13 +201,15 @@ export function buildFollowupAnswers(initial: StructuredReading) {
   }));
 }
 
-export class TestReadingProvider implements ReadingProvider {
+export class TestReadingProvider extends PlaceholderReadingProvider implements ReadingProvider {
   constructor(
     private readonly overrides: {
       initial?: (draft: ReadingDraft, context: HydratedReadingContext) => ReadingDraft;
       final?: (draft: ReadingDraft, context: FinalReadingContext) => ReadingDraft;
     } = {},
-  ) {}
+  ) {
+    super();
+  }
 
   async generateInitialRead(context: HydratedReadingContext) {
     const draft = buildPlaceholderInitialReadingDraft(context);

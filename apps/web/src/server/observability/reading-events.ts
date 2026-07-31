@@ -3,7 +3,7 @@ import "server-only";
 import type { ReadingPhase } from "@aethertarot/shared-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
-import type { PersistedReadingTraceV2 } from "@/server/reading/trace";
+import type { PersistedReadingTraceV3 } from "@/server/reading/trace";
 
 export interface ReadingEventInput {
   userId: string | null;
@@ -25,7 +25,7 @@ export interface ReadingEventInput {
   estimatedCostUsd: number;
   completedInitial: boolean;
   completedFinal: boolean;
-  agentTrace?: PersistedReadingTraceV2 | null;
+  agentTrace?: PersistedReadingTraceV3 | null;
 }
 
 export async function recordReadingEvent(input: ReadingEventInput) {

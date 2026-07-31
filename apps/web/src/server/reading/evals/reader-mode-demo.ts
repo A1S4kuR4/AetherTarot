@@ -13,15 +13,12 @@
  * by buildInitialReadingPrompt / buildFinalReadingPrompt.
  */
 import {
-  buildPlaceholderFinalReadingDraft,
-  buildPlaceholderInitialReadingDraft,
   readerModeStrategies,
 } from "@aethertarot/prompting";
 import type { AgentProfile, ReadingRequestPayload } from "@aethertarot/shared-types";
 import { runReadingGraphWithDiagnostics } from "@/server/reading/graph";
+import { PlaceholderReadingProvider } from "@/server/reading/provider";
 import type {
-  FinalReadingContext,
-  HydratedReadingContext,
   ReadingProvider,
 } from "@/server/reading/types";
 
@@ -33,15 +30,7 @@ const MODES: AgentProfile[] = ["lite", "standard", "sober"];
  * LLM receives the same mode strategy via the prompt built by
  * buildInitialReadingPrompt / buildFinalReadingPrompt.
  */
-class DemoPlaceholderProvider implements ReadingProvider {
-  async generateInitialRead(context: HydratedReadingContext) {
-    return buildPlaceholderInitialReadingDraft(context);
-  }
-
-  async generateFinalRead(context: FinalReadingContext) {
-    return buildPlaceholderFinalReadingDraft(context);
-  }
-}
+class DemoPlaceholderProvider extends PlaceholderReadingProvider implements ReadingProvider {}
 
 const SHARED_INPUT: ReadingRequestPayload = {
   question: "我该如何看待当前的职业选择？",

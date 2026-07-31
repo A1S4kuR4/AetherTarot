@@ -12,7 +12,11 @@ import {
 
 export type ReadingServiceOptions = Pick<
   RunReadingGraphOptions,
-  "initialReading" | "memoryUserId" | "sessionMemoryStore"
+  | "initialReading"
+  | "memoryUserId"
+  | "sessionMemoryStore"
+  | "generationMode"
+  | "signal"
 >;
 
 export async function generateStructuredReadingWithDiagnostics(

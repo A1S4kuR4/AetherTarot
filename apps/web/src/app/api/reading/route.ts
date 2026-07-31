@@ -34,7 +34,7 @@ import {
 } from "@/server/reading/runtime-persistence";
 import { ReadingServiceError } from "@/server/reading/errors";
 import {
-  toPersistedReadingTraceV2,
+  toPersistedReadingTraceV3,
   type ReadingRunTrace,
 } from "@/server/reading/trace";
 import {
@@ -238,6 +238,7 @@ async function executeReadingRequest({
   subjectKey,
   snapshotStore,
   initialSnapshot,
+  signal,
 }: {
   deps: ReadingRouteDependencies;
   parsedPayload: ReadingRequestPayload;
@@ -249,6 +250,7 @@ async function executeReadingRequest({
   subjectKey: string;
   snapshotStore: InitialReadingSnapshotStore;
   initialSnapshot?: InitialReadingSnapshot;
+  signal?: AbortSignal;
 }): Promise<ReadingResponseSnapshot> {
   let quotaConsumed = false;
   let trace: ReadingRunTrace | undefined;
@@ -260,6 +262,7 @@ async function executeReadingRequest({
       deps.generateReading(parsedPayload, {
         initialReading: initialSnapshot?.initialReading,
         memoryUserId: actor.userId ?? undefined,
+        signal,
       })
     );
     const generated = normalizeGenerationResult(result);
@@ -313,7 +316,7 @@ async function executeReadingRequest({
       estimatedCostUsd: usageSummary.estimatedCostUsd,
       completedInitial: reading.reading_phase === "initial" && !reading.requires_followup,
       completedFinal: reading.reading_phase === "final",
-      agentTrace: trace ? toPersistedReadingTraceV2(trace) : null,
+      agentTrace: trace ? toPersistedReadingTraceV3(trace) : null,
     });
 
     return { payload: reading, status: 200 };
@@ -373,7 +376,7 @@ async function executeReadingRequest({
       estimatedCostUsd: usageSummary.estimatedCostUsd,
       completedInitial: false,
       completedFinal: false,
-      agentTrace: trace ? toPersistedReadingTraceV2(trace) : null,
+      agentTrace: trace ? toPersistedReadingTraceV3(trace) : null,
     });
 
     return {
@@ -629,6 +632,7 @@ export async function handleReadingPost(
     subjectKey: identity.subjectKey,
     snapshotStore: runtimeStores.snapshotStore,
     initialSnapshot,
+    signal: request.signal,
   });
 
   if (snapshot.status === 200 && leaseOwner && parsedPayload.request_id) {

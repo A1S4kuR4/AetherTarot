@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildReadingRunTrace,
-  toPersistedReadingTraceV2,
+  toPersistedReadingTraceV3,
 } from "@/server/reading/trace";
 
 describe("reading run trace", () => {
@@ -100,9 +100,9 @@ describe("reading run trace", () => {
       { status: "success", endedAt: "2026-07-23T00:00:01.000Z" },
     );
 
-    const persisted = toPersistedReadingTraceV2(trace);
+    const persisted = toPersistedReadingTraceV3(trace);
     const serialized = JSON.stringify(persisted);
-    expect(persisted.schema_version).toBe(2);
+    expect(persisted.schema_version).toBe(3);
     expect(persisted.grounding).toMatchObject({
       source_ids: ["source-1"],
       chunk_ids: ["chunk-1"],
@@ -118,5 +118,40 @@ describe("reading run trace", () => {
     });
     expect(serialized).not.toContain(rawQuestion);
     expect(serialized).not.toContain(providerText);
+  });
+
+  it("persists redacted generation plan and attempt diagnostics", () => {
+    const trace = buildReadingRunTrace(
+      {
+        runId: "trace-generation-test",
+        generationMode: "adaptive_staged",
+        generationPlan: {
+          mode: "adaptive_staged",
+          stages: ["card_insights", "synthesis"],
+          max_requests: 4,
+        },
+        generationAttempts: [{
+          stage_id: "trace-generation-test:card_insights",
+          attempt_id: "trace-generation-test:card_insights:1",
+          stage: "card_insights",
+          attempt: 1,
+          kind: "generate",
+          success: false,
+          subtype: "malformed_json",
+        }],
+        failureStage: "card_insights",
+        failureSubtype: "retry_exhausted",
+      },
+      { status: "failed" },
+    );
+    const persisted = toPersistedReadingTraceV3(trace);
+    expect(persisted.generation).toMatchObject({
+      mode: "adaptive_staged",
+      stages: ["card_insights", "synthesis"],
+      max_requests: 4,
+      failure_stage: "card_insights",
+      failure_subtype: "retry_exhausted",
+    });
+    expect(JSON.stringify(persisted)).not.toContain("prompt");
   });
 });

@@ -1,7 +1,9 @@
 import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import {
+  buildCardInsightsPrompt,
   buildFinalReadingPrompt,
   buildInitialReadingPrompt,
+  buildReadingStageRepairPrompt,
   readerModeStrategies,
 } from "@aethertarot/prompting";
 import type { AgentProfile } from "@aethertarot/shared-types";
@@ -174,5 +176,56 @@ describe("reader mode prompt contract", () => {
     expect(finalPrompt.user).toMatch(/Preserve the initial primary themes/);
     expect(finalPrompt.user).toMatch(/Initial reading snapshot/);
     expect(finalPrompt.user).toMatch(/Follow-up answers/);
+  });
+
+  it("keeps card evidence refs scoped to the matching authority card", () => {
+    const prompt = buildCardInsightsPrompt(buildHydratedContext("standard"));
+
+    expect(prompt.system).toMatch(/card_id exactly matches that authority card/);
+    expect(prompt.system).toMatch(/Omit evidence_refs in normal generation/);
+    expect(prompt.system).toMatch(/no more than about 180 Chinese characters/);
+  });
+
+  it("gives repair attempts the complete stage contract and per-index ref boundary", () => {
+    const prompt = buildReadingStageRepairPrompt({
+      stage: "compact",
+      invalidPayload: {
+        card_insights: [{ index: 0, evidence_refs: ["K2"] }],
+      },
+      issues: ["card_insights.0.evidence_refs 包含未知或跨牌 ref。"],
+      allowedIndices: [0],
+      allowedRefs: ["K1", "K2"],
+      allowedRefsByIndex: [{ index: 0, refs: ["K1"] }],
+      agentProfile: "lite",
+      requiredThemes: [],
+    });
+
+    expect(prompt.system).toMatch(/Allowed card refs by index/);
+    expect(prompt.system).toMatch(/index 0: K1/);
+    expect(prompt.system).toMatch(/"card_insights"/);
+    expect(prompt.system).toMatch(/"synthesis"/);
+    expect(prompt.system).toMatch(
+      /complete repaired object including every required sibling field/i,
+    );
+    expect(prompt.user).toMatch(/Invalid payload/);
+  });
+
+  it("requires final repairs to retain a server-owned Initial theme verbatim", () => {
+    const prompt = buildReadingStageRepairPrompt({
+      stage: "final_synthesis",
+      invalidPayload: {
+        themes: ["新主题"],
+      },
+      issues: ["Final synthesis 完全丢失 Initial 核心主题。"],
+      allowedIndices: [0],
+      allowedRefs: ["K1"],
+      allowedRefsByIndex: [{ index: 0, refs: ["K1"] }],
+      agentProfile: "sober",
+      requiredThemes: ["现实核实", "沟通边界"],
+    });
+
+    expect(prompt.system).toMatch(/Required Initial themes/);
+    expect(prompt.system).toMatch(/现实核实/);
+    expect(prompt.system).toMatch(/appear verbatim in themes or synthesis/);
   });
 });

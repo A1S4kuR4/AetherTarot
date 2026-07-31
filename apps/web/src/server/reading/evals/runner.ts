@@ -1,10 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import {
-  buildPlaceholderFinalReadingDraft,
-  buildPlaceholderInitialReadingDraft,
-} from "@aethertarot/prompting";
 import type { ReadingRequestPayload } from "@aethertarot/shared-types";
 import { isReadingServiceError } from "@/server/reading/errors";
 import type { ReadingEvalRunResult } from "@/server/reading/evals/assertions";
@@ -16,14 +12,13 @@ import {
   type ReadingEvalReport,
 } from "@/server/reading/evals/report";
 import { runReadingGraphWithDiagnostics } from "@/server/reading/graph";
+import { PlaceholderReadingProvider } from "@/server/reading/provider";
 import {
   createInMemorySessionMemoryStore,
   type SessionMemoryStore,
 } from "@/server/reading/memory";
 import type { ReadingAgentDecider } from "@/server/reading/reading-agent-core";
 import type {
-  FinalReadingContext,
-  HydratedReadingContext,
   ReadingProvider,
 } from "@/server/reading/types";
 import {
@@ -46,15 +41,7 @@ const DEFAULT_REPORT_PATH = path.resolve(
   "../../../../../../outputs/evals/reading-eval-report.json",
 );
 
-class EvalPlaceholderReadingProvider implements ReadingProvider {
-  async generateInitialRead(context: HydratedReadingContext) {
-    return buildPlaceholderInitialReadingDraft(context);
-  }
-
-  async generateFinalRead(context: FinalReadingContext) {
-    return buildPlaceholderFinalReadingDraft(context);
-  }
-}
+class EvalPlaceholderReadingProvider extends PlaceholderReadingProvider implements ReadingProvider {}
 
 function buildPayload(evalCase: ReadingEvalCase): ReadingRequestPayload {
   const cards = evalCase.input.cards?.length
