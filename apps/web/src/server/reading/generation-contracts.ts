@@ -131,14 +131,19 @@ function normalizeStringArray({
   field,
   min,
   max,
+  acceptSingleString = false,
 }: {
   value: unknown;
   stage: ReadingGenerationStage;
   field: string;
   min: number;
   max: number;
+  acceptSingleString?: boolean;
 }) {
-  if (!Array.isArray(value)) {
+  const items = acceptSingleString && typeof value === "string"
+    ? [value]
+    : value;
+  if (!Array.isArray(items)) {
     contractFailure({
       subtype: "schema_violation",
       stage,
@@ -146,7 +151,7 @@ function normalizeStringArray({
       invalidPayload: value,
     });
   }
-  const values = value.map((item, index) =>
+  const values = items.map((item, index) =>
     asNonEmptyString(item, stage, `${field}.${index}`)
   );
   const normalized = [...new Set(values)];
@@ -474,6 +479,7 @@ export function normalizeSynthesisPayload({
       field: "follow_up_questions",
       min: followup.min,
       max: followup.max,
+      acceptSingleString: true,
     }),
     confidence_note: asNonEmptyString(
       record.confidence_note,
@@ -597,16 +603,27 @@ export function hydrateStagedReadingDraft({
       message: "缺少可用于 authority hydration 的 card insights。",
     });
   }
+  const groundedInsights = effectiveInsights.map((insight) => ({
+    ...insight,
+    evidence_refs: insight.evidence_refs?.length
+      ? insight.evidence_refs
+      : [...allowedRefsForCard(context, insight.index)],
+  }));
+  const synthesisRefs = synthesis.evidence_refs?.length
+    ? synthesis.evidence_refs
+    : [...new Set(groundedInsights.flatMap(
+        (insight) => insight.evidence_refs ?? [],
+      ))];
 
   return {
-    cards: buildAuthorityCards(context, effectiveInsights),
+    cards: buildAuthorityCards(context, groundedInsights),
     themes: synthesis.themes,
     synthesis: synthesis.synthesis,
     reflective_guidance: synthesis.reflective_guidance,
     follow_up_questions: synthesis.follow_up_questions,
     confidence_note: synthesis.confidence_note,
     grounding_claims: [
-      ...effectiveInsights.flatMap((insight) =>
+      ...groundedInsights.flatMap((insight) =>
         insight.evidence_refs?.length
           ? [{
               path: `cards.${insight.index}.interpretation` as const,
@@ -614,10 +631,10 @@ export function hydrateStagedReadingDraft({
             }]
           : []
       ),
-      ...(synthesis.evidence_refs?.length
+      ...(synthesisRefs.length
         ? [{
             path: "synthesis" as const,
-            source_refs: synthesis.evidence_refs,
+            source_refs: synthesisRefs,
           }]
         : []),
     ],

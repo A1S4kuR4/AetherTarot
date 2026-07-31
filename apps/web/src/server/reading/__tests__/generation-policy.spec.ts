@@ -99,6 +99,55 @@ describe("adaptive staged reading generation", () => {
     ]);
   });
 
+  it("preserves verified staged prose when the provider omits optional refs", async () => {
+    const cardPrefix = "staged-card-prose";
+    const synthesisText = "staged-synthesis-prose：整组牌要求先核对现实条件，再选择低风险行动。";
+    class ContentProvider extends RecordingProvider {
+      override async generateCardInsights(
+        context: HydratedReadingContext,
+        options: ReadingGenerationCallOptions,
+      ) {
+        this.stages.push(`card_insights:${options.attempt}:${options.kind}`);
+        return context.drawnCards.map((_, index) => ({
+          index,
+          interpretation: `${cardPrefix}-${index}：这个位置提供一条可核实的观察线索。`,
+        }));
+      }
+
+      override async generateSynthesis(
+        _context: HydratedReadingContext,
+        _cardInsights: Parameters<PlaceholderReadingProvider["generateSynthesis"]>[1],
+        options: ReadingGenerationCallOptions,
+      ) {
+        this.stages.push(`synthesis:${options.attempt}:${options.kind}`);
+        return {
+          themes: ["核实现实条件", "选择低风险行动"],
+          synthesis: synthesisText,
+          reflective_guidance: [
+            "列出已经确认的事实。",
+            "标记仍待验证的假设。",
+            "选择一个可撤回的小步骤。",
+          ],
+          follow_up_questions: ["哪个现实条件最需要先确认？"],
+          confidence_note: "这些内容是反思线索，不替代现实判断。",
+        };
+      }
+    }
+
+    const result = await runReadingGraphWithDiagnostics(
+      { ...buildHolyTrianglePayload(), agent_profile: "standard" },
+      { provider: new ContentProvider(), generationMode: "adaptive_staged" },
+    );
+
+    expect(result.reading.cards.map((card) => card.interpretation)).toEqual([
+      `${cardPrefix}-0：这个位置提供一条可核实的观察线索。`,
+      `${cardPrefix}-1：这个位置提供一条可核实的观察线索。`,
+      `${cardPrefix}-2：这个位置提供一条可核实的观察线索。`,
+    ]);
+    expect(result.reading.synthesis).toBe(synthesisText);
+    expect(result.reading.grounding?.status).toBe("grounded");
+  });
+
   it("keeps seven-card Initial in one card-insight batch", () => {
     expect(buildReadingGenerationPlan({
       mode: "adaptive_staged",

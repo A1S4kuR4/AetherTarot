@@ -145,6 +145,53 @@ describe("staged generation contracts", () => {
     ]);
   });
 
+  it("deterministically maps omitted staged refs by authority card index", () => {
+    const context = buildContext();
+    const cardInsights = normalizeCardInsightsPayload({
+      context,
+      payload: {
+        card_insights: validInsights().map(({ index, interpretation }) => ({
+          index,
+          interpretation,
+        })),
+      },
+    });
+    const synthesis = normalizeSynthesisPayload({
+      context,
+      phase: "initial",
+      payload: { ...validSynthesis(), evidence_refs: undefined },
+    });
+
+    expect(hydrateStagedReadingDraft({
+      context,
+      cardInsights,
+      synthesis,
+    }).grounding_claims).toEqual([
+      { path: "cards.0.interpretation", source_refs: ["ref-0"] },
+      { path: "cards.1.interpretation", source_refs: ["ref-1"] },
+      { path: "cards.2.interpretation", source_refs: ["ref-2"] },
+      { path: "synthesis", source_refs: ["ref-0", "ref-1", "ref-2"] },
+    ]);
+  });
+
+  it("normalizes one follow-up string but still rejects unknown synthesis refs", () => {
+    const context = buildContext();
+    expect(normalizeSynthesisPayload({
+      context,
+      phase: "initial",
+      payload: {
+        ...validSynthesis(),
+        follow_up_questions: "哪个现实条件最需要先确认？",
+      },
+    }).follow_up_questions).toEqual(["哪个现实条件最需要先确认？"]);
+
+    expect(() => normalizeSynthesisPayload({
+      context,
+      phase: "initial",
+      payload: { ...validSynthesis(), evidence_refs: ["unknown-ref"] },
+    })).toThrow(expect.objectContaining({ subtype: "grounding_violation" }));
+  });
+
   it("requires Final to retain an Initial core theme", () => {
     const context = buildContext();
     const initialReading = {

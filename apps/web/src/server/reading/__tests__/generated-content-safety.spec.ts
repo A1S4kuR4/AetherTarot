@@ -1,12 +1,48 @@
 import { describe, expect, it } from "vitest";
 import { runReadingGraphWithDiagnostics } from "@/server/reading/graph";
 import { createInMemorySessionMemoryStore } from "@/server/reading/memory";
+import { PlaceholderReadingProvider } from "@/server/reading/provider";
 import {
   buildSinglePayload,
   TestReadingProvider,
 } from "@/server/reading/__tests__/fixtures";
 
 describe("reading generated-content safety", () => {
+  it("still degrades deterministic staged claims after a safety rewrite", async () => {
+    const unsafeText = "你应该停药。";
+    class UnsafeCompactProvider extends PlaceholderReadingProvider {
+      override async generateCompactRead() {
+        return {
+          card_insights: [{
+            index: 0,
+            interpretation: "这张牌先提供一条安全的现实观察。",
+          }],
+          synthesis: {
+            themes: ["现实观察", "谨慎判断"],
+            synthesis: unsafeText,
+            reflective_guidance: ["核实现实信息。", "必要时咨询专业人士。"],
+            follow_up_questions: [],
+            confidence_note: "这只是反思线索。",
+          },
+        };
+      }
+    }
+    const result = await runReadingGraphWithDiagnostics(
+      { ...buildSinglePayload(), agent_profile: "lite" },
+      {
+        provider: new UnsafeCompactProvider(),
+        generationMode: "adaptive_staged",
+      },
+    );
+
+    expect(JSON.stringify(result.reading)).not.toContain(unsafeText);
+    expect(result.reading.safety_note).toMatch(/替换/);
+    expect(result.reading.grounding?.status).toBe("degraded");
+    expect(result.reading.grounding?.sources.every(
+      (source) => source.kind === "authority_card",
+    )).toBe(true);
+  });
+
   it("replaces severe provider output before capsule and thread memory writes", async () => {
     const memoryStore = createInMemorySessionMemoryStore();
     const unsafeText = "你应该停药。";
