@@ -2,6 +2,7 @@ import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import {
   buildCardInsightsPrompt,
   buildFinalReadingPrompt,
+  buildFinalSynthesisRefinementPrompt,
   buildInitialReadingPrompt,
   buildReadingStageRepairPrompt,
   readerModeStrategies,
@@ -171,11 +172,16 @@ describe("reader mode prompt contract", () => {
     };
 
     const finalPrompt = buildFinalReadingPrompt(finalContext);
+    const stagedFinalPrompt = buildFinalSynthesisRefinementPrompt(finalContext);
 
     expect(finalPrompt.system).toMatch(/FINAL phase/);
     expect(finalPrompt.user).toMatch(/Preserve the initial primary themes/);
     expect(finalPrompt.user).toMatch(/Initial reading snapshot/);
     expect(finalPrompt.user).toMatch(/Follow-up answers/);
+    expect(stagedFinalPrompt.user).toMatch(
+      /Allowed zero-based card_refinement indices: 0/,
+    );
+    expect(stagedFinalPrompt.user).toMatch(/Never use one-based position numbers/);
   });
 
   it("keeps card evidence refs scoped to the matching authority card", () => {
@@ -227,5 +233,8 @@ describe("reader mode prompt contract", () => {
     expect(prompt.system).toMatch(/Required Initial themes/);
     expect(prompt.system).toMatch(/现实核实/);
     expect(prompt.system).toMatch(/appear verbatim in themes or synthesis/);
+    expect(prompt.system).toMatch(
+      /omit card_refinements entirely and copy themes, synthesis/i,
+    );
   });
 });

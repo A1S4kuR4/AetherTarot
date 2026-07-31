@@ -517,6 +517,7 @@ export class OpenAiCompatibleTransport {
     }
 
     let result: T;
+    let parsedMessage: JsonRecord | undefined;
     try {
       messageText = extractMessageText(payload);
       recordLlmRawCompletion({
@@ -528,8 +529,12 @@ export class OpenAiCompatibleTransport {
         kind: input.metric?.kind,
         text: messageText,
       });
-      result = input.parse(parseOpenAiJsonObject(messageText));
+      parsedMessage = parseOpenAiJsonObject(messageText);
+      result = input.parse(parsedMessage);
     } catch (error) {
+      if (parsedMessage && isReadingGenerationError(error)) {
+        error.invalidPayload = parsedMessage;
+      }
       const subtype = isReadingGenerationError(error)
         ? error.subtype
         : "schema_violation";

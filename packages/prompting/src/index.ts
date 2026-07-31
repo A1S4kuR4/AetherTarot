@@ -1559,6 +1559,7 @@ export function buildFinalSynthesisRefinementPrompt({
   questionType,
   agentProfile,
   spread,
+  drawnCards,
   initialReading,
   followupAnswers,
   priorSessionCapsule,
@@ -1569,6 +1570,7 @@ export function buildFinalSynthesisRefinementPrompt({
   questionType: QuestionType;
   agentProfile: AgentProfile;
   spread: Spread;
+  drawnCards: DrawnCard[];
   initialReading: StructuredReading;
   followupAnswers: FollowupAnswer[];
   priorSessionCapsule: string | null;
@@ -1591,6 +1593,9 @@ export function buildFinalSynthesisRefinementPrompt({
       buildModeStrategyBlock(agentProfile),
       buildSpreadPromptBias(spread, "final"),
       formatSpread(spread),
+      `Allowed zero-based card_refinement indices: ${
+        drawnCards.map((_, index) => index).join(", ") || "none"
+      }. Never use one-based position numbers.`,
       "Server-owned Initial reading:",
       formatInitialReading(initialReading),
       "Follow-up answers:",
@@ -1639,6 +1644,7 @@ export function buildReadingStageRepairPrompt({
       `Allowed refs: ${allowedRefs.join(", ") || "none"}`,
       `Allowed card refs by index:\n${refBoundary || "- none"}`,
       "For card_insights or card_refinements, refs are valid only for the same index. Omit evidence_refs when no valid same-card ref is available.",
+      "If a final_synthesis validation issue names card_refinements, omit card_refinements entirely and copy themes, synthesis, reflective_guidance, follow_up_questions, and confidence_note exactly from the supplied invalid payload.",
       buildRepairStageContract({
         stage,
         agentProfile,

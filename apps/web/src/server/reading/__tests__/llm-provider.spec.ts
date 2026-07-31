@@ -455,6 +455,52 @@ describe("llm provider baseline", () => {
     expect(draft.reflective_guidance).toHaveLength(3);
   });
 
+  it("returns the complete staged payload when contract validation requests repair", async () => {
+    const context = await buildFinalContext();
+    const tokenGate = buildTokenGate();
+    const completion = {
+      themes: context.initialReading.themes,
+      synthesis: "这段综合保留了初读主轴，只需要修复一个字段。",
+      reflective_guidance: [
+        "先核实补充信息对应的现实信号。",
+        "保留一个低风险的小动作。",
+      ],
+      follow_up_questions: "这个字段错误地使用了字符串。",
+      confidence_note: "这些线索仍需要结合现实信息继续验证。",
+    };
+    const provider = new LlmReadingProvider(
+      {
+        baseUrl: "http://127.0.0.1:11434/v1",
+        model: "test-model",
+        thinkingMode: "disabled",
+        responseFormat: "json_object",
+        temperature: 0.2,
+        timeoutMs: 5_000,
+        maxOutputTokens: 3200,
+      },
+      vi.fn(async () => Response.json({
+        choices: [{
+          finish_reason: "stop",
+          message: { content: JSON.stringify(completion) },
+        }],
+      })) as typeof fetch,
+      tokenGate,
+    );
+
+    await expect(provider.refineFinalSynthesis(context, {
+      runId: "run-final-repair",
+      stageId: "run-final-repair:final_synthesis",
+      attemptId: "run-final-repair:final_synthesis:1",
+      stage: "final_synthesis",
+      attempt: 1,
+      kind: "generate",
+    })).rejects.toMatchObject({
+      subtype: "schema_violation",
+      invalidPayload: completion,
+    });
+    expect(tokenGate.settle).toHaveBeenCalledTimes(1);
+  });
+
   it("does not call the model when the daily token reservation is rejected", async () => {
     const context = await buildFinalContext();
     const fetchMock = vi.fn();

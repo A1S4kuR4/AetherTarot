@@ -414,16 +414,17 @@ export class LlmReadingProvider implements ReadingProvider {
     );
   }
 
-  private requestDraft(
+  private requestDraft<T>(
     prompt: { system: string; user: string },
     maxOutputTokens: number,
+    parse: (payload: JsonRecord) => T,
     options?: ReadingGenerationCallOptions,
   ) {
     return this.transport.request({
       source: "reading",
       prompt,
       maxOutputTokens,
-      parse: (payload) => payload,
+      parse,
       truncatedMessage:
         "llm provider 输出达到长度上限，解读未完整生成，请稍后重试或减少牌数。",
       signal: options?.signal,
@@ -460,17 +461,16 @@ export class LlmReadingProvider implements ReadingProvider {
       cardCount: context.drawnCards.length,
       configuredMaxOutputTokens: this.config.maxOutputTokens,
     });
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildInitialReadingPrompt(context),
       maxOutputTokens,
+      (payload) => normalizeReadingDraft({
+        payload,
+        context,
+        phase: "initial",
+      }),
       options,
     );
-
-    return normalizeReadingDraft({
-      payload,
-      context,
-      phase: "initial",
-    });
   }
 
   async generateFinalRead(
@@ -482,41 +482,40 @@ export class LlmReadingProvider implements ReadingProvider {
       cardCount: context.drawnCards.length,
       configuredMaxOutputTokens: this.config.maxOutputTokens,
     });
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildFinalReadingPrompt(context),
       maxOutputTokens,
+      (payload) => normalizeReadingDraft({
+        payload,
+        context,
+        phase: "final",
+      }),
       options,
     );
-
-    return normalizeReadingDraft({
-      payload,
-      context,
-      phase: "final",
-    });
   }
 
   async generateCompactRead(
     context: HydratedReadingContext,
     options: ReadingGenerationCallOptions,
   ) {
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildCompactReadingPrompt(context),
       this.maxTokens(context, 0.9),
+      (payload) => normalizeCompactReadingPayload({ payload, context }),
       options,
     );
-    return normalizeCompactReadingPayload({ payload, context });
   }
 
   async generateCardInsights(
     context: HydratedReadingContext,
     options: ReadingGenerationCallOptions,
   ) {
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildCardInsightsPrompt(context),
       this.maxTokens(context),
+      (payload) => normalizeCardInsightsPayload({ payload, context }),
       options,
     );
-    return normalizeCardInsightsPayload({ payload, context });
   }
 
   async generateSynthesis(
@@ -524,32 +523,32 @@ export class LlmReadingProvider implements ReadingProvider {
     cardInsights: Parameters<typeof buildSynthesisPrompt>[0]["cardInsights"],
     options: ReadingGenerationCallOptions,
   ) {
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildSynthesisPrompt({ ...context, cardInsights }),
       this.maxTokens(context, 0.65),
+      (payload) => normalizeSynthesisPayload({
+        payload,
+        context,
+        phase: "initial",
+      }),
       options,
     );
-    return normalizeSynthesisPayload({
-      payload,
-      context,
-      phase: "initial",
-    });
   }
 
   async refineFinalSynthesis(
     context: FinalReadingContext,
     options: ReadingGenerationCallOptions,
   ) {
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildFinalSynthesisRefinementPrompt(context),
       this.maxTokens(context, 0.75),
+      (payload) => normalizeFinalSynthesisPayload({
+        payload,
+        context,
+        initialReading: context.initialReading,
+      }),
       options,
     );
-    return normalizeFinalSynthesisPayload({
-      payload,
-      context,
-      initialReading: context.initialReading,
-    });
   }
 
   async repairStage(
@@ -557,7 +556,7 @@ export class LlmReadingProvider implements ReadingProvider {
     options: ReadingGenerationCallOptions,
   ): Promise<ReadingStageDraft> {
     const context = request.context;
-    const payload = await this.requestDraft(
+    return this.requestDraft(
       buildReadingStageRepairPrompt({
         stage: request.stage,
         invalidPayload: request.invalidPayload,
@@ -583,33 +582,37 @@ export class LlmReadingProvider implements ReadingProvider {
             ? 0.9
             : 0.75,
       ),
+      (payload) => {
+        if (request.stage === "compact") {
+          return normalizeCompactReadingPayload({ payload, context });
+        }
+        if (request.stage === "card_insights") {
+          return normalizeCardInsightsPayload({ payload, context });
+        }
+        if (request.stage === "synthesis") {
+          return normalizeSynthesisPayload({
+            payload,
+            context,
+            phase: "initial",
+          });
+        }
+        if (
+          request.stage === "final_synthesis"
+          && "initialReading" in context
+        ) {
+          return normalizeFinalSynthesisPayload({
+            payload,
+            context,
+            initialReading: context.initialReading,
+          });
+        }
+        throw new ReadingServiceError(
+          "generation_failed",
+          `不支持修复 generation stage：${request.stage}。`,
+          500,
+        );
+      },
       options,
-    );
-
-    if (request.stage === "compact") {
-      return normalizeCompactReadingPayload({ payload, context });
-    }
-    if (request.stage === "card_insights") {
-      return normalizeCardInsightsPayload({ payload, context });
-    }
-    if (request.stage === "synthesis") {
-      return normalizeSynthesisPayload({
-        payload,
-        context,
-        phase: "initial",
-      });
-    }
-    if (request.stage === "final_synthesis" && "initialReading" in context) {
-      return normalizeFinalSynthesisPayload({
-        payload,
-        context,
-        initialReading: context.initialReading,
-      });
-    }
-    throw new ReadingServiceError(
-      "generation_failed",
-      `不支持修复 generation stage：${request.stage}。`,
-      500,
     );
   }
 }

@@ -7,6 +7,7 @@ import {
   collectLlmUsage,
   unwrapLlmUsageError,
 } from "@/server/observability/llm-usage";
+import { ReadingGenerationError } from "@/server/reading/errors";
 
 const config = {
   baseUrl: "http://provider.test/v1",
@@ -85,6 +86,60 @@ describe("OpenAI-compatible transport", () => {
     });
 
     expect(result).toBe("ok");
+    expect(tokenGate.settle).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the complete parsed payload for constrained contract repair", async () => {
+    const tokenGate = createTokenGate();
+    const completion = {
+      themes: ["保留的初始主题", "新的整合视角"],
+      synthesis: "这段内容本身有效。",
+      follow_up_questions: "这一个字段错误地使用了字符串。",
+    };
+    const transport = new OpenAiCompatibleTransport(
+      config,
+      vi.fn(async () => Response.json({
+        choices: [{
+          finish_reason: "stop",
+          message: { content: JSON.stringify(completion) },
+        }],
+      })),
+      tokenGate,
+    );
+    let collectedError: unknown;
+
+    try {
+      await collectLlmUsage(() => transport.request({
+        source: "reading",
+        prompt: { system: "system", user: "user" },
+        maxOutputTokens: 100,
+        parse: (payload) => {
+          throw new ReadingGenerationError({
+            subtype: "schema_violation",
+            message: "follow_up_questions must be an array",
+            retryable: true,
+            invalidPayload: payload.follow_up_questions,
+            issues: ["follow_up_questions must be an array"],
+          });
+        },
+        truncatedMessage: "truncated",
+      }));
+    } catch (error) {
+      collectedError = error;
+    }
+    const unwrapped = unwrapLlmUsageError(collectedError);
+
+    expect(unwrapped.cause).toMatchObject({
+      subtype: "schema_violation",
+      issues: ["follow_up_questions must be an array"],
+      invalidPayload: completion,
+    });
+    expect(unwrapped.calls).toEqual([
+      expect.objectContaining({
+        success: false,
+        subtype: "schema_violation",
+      }),
+    ]);
     expect(tokenGate.settle).toHaveBeenCalledTimes(1);
   });
 
