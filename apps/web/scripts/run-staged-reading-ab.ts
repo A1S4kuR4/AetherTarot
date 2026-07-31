@@ -35,12 +35,13 @@ import type {
   ReadingProvider,
   RepairStageRequest,
 } from "../src/server/reading/types";
-import type {
-  CardInsightDraft,
-  CompactReadingDraft,
-  FinalSynthesisDraft,
-  ReadingStageDraft,
-  SynthesisDraft,
+import {
+  isExtractiveCardPileup,
+  type CardInsightDraft,
+  type CompactReadingDraft,
+  type FinalSynthesisDraft,
+  type ReadingStageDraft,
+  type SynthesisDraft,
 } from "../src/server/reading/generation-contracts";
 import {
   collectLlmUsage,
@@ -74,6 +75,16 @@ const DETERMINISTIC_CLAIM_PATTERN =
   /一定会|必然会|命中注定|百分之百|必须(?:分手|辞职|结婚|投资)/u;
 const DUPLICATE_PERIOD_PATTERN = /(?:。|\.)\s*(?:。|\.)/u;
 const SINGLE_FAKE_PATH_PATTERN = /一路带到|从\s*核心指引\s*(?:一路)?带到\s*核心指引/u;
+
+function positiveIntegerEnv(name: string, fallback: number) {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+  return parsed;
+}
 
 type Arm = "monolithic" | "adaptive_staged";
 type Scenario = "lite_initial" | "standard_initial" | "sober_final_prep" | "sober_final";
@@ -202,6 +213,29 @@ function visibleProse(reading: StructuredReading) {
   ].join("\n");
 }
 
+function rubricReadingView(reading: StructuredReading) {
+  return {
+    question_type: reading.question_type,
+    agent_profile: reading.agent_profile,
+    reading_phase: reading.reading_phase,
+    cards: reading.cards.map((card) => ({
+      name: card.name,
+      orientation: card.orientation,
+      position: card.position,
+      position_meaning: card.position_meaning,
+      interpretation: card.interpretation,
+    })),
+    themes: reading.themes,
+    synthesis: reading.synthesis,
+    reflective_guidance: reading.reflective_guidance,
+    follow_up_questions: reading.follow_up_questions,
+    safety_note: reading.safety_note,
+    confidence_note: reading.confidence_note,
+    sober_check: reading.sober_check,
+    presentation_mode: reading.presentation_mode,
+  };
+}
+
 function evaluateChecks(
   reading: StructuredReading,
   payload: ReadingRequestPayload,
@@ -240,10 +274,13 @@ function evaluateChecks(
       reading.spread.id !== "single"
       || !SINGLE_FAKE_PATH_PATTERN.test(reading.synthesis),
     no_multi_card_pileup:
-      reading.cards.length <= 1
-      || mentionedCards < Math.ceil(reading.cards.length * 0.7)
-      || !/(?:^|\s)(?:1[.)、]|2[.)、]|3[.)、])|首先.{0,40}(?:其次|然后)|第一张.{0,60}第二张/u.test(
-        reading.synthesis,
+      !isExtractiveCardPileup(reading.synthesis, reading.cards)
+      && (
+        reading.cards.length <= 1
+        || mentionedCards < Math.ceil(reading.cards.length * 0.7)
+        || !/(?:^|\s)(?:1[.)、]|2[.)、]|3[.)、])|首先.{0,40}(?:其次|然后)|第一张.{0,60}第二张/u.test(
+          reading.synthesis,
+        )
       ),
     no_deterministic_claim: !DETERMINISTIC_CLAIM_PATTERN.test(prose),
     final_integration:
@@ -679,12 +716,16 @@ async function evaluatePair({
   pairId,
   left,
   right,
+  leftInitial,
+  rightInitial,
   transport,
   swappedReview,
 }: {
   pairId: string;
   left: ExecutionResult;
   right: ExecutionResult;
+  leftInitial?: ExecutionResult;
+  rightInitial?: ExecutionResult;
   transport: OpenAiCompatibleTransport;
   swappedReview: boolean;
 }): Promise<RubricResult> {
@@ -693,6 +734,8 @@ async function evaluatePair({
     : { A: left.arm, B: right.arm };
   const A = swappedReview ? right : left;
   const B = swappedReview ? left : right;
+  const AInitial = swappedReview ? rightInitial : leftInitial;
+  const BInitial = swappedReview ? leftInitial : rightInitial;
   const scoreShape = Object.fromEntries(
     RUBRIC_DIMENSIONS.map((dimension) => [dimension, { A: 1, B: 1 }]),
   );
@@ -706,6 +749,9 @@ async function evaluatePair({
         `Dimensions: ${RUBRIC_DIMENSIONS.join(", ")}.`,
         `scores must use this exact nested object shape: ${JSON.stringify(scoreShape)}. Never return a single scalar score for a dimension.`,
         "Prioritize fatal contract, authority, grounding, safety, and contradiction failures before stylistic preference.",
+        "Operational anchors: question_relevance measures whether the reading answers the shared question; spread_logic measures correct use of position semantics and spread axes; holistic_synthesis measures transformation into one argument rather than a card list; card_specificity measures concrete card-position-orientation use; constructive_tension measures a grounded counterpoint or unverified condition; card_synthesis_consistency measures whether synthesis faithfully consumes card interpretations without copying or contradicting them; final_integration measures whether a FINAL reading preserves the Initial axis and uses follow-up answers to narrow a relationship, tension, condition, or next action rather than merely appending an acknowledgement.",
+        "Do not reward verbosity, answer order, source counts, grounding status, IDs, or metadata. Compare the visible prose and its use of the shared input.",
+        "For INITIAL pairs, set final_integration to 5 for both A and B and do not use that dimension to choose the winner.",
       ].join("\n"),
       user: JSON.stringify({
         shared_input: {
@@ -715,8 +761,20 @@ async function evaluatePair({
           phase: A.payload.phase,
           drawn_cards: A.payload.drawnCards,
         },
-        A: A.reading,
-        B: B.reading,
+        A: {
+          initial: AInitial?.reading
+            ? rubricReadingView(AInitial.reading)
+            : undefined,
+          followup_answers: A.payload.followup_answers,
+          reading: A.reading ? rubricReadingView(A.reading) : null,
+        },
+        B: {
+          initial: BInitial?.reading
+            ? rubricReadingView(BInitial.reading)
+            : undefined,
+          followup_answers: B.payload.followup_answers,
+          reading: B.reading ? rubricReadingView(B.reading) : null,
+        },
       }),
     },
     maxOutputTokens: 1_200,
@@ -834,8 +892,9 @@ function buildSummary(
       }];
     }));
   const primaryRubrics = rubricResults.filter((result) => !result.swapped_review);
+  const resolvedPrimaryRubrics = primaryRubrics.filter((result) => !result.conflict);
   const wins = { monolithic: 0, adaptive_staged: 0, tie: 0 };
-  for (const result of primaryRubrics) {
+  for (const result of resolvedPrimaryRubrics) {
     if (result.winner === "tie") {
       wins.tie += 1;
     } else {
@@ -843,7 +902,7 @@ function buildSummary(
     }
   }
   const rubricByDimension = Object.fromEntries(RUBRIC_DIMENSIONS.map((dimension) => {
-    const pairs = primaryRubrics.map((result): [number, number] => {
+    const pairs = resolvedPrimaryRubrics.map((result): [number, number] => {
       const monolithicLabel = result.label_order.A === "monolithic" ? "A" : "B";
       const adaptiveLabel = monolithicLabel === "A" ? "B" : "A";
       return [
@@ -884,8 +943,11 @@ function buildSummary(
     paired_rubric: {
       ...wins,
       reviewed_pairs: primaryRubrics.length,
+      resolved_pairs: resolvedPrimaryRubrics.length,
       swapped_rechecks: rubricResults.filter((result) => result.swapped_review).length,
-      conflicts: rubricResults.filter((result) => result.conflict).length,
+      conflicts: rubricResults.filter(
+        (result) => result.swapped_review && result.conflict,
+      ).length,
       by_dimension: rubricByDimension,
     },
   };
@@ -909,7 +971,11 @@ function rubricMean({
   pairFilter?: (pairId: string) => boolean;
 }) {
   const values = results
-    .filter((result) => !result.swapped_review && pairFilter(result.pair_id))
+    .filter((result) =>
+      !result.swapped_review
+      && !result.conflict
+      && pairFilter(result.pair_id)
+    )
     .flatMap((result) => {
       const label = result.label_order.A === arm ? "A" : "B";
       return dimensions.map((dimension) => result.scores[dimension]?.[label])
@@ -1126,7 +1192,7 @@ function buildEnablementGates(
           (result) => result.swapped_review,
         ).length,
         unresolved_conflicts: rubricResults.filter(
-          (result) => result.conflict,
+          (result) => result.swapped_review && result.conflict,
         ).length,
       },
       threshold: "75 primary, 15 swapped rechecks, and 0 unresolved conflicts",
@@ -1184,6 +1250,28 @@ async function main() {
     throw new Error("A/B requires a configured LLM API key.");
   }
 
+  const graphExecutionLimit = positiveIntegerEnv(
+    "AETHERTAROT_AB_GRAPH_EXECUTION_LIMIT",
+    GRAPH_EXECUTION_LIMIT,
+  );
+  const tokenBudget = positiveIntegerEnv(
+    "AETHERTAROT_AB_TOKEN_BUDGET",
+    TOKEN_BUDGET,
+  );
+  const rawRequestLimit = positiveIntegerEnv(
+    "AETHERTAROT_AB_RAW_REQUEST_LIMIT",
+    RAW_REQUEST_LIMIT,
+  );
+  const evaluatorTokenBudget = positiveIntegerEnv(
+    "AETHERTAROT_AB_EVALUATOR_TOKEN_BUDGET",
+    EVALUATOR_TOKEN_BUDGET,
+  );
+  const evaluatorRequestLimit = positiveIntegerEnv(
+    "AETHERTAROT_AB_EVALUATOR_REQUEST_LIMIT",
+    EVALUATOR_REQUEST_LIMIT,
+  );
+  const swapEvery = positiveIntegerEnv("AETHERTAROT_AB_SWAP_EVERY", 5);
+
   const startedAt = new Date().toISOString();
   const outputDirectory = path.join(
     OUTPUT_ROOT,
@@ -1191,8 +1279,8 @@ async function main() {
   );
   await mkdir(outputDirectory, { recursive: true });
   const tokenGate = createHardBudgetTokenGate({
-    tokenBudget: TOKEN_BUDGET,
-    callLimit: RAW_REQUEST_LIMIT,
+    tokenBudget,
+    callLimit: rawRequestLimit,
   });
   const abTokenGate = {
     async reserve(input: Parameters<typeof tokenGate.gate.reserve>[0]) {
@@ -1250,22 +1338,63 @@ async function main() {
     throw new Error(`Unknown A/B arm: ${configuredArm}`);
   }
   const onlyArm = configuredArm as Arm | undefined;
-  const plannedGraphExecutions = getAllSpreads().length
-    * questionTypes.length
-    * (onlyArm ? 1 : 2)
-    * 4;
-  if (plannedGraphExecutions > GRAPH_EXECUTION_LIMIT) {
+  const configuredPairIds = process.env.AETHERTAROT_AB_PAIR_IDS
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const selectedPairIds = configuredPairIds?.length
+    ? new Set(configuredPairIds)
+    : undefined;
+  const validPairIds = new Set(
+    getAllSpreads().flatMap((spread) =>
+      allQuestionTypes.flatMap((questionType) => [
+        `${spread.id}:${questionType}:lite_initial`,
+        `${spread.id}:${questionType}:standard_initial`,
+        `${spread.id}:${questionType}:sober_final`,
+      ])
+    ),
+  );
+  for (const pairId of selectedPairIds ?? []) {
+    if (!validPairIds.has(pairId)) {
+      throw new Error(`Unknown A/B pair ID: ${pairId}`);
+    }
+  }
+  const shouldRunPair = (pairId: string) =>
+    selectedPairIds === undefined || selectedPairIds.has(pairId);
+  const executionCountForCell = (spreadId: string, questionType: QuestionType) => {
+    const prefix = `${spreadId}:${questionType}:`;
+    return Number(shouldRunPair(`${prefix}lite_initial`))
+      + Number(shouldRunPair(`${prefix}standard_initial`))
+      + (shouldRunPair(`${prefix}sober_final`) ? 2 : 0);
+  };
+  const selectedArmCount = onlyArm ? 1 : 2;
+  const plannedGraphExecutions = getAllSpreads().reduce(
+    (total, spread) => total + questionTypes.reduce(
+      (spreadTotal, questionType) =>
+        spreadTotal + executionCountForCell(spread.id, questionType),
+      0,
+    ),
+    0,
+  ) * selectedArmCount;
+  if (plannedGraphExecutions === 0) {
+    throw new Error("A/B pair selection produced no Graph executions.");
+  }
+  if (plannedGraphExecutions > graphExecutionLimit) {
     throw new Error(
-      `Planned matrix has ${plannedGraphExecutions} Graph executions, above the ${GRAPH_EXECUTION_LIMIT} limit.`,
+      `Planned matrix has ${plannedGraphExecutions} Graph executions, above the ${graphExecutionLimit} limit.`,
     );
   }
   const matrixRandom = createRandom(MATRIX_SEED);
   const cells = deterministicShuffle(
-    getAllSpreads().flatMap((_, spreadIndex) =>
-      questionTypes.map((questionType) => ({
-        spreadIndex,
-        questionType,
-      }))
+    getAllSpreads().flatMap((spread, spreadIndex) =>
+      questionTypes
+        .filter((questionType) =>
+          executionCountForCell(spread.id, questionType) > 0
+        )
+        .map((questionType) => ({
+          spreadIndex,
+          questionType,
+        }))
     ),
     matrixRandom,
   );
@@ -1279,6 +1408,7 @@ async function main() {
         ? ["monolithic", "adaptive_staged"]
         : ["adaptive_staged", "monolithic"];
     for (const arm of arms) {
+      const spreadId = getAllSpreads()[spreadIndex].id;
       const scenarios = [
         {
           scenario: "lite_initial" as const,
@@ -1298,10 +1428,13 @@ async function main() {
           question: QUESTION_FIXTURES[questionType][2],
           scenarioIndex: 2,
         },
-      ];
+      ].filter((scenario) => {
+        const scoredScenario = scenario.scenario.replace("_prep", "");
+        return shouldRunPair(`${spreadId}:${questionType}:${scoredScenario}`);
+      });
       let prep: ExecutionResult | undefined;
       for (const scenario of scenarios) {
-        if (executions.length >= GRAPH_EXECUTION_LIMIT) {
+        if (executions.length >= graphExecutionLimit) {
           stoppedByBudget = true;
           break outer;
         }
@@ -1312,7 +1445,7 @@ async function main() {
           profile: scenario.profile,
           scenarioIndex: scenario.scenarioIndex,
         });
-        const pairId = `${getAllSpreads()[spreadIndex].id}:${questionType}:${scenario.scenario.replace("_prep", "")}`;
+        const pairId = `${spreadId}:${questionType}:${scenario.scenario.replace("_prep", "")}`;
         const result = await runExecution({
           pairId,
           arm,
@@ -1330,13 +1463,14 @@ async function main() {
           break outer;
         }
       }
-      if (!prep?.reading) continue;
-      if (executions.length >= GRAPH_EXECUTION_LIMIT) {
+      const finalPairId = `${spreadId}:${questionType}:sober_final`;
+      if (!shouldRunPair(finalPairId) || !prep?.reading) continue;
+      if (executions.length >= graphExecutionLimit) {
         stoppedByBudget = true;
         break outer;
       }
       const final = await runExecution({
-        pairId: `${getAllSpreads()[spreadIndex].id}:${questionType}:sober_final`,
+        pairId: finalPairId,
         arm,
         scenario: "sober_final",
         payload: finalPayload(prep.payload, prep.reading, questionType),
@@ -1370,8 +1504,8 @@ async function main() {
     scoredPairs.set(execution.pair_id, pair);
   }
   const evaluatorTokenGate = createHardBudgetTokenGate({
-    tokenBudget: EVALUATOR_TOKEN_BUDGET,
-    callLimit: EVALUATOR_REQUEST_LIMIT,
+    tokenBudget: evaluatorTokenBudget,
+    callLimit: evaluatorRequestLimit,
   });
   const evaluatorAbTokenGate: LlmTokenGate = {
     async reserve(input) {
@@ -1420,11 +1554,15 @@ async function main() {
     pairId,
     left,
     right,
+    leftInitial,
+    rightInitial,
     swappedReview,
   }: {
     pairId: string;
     left: ExecutionResult;
     right: ExecutionResult;
+    leftInitial?: ExecutionResult;
+    rightInitial?: ExecutionResult;
     swappedReview: boolean;
   }): Promise<
     | { result: RubricResult; error: null }
@@ -1437,6 +1575,8 @@ async function main() {
           pairId,
           left,
           right,
+          leftInitial,
+          rightInitial,
           transport: evaluatorTransport,
           swappedReview,
         }))
@@ -1470,10 +1610,28 @@ async function main() {
       const monolithic = pair.monolithic;
       const adaptiveStaged = pair.adaptive_staged;
       if (!monolithic?.reading || !adaptiveStaged?.reading) continue;
+      const monolithicInitial = monolithic.payload.phase === "final"
+        ? executions.find((execution) =>
+            execution.pair_id === pairId
+            && execution.arm === "monolithic"
+            && execution.scenario === "sober_final_prep"
+            && Boolean(execution.reading)
+          )
+        : undefined;
+      const adaptiveStagedInitial = adaptiveStaged.payload.phase === "final"
+        ? executions.find((execution) =>
+            execution.pair_id === pairId
+            && execution.arm === "adaptive_staged"
+            && execution.scenario === "sober_final_prep"
+            && Boolean(execution.reading)
+          )
+        : undefined;
       const primaryCollected = await collectEvaluation({
         pairId,
         left: monolithic,
         right: adaptiveStaged,
+        leftInitial: monolithicInitial,
+        rightInitial: adaptiveStagedInitial,
         swappedReview: false,
       });
       if (primaryCollected.result === null) {
@@ -1489,11 +1647,13 @@ async function main() {
       }
       const primary = primaryCollected.result;
       rubricResults.push(primary);
-      if (pairIndex % 5 === 0) {
+      if (pairIndex % swapEvery === 0) {
         const swappedCollected = await collectEvaluation({
           pairId,
           left: monolithic,
           right: adaptiveStaged,
+          leftInitial: monolithicInitial,
+          rightInitial: adaptiveStagedInitial,
           swappedReview: true,
         });
         if (swappedCollected.result === null) {
@@ -1514,7 +1674,9 @@ async function main() {
         const swappedWinner = swapped.winner === "tie"
           ? "tie"
           : swapped.label_order[swapped.winner];
-        swapped.conflict = primaryWinner !== swappedWinner;
+        const conflict = primaryWinner !== swappedWinner;
+        primary.conflict = conflict;
+        swapped.conflict = conflict;
         rubricResults.push(swapped);
       }
       pairIndex += 1;
@@ -1539,7 +1701,7 @@ async function main() {
     version: 1,
     status:
       stoppedByBudget
-      || executions.length < GRAPH_EXECUTION_LIMIT
+      || executions.length < plannedGraphExecutions
       || evaluatorFailures.length > 0
         ? "partial"
         : "completed",
@@ -1550,6 +1712,8 @@ async function main() {
       generation_arms: ["monolithic", "adaptive_staged"],
       selected_arms: onlyArm ? [onlyArm] : ["monolithic", "adaptive_staged"],
       question_types: questionTypes,
+      selected_pair_ids: selectedPairIds ? [...selectedPairIds] : null,
+      swap_every: swapEvery,
       matrix_seed: MATRIX_SEED,
       temperature: config.temperature,
       thinking_mode: "disabled",
@@ -1558,11 +1722,12 @@ async function main() {
       seed_supported: false,
       api_key_configured: true,
       base_url_host: new URL(config.baseUrl).host,
-      token_budget: TOKEN_BUDGET,
-      raw_request_limit: RAW_REQUEST_LIMIT,
-      graph_execution_limit: GRAPH_EXECUTION_LIMIT,
-      evaluator_token_budget: EVALUATOR_TOKEN_BUDGET,
-      evaluator_request_limit: EVALUATOR_REQUEST_LIMIT,
+      token_budget: tokenBudget,
+      raw_request_limit: rawRequestLimit,
+      graph_execution_limit: graphExecutionLimit,
+      planned_graph_executions: plannedGraphExecutions,
+      evaluator_token_budget: evaluatorTokenBudget,
+      evaluator_request_limit: evaluatorRequestLimit,
       supabase_used: false,
     },
     summary: summaryWithEvaluator,

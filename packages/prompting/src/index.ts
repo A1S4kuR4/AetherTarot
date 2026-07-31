@@ -406,14 +406,30 @@ function formatCompactRefCatalog(
   ].join("\n");
 }
 
-function formatStagedCardInsights(cardInsights: StagedCardInsight[]) {
-  return cardInsights.map((insight) =>
-    [
+function formatStagedCardInsights({
+  spread,
+  drawnCards,
+  cardInsights,
+}: {
+  spread?: Spread;
+  drawnCards?: DrawnCard[];
+  cardInsights: StagedCardInsight[];
+}) {
+  return cardInsights.map((insight) => {
+    const drawnCard = drawnCards?.[insight.index];
+    const position = spread?.positions.find(
+      (item) => item.id === drawnCard?.positionId,
+    );
+
+    return [
       `- index: ${insight.index}`,
-      `  interpretation: ${insight.interpretation}`,
+      drawnCard ? `  position_id: ${drawnCard.positionId}` : null,
+      position ? `  position: ${position.name}` : null,
+      position ? `  position_meaning: ${position.description}` : null,
+      `  verified_interpretation: ${insight.interpretation}`,
       `  evidence_refs: ${insight.evidence_refs?.join(", ") || "none"}`,
-    ].join("\n")
-  ).join("\n");
+    ].filter((item): item is string => Boolean(item)).join("\n");
+  }).join("\n");
 }
 
 function buildStagedVisibleProseRules() {
@@ -449,6 +465,9 @@ function buildSynthesisStageContract({
     followup,
     "confidence_note must be one short reader-facing uncertainty boundary.",
     "Synthesize the verified insights into a spread-level argument. Do not enumerate or retell cards one by one.",
+    phase === "final"
+      ? "Rewrite one coherent synthesis in which the follow-up answer changes or narrows an Initial relationship, tension, unverified condition, or next action. Do not copy the complete Initial synthesis and merely append an acknowledgement of the answer."
+      : "Answer the user's question in the opening, then express at least one causal, supporting, conflicting, or turning relationship between the mapped position insights. Do not copy complete card interpretations into synthesis.",
     "Include one constructive resistance point anchored to the verified insights or an unverified reality condition.",
   ].join("\n");
 }
@@ -1465,6 +1484,7 @@ export function buildSynthesisPrompt({
   questionType,
   agentProfile,
   spread,
+  drawnCards,
   cardInsights,
   priorSessionCapsule,
   sessionMemory,
@@ -1474,6 +1494,7 @@ export function buildSynthesisPrompt({
   questionType: QuestionType;
   agentProfile: AgentProfile;
   spread: Spread;
+  drawnCards: DrawnCard[];
   cardInsights: StagedCardInsight[];
   priorSessionCapsule: string | null;
   sessionMemory?: SessionMemoryContext;
@@ -1494,7 +1515,7 @@ export function buildSynthesisPrompt({
       buildSpreadPromptBias(spread, "initial"),
       formatSpread(spread),
       "Verified card insights:",
-      formatStagedCardInsights(cardInsights),
+      formatStagedCardInsights({ spread, drawnCards, cardInsights }),
       formatCompactRefCatalog(knowledgeGrounding),
       priorSessionCapsule
         ? `Prior session capsule (low priority only):\n${priorSessionCapsule}`
@@ -1549,7 +1570,7 @@ export function buildCompactReadingPrompt(input: {
       formatSessionMemoryForPrompt(input.sessionMemory),
       input.spread.id === "single"
         ? "Keep the synthesis on the single card and its one position; do not invent an arc."
-        : "Keep the synthesis concise and spread-level; do not retell every card.",
+        : "Treat the card_insights in this same JSON payload as the only card-level premises for synthesis. Answer the question first, then express at least one causal, supporting, conflicting, or turning relationship across their mapped positions. Keep it concise and do not copy or retell every card interpretation.",
     ].filter((item): item is string => Boolean(item)).join("\n\n"),
   };
 }
@@ -1600,6 +1621,11 @@ export function buildFinalSynthesisRefinementPrompt({
       formatInitialReading(initialReading),
       "Follow-up answers:",
       formatFollowupAnswers(followupAnswers),
+      "Final integration work order:",
+      `1. Retain the Initial axis represented by these server-owned themes: ${initialReading.themes.join(" | ")}.`,
+      "2. For each answer, identify which Initial relationship, tension, unverified condition, or next action it narrows; a passing acknowledgement is not integration.",
+      "3. Rewrite synthesis as one coherent argument that makes that change visible. Do not copy the complete Initial synthesis and append an answer summary.",
+      "4. Keep unchanged card interpretations server-owned. Return sparse card_refinements only when an answer materially changes that card's local understanding.",
       formatCompactRefCatalog(knowledgeGrounding),
       priorSessionCapsule
         ? `Prior session capsule (low priority only):\n${priorSessionCapsule}`
@@ -1658,7 +1684,7 @@ export function buildReadingStageRepairPrompt({
       "Validation issues:",
       ...issues.slice(0, 8).map((issue, index) => `${index + 1}. ${issue}`),
       cardInsights?.length
-        ? `Verified card insights (immutable):\n${formatStagedCardInsights(cardInsights)}`
+        ? `Verified card insights (immutable):\n${formatStagedCardInsights({ cardInsights })}`
         : null,
       "Invalid payload:",
       JSON.stringify(invalidPayload ?? null),

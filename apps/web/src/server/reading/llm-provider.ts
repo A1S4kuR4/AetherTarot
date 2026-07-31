@@ -530,6 +530,7 @@ export class LlmReadingProvider implements ReadingProvider {
         payload,
         context,
         phase: "initial",
+        cardInsights,
       }),
       options,
     );
@@ -594,6 +595,7 @@ export class LlmReadingProvider implements ReadingProvider {
             payload,
             context,
             phase: "initial",
+            cardInsights: request.cardInsights,
           });
         }
         if (

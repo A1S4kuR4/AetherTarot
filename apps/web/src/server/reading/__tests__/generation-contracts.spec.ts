@@ -117,6 +117,25 @@ describe("staged generation contracts", () => {
     })).toThrow(expect.objectContaining({ subtype: "schema_violation" }));
   });
 
+  it("rejects synthesis that copies most verified card insights verbatim", () => {
+    const context = buildContext();
+    const cardInsights = [
+      { index: 0, interpretation: "过去的位置提醒你先辨认那些尚未说清的判断，不要急着把直觉当成已经确认的事实。" },
+      { index: 1, interpretation: "现在的位置更适合独立梳理现实条件，把已经知道的部分和仍需核实的部分分开。" },
+      { index: 2, interpretation: "未来的位置显示希望感暂时向内收拢，需要通过低风险行动重新观察它是否能够落地。" },
+    ];
+
+    expect(() => normalizeSynthesisPayload({
+      context,
+      phase: "initial",
+      cardInsights,
+      payload: {
+        ...validSynthesis(),
+        synthesis: cardInsights.map((insight) => insight.interpretation).join(""),
+      },
+    })).toThrow(expect.objectContaining({ subtype: "schema_violation" }));
+  });
+
   it("hydrates all public card metadata from server authority", () => {
     const context = buildContext();
     const cardInsights = normalizeCardInsightsPayload({

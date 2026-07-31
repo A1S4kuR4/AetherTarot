@@ -386,18 +386,42 @@ function followupBounds(phase: ReadingPhase, profile: AgentProfile) {
   return profile === "lite" ? { min: 0, max: 1 } : { min: 1, max: 2 };
 }
 
+function normalizeForExtractiveComparison(value: string) {
+  return value.normalize("NFKC").replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
+}
+
+export function isExtractiveCardPileup(
+  synthesis: string,
+  cardInsights: Array<Pick<CardInsightDraft, "interpretation">>,
+) {
+  if (cardInsights.length <= 1) return false;
+
+  const normalizedSynthesis = normalizeForExtractiveComparison(synthesis);
+  const copiedInsights = cardInsights.filter((insight) => {
+    const normalizedInsight = normalizeForExtractiveComparison(
+      insight.interpretation,
+    );
+    return normalizedInsight.length >= 24
+      && normalizedSynthesis.includes(normalizedInsight);
+  }).length;
+
+  return copiedInsights >= Math.ceil(cardInsights.length * 0.7);
+}
+
 function validateSynthesisShape({
   synthesis,
   context,
   phase,
   stage,
   initialReading,
+  cardInsights,
 }: {
   synthesis: SynthesisDraft;
   context: HydratedReadingContext;
   phase: ReadingPhase;
   stage: ReadingGenerationStage;
   initialReading?: StructuredReading;
+  cardInsights?: Array<Pick<CardInsightDraft, "interpretation">>;
 }) {
   if (context.drawnCards.length > 1) {
     const namedCards = context.drawnCards.filter((drawnCard) =>
@@ -415,6 +439,18 @@ function validateSynthesisShape({
         subtype: "schema_violation",
         stage,
         message: "synthesis 明显退化为逐牌枚举或逐牌复述。",
+        invalidPayload: synthesis,
+      });
+    }
+
+    if (
+      cardInsights
+      && isExtractiveCardPileup(synthesis.synthesis, cardInsights)
+    ) {
+      contractFailure({
+        subtype: "schema_violation",
+        stage,
+        message: "synthesis 大比例逐字复制 card insights，未形成牌阵级综合。",
         invalidPayload: synthesis,
       });
     }
@@ -455,12 +491,14 @@ export function normalizeSynthesisPayload({
   phase,
   stage = "synthesis",
   initialReading,
+  cardInsights,
 }: {
   payload: unknown;
   context: HydratedReadingContext;
   phase: ReadingPhase;
   stage?: "synthesis" | "compact" | "final_synthesis";
   initialReading?: StructuredReading;
+  cardInsights?: Array<Pick<CardInsightDraft, "interpretation">>;
 }): SynthesisDraft {
   const record = asRecord(payload, stage, "synthesis payload");
   const guidance = guidanceBounds(context.agentProfile);
@@ -507,6 +545,7 @@ export function normalizeSynthesisPayload({
     phase,
     stage,
     initialReading,
+    cardInsights,
   });
   return draft;
 }
@@ -519,17 +558,19 @@ export function normalizeCompactReadingPayload({
   context: HydratedReadingContext;
 }): CompactReadingDraft {
   const record = asRecord(payload, "compact", "compact payload");
+  const cardInsights = normalizeCardInsightsPayload({
+    payload: { card_insights: record.card_insights },
+    context,
+    stage: "compact",
+  });
   return {
-    card_insights: normalizeCardInsightsPayload({
-      payload: { card_insights: record.card_insights },
-      context,
-      stage: "compact",
-    }),
+    card_insights: cardInsights,
     synthesis: normalizeSynthesisPayload({
       payload: record.synthesis,
       context,
       phase: "initial",
       stage: "compact",
+      cardInsights,
     }),
   };
 }

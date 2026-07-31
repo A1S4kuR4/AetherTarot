@@ -1,10 +1,12 @@
 import { findCardById, findSpreadById } from "@aethertarot/domain-tarot";
 import {
   buildCardInsightsPrompt,
+  buildCompactReadingPrompt,
   buildFinalReadingPrompt,
   buildFinalSynthesisRefinementPrompt,
   buildInitialReadingPrompt,
   buildReadingStageRepairPrompt,
+  buildSynthesisPrompt,
   readerModeStrategies,
 } from "@aethertarot/prompting";
 import type { AgentProfile } from "@aethertarot/shared-types";
@@ -50,6 +52,27 @@ function buildHydratedContext(agentProfile: AgentProfile): HydratedReadingContex
     priorSessionCapsule: null,
     sessionMemory: null,
     knowledgeGrounding: { status: "none", chunks: [] },
+  };
+}
+
+function buildMultiCardContext(
+  agentProfile: AgentProfile,
+): HydratedReadingContext {
+  const spread = findSpreadById("holy-triangle");
+  const cards = ["high-priestess", "hermit", "star"].map(findCardById);
+
+  if (!spread || cards.some((card) => !card)) {
+    throw new Error("multi-card prompt authority data not found");
+  }
+
+  return {
+    ...buildHydratedContext(agentProfile),
+    spread,
+    drawnCards: spread.positions.map((position, index) => ({
+      positionId: position.id,
+      card: cards[index]!,
+      isReversed: index === 2,
+    })),
   };
 }
 
@@ -182,6 +205,39 @@ describe("reader mode prompt contract", () => {
       /Allowed zero-based card_refinement indices: 0/,
     );
     expect(stagedFinalPrompt.user).toMatch(/Never use one-based position numbers/);
+    expect(stagedFinalPrompt.user).toMatch(/Final integration work order/);
+    expect(stagedFinalPrompt.user).toMatch(
+      /a passing acknowledgement is not integration/i,
+    );
+    expect(stagedFinalPrompt.user).toMatch(
+      /Do not copy the complete Initial synthesis and append an answer summary/i,
+    );
+  });
+
+  it("maps verified card insights to server-owned spread semantics", () => {
+    const context = buildMultiCardContext("standard");
+    const prompt = buildSynthesisPrompt({
+      ...context,
+      cardInsights: context.drawnCards.map((_, index) => ({
+        index,
+        interpretation: `已验证逐牌洞察 ${index + 1}`,
+      })),
+    });
+
+    expect(prompt.user).toMatch(/position_id: past/);
+    expect(prompt.user).toMatch(/position: 过去/);
+    expect(prompt.user).toMatch(/position_meaning: 根基与起源/);
+    expect(prompt.user).toMatch(/verified_interpretation: 已验证逐牌洞察 1/);
+    expect(prompt.system).toMatch(/causal, supporting, conflicting, or turning relationship/);
+    expect(prompt.system).toMatch(/Do not copy complete card interpretations/);
+  });
+
+  it("requires compact synthesis to consume its card insights as premises", () => {
+    const prompt = buildCompactReadingPrompt(buildMultiCardContext("lite"));
+
+    expect(prompt.user).toMatch(/only card-level premises for synthesis/);
+    expect(prompt.user).toMatch(/Answer the question first/);
+    expect(prompt.user).toMatch(/do not copy or retell every card interpretation/);
   });
 
   it("keeps card evidence refs scoped to the matching authority card", () => {
