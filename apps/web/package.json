@@ -15,6 +15,7 @@
     "canary:llm": "vite-node --config vitest.config.ts scripts/run-llm-canary.ts",
     "eval:export-feedback": "vite-node --config vitest.config.ts scripts/export-feedback-replay.ts",
     "eval:review": "vite-node --config vitest.config.ts scripts/quality-review.ts",
+    "eval:reading-staged-ab": "vite-node --config vitest.config.ts scripts/run-staged-reading-ab.ts",
     "test:a11y:reading": "playwright test --project=chromium tests/reading-accessibility.spec.ts",
     "test:e2e": "playwright test"
   },
