@@ -170,10 +170,18 @@ function allowedRefsForCard(
   context: HydratedReadingContext,
   cardIndex: number,
 ) {
-  const cardId = context.drawnCards[cardIndex]?.card.id;
+  const drawnCard = context.drawnCards[cardIndex];
+  const cardId = drawnCard?.card.id;
+  const orientation = drawnCard?.isReversed ? "reversed" : "upright";
   return new Set(
     context.knowledgeGrounding.chunks
-      .filter((chunk) => chunk.card === cardId)
+      .filter((chunk) =>
+        chunk.card === cardId
+        && (
+          chunk.orientation === orientation
+          || chunk.orientation === "unknown"
+        )
+      )
       .map((chunk) => chunk.ref),
   );
 }

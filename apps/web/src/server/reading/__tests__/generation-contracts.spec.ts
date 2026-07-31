@@ -147,6 +147,12 @@ describe("staged generation contracts", () => {
 
   it("deterministically maps omitted staged refs by authority card index", () => {
     const context = buildContext();
+    context.knowledgeGrounding.chunks.push({
+      ...context.knowledgeGrounding.chunks[0],
+      id: "wrong-orientation-chunk",
+      ref: "wrong-orientation-ref",
+      orientation: "reversed",
+    });
     const cardInsights = normalizeCardInsightsPayload({
       context,
       payload: {
@@ -172,6 +178,18 @@ describe("staged generation contracts", () => {
       { path: "cards.2.interpretation", source_refs: ["ref-2"] },
       { path: "synthesis", source_refs: ["ref-0", "ref-1", "ref-2"] },
     ]);
+
+    expect(() => normalizeCardInsightsPayload({
+      context,
+      payload: {
+        card_insights: validInsights().map((insight, index) => ({
+          ...insight,
+          evidence_refs: index === 0
+            ? ["wrong-orientation-ref"]
+            : insight.evidence_refs,
+        })),
+      },
+    })).toThrow(expect.objectContaining({ subtype: "grounding_violation" }));
   });
 
   it("normalizes one follow-up string but still rejects unknown synthesis refs", () => {

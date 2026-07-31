@@ -90,8 +90,9 @@ export function buildMinimumReadingGrounding({
     const match = wikiChunks.find((chunk) =>
       isSameCard(chunk.card, drawnCard.card.id) && chunk.orientation === orientation
     ) ?? wikiChunks.find((chunk) =>
-      isSameCard(chunk.card, drawnCard.card.id) && chunk.orientation === "unknown"
-    ) ?? wikiChunks.find((chunk) => isSameCard(chunk.card, drawnCard.card.id));
+      isSameCard(chunk.card, drawnCard.card.id)
+      && (chunk.orientation ?? "unknown") === "unknown"
+    );
 
     if (match) {
       add({
@@ -122,11 +123,22 @@ export function buildMinimumReadingGrounding({
     if (!chunk.card) {
       continue;
     }
+    const drawnCard = drawnCards.find((item) =>
+      isSameCard(chunk.card, item.card.id)
+    );
+    const chunkOrientation = chunk.orientation ?? "unknown";
+    if (
+      drawnCard
+      && chunkOrientation !== "unknown"
+      && chunkOrientation !== orientationOf(drawnCard)
+    ) {
+      continue;
+    }
     add({
       ...chunk,
       kind: "wiki",
       card: chunk.card,
-      orientation: chunk.orientation ?? "unknown",
+      orientation: chunkOrientation,
     });
   }
 
