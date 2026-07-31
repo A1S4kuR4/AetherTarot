@@ -96,6 +96,17 @@ describe("beta access helpers", () => {
     });
   });
 
+  it("gives local-only development the admin bypass without Supabase", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("AETHERTAROT_LOCAL_ONLY", "1");
+
+    expect(getE2eAccessBypassTester()).toEqual({
+      userId: "00000000-0000-0000-0000-0000000000e2",
+      email: "playwright@example.com",
+      role: "admin",
+    });
+  });
+
   it("allows a non-production e2e beta access bypass trigger from the request", () => {
     vi.stubEnv("NODE_ENV", "development");
 
@@ -109,6 +120,14 @@ describe("beta access helpers", () => {
   it("does not allow the e2e beta access bypass in production", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("AETHERTAROT_E2E_BYPASS_BETA_ACCESS", "1");
+
+    expect(isE2eAccessBypassEnabled()).toBe(false);
+    expect(getE2eAccessBypassTester()).toBeNull();
+  });
+
+  it("does not allow the local-only admin bypass in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AETHERTAROT_LOCAL_ONLY", "1");
 
     expect(isE2eAccessBypassEnabled()).toBe(false);
     expect(getE2eAccessBypassTester()).toBeNull();

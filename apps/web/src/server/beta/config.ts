@@ -1,6 +1,7 @@
 import "server-only";
 
 import { ReadingServiceError } from "@/server/reading/errors";
+import type { RuntimeEnvironment } from "@/server/local-only";
 
 export interface BetaOpsConfig {
   userDailyLimit: number;
@@ -23,7 +24,7 @@ function parsePositiveInteger({
   name,
   fallback,
 }: {
-  env: NodeJS.ProcessEnv;
+  env: RuntimeEnvironment;
   name: string;
   fallback: number;
 }) {
@@ -46,18 +47,18 @@ function parsePositiveInteger({
   return parsed;
 }
 
-export function getReadingProviderName(env: NodeJS.ProcessEnv = process.env) {
+export function getReadingProviderName(env: RuntimeEnvironment = process.env) {
   return env.AETHERTAROT_READING_PROVIDER ?? "placeholder";
 }
 
 export function isEncyclopediaQueryEnabled(
-  env: NodeJS.ProcessEnv = process.env,
+  env: RuntimeEnvironment = process.env,
 ) {
   return (env.AETHERTAROT_ENCYCLOPEDIA_PROVIDER ?? "disabled") === "llm";
 }
 
 export function getBetaOpsConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: RuntimeEnvironment = process.env,
 ): BetaOpsConfig {
   return {
     userDailyLimit: parsePositiveInteger({
@@ -79,7 +80,7 @@ export function getBetaOpsConfig(
 }
 
 export function getEncyclopediaQuotaConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: RuntimeEnvironment = process.env,
 ): EncyclopediaQuotaConfig {
   return {
     userDailyLimit: parsePositiveInteger({
@@ -101,7 +102,7 @@ export function getEncyclopediaQuotaConfig(
 }
 
 export function getLlmTokenBudgetConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: RuntimeEnvironment = process.env,
 ): LlmTokenBudgetConfig {
   return {
     dailyTokenLimit: parsePositiveInteger({

@@ -1,6 +1,11 @@
 import { test, chromium } from "@playwright/test";
 import { playAudit } from "playwright-lighthouse";
 
+test.skip(
+  process.env.AETHERTAROT_ALLOW_REMOTE_E2E !== "1",
+  "Production Lighthouse tests require explicit remote approval.",
+);
+
 test("Lighthouse performance audit for main pages", async () => {
   // Use a separate browser instance with remote-debugging-port for lighthouse
   const browser = await chromium.launch({
@@ -12,7 +17,7 @@ test("Lighthouse performance audit for main pages", async () => {
   // Audit Home Page
   await page.goto("https://aethertarot.cn/");
   await playAudit({
-    page: page,
+    page: page as unknown as Parameters<typeof playAudit>[0]["page"],
     thresholds: {
       performance: 50,
       accessibility: 50,
@@ -32,7 +37,7 @@ test("Lighthouse performance audit for main pages", async () => {
   // Audit Login Page
   await page.goto("https://aethertarot.cn/login");
   await playAudit({
-    page: page,
+    page: page as unknown as Parameters<typeof playAudit>[0]["page"],
     thresholds: {
       performance: 50,
       accessibility: 50,

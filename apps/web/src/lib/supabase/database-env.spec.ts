@@ -37,4 +37,26 @@ describe("getSupabaseDatabaseEnv", () => {
       }),
     ).toBeNull();
   });
+
+  it("disables Supabase in non-production local-only mode", () => {
+    expect(
+      getSupabaseDatabaseEnv({
+        NODE_ENV: "development",
+        AETHERTAROT_LOCAL_ONLY: "1",
+        SUPABASE_URL: "https://example.supabase.co",
+      }),
+    ).toBeNull();
+  });
+
+  it("never lets the local-only flag disable production Supabase", () => {
+    expect(
+      getSupabaseDatabaseEnv({
+        NODE_ENV: "production",
+        AETHERTAROT_LOCAL_ONLY: "1",
+        SUPABASE_URL: "https://example.supabase.co",
+      }),
+    ).toEqual({
+      url: "https://example.supabase.co",
+    });
+  });
 });

@@ -1,3 +1,8 @@
+import {
+  isLocalOnlyModeEnabled,
+  type RuntimeEnvironment,
+} from "@/server/local-only";
+
 export type SupabaseDatabaseEnv = {
   url: string;
 };
@@ -31,8 +36,12 @@ function isHttpUrl(value: string): boolean {
 }
 
 export function getSupabaseDatabaseEnv(
-  env: NodeJS.ProcessEnv = process.env,
+  env: RuntimeEnvironment = process.env,
 ): SupabaseDatabaseEnv | null {
+  if (isLocalOnlyModeEnabled(env)) {
+    return null;
+  }
+
   const url = normalizeEnvValue(env.SUPABASE_URL);
 
   if (!url || !isHttpUrl(url)) {

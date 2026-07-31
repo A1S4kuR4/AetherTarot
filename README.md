@@ -90,10 +90,15 @@ AetherTarot/
 
 ```powershell
 npm ci
+npm run dev -w @aethertarot/web
 npm run test:contract -w @aethertarot/web
 npm run lint -w @aethertarot/web
 npm run build -w @aethertarot/web
 ```
+
+`npm run dev -w @aethertarot/web` 默认进入 `local-only` 模式：不要求安装或启动
+Supabase 本地栈，使用非 production 的固定 admin 测试身份，并关闭 Supabase 与外部
+LLM 调用。完整边界与检查清单见 `docs/70-ops/dev-setup.md`。
 
 端到端检查：
 

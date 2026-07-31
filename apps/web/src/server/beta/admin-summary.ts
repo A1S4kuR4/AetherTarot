@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireBetaTesterAccess } from "@/server/beta/access";
 import { getLlmTokenBudgetConfig } from "@/server/beta/config";
+import { isLocalOnlyModeEnabled } from "@/server/local-only";
 import { ReadingServiceError } from "@/server/reading/errors";
 
 interface ReadingEventRow {
@@ -86,7 +87,10 @@ export async function getAdminSummary(days: number = 1) {
   const windowDays = Math.max(1, Math.floor(days));
   const tokenBudget = getLlmTokenBudgetConfig();
 
-  if (process.env.AETHERTAROT_MOCK_ADMIN_SUMMARY === "1") {
+  if (
+    isLocalOnlyModeEnabled()
+    || process.env.AETHERTAROT_MOCK_ADMIN_SUMMARY === "1"
+  ) {
     return {
       since: getBeijingDayWindow(new Date(), windowDays).since,
       readingRequests: 124,

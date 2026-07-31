@@ -2,6 +2,15 @@ import { expect, test, type Page } from "@playwright/test";
 import * as path from "path";
 
 const ARTIFACT_DIR = "C:\\Users\\yoga\\.gemini\\antigravity\\brain\\cc241b25-ab43-4983-a8cf-df8cd23d96f8";
+const PROD_TEST_EMAIL = process.env.AETHERTAROT_PROD_TEST_EMAIL;
+const PROD_TEST_PASSWORD = process.env.AETHERTAROT_PROD_TEST_PASSWORD;
+
+test.skip(
+  process.env.AETHERTAROT_ALLOW_REMOTE_E2E !== "1"
+    || !PROD_TEST_EMAIL
+    || !PROD_TEST_PASSWORD,
+  "Production interaction tests require explicit remote approval and injected credentials.",
+);
 
 async function takeScreenshot(page: Page, name: string) {
   const screenshotPath = path.join(ARTIFACT_DIR, name);
@@ -217,8 +226,8 @@ test("Production Interaction and Flow E2E Test", async ({ page }) => {
 
   // 2. Fill login form
   console.log("Filling login credentials...");
-  await page.fill("#email", "643490291@qq.com");
-  await page.fill("#password", "AT6b407fe84bd3!");
+  await page.fill("#email", PROD_TEST_EMAIL ?? "");
+  await page.fill("#password", PROD_TEST_PASSWORD ?? "");
   await takeScreenshot(page, "2-login-filled.png");
 
   // 3. Submit
@@ -320,8 +329,8 @@ test("Production Mobile Interaction and Flow E2E Test", async ({ page }) => {
 
   // 2. Fill login form
   console.log("[Mobile] Filling credentials...");
-  await page.fill("#email", "643490291@qq.com");
-  await page.fill("#password", "AT6b407fe84bd3!");
+  await page.fill("#email", PROD_TEST_EMAIL ?? "");
+  await page.fill("#password", PROD_TEST_PASSWORD ?? "");
   await takeScreenshot(page, "mobile-2-login-filled.png");
 
   // 3. Submit

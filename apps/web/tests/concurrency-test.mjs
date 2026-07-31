@@ -3,6 +3,13 @@
 const TARGET_URL = 'https://aethertarot.cn/';
 const CONCURRENT_REQUESTS = 20;
 
+if (process.env.AETHERTAROT_ALLOW_REMOTE_E2E !== '1') {
+  console.error(
+    'Refusing to run the production concurrency test without AETHERTAROT_ALLOW_REMOTE_E2E=1.',
+  );
+  process.exit(1);
+}
+
 async function runConcurrencyTest() {
   console.log(`Starting concurrency test against ${TARGET_URL}`);
   console.log(`Sending ${CONCURRENT_REQUESTS} concurrent requests...`);

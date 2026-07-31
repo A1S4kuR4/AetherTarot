@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ReadingServiceError } from "@/server/reading/errors";
+import { isLocalOnlyModeEnabled } from "@/server/local-only";
 
 export type BetaTesterRole = "tester" | "admin";
 
@@ -49,7 +50,10 @@ function normalizeEmail(value: string) {
 export function isE2eAccessBypassEnabled(triggerValue?: string | null) {
   return (
     process.env.NODE_ENV !== "production" &&
-    (triggerValue ?? process.env.AETHERTAROT_E2E_BYPASS_BETA_ACCESS) === "1"
+    (
+      isLocalOnlyModeEnabled()
+      || (triggerValue ?? process.env.AETHERTAROT_E2E_BYPASS_BETA_ACCESS) === "1"
+    )
   );
 }
 
