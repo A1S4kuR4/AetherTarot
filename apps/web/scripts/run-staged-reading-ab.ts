@@ -54,12 +54,20 @@ import {
   type LlmRawCompletion,
 } from "../src/server/observability/llm-raw-completions";
 import { createCanaryTokenGate } from "../src/server/quality/canary";
+import {
+  getReservationTokenCount,
+  type LlmTokenGate,
+} from "../src/server/beta/token-budget";
 
 const OUTPUT_ROOT = path.resolve(process.cwd(), "..", "..", "outputs", "evals");
+const GRAPH_EXECUTION_LIMIT = 200;
 const TOKEN_BUDGET = 2_500_000;
 const RAW_REQUEST_LIMIT = 650;
+const EVALUATOR_TOKEN_BUDGET = 2_500_000;
+const EVALUATOR_REQUEST_LIMIT = 100;
 const BOOTSTRAP_SAMPLES = 10_000;
 const BOOTSTRAP_SEED = 20260731;
+const MATRIX_SEED = 2026073101;
 const PROSE_LEAK_PATTERN =
   /本地知识库(?:片段|检索)|source_?id|grounding_claims|第一阶段|第二阶段|provider|prompt|generation stage/iu;
 const DETERMINISTIC_CLAIM_PATTERN =
@@ -488,6 +496,43 @@ function percentile(values: number[], probability: number) {
   )];
 }
 
+function countBy<T>(values: T[], keyFor: (value: T) => string) {
+  return values.reduce<Record<string, number>>((counts, value) => {
+    const key = keyFor(value);
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function summarizeUsage(results: ExecutionResult[]) {
+  return {
+    raw_requests: results.reduce((sum, result) => sum + result.calls.length, 0),
+    prompt_tokens: results.reduce(
+      (sum, result) => sum + result.usage.promptTokens,
+      0,
+    ),
+    completion_tokens: results.reduce(
+      (sum, result) => sum + result.usage.completionTokens,
+      0,
+    ),
+    total_tokens: results.reduce(
+      (sum, result) => sum + result.usage.totalTokens,
+      0,
+    ),
+    estimated_cost_usd: results.reduce(
+      (sum, result) => sum + result.usage.estimatedCostUsd,
+      0,
+    ),
+  };
+}
+
+function summarizeLatencies(values: number[]) {
+  return {
+    p50_ms: percentile(values, 0.5),
+    p95_ms: percentile(values, 0.95),
+  };
+}
+
 function wilson(successes: number, total: number) {
   if (total === 0) return { observed: null, low: null, high: null };
   const z = 1.959963984540054;
@@ -513,6 +558,50 @@ function createRandom(seed: number) {
     value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
     return value / 4294967296;
   };
+}
+
+function deterministicShuffle<T>(values: readonly T[], random: () => number) {
+  const shuffled = [...values];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+  return shuffled;
+}
+
+function createHardBudgetTokenGate({
+  tokenBudget,
+  callLimit,
+}: {
+  tokenBudget: number;
+  callLimit: number;
+}) {
+  const inner = createCanaryTokenGate({ tokenBudget, callLimit });
+  const gate: LlmTokenGate = {
+    async reserve(input) {
+      const snapshot = inner.snapshot();
+      if (snapshot.reservations >= callLimit) {
+        throw new Error(`A/B reached the fixed ${callLimit}-request limit.`);
+      }
+      const worstCaseTokens = getReservationTokenCount(
+        input.promptText,
+        input.maxOutputTokens,
+      );
+      if (snapshot.settled_tokens + worstCaseTokens > tokenBudget) {
+        throw new Error(
+          `A/B cannot start another request without risking the ${tokenBudget}-token limit.`,
+        );
+      }
+      return inner.gate.reserve(input);
+    },
+    settle(input) {
+      return inner.gate.settle(input);
+    },
+  };
+  return { gate, snapshot: inner.snapshot };
 }
 
 function bootstrapMeanDifference(pairs: Array<[number, number]>) {
@@ -671,35 +760,77 @@ function buildSummary(
   const metrics = Object.fromEntries((["monolithic", "adaptive_staged"] as Arm[])
     .map((arm) => {
       const results = byArm(arm);
+      const allArmResults = executions.filter((item) => item.arm === arm);
+      const preparationResults = allArmResults.filter(
+        (item) => item.scenario === "sober_final_prep",
+      );
       const passed = results.filter((result) => !fatalFailure(result)).length;
+      const firstPass = results.filter(firstPassSuccess).length;
       const attempts = results.map((result) => result.calls.length);
+      const failedCalls = results.flatMap((result) =>
+        result.calls.filter((call) => !call.success)
+      );
+      const recoveredFailedCalls = results
+        .filter((result) => !fatalFailure(result))
+        .flatMap((result) => result.calls.filter((call) => !call.success));
+      const allCalls = allArmResults.flatMap((result) => result.calls);
+      const stages = [...new Set(allCalls.map((call) => call.stage ?? "unknown"))];
+      const scenarios = [...new Set(allArmResults.map((result) => result.scenario))];
+      const checkNames = [...new Set(results.flatMap(
+        (result) => Object.keys(result.checks),
+      ))];
       return [arm, {
         scored_cases: results.length,
         legal_cases: passed,
         legal_rate: wilson(passed, results.length),
-        first_pass_successes: results.filter(firstPassSuccess).length,
+        first_pass_successes: firstPass,
+        first_pass_rate: wilson(firstPass, results.length),
         recovered_cases: results.filter(
           (result) =>
             result.calls.some((call) => (call.attempt ?? 1) > 1)
             && !fatalFailure(result),
         ).length,
         p95_attempts: percentile(attempts, 0.95),
-        raw_requests: results.reduce((sum, result) => sum + result.calls.length, 0),
-        prompt_tokens: results.reduce((sum, result) => sum + result.usage.promptTokens, 0),
-        completion_tokens: results.reduce((sum, result) => sum + result.usage.completionTokens, 0),
-        total_tokens: results.reduce((sum, result) => sum + result.usage.totalTokens, 0),
-        estimated_cost_usd: results.reduce(
-          (sum, result) => sum + result.usage.estimatedCostUsd,
-          0,
-        ),
+        ...summarizeUsage(results),
+        all_execution_usage: summarizeUsage(allArmResults),
+        final_preparation_usage: summarizeUsage(preparationResults),
         latency_p50_ms: percentile(results.map((result) => result.duration_ms), 0.5),
         latency_p95_ms: percentile(results.map((result) => result.duration_ms), 0.95),
-        failures_by_stage_and_subtype: results.filter((result) => result.error)
-          .reduce<Record<string, number>>((counts, result) => {
-            const key = `${result.error?.stage ?? "unknown"}:${result.error?.subtype ?? result.error?.code ?? "unknown"}`;
-            counts[key] = (counts[key] ?? 0) + 1;
-            return counts;
-          }, {}),
+        end_to_end_latency_by_scenario: Object.fromEntries(
+          scenarios.map((scenario) => [
+            scenario,
+            summarizeLatencies(
+              allArmResults
+                .filter((result) => result.scenario === scenario)
+                .map((result) => result.duration_ms),
+            ),
+          ]),
+        ),
+        stage_latency: Object.fromEntries(stages.map((stage) => [
+          stage,
+          summarizeLatencies(
+            allCalls
+              .filter((call) => (call.stage ?? "unknown") === stage)
+              .map((call) => call.durationMs),
+          ),
+        ])),
+        terminal_failures_by_stage_and_subtype: countBy(
+          results.filter((result) => result.error),
+          (result) =>
+            `${result.error?.stage ?? "unknown"}:${result.error?.subtype ?? result.error?.code ?? "unknown"}`,
+        ),
+        failed_attempts_by_stage_and_subtype: countBy(
+          failedCalls,
+          (call) => `${call.stage ?? "unknown"}:${call.subtype ?? "unknown"}`,
+        ),
+        recovered_failed_attempts_by_stage_and_subtype: countBy(
+          recoveredFailedCalls,
+          (call) => `${call.stage ?? "unknown"}:${call.subtype ?? "unknown"}`,
+        ),
+        check_failures: Object.fromEntries(checkNames.map((name) => [
+          name,
+          results.filter((result) => result.checks[name] === false).length,
+        ])),
       }];
     }));
   const primaryRubrics = rubricResults.filter((result) => !result.swapped_review);
@@ -711,6 +842,26 @@ function buildSummary(
       wins[result.label_order[result.winner]] += 1;
     }
   }
+  const rubricByDimension = Object.fromEntries(RUBRIC_DIMENSIONS.map((dimension) => {
+    const pairs = primaryRubrics.map((result): [number, number] => {
+      const monolithicLabel = result.label_order.A === "monolithic" ? "A" : "B";
+      const adaptiveLabel = monolithicLabel === "A" ? "B" : "A";
+      return [
+        result.scores[dimension][monolithicLabel],
+        result.scores[dimension][adaptiveLabel],
+      ];
+    });
+    return [dimension, {
+      monolithic_wins: pairs.filter(([baseline, adaptive]) => baseline > adaptive).length,
+      adaptive_staged_wins: pairs.filter(
+        ([baseline, adaptive]) => adaptive > baseline,
+      ).length,
+      ties: pairs.filter(([baseline, adaptive]) => baseline === adaptive).length,
+      monolithic_mean: average(pairs.map(([baseline]) => baseline)),
+      adaptive_staged_mean: average(pairs.map(([, adaptive]) => adaptive)),
+      paired_bootstrap_difference: bootstrapMeanDifference(pairs),
+    }];
+  }));
   return {
     graph_executions: executions.length,
     scored_cases: scored.length,
@@ -735,6 +886,7 @@ function buildSummary(
       reviewed_pairs: primaryRubrics.length,
       swapped_rechecks: rubricResults.filter((result) => result.swapped_review).length,
       conflicts: rubricResults.filter((result) => result.conflict).length,
+      by_dimension: rubricByDimension,
     },
   };
 }
@@ -1038,7 +1190,7 @@ async function main() {
     `staged-reading-ab-${startedAt.replace(/[:.]/g, "-")}`,
   );
   await mkdir(outputDirectory, { recursive: true });
-  const tokenGate = createCanaryTokenGate({
+  const tokenGate = createHardBudgetTokenGate({
     tokenBudget: TOKEN_BUDGET,
     callLimit: RAW_REQUEST_LIMIT,
   });
@@ -1102,94 +1254,113 @@ async function main() {
     * questionTypes.length
     * (onlyArm ? 1 : 2)
     * 4;
+  if (plannedGraphExecutions > GRAPH_EXECUTION_LIMIT) {
+    throw new Error(
+      `Planned matrix has ${plannedGraphExecutions} Graph executions, above the ${GRAPH_EXECUTION_LIMIT} limit.`,
+    );
+  }
+  const matrixRandom = createRandom(MATRIX_SEED);
+  const cells = deterministicShuffle(
+    getAllSpreads().flatMap((_, spreadIndex) =>
+      questionTypes.map((questionType) => ({
+        spreadIndex,
+        questionType,
+      }))
+    ),
+    matrixRandom,
+  );
   let stoppedByBudget = false;
 
   outer:
-  for (let spreadIndex = 0; spreadIndex < getAllSpreads().length; spreadIndex += 1) {
-    for (let typeIndex = 0; typeIndex < questionTypes.length; typeIndex += 1) {
-      const questionType = questionTypes[typeIndex];
-      const cellIndex = spreadIndex * questionTypes.length + typeIndex;
-      const arms: Arm[] = onlyArm
-        ? [onlyArm]
-        : cellIndex % 2 === 0
-          ? ["monolithic", "adaptive_staged"]
-          : ["adaptive_staged", "monolithic"];
-      for (const arm of arms) {
-        const scenarios = [
-          {
-            scenario: "lite_initial" as const,
-            profile: "lite" as const,
-            question: QUESTION_FIXTURES[questionType][0],
-            scenarioIndex: 0,
-          },
-          {
-            scenario: "standard_initial" as const,
-            profile: "standard" as const,
-            question: QUESTION_FIXTURES[questionType][1],
-            scenarioIndex: 1,
-          },
-          {
-            scenario: "sober_final_prep" as const,
-            profile: "sober" as const,
-            question: QUESTION_FIXTURES[questionType][2],
-            scenarioIndex: 2,
-          },
-        ];
-        let prep: ExecutionResult | undefined;
-        for (const scenario of scenarios) {
-          const payload = buildPayload({
-            spreadIndex,
-            questionType,
-            question: scenario.question,
-            profile: scenario.profile,
-            scenarioIndex: scenario.scenarioIndex,
-          });
-          const pairId = `${getAllSpreads()[spreadIndex].id}:${questionType}:${scenario.scenario.replace("_prep", "")}`;
-          const result = await runExecution({
-            pairId,
-            arm,
-            scenario: scenario.scenario,
-            payload,
-            provider: providers[arm],
-          });
-          executions.push(result);
-          if (scenario.scenario === "sober_final_prep") prep = result;
-          process.stdout.write(
-            `[${executions.length}/${plannedGraphExecutions}] ${result.execution_id} ${result.error ? `FAIL ${result.error.stage ?? ""}:${result.error.subtype ?? result.error.code ?? ""}` : "PASS"}\n`,
-          );
-          if (result.error?.code === "token_limit_exceeded") {
-            stoppedByBudget = true;
-            break outer;
-          }
+  for (const { spreadIndex, questionType } of cells) {
+    const arms: Arm[] = onlyArm
+      ? [onlyArm]
+      : matrixRandom() < 0.5
+        ? ["monolithic", "adaptive_staged"]
+        : ["adaptive_staged", "monolithic"];
+    for (const arm of arms) {
+      const scenarios = [
+        {
+          scenario: "lite_initial" as const,
+          profile: "lite" as const,
+          question: QUESTION_FIXTURES[questionType][0],
+          scenarioIndex: 0,
+        },
+        {
+          scenario: "standard_initial" as const,
+          profile: "standard" as const,
+          question: QUESTION_FIXTURES[questionType][1],
+          scenarioIndex: 1,
+        },
+        {
+          scenario: "sober_final_prep" as const,
+          profile: "sober" as const,
+          question: QUESTION_FIXTURES[questionType][2],
+          scenarioIndex: 2,
+        },
+      ];
+      let prep: ExecutionResult | undefined;
+      for (const scenario of scenarios) {
+        if (executions.length >= GRAPH_EXECUTION_LIMIT) {
+          stoppedByBudget = true;
+          break outer;
         }
-        if (!prep?.reading) continue;
-        const final = await runExecution({
-          pairId: `${getAllSpreads()[spreadIndex].id}:${questionType}:sober_final`,
-          arm,
-          scenario: "sober_final",
-          payload: finalPayload(prep.payload, prep.reading, questionType),
-          provider: providers[arm],
-          initialReading: prep.reading,
+        const payload = buildPayload({
+          spreadIndex,
+          questionType,
+          question: scenario.question,
+          profile: scenario.profile,
+          scenarioIndex: scenario.scenarioIndex,
         });
-        executions.push(final);
+        const pairId = `${getAllSpreads()[spreadIndex].id}:${questionType}:${scenario.scenario.replace("_prep", "")}`;
+        const result = await runExecution({
+          pairId,
+          arm,
+          scenario: scenario.scenario,
+          payload,
+          provider: providers[arm],
+        });
+        executions.push(result);
+        if (scenario.scenario === "sober_final_prep") prep = result;
         process.stdout.write(
-          `[${executions.length}/${plannedGraphExecutions}] ${final.execution_id} ${final.error ? `FAIL ${final.error.stage ?? ""}:${final.error.subtype ?? final.error.code ?? ""}` : "PASS"}\n`,
+          `[${executions.length}/${plannedGraphExecutions}] ${result.execution_id} ${result.error ? `FAIL ${result.error.stage ?? ""}:${result.error.subtype ?? result.error.code ?? ""}` : "PASS"}\n`,
         );
-        if (final.error?.code === "token_limit_exceeded") {
+        if (result.error?.code === "token_limit_exceeded") {
           stoppedByBudget = true;
           break outer;
         }
       }
-      await writeFile(
-        path.join(outputDirectory, "checkpoint.json"),
-        `${JSON.stringify({
-          status: "running",
-          completed_graph_executions: executions.length,
-          budget: tokenGate.snapshot(),
-        }, null, 2)}\n`,
-        "utf8",
+      if (!prep?.reading) continue;
+      if (executions.length >= GRAPH_EXECUTION_LIMIT) {
+        stoppedByBudget = true;
+        break outer;
+      }
+      const final = await runExecution({
+        pairId: `${getAllSpreads()[spreadIndex].id}:${questionType}:sober_final`,
+        arm,
+        scenario: "sober_final",
+        payload: finalPayload(prep.payload, prep.reading, questionType),
+        provider: providers[arm],
+        initialReading: prep.reading,
+      });
+      executions.push(final);
+      process.stdout.write(
+        `[${executions.length}/${plannedGraphExecutions}] ${final.execution_id} ${final.error ? `FAIL ${final.error.stage ?? ""}:${final.error.subtype ?? final.error.code ?? ""}` : "PASS"}\n`,
       );
+      if (final.error?.code === "token_limit_exceeded") {
+        stoppedByBudget = true;
+        break outer;
+      }
     }
+    await writeFile(
+      path.join(outputDirectory, "checkpoint.json"),
+      `${JSON.stringify({
+        status: "running",
+        completed_graph_executions: executions.length,
+        budget: tokenGate.snapshot(),
+      }, null, 2)}\n`,
+      "utf8",
+    );
   }
 
   const scoredPairs = new Map<string, Partial<Record<Arm, ExecutionResult>>>();
@@ -1198,10 +1369,38 @@ async function main() {
     pair[execution.arm] = execution;
     scoredPairs.set(execution.pair_id, pair);
   }
+  const evaluatorTokenGate = createHardBudgetTokenGate({
+    tokenBudget: EVALUATOR_TOKEN_BUDGET,
+    callLimit: EVALUATOR_REQUEST_LIMIT,
+  });
+  const evaluatorAbTokenGate: LlmTokenGate = {
+    async reserve(input) {
+      try {
+        return await evaluatorTokenGate.gate.reserve(input);
+      } catch (error) {
+        throw new ReadingServiceError(
+          "token_limit_exceeded",
+          error instanceof Error ? error.message : "Evaluator hard budget exceeded.",
+          429,
+        );
+      }
+    },
+    async settle(input) {
+      try {
+        await evaluatorTokenGate.gate.settle(input);
+      } catch (error) {
+        throw new ReadingServiceError(
+          "token_limit_exceeded",
+          error instanceof Error ? error.message : "Evaluator hard budget exceeded.",
+          429,
+        );
+      }
+    },
+  };
   const evaluatorTransport = new OpenAiCompatibleTransport(
     config,
     fetch,
-    abTokenGate,
+    evaluatorAbTokenGate,
   );
   const rubricResults: RubricResult[] = [];
   const evaluatorCalls: LlmCallMetric[] = [];
@@ -1340,7 +1539,7 @@ async function main() {
     version: 1,
     status:
       stoppedByBudget
-      || executions.length < 200
+      || executions.length < GRAPH_EXECUTION_LIMIT
       || evaluatorFailures.length > 0
         ? "partial"
         : "completed",
@@ -1351,6 +1550,7 @@ async function main() {
       generation_arms: ["monolithic", "adaptive_staged"],
       selected_arms: onlyArm ? [onlyArm] : ["monolithic", "adaptive_staged"],
       question_types: questionTypes,
+      matrix_seed: MATRIX_SEED,
       temperature: config.temperature,
       thinking_mode: "disabled",
       response_format: "json_object",
@@ -1360,11 +1560,15 @@ async function main() {
       base_url_host: new URL(config.baseUrl).host,
       token_budget: TOKEN_BUDGET,
       raw_request_limit: RAW_REQUEST_LIMIT,
+      graph_execution_limit: GRAPH_EXECUTION_LIMIT,
+      evaluator_token_budget: EVALUATOR_TOKEN_BUDGET,
+      evaluator_request_limit: EVALUATOR_REQUEST_LIMIT,
       supabase_used: false,
     },
     summary: summaryWithEvaluator,
     enablement,
     budget: tokenGate.snapshot(),
+    evaluator_budget: evaluatorTokenGate.snapshot(),
     recommendation,
   };
   const failures = executions.filter((execution) => fatalFailure(execution));
