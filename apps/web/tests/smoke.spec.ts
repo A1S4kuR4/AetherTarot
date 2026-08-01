@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 
 async function waitForReadingHydration(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
 ) {
   await page.waitForFunction(
     () =>
@@ -13,7 +13,7 @@ async function waitForReadingHydration(
 }
 
 async function gotoAppRoute(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   url: string,
 ) {
   let lastError: unknown = null;
@@ -75,12 +75,12 @@ function getNextImageSourcePath(src: string) {
   }
 }
 
-function historyEntry(page: Parameters<typeof test>[0]["page"], question: string) {
+function historyEntry(page: Page, question: string) {
   return page.locator("article").filter({ hasText: question }).first();
 }
 
 async function waitForPersistedHistoryEntry(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   question: string,
 ) {
   await page.waitForFunction(
@@ -117,7 +117,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-async function expectTrustPath(page: Parameters<typeof test>[0]["page"]) {
+async function expectTrustPath(page: Page) {
   const evidenceSection = page.locator("#reading-evidence");
 
   await expect(
@@ -138,7 +138,7 @@ async function expectTrustPath(page: Parameters<typeof test>[0]["page"]) {
 }
 
 async function expectElementBefore(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   firstSelector: string,
   secondSelector: string,
 ) {
@@ -167,7 +167,7 @@ async function expectElementBefore(
 }
 
 async function expectReadingQuickReady(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   timeout = 60000,
 ) {
   await expect
@@ -194,7 +194,7 @@ async function fillTextarea(
 }
 
 async function expectDocumentFitsViewport(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   tolerance = 2,
 ) {
   await expect
@@ -214,7 +214,7 @@ async function expectDocumentFitsViewport(
 }
 
 async function expectNoHorizontalOverflow(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   tolerance = 2,
 ) {
   await expect
@@ -232,7 +232,7 @@ async function expectNoHorizontalOverflow(
 }
 
 async function expectEncyclopediaImagePaneWidth(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   matcher: { max?: number; min?: number },
 ) {
   const imagePane = page.getByTestId("encyclopedia-image-pane");
@@ -251,7 +251,7 @@ async function expectEncyclopediaImagePaneWidth(
 }
 
 async function expectHomeSectionsDoNotClipContent(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
 ) {
   const clippedSections = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>("[data-index]")]
@@ -270,7 +270,7 @@ async function expectHomeSectionsDoNotClipContent(
 }
 
 async function expectRitualInitializerControlsInViewport(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
 ) {
   const controls = [
     page.getByPlaceholder("今天，你想向内心询问什么？"),
@@ -295,7 +295,7 @@ async function expectRitualInitializerControlsInViewport(
   }
 }
 
-async function seedRecentCareerHistory(page: Parameters<typeof test>[0]["page"]) {
+async function seedRecentCareerHistory(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem(
       "aether_tarot_history_v2",
@@ -341,7 +341,7 @@ async function seedRecentCareerHistory(page: Parameters<typeof test>[0]["page"])
 }
 
 async function holdToStart(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   durationMs = 2200,
 ) {
   let completed = false;
@@ -404,7 +404,7 @@ async function holdToStart(
 }
 
 async function startReading(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   question: string,
   spreadName: RegExp,
   profileName?: RegExp,
@@ -453,7 +453,7 @@ async function startReading(
 }
 
 async function getSelectedCount(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   targetCount: number,
 ) {
   if (/\/reveal$/.test(page.url())) {
@@ -468,7 +468,7 @@ async function getSelectedCount(
 }
 
 async function drawCards(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   count: number,
 ) {
   let attempts = 0;
@@ -507,7 +507,7 @@ async function drawCards(
   }
 }
 
-async function revealSpread(page: Parameters<typeof test>[0]["page"]) {
+async function revealSpread(page: Page) {
   const revealButton = page.getByRole("button", { name: /揭示牌阵/i });
   await expect(revealButton).toBeVisible();
 
@@ -535,7 +535,7 @@ async function revealSpread(page: Parameters<typeof test>[0]["page"]) {
   throw lastError;
 }
 
-async function enterReading(page: Parameters<typeof test>[0]["page"]) {
+async function enterReading(page: Page) {
   const enterButton = page.getByRole("button", { name: /带着整组气候进入深读/i });
   await expect(enterButton).toBeVisible();
 
@@ -557,7 +557,7 @@ async function enterReading(page: Parameters<typeof test>[0]["page"]) {
 }
 
 async function expectHeroImageLoading(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   expectedCount: number,
 ) {
   const images = page.getByTestId("hero-spread-display").locator("img");
@@ -570,8 +570,29 @@ async function expectHeroImageLoading(
   }
 }
 
+async function expectCardImageFrame(
+  page: Page,
+  expectedWidth: number,
+) {
+  const frame = page.getByTestId("reading-card-image-frame").first();
+  await expect(frame).toBeVisible();
+  const metrics = await frame.evaluate((element) => {
+    const frameRect = element.getBoundingClientRect();
+    const imageRect = element.querySelector("img")?.getBoundingClientRect();
+    return {
+      frameWidth: frameRect.width,
+      frameHeight: frameRect.height,
+      imageHeight: imageRect?.height ?? 0,
+    };
+  });
+
+  expect(Math.abs(metrics.frameWidth - expectedWidth)).toBeLessThan(1);
+  expect(Math.abs(metrics.frameWidth / metrics.frameHeight - 1 / 1.7)).toBeLessThan(0.01);
+  expect(Math.abs(metrics.frameHeight - metrics.imageHeight)).toBeLessThan(1);
+}
+
 async function completeFollowup(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   answer = "我会先对照现实情况观察，再做下一步决定。",
 ) {
   await expect(page.getByTestId("reading-hero-meta")).toContainText("初步解读", {
@@ -672,6 +693,9 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByTestId("reading-hero-meta")).toContainText("初步解读");
     await expectHeroImageLoading(page, 1);
     await expectTrustPath(page);
+    await expectCardImageFrame(page, 160);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expectCardImageFrame(page, 92);
     await expect(page.getByRole("heading", { name: "回答后进入整合深读" })).toBeHidden();
 
     await waitForPersistedHistoryEntry(page, "我现在最该注意什么？");

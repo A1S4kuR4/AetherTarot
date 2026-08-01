@@ -1,4 +1,8 @@
-import { expect, test } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+} from "@playwright/test";
 
 type ReadingPayload = {
   question: string;
@@ -140,7 +144,7 @@ function buildFollowupAnswers(initial: ReadingBody) {
 }
 
 async function createInitialReading(
-  request: Parameters<typeof test>[0]["request"],
+  request: APIRequestContext,
   payload: ReadingPayload = buildHolyTrianglePayload(),
 ) {
   const response = await request.post("/api/reading", { data: payload });

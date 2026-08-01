@@ -125,7 +125,9 @@ async function auditWcag(page: Page, testInfo: TestInfo, label: string) {
     { timeout: 5000 },
   );
   await page.waitForTimeout(500);
-  const results = await new AxeBuilder({ page }).withTags([...WCAG_TAGS]).analyze();
+  const results = await new AxeBuilder({
+    page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"],
+  }).withTags([...WCAG_TAGS]).analyze();
 
   await testInfo.attach(`${label}-axe.json`, {
     body: Buffer.from(JSON.stringify(results, null, 2)),
@@ -297,7 +299,7 @@ test.describe("/reading WCAG 2.2 AA audit", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await startReading(page, "我现在最需要留意什么？", /单牌启示/i, 1);
 
-    let releaseRequest: (() => void) | null = null;
+    let releaseRequest: () => void = () => undefined;
     const heldRequest = new Promise<void>((resolve) => {
       releaseRequest = resolve;
     });

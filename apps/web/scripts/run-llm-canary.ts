@@ -24,6 +24,20 @@ import {
 
 const execFileAsync = promisify(execFile);
 
+function resolveCanaryTokenBudget() {
+  const rawBudget = process.env.AETHERTAROT_LLM_CANARY_TOKEN_BUDGET;
+  if (!rawBudget) {
+    return CANARY_TOKEN_BUDGET;
+  }
+  const parsedBudget = Number(rawBudget);
+  if (!Number.isSafeInteger(parsedBudget) || parsedBudget <= 0) {
+    throw new Error(
+      "AETHERTAROT_LLM_CANARY_TOKEN_BUDGET must be a positive integer.",
+    );
+  }
+  return parsedBudget;
+}
+
 function payloadFor({
   question,
   spreadId,
@@ -66,7 +80,8 @@ async function gitCommit() {
 async function main() {
   const outputDir = path.resolve(process.cwd(), "..", "..", "outputs", "evals");
   await mkdir(outputDir, { recursive: true });
-  const tokenGate = createCanaryTokenGate();
+  const canaryTokenBudget = resolveCanaryTokenBudget();
+  const tokenGate = createCanaryTokenGate({ tokenBudget: canaryTokenBudget });
   const config = resolveLlmProviderConfig(process.env);
   const provider = createLlmReadingProviderFromEnv(process.env, fetch, tokenGate.gate);
   const wikiChunks = await loadTarotKnowledgeChunks();
@@ -191,7 +206,7 @@ async function main() {
     git_commit: await gitCommit(),
     model_config_fingerprint: modelFingerprint,
     wiki_corpus_hash: wikiHash,
-    budget: { maximum_tokens: CANARY_TOKEN_BUDGET, ...tokenGate.snapshot() },
+    budget: { maximum_tokens: canaryTokenBudget, ...tokenGate.snapshot() },
     cases,
     failures,
   };

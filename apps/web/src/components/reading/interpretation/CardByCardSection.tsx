@@ -36,7 +36,10 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
               className="grid grid-cols-[92px_1fr] gap-x-4 gap-y-4 border-t border-paper-border/60 py-8 first:border-t-0 first:pt-6 sm:grid-cols-[140px_1fr] sm:gap-x-6 md:grid-cols-[160px_1fr] md:gap-x-8"
             >
               {drawnCard ? (
-                <div className="row-span-3 w-full overflow-hidden rounded-card-md border border-paper-border shadow-sm">
+                <div
+                  data-testid="reading-card-image-frame"
+                  className="row-span-3 aspect-[1/1.7] w-full self-start overflow-hidden rounded-card-md shadow-sm ring-1 ring-inset ring-paper-border"
+                >
                   <CardImage
                     src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                     alt={`${drawnCard.card.name}，${card.position}，${orientationLabel}`}

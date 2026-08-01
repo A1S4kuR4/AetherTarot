@@ -6,6 +6,9 @@ import { z } from "zod";
 import { loadTarotKnowledgeChunks } from "@/server/reading/knowledge/loader";
 import { createInMemorySessionMemoryStore } from "@/server/reading/memory";
 import { executeReadingTool } from "@/server/reading/tools/executor";
+import type { DrawCardsOutput } from "@/server/reading/tools/draw-cards-server-side";
+import type { RetrieveTarotKnowledgeOutput } from "@/server/reading/tools/retrieve-tarot-knowledge";
+import type { GetSessionMemoryOutput } from "@/server/reading/tools/session-memory";
 import {
   createReadingToolRegistry,
   getSessionMemoryTool,
@@ -127,7 +130,7 @@ describe("reading tool system", () => {
       last_advice_summary: "先识别卡点，不要冲动行动。",
       updated_at: "2026-05-21T00:00:00.000Z",
     });
-    const execution = await executeReadingTool({
+    const execution = await executeReadingTool<GetSessionMemoryOutput>({
       toolName: "get_session_memory",
       input: { threadId: "thread-memory-tool" },
       registry: createReadingToolRegistry([getSessionMemoryTool]),
@@ -225,7 +228,7 @@ describe("reading tool system", () => {
   });
 
   it("executes retrieve_tarot_knowledge through the executor with real local wiki chunks", async () => {
-    const execution = await executeReadingTool({
+    const execution = await executeReadingTool<RetrieveTarotKnowledgeOutput>({
       toolName: "retrieve_tarot_knowledge",
       input: {
         query: "倒吊人逆位在职业问题中代表什么？",
@@ -317,7 +320,7 @@ describe("reading tool system", () => {
   });
 
   it("executes draw_cards_server_side through the executor", async () => {
-    const execution = await executeReadingTool({
+    const execution = await executeReadingTool<DrawCardsOutput>({
       toolName: "draw_cards_server_side",
       input: {
         spreadType: "three_card",

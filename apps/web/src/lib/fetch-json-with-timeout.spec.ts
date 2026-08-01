@@ -72,6 +72,7 @@ describe("fetchJsonWithTimeout", () => {
     await vi.advanceTimersByTimeAsync(25);
 
     await rejection;
-    expect(capturedSignal?.aborted).toBe(true);
+    expect(capturedSignal).not.toBeNull();
+    expect((capturedSignal as unknown as AbortSignal).aborted).toBe(true);
   });
 });
