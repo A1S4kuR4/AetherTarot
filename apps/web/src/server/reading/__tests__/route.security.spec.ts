@@ -185,6 +185,29 @@ describe("reading route beta access and quota", () => {
     expect(deps.generateReading).not.toHaveBeenCalled();
   });
 
+  it("accepts an empty question only for the single-card lite current-moment mirror", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(buildRequest({
+      ...buildSinglePayload(""),
+      agent_profile: "lite",
+    }), deps);
+    const reading = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(reading.question).toBe("");
+    expect(reading.agent_profile).toBe("lite");
+  });
+
+  it("keeps empty questions invalid outside the current-moment mirror", async () => {
+    const deps = buildDependencies();
+    const response = await handleReadingPost(buildRequest(buildSinglePayload("")), deps);
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(400);
+    expect(payload.error?.code).toBe("invalid_request");
+    expect(deps.generateReading).not.toHaveBeenCalled();
+  });
+
   it("rejects oversized continuity identifiers and capsule text", async () => {
     const deps = buildDependencies();
     const response = await handleReadingPost(

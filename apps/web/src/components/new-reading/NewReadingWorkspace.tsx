@@ -1,0 +1,376 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { getAllSpreads } from "@aethertarot/domain-tarot";
+import type { AgentProfile, DrawSource, QuestionType, ReadingHistoryEntry } from "@aethertarot/shared-types";
+import { useReading } from "@/context/ReadingContext";
+import { useQuickDraw } from "@/hooks/useQuickDraw";
+import { ConfigurationPane } from "./ConfigurationPane";
+import { InquiryPane } from "./InquiryPane";
+import { trackNewReadingEvent } from "./new-reading-analytics";
+import {
+  getPromptBatch,
+  needsDecisionBoundary,
+  normalizeDecisionQuestion,
+} from "./new-reading-flow";
+import {
+  readNewReadingQuestionDraft,
+  saveNewReadingQuestionDraft,
+} from "./new-reading-question-draft";
+import type { AgentProfileOption, DrawSourceOption } from "./types";
+
+const MAJOR_DECISION_TERM_REGEX =
+  /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂|起诉|诉讼|官司|借贷|贷款|法律|财务|理财/i;
+
+const spreads = getAllSpreads();
+
+const PROMPT_CATEGORIES = [
+  { id: "all", label: "全部" },
+  { id: "relationship", label: "感情关系" },
+  { id: "career", label: "事业职场" },
+  { id: "self_growth", label: "自我探索" },
+  { id: "decision", label: "抉择困局" },
+];
+
+const AGENT_PROFILES: AgentProfileOption[] = [
+  { id: "standard", name: "日常塔罗师", subtitle: "用自然语言理解牌面与你的处境", description: "适合大多数感情、事业和自我探索问题。", badge: "推荐" },
+  { id: "sober", name: "深度塔罗师", subtitle: "从多角度深入分析复杂问题", description: "适合多牌阵、需要梳理多重因素或验证假设的议题。", badge: "深度分析" },
+  { id: "lite", name: "快速塔罗师", subtitle: "快速看懂当前最值得关注的一点", description: "适合简单问题或快速抽牌。", badge: "快速体验" },
+];
+
+const DRAW_SOURCES: DrawSourceOption[] = [
+  { id: "digital_random", name: "线上随机洗牌", description: "线上为你执行随机洗牌与发牌序列。" },
+  { id: "offline_manual", name: "实体牌线下录入", description: "使用你的实体牌抽取，再按牌阵位置录入牌面。" },
+];
+
+const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  relationship: "关系议题",
+  career: "职业议题",
+  self_growth: "自我成长",
+  decision: "行动选择",
+  other: "综合议题",
+};
+
+function inferQuestionType(question: string): QuestionType | null {
+  if (!question.trim()) return null;
+  if (/关系|感情|伴侣|喜欢|爱|分手|复合|他|她|对方/.test(question)) return "relationship";
+  if (/工作|职业|事业|职场|项目|升职|跳槽|辞职|创业/.test(question)) return "career";
+  if (/成长|模式|内心|自我|状态|课题|情绪/.test(question)) return "self_growth";
+  if (/离婚|辞职|退学|堕胎|卖房|买房|投资|炒股|决裂|决定|选择|必须|要不要/.test(question)) return "decision";
+  return "other";
+}
+
+function findRecentRepeatedTheme(history: ReadingHistoryEntry[], question: string) {
+  const questionType = inferQuestionType(question);
+  if (!questionType || questionType === "other") return null;
+
+  const recentMatch = history.slice(0, 6).find((entry) => entry.reading.question_type === questionType);
+  return recentMatch
+    ? { label: QUESTION_TYPE_LABELS[questionType], question: recentMatch.reading.question }
+    : null;
+}
+
+export function NewReadingWorkspace() {
+  const router = useRouter();
+  const { status: sessionStatus } = useSession();
+  const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
+  const {
+    agentProfile, clearContinuityMemory, clearContinuitySource, continuitySource, drawSource,
+    drawnCards, history, isHydrated, question, reading, selectedSpread, setAgentProfile, setDrawSource, setQuestion,
+    setSelectedSpread, startRitual,
+  } = useReading();
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [promptBatchIndex, setPromptBatchIndex] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCondensing, setIsCondensing] = useState(false);
+  const [pendingStart, setPendingStart] = useState<{
+    mode: "ritual" | "quick";
+    question: string;
+  } | null>(null);
+  const [navigationMode, setNavigationMode] = useState<"ritual" | "quick" | null>(null);
+  const [confirmedDecisionQuestion, setConfirmedDecisionQuestion] = useState<string | null>(null);
+  const [showDecisionGuidance, setShowDecisionGuidance] = useState(false);
+  const [isClearingMemory, setIsClearingMemory] = useState(false);
+  const [memoryClearMessage, setMemoryClearMessage] = useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"restored" | "saved" | null>(null);
+  const isQuestionDraftRestored = useRef(false);
+
+  const trimmedQuestion = question.trim();
+  const isNavigationPending = navigationMode !== null || isQuickDrawing;
+  const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
+  const currentPrompts = getPromptBatch(
+    activeCategory as "all" | "relationship" | "career" | "self_growth" | "decision",
+    promptBatchIndex,
+  );
+  const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
+  const startButtonDisabled = !trimmedQuestion || !selectedSpread || isNavigationPending || isCondensing;
+  const quickButtonDisabled = isNavigationPending || isCondensing;
+  const startButtonLabel = navigationMode === "ritual"
+    ? drawSource === "offline_manual" ? "正在进入录入..." : "正在进入仪式..."
+    : isCondensing ? "正在凝聚牌意……"
+    : drawSource === "offline_manual" ? "确认问询，进入录入 →" : "确认问询，进入抽牌 →";
+  const quickButtonLabel = navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "当下之镜 →";
+
+  useEffect(() => {
+    if (!pendingStart) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setPendingStart(null);
+      setShowDecisionGuidance(true);
+      window.requestAnimationFrame(() => {
+        document.getElementById("new-reading-question")?.focus();
+      });
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [pendingStart]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!isQuestionDraftRestored.current) {
+      isQuestionDraftRestored.current = true;
+
+      if (!question && !reading && drawnCards.length === 0) {
+        try {
+          const draft = readNewReadingQuestionDraft(window.localStorage);
+          if (draft) {
+            setQuestion(draft);
+            window.requestAnimationFrame(() => setDraftStatus("restored"));
+          }
+        } catch {}
+      }
+
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      try {
+        setDraftStatus(saveNewReadingQuestionDraft(window.localStorage, question) ? "saved" : null);
+      } catch {
+        setDraftStatus(null);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [drawnCards.length, isHydrated, question, reading, setQuestion]);
+
+  const requestStart = (mode: "ritual" | "quick") => {
+    if (isNavigationPending) return false;
+    const eventPayload = {
+      drawSource,
+      profile: agentProfile,
+      spreadId: selectedSpread?.id,
+      startMode: mode,
+    } as const;
+    trackNewReadingEvent("new_reading_start_requested", eventPayload);
+    const normalizedQuestion = normalizeDecisionQuestion(question);
+    if (needsDecisionBoundary({
+      isMajorDecisionQuestion,
+      question,
+      confirmedQuestion: confirmedDecisionQuestion,
+    })) {
+      trackNewReadingEvent("new_reading_boundary_shown", eventPayload);
+      setPendingStart({ mode, question: normalizedQuestion });
+      return true;
+    }
+    if (mode === "quick") {
+      setNavigationMode("quick");
+      if (!performQuickDraw()) setNavigationMode(null);
+      return true;
+    }
+    if (!startRitual()) return false;
+    setNavigationMode("ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
+    return true;
+  };
+
+  const startWithCondensation = () => {
+    if (startButtonDisabled) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestStart("ritual");
+      return;
+    }
+    setIsCondensing(true);
+  };
+
+  const finishCondensation = () => {
+    if (!isCondensing) return;
+    setIsCondensing(false);
+    requestStart("ritual");
+  };
+
+  const confirmDecisionBoundary = () => {
+    const pending = pendingStart;
+    setPendingStart(null);
+    if (!pending || isNavigationPending) return;
+    setConfirmedDecisionQuestion(pending.question);
+    trackNewReadingEvent("new_reading_boundary_confirmed", {
+      drawSource,
+      profile: agentProfile,
+      spreadId: selectedSpread?.id,
+      startMode: pending.mode,
+    });
+    if (pending.mode === "quick") {
+      setNavigationMode("quick");
+      if (!performQuickDraw()) setNavigationMode(null);
+      return;
+    }
+    if (!startRitual()) return;
+    setNavigationMode("ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
+  };
+
+  const returnToQuestion = () => {
+    setPendingStart(null);
+    setShowDecisionGuidance(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById("new-reading-question")?.focus();
+    });
+  };
+
+  return (
+    <div className="new-reading-sheet">
+      {continuitySource ? (
+        <aside className="new-reading-continuity" aria-label="延续中的线索">
+          <div>
+            <strong>延续中的线索</strong>
+            <span>你正在延续「{continuitySource.spreadName}」：{continuitySource.question}</span>
+          </div>
+          <div className="new-reading-continuity-actions">
+            <button type="button" onClick={clearContinuitySource} className="new-reading-text-button">停止延续</button>
+            {sessionStatus === "authenticated" ? (
+              <button
+                type="button"
+                disabled={isClearingMemory}
+                onClick={async () => {
+                  setIsClearingMemory(true);
+                  setMemoryClearMessage(null);
+                  const cleared = await clearContinuityMemory();
+                  setMemoryClearMessage(cleared ? "服务端记忆已清除；当前摘要仍可用于本次延续。" : "暂时无法清除，请稍后再试。");
+                  setIsClearingMemory(false);
+                }}
+                className="new-reading-text-button"
+              >
+                {isClearingMemory ? "正在清除…" : "清除这条线的记忆"}
+              </button>
+            ) : null}
+          </div>
+          {memoryClearMessage ? <p role="status">{memoryClearMessage}</p> : null}
+        </aside>
+      ) : null}
+
+      <div className="new-reading-columns">
+        <InquiryPane
+          activeCategory={activeCategory}
+          categories={PROMPT_CATEGORIES}
+          currentPrompts={currentPrompts}
+          isRefreshing={isRefreshing}
+          onCategoryChange={(category) => {
+            setActiveCategory(category);
+            setPromptBatchIndex(0);
+            trackNewReadingEvent("new_reading_category_selected", { category });
+          }}
+          onClearQuestion={() => {
+            setQuestion("");
+            setDraftStatus(null);
+          }}
+          onPromptSelect={(prompt) => {
+            setQuestion(prompt);
+            setDraftStatus(null);
+            trackNewReadingEvent("new_reading_prompt_selected", { category: activeCategory });
+          }}
+          onQuestionChange={(nextQuestion) => {
+            setQuestion(nextQuestion);
+            setDraftStatus(null);
+          }}
+          onRefreshPrompts={() => {
+            setIsRefreshing(true);
+            setPromptBatchIndex((index) => index + 1);
+            trackNewReadingEvent("new_reading_prompts_refreshed", { category: activeCategory });
+            window.setTimeout(() => setIsRefreshing(false), 300);
+          }}
+          question={question}
+          repeatedThemeNotice={repeatedThemeNotice}
+          showDecisionGuidance={showDecisionGuidance}
+          draftStatus={draftStatus}
+        />
+        <ConfigurationPane
+          agentProfile={agentProfile}
+          agentProfiles={AGENT_PROFILES}
+          drawSource={drawSource}
+          drawSources={DRAW_SOURCES}
+          isCondensing={isCondensing}
+          isNavigationPending={isNavigationPending}
+          onAgentProfileSelect={(profile: AgentProfile) => {
+            setAgentProfile(profile);
+            trackNewReadingEvent("new_reading_profile_selected", { profile });
+          }}
+          onDrawSourceSelect={(source: DrawSource) => {
+            setDrawSource(source);
+            trackNewReadingEvent("new_reading_draw_source_selected", { drawSource: source });
+          }}
+          onStart={startWithCondensation}
+          onStartAnimationEnd={finishCondensation}
+          onQuickStart={() => requestStart("quick")}
+          quickButtonDisabled={quickButtonDisabled}
+          quickButtonLabel={quickButtonLabel}
+          selectedSpread={selectedSpread}
+          spreads={spreads}
+          onSelect={(spread) => {
+            setSelectedSpread(spread);
+            trackNewReadingEvent("new_reading_spread_selected", { spreadId: spread.id });
+          }}
+          startButtonDisabled={startButtonDisabled}
+          startButtonLabel={startButtonLabel}
+        />
+      </div>
+
+      <div className="new-reading-mobile-actions" data-testid="new-reading-mobile-actions">
+        <button
+          type="button"
+          disabled={startButtonDisabled}
+          onClick={startWithCondensation}
+          onAnimationEnd={finishCondensation}
+          className={`new-reading-start-button${isCondensing ? " new-reading-start-button-condensing" : ""}`}
+        >
+          {startButtonLabel}
+        </button>
+        <button
+          type="button"
+          disabled={quickButtonDisabled}
+          onClick={() => requestStart("quick")}
+          className="new-reading-quick-button"
+        >
+          {quickButtonLabel}
+        </button>
+      </div>
+
+      {pendingStart ? (
+        <div className="new-reading-dialog-backdrop" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="new-reading-boundary-title" className="new-reading-dialog">
+            <p className="new-reading-section-mark">边界提醒</p>
+            <h2 id="new-reading-boundary-title">重大现实决定前的校准</h2>
+            <p>检测到你的问题涉及重大现实抉择。塔罗可帮助整理感受与线索，但不能替代法律、财务、医疗或其他专业意见；现实信息与个人底线应优先。</p>
+            <div className="new-reading-dialog-comparison" aria-label="两种提问方式的对照">
+              <div>
+                <strong>判定式</strong>
+                <span>“我是不是该辞职？”</span>
+              </div>
+              <div>
+                <strong>启发式</strong>
+                <span>“在决定是否离开前，我还需要看清哪些条件与代价？”</span>
+              </div>
+            </div>
+            <div className="new-reading-dialog-actions">
+              <button type="button" autoFocus onClick={returnToQuestion} className="btn-secondary">返回修改</button>
+              <button type="button" onClick={confirmDecisionBoundary} className="btn-primary">我已了解，继续仪式</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </div>
+  );
+}

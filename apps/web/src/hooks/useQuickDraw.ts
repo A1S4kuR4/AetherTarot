@@ -19,33 +19,31 @@ export function useQuickDraw() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const performQuickDraw = (overrideQuestion?: string) => {
-    if (isNavigating) return;
-
-    const finalQuestion = (overrideQuestion ?? question).trim();
-    if (!finalQuestion) {
-      return;
-    }
+    if (isNavigating) return false;
 
     const spreads = getAllSpreads();
     const fallbackSpread = spreads.find((s) => s.id === "single") ?? spreads[0];
     
-    // If overrideQuestion is provided, it's a "cold start" entry point.
-    // We default to the single spread instead of whatever might be selected.
-    const targetSpread = overrideQuestion ? fallbackSpread : (selectedSpread ?? fallbackSpread);
+    // A questionless mirror always uses a single card. A submitted question
+    // keeps the user's selected spread, matching the established quick path.
+    const hasQuestion = Boolean((overrideQuestion ?? question).trim());
+    const targetSpread = overrideQuestion !== undefined || !hasQuestion
+      ? fallbackSpread
+      : (selectedSpread ?? fallbackSpread);
 
     if (!targetSpread) {
-      return;
+      return false;
     }
 
     const quickDrawnCards = drawCardsForSpread(targetSpread.positions);
 
     if (quickDrawnCards.length !== targetSpread.positions.length) {
-      return;
+      return false;
     }
 
     setIsNavigating(true);
 
-    if (overrideQuestion) {
+    if (overrideQuestion !== undefined) {
       setQuestion(overrideQuestion);
     }
     
@@ -54,6 +52,7 @@ export function useQuickDraw() {
     setSelectedSpread(targetSpread);
     completeRitual(quickDrawnCards);
     router.push("/reading");
+    return true;
   };
 
   return { performQuickDraw, isNavigating };

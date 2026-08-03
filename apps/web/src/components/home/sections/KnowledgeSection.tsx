@@ -1,73 +1,49 @@
 "use client";
 
 import { m } from "motion/react";
-import LegacyIcon from "@/components/ui/LegacyIcon";
 
 export default function KnowledgeSection() {
   return (
-    <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-paper-raised/50 px-6 py-12 lg:h-full lg:min-h-0 lg:py-10">
-      <div className="w-full max-w-5xl space-y-14">
-        <header className="text-center">
-          <h2 className="font-serif text-3xl font-medium text-ink md:text-4xl">
-            象征：灵魂的 78 个切面
-          </h2>
-          <div className="mx-auto mt-4 h-px w-24 bg-terracotta/30" />
-        </header>
-
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Major Arcana */}
-          <m.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="rounded-3xl border border-paper-border bg-paper p-8 shadow-sm transition-all hover:shadow-md"
-          >
-            <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
-              <LegacyIcon name="stars" />
-            </div>
-            <h3 className="mb-4 font-serif text-2xl text-ink">大阿尔卡纳 · Major Arcana</h3>
-            <p className="font-sans text-base leading-relaxed text-text-body">
+    <section
+      id="symbolism"
+      className="flex min-h-[calc(100dvh-4rem)] w-full items-center px-6 py-14 sm:px-10 lg:h-full lg:min-h-0 lg:px-16 lg:py-10"
+    >
+      <m.div
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+        className="mx-auto w-full max-w-[1120px]"
+      >
+        <span className="mb-3 block font-mono text-xs font-semibold tracking-[0.2em] text-terracotta">
+          CHAPTER II
+        </span>
+        <h2 className="mb-8 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.16] tracking-[-0.03em] text-ink">
+          灵魂的 78 个切面
+        </h2>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(13rem,1fr)] lg:gap-16">
+          <div className="max-w-[44rem] font-serif text-lg leading-[1.9] text-text-body">
+            <h3 className="mb-4 font-serif text-2xl font-semibold text-ink">大阿尔卡纳 · Major Arcana</h3>
+            <p className="mb-9">
               由 22 张具有深度原型的牌组成。它们描绘的是从“愚人”到“世界”的灵魂旅程，象征着生命中重大的转折点、精神课题与核心命运。
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {["原型", "命运", "课题", "转折"].map((tag) => (
-                <span key={tag} className="chip-muted text-[11px]">{tag}</span>
-              ))}
-            </div>
-          </m.div>
-
-          {/* Minor Arcana */}
-          <m.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="rounded-3xl border border-paper-border bg-paper p-8 shadow-sm transition-all hover:shadow-md"
-          >
-            <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-              <LegacyIcon name="waves" />
-            </div>
-            <h3 className="mb-4 font-serif text-2xl text-ink">小阿尔卡纳 · Minor Arcana</h3>
-            <p className="font-sans text-base leading-relaxed text-text-body">
+            <h3 className="mb-4 font-serif text-2xl font-semibold text-ink">小阿尔卡纳 · Minor Arcana</h3>
+            <p>
               由 56 张牌组成，对应四种元素。它们反映的是我们日常生活的纹理：工作、情感、思想与物质。它们是灵魂在现实尘埃中的具体舞动。
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {["情感", "意志", "物质", "逻辑"].map((tag) => (
-                <span key={tag} className="chip-muted text-[11px]">{tag}</span>
-              ))}
+          </div>
+          <aside className="space-y-8 self-start lg:mt-2">
+            <div className="border-l border-terracotta pl-4 font-serif text-sm italic leading-relaxed text-terracotta">
+              <span className="mb-1 block font-mono text-[0.7rem] not-italic font-semibold tracking-[0.12em]">MAJOR ARCANA</span>
+              原型 / 命运 / 课题 / 转折
             </div>
-          </m.div>
+            <div className="border-l border-terracotta pl-4 font-serif text-sm italic leading-relaxed text-terracotta">
+              <span className="mb-1 block font-mono text-[0.7rem] not-italic font-semibold tracking-[0.12em]">MINOR ARCANA</span>
+              权杖（意志）/ 圣杯（情感）/ 宝剑（逻辑）/ 星币（物质）
+            </div>
+          </aside>
         </div>
-
-        <m.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="text-center font-serif text-lg italic text-text-muted"
-        >
-          “理解了象征，便理解了生命在这个时刻向你呈现的姿态。”
-        </m.p>
-      </div>
+      </m.div>
     </section>
   );
 }

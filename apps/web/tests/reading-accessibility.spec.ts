@@ -40,10 +40,9 @@ async function startReading(
   await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
   await page.getByRole("button", { name: spreadName }).click();
 
-  const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
   await expect(startButton).toBeEnabled();
-  await startButton.dispatchEvent("mousedown");
-  await page.waitForTimeout(2300);
+  await startButton.click();
 
   const decisionHeading = page.getByRole("heading", {
     name: /重大现实决定前的校准|重大决策风险提示/,

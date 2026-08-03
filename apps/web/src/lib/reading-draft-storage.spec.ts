@@ -120,6 +120,7 @@ describe("reading draft storage", () => {
     expect(parseReadingDraftSnapshot(JSON.stringify({
       ...baseSnapshot,
       question: "   ",
+      agentProfile: "standard",
     }), {
       findSpreadById: () => spread,
       findCardById: () => card,
@@ -137,6 +138,27 @@ describe("reading draft storage", () => {
       findSpreadById: () => spread,
       findCardById: () => undefined,
     })).toBeNull();
+  });
+
+  it("restores a questionless lite single-card current-moment draft", () => {
+    const snapshot = buildReadingDraftSnapshot({
+      requestId,
+      question: "",
+      selectedSpread: spread,
+      agentProfile: "lite",
+      drawSource: "digital_random",
+      drawnCards,
+    });
+
+    expect(parseReadingDraftSnapshot(JSON.stringify(snapshot), {
+      findSpreadById: () => spread,
+      findCardById: () => card,
+    })).toMatchObject({
+      question: "",
+      agentProfile: "lite",
+      selectedSpread: spread,
+      drawnCards,
+    });
   });
 
   it("restores legacy agent_profile aliases from drafts", () => {

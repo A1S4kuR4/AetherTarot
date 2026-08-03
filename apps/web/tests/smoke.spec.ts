@@ -269,32 +269,6 @@ async function expectHomeSectionsDoNotClipContent(
   expect(clippedSections).toEqual([]);
 }
 
-async function expectRitualInitializerControlsInViewport(
-  page: Page,
-) {
-  const controls = [
-    page.getByPlaceholder("今天，你想向内心询问什么？"),
-    page.getByRole("button", { name: /快速塔罗师/i }),
-    page.getByRole("button", { name: /日常塔罗师/i }),
-    page.getByRole("button", { name: /深度塔罗师/i }),
-    page.getByText("深度分析", { exact: true }),
-    page.getByRole("button", { name: /单牌启示/i }),
-    page.getByRole("button", { name: /圣三角/i }),
-    page.getByRole("button", { name: /四个面向/i }),
-    page.getByRole("button", { name: /七张牌/i }),
-    page.getByRole("button", { name: /赛尔特十字/i }),
-    page.getByRole("button", { name: /线上抽牌/i }),
-    page.getByRole("button", { name: /线下录入/i }),
-    page.getByRole("button", { name: /^长按开始仪式$/ }),
-    page.getByRole("button", { name: "快速解读" }),
-  ];
-
-  for (const control of controls) {
-    await expect(control).toBeVisible();
-    await expect(control).toBeInViewport();
-  }
-}
-
 async function seedRecentCareerHistory(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -340,10 +314,7 @@ async function seedRecentCareerHistory(page: Page) {
   });
 }
 
-async function holdToStart(
-  page: Page,
-  durationMs = 2200,
-) {
+async function holdToStart(page: Page) {
   let completed = false;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -352,10 +323,10 @@ async function holdToStart(
     }
 
     try {
-      const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+      const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
       await expect(startButton).toBeVisible({ timeout: 3000 });
       await expect(startButton).toBeEnabled({ timeout: 3000 });
-      await startButton.dispatchEvent("mousedown", undefined, { timeout: 3000 });
+      await startButton.click({ timeout: 3000 });
     } catch (error) {
       if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
         return;
@@ -368,8 +339,6 @@ async function holdToStart(
 
       throw error;
     }
-
-    await page.waitForTimeout(durationMs);
 
     if (/\/(ritual\/draw|offline-draw)$/i.test(page.url())) {
       return;
@@ -412,7 +381,7 @@ async function startReading(
   await gotoAppRoute(page, "/new");
   const input = page.getByPlaceholder("今天，你想向内心询问什么？");
   const spreadButton = page.getByRole("button", { name: spreadName });
-  const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
 
   await expect(input).toBeEditable();
 
@@ -711,7 +680,7 @@ test.describe("AetherTarot smoke flow", () => {
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
     await input.fill("我现在最该注意什么？");
     await delayAppRouteOnce(page, "/reading");
-    await page.getByRole("button", { name: "快速解读" }).click();
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
     await expect(
       page.getByRole("button", { name: "正在生成轻量解读..." }),
     ).toBeDisabled();
@@ -747,7 +716,7 @@ test.describe("AetherTarot smoke flow", () => {
 
     const question = "刷新后这次抽牌还应该继续吗？";
     await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
-    await page.getByRole("button", { name: "快速解读" }).click();
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
 
     await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
     await expect(page.getByText("正在确认访问与本次牌阵…")).toBeVisible();
@@ -768,7 +737,7 @@ test.describe("AetherTarot smoke flow", () => {
       .getByPlaceholder("今天，你想向内心询问什么？")
       .fill("我该如何看待当前的职业选择？");
     await page.getByRole("button", { name: /圣三角/i }).click();
-    await page.getByRole("button", { name: "快速解读" }).click();
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
 
     await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
     await expectReadingQuickReady(page);
@@ -1157,7 +1126,7 @@ test.describe("AetherTarot smoke flow", () => {
     await gotoAppRoute(page, "/new");
 
     await page.getByPlaceholder("今天，你想向内心询问什么？").fill("我应该离婚吗？");
-    await page.getByRole("button", { name: "快速解读" }).click();
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
 
     await expect(page.getByRole("heading", {
       name: /重大现实决定前的校准|重大决策风险提示/,
@@ -1182,13 +1151,33 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("heading", { name: "串联在一起的故事" })).toBeHidden();
   });
 
+  test("returns to the question with guidance when the decision dialog closes by Escape", async ({
+    page,
+  }) => {
+    await gotoAppRoute(page, "/new");
+
+    const input = page.getByPlaceholder("今天，你想向内心询问什么？");
+    await input.fill("我应该离婚吗？");
+    await page.getByTestId("new-reading-actions").getByRole("button", {
+      name: /^确认问询，进入抽牌 →$/,
+    }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await expect(dialog).toBeHidden();
+    await expect(input).toBeFocused();
+    await expect(page.getByText(/我需要看清哪些条件与代价/)).toBeVisible();
+  });
+
   test("keeps the start button disabled until the question is non-empty, with 单牌启示 preselected", async ({
     page,
   }) => {
     await seedRecentCareerHistory(page);
     await gotoAppRoute(page, "/new");
 
-    const startButton = page.getByRole("button", { name: /^长按开始仪式$/ });
+    const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /^确认问询，进入抽牌 →$/ });
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
 
     await expect(startButton).toBeDisabled();
@@ -1215,14 +1204,20 @@ test.describe("AetherTarot smoke flow", () => {
     await input.clear();
     await expect(startButton).toBeDisabled();
 
-    await input.fill("只输入问题");
+    const draftQuestion = "只输入问题";
+    await input.fill(draftQuestion);
+    await expect
+      .poll(
+        () => page.evaluate(() => window.localStorage.getItem("aether_tarot_new_question_draft_v1")),
+        { timeout: 3000 },
+      )
+      .toBe(draftQuestion);
     await page.reload({ waitUntil: "domcontentloaded" });
     await waitForReadingHydration(page);
-    await page.waitForTimeout(250);
+    await expect(input).toHaveValue(draftQuestion);
+    await expect(page.getByText("已恢复上次草稿")).toBeVisible();
 
-    await expect(startButton).toBeDisabled();
-    await startButton.click({ force: true });
-    await expect(page).toHaveURL(/\/new$/);
+    await expect(startButton).toBeEnabled();
   });
 
   test("keeps the home narrative inside one viewport and jumps section by section", async ({
@@ -1288,7 +1283,7 @@ test.describe("AetherTarot smoke flow", () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("keeps the ritual initializer visible without body scrolling on desktop", async ({
+  test("uses a natural-scrolling manuscript layout on desktop", async ({
     page,
   }) => {
     for (const viewport of [
@@ -1298,86 +1293,61 @@ test.describe("AetherTarot smoke flow", () => {
     ]) {
       await page.setViewportSize(viewport);
       await gotoAppRoute(page, "/new");
-      await expectDocumentFitsViewport(page);
-      await expectRitualInitializerControlsInViewport(page);
+      await expectNoHorizontalOverflow(page);
+      await expect(page.locator("main main")).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: "落笔成问" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "I. 选择牌阵" })).toBeVisible();
 
-      // The 3-column grid must not overflow horizontally (clipped by overflow-hidden).
-      const settingsColumn = page.locator("aside", {
-        has: page.getByRole("heading", { name: "阅读设置" }),
-      });
-      const settingsBox = await settingsColumn.boundingBox();
-      expect(settingsBox).not.toBeNull();
-      expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(viewport.width + 2);
+      const layout = await page.locator(".new-reading-sheet").evaluate((sheet) => ({
+        documentHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+        overflowY: getComputedStyle(sheet).overflowY,
+      }));
+      expect(layout.documentHeight).toBeGreaterThan(layout.viewportHeight);
+      expect(["visible", "clip"]).toContain(layout.overflowY);
     }
 
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
-    const startButton = page.getByRole("button", { name: /^长按开始仪式$/ });
+    const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /^确认问询，进入抽牌 →$/ });
 
     await expect(input).toBeEditable();
+    await expect(input).toHaveAttribute("maxlength", "200");
     await expect(startButton).toBeDisabled();
     await input.fill("我现在最需要看清什么？");
+    await expect(page.getByRole("button", { name: "清空草稿" })).toBeVisible();
     await page.getByRole("button", { name: /单牌启示/i }).click();
     await expect(startButton).toBeEnabled();
-    await expect(page.getByText(/单牌启示 会用 \d+ 个位置来组织这次随机/)).toBeVisible();
-    await expectDocumentFitsViewport(page);
+    await expect(page.getByText(/单牌启示 会用 \d+ 个位置组织这次随机/)).toBeVisible();
+    await page.getByTestId("new-reading-actions").scrollIntoViewIfNeeded();
+    await expect(startButton).toBeInViewport();
+
+    await input.fill("这段感情中，我需要看清什么？");
+    await expect(page.getByText(/检测到议题可能聚焦关系/)).toBeVisible();
   });
 
-  test("pins the mobile ritual CTA to the viewport bottom", async ({
+  test("keeps mobile CTAs reachable without scrolling and reserves their space", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoAppRoute(page, "/new");
 
     const input = page.getByPlaceholder("今天，你想向内心询问什么？");
-    const mobileCta = page.getByTestId("mobile-ritual-cta");
-    const startButton = mobileCta.getByRole("button", { name: /^长按开始仪式$/ });
-    const quickButton = mobileCta.getByRole("button", { name: "快速解读" });
+    const actions = page.getByTestId("new-reading-mobile-actions");
+    const startButton = actions.getByRole("button", { name: /^确认问询，进入抽牌 →$/ });
+    const quickButton = actions.getByRole("button", { name: "当下之镜 →" });
 
-    const expectCtaPinnedToViewportBottom = async () => {
-      const metrics = await mobileCta.evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-
-        return {
-          bottom: rect.bottom,
-          position: getComputedStyle(element).position,
-          viewportHeight: window.innerHeight,
-        };
-      });
-
-      expect(metrics.position).toBe("fixed");
-      expect(Math.abs(metrics.viewportHeight - metrics.bottom)).toBeLessThanOrEqual(1);
-    };
-
-    await expect(mobileCta).toBeVisible();
-    await expect(startButton).toBeVisible();
+    await expect(actions).toBeInViewport();
     await expect(startButton).toBeDisabled();
-    await expectCtaPinnedToViewportBottom();
-    const deepModeButton = page.getByRole("button", { name: /深度塔罗师/i });
-    await expect(deepModeButton).toBeVisible();
-    await expect(page.getByText("深度分析", { exact: true })).toBeVisible();
     await expect(quickButton).toBeVisible();
-    await expect(quickButton).toBeDisabled();
+    await expect(quickButton).toBeEnabled();
 
     await input.fill("我现在最需要看清什么？");
-    await deepModeButton.click();
-    await expect(deepModeButton).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: /圣三角/i }).click();
-
     await expect(startButton).toBeEnabled();
     await expect(quickButton).toBeEnabled();
-    await expectCtaPinnedToViewportBottom();
     await expectNoHorizontalOverflow(page);
 
-    const offlineDrawButton = page.getByRole("button", { name: /线下录入/i });
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(offlineDrawButton).toBeInViewport();
-
-    const [ctaTop, lastSettingBottom] = await Promise.all([
-      mobileCta.evaluate((element) => element.getBoundingClientRect().top),
-      offlineDrawButton.evaluate((element) => element.getBoundingClientRect().bottom),
-    ]);
-
-    expect(lastSettingBottom).toBeLessThanOrEqual(ctaTop + 1);
+    const actionPosition = await actions.evaluate((element) => getComputedStyle(element).position);
+    expect(actionPosition).toBe("fixed");
   });
 
   test("opens and closes the mobile drawer and keeps the home entry usable", async ({

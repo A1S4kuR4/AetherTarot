@@ -133,7 +133,6 @@ export function parseReadingDraftSnapshot(
 
   if (
     (parsed.version !== 1 && parsed.version !== 2) ||
-    !question ||
     !spreadId ||
     !DRAW_SOURCES.has(drawSource as DrawSource) ||
     !Array.isArray(parsed.drawnCards) ||
@@ -172,6 +171,19 @@ export function parseReadingDraftSnapshot(
       card,
       isReversed: requestCard.isReversed,
     });
+  }
+
+  const normalizedAgentProfile = restoreAgentProfile(agentProfile);
+  const isQuestionlessQuickDraft =
+    !question
+    && normalizedAgentProfile === "lite"
+    && selectedSpread.id === "single"
+    && selectedSpread.positions.length === 1
+    && drawnCards.length === 1
+    && drawnCards[0]?.positionId === selectedSpread.positions[0]?.id;
+
+  if (!question && !isQuestionlessQuickDraft) {
+    return null;
   }
 
   return {

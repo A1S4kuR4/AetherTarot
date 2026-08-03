@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
 import { m } from "motion/react";
+import NextLink from "next/link";
 
 import IntroSection from "./sections/IntroSection";
 import KnowledgeSection from "./sections/KnowledgeSection";
@@ -123,20 +124,22 @@ export default function HomeView() {
       />
 
       {activeSection < 3 ? (
-        <m.button
-          type="button"
+        <m.div
           data-testid="home-scroll-cue"
-          aria-label="继续下探"
-          onClick={() => scrollToSection(activeSection + 1)}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed inset-x-0 bottom-5 z-40 mx-auto flex min-h-12 w-max items-center gap-2 rounded-full border border-terracotta/25 bg-paper-raised/95 px-4 py-2 text-xs font-medium text-terracotta shadow-[0_10px_28px_rgba(24,23,19,0.14)] backdrop-blur md:hidden"
+          className="fixed inset-x-0 bottom-5 z-40 mx-auto w-max md:hidden"
         >
-          <span>继续下探</span>
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-paper shadow-sm">
-            <LegacyIcon name="keyboard_arrow_down" className="animate-float-slow text-[18px]" />
-          </span>
-        </m.button>
+          <NextLink
+            href="/new"
+            className="flex min-h-12 items-center gap-2 rounded-full border border-terracotta/30 bg-paper-raised px-4 py-2 text-xs font-medium text-terracotta shadow-[0_10px_28px_rgba(24,23,19,0.14)]"
+          >
+            <span>进入仪式场域</span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-paper">
+              <LegacyIcon name="arrow_forward" className="text-[17px]" />
+            </span>
+          </NextLink>
+        </m.div>
       ) : null}
 
       {/* Snap Scroll Container */}

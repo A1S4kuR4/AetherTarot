@@ -44,8 +44,8 @@ async function gotoAppRoute(page: Page, url: string) {
   throw lastError;
 }
 
-async function holdToStart(page: Page, durationMs = 2200) {
-  const startButton = page.getByRole("button", { name: /长按开始仪式/i });
+async function holdToStart(page: Page) {
+  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
   await expect(startButton).toBeVisible();
   await expect(startButton).toBeEnabled();
 
@@ -55,18 +55,13 @@ async function holdToStart(page: Page, durationMs = 2200) {
     }
 
     try {
-      await startButton.dispatchEvent("mousedown", undefined, { timeout: 3000 });
-      await expect(
-        page.getByRole("button", { name: /正在收束意图/i }),
-      ).toBeVisible({ timeout: 3000 });
+      await startButton.click({ timeout: 3000 });
     } catch (error) {
       if (/\/(ritual|offline-draw)$/i.test(page.url())) {
         return;
       }
       throw error;
     }
-
-    await page.waitForTimeout(durationMs);
 
     if (/\/(ritual|offline-draw)$/i.test(page.url())) {
       return;

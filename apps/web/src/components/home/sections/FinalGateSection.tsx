@@ -1,103 +1,64 @@
 "use client";
 
 import { m } from "motion/react";
-import Image from "next/image";
 import NextLink from "next/link";
 
 export default function FinalGateSection() {
   return (
-    <section className="flex w-full max-w-5xl flex-col items-center justify-center px-6 py-12 text-center lg:py-0">
-      <m.header
-        initial={{ opacity: 0, y: 20 }}
+    <section
+      id="final-gate"
+      className="flex min-h-[calc(100dvh-4rem)] w-full items-center px-6 py-14 sm:px-10 lg:h-full lg:min-h-0 lg:px-16 lg:py-10"
+    >
+      <m.div
+        initial={{ opacity: 0, y: 14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="mb-16 space-y-4"
+        transition={{ duration: 0.55, ease: "easeOut" }}
+        className="mx-auto w-full max-w-[1120px]"
       >
-        <h2 className="font-serif text-4xl font-semibold text-ink md:text-5xl">
+        <span className="mb-3 block font-mono text-xs font-semibold tracking-[0.2em] text-terracotta">
+          CHAPTER IV
+        </span>
+        <h2 className="mb-8 font-serif text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.16] tracking-[-0.03em] text-ink">
           通往深处
         </h2>
-        <p className="mx-auto max-w-lg text-base text-text-muted">
-          在这里，你的意志将化为指引。你选择回顾过往的影子，还是开启一段未知的仪式？
-        </p>
-      </m.header>
-
-      <div className="grid w-full gap-8 md:grid-cols-2">
-        {/* Path A: New Ritual */}
-        <m.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="group relative"
-        >
-          <NextLink href="/new" className="block text-left">
-            <div className="overflow-hidden rounded-[32px] border border-ink/5 bg-night p-2 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-midnight-panel">
-                {/* Symbolic representation of new ritual */}
-                <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                  <Image
-                    src="/home/ritual_cover.png"
-                    alt="Ritual Cover"
-                    fill
-                    sizes="(min-width: 768px) 480px, 90vw"
-                    quality={75}
-                    className="object-cover opacity-80 transition-all duration-700 group-hover:opacity-100"
-                  />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-6">
-                  <span className="rounded-full border border-indigo/20 bg-indigo/10 px-3 py-1 text-[10px] uppercase tracking-widest text-indigo-400">
-                    New Ritual
-                  </span>
-                </div>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.6fr)_minmax(14rem,1.1fr)] lg:gap-16">
+          <div className="max-w-[44rem]">
+            <span className="mb-3 block font-mono text-xs tracking-[0.12em] text-terracotta">01 / INITIATE RITUAL</span>
+            <h3 className="mb-4 font-serif text-3xl font-semibold leading-tight text-ink">开启崭新仪式</h3>
+            <p className="font-serif text-lg leading-[1.9] text-text-body">
+              在这里，你的意志将化为指引。完成了理性辨析与发问准备后，在安静的氛围中，让 78 张牌重新排列出当下的共鸣。带着具体的困惑或开放的视角，开启一次完整的深读陪伴。
+            </p>
+            <NextLink
+              href="/new"
+              className="mt-10 inline-flex min-h-12 items-center gap-3 border border-terracotta px-6 py-3 font-serif text-lg text-terracotta transition-colors hover:bg-terracotta hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            >
+              <span>进入仪式场域</span>
+              <span aria-hidden="true">→</span>
+            </NextLink>
+          </div>
+          <div className="self-start lg:pt-1">
+            <span className="mb-3 block font-mono text-xs tracking-[0.12em] text-terracotta">02 / MEMORY ARCHIVE</span>
+            <h3 className="mb-3 font-serif text-2xl font-semibold leading-tight text-ink">回溯过往旅程</h3>
+            <p className="font-serif text-base leading-[1.85] text-text-body">
+              在这面镜子前，你曾经的提问与觉察线索依然闪烁，随时等待重新审视与反思。
+            </p>
+            <NextLink
+              href="/journey"
+              className="mt-7 inline-flex items-center gap-2 border-b border-terracotta pb-1 font-serif text-base text-terracotta transition-opacity hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
+            >
+              <span>调取历史档案</span>
+              <span aria-hidden="true">→</span>
+            </NextLink>
+            <aside className="mt-10 border-t border-dashed border-paper-border pt-6">
+              <div className="border-l border-terracotta pl-4 font-serif text-sm italic leading-relaxed text-terracotta">
+                <span className="mb-1 block font-mono text-[0.7rem] not-italic font-semibold tracking-[0.12em]">ACTION &amp; EXPLORATION</span>
+                从自我觉察走向现实选择与仪式探索。
               </div>
-              <div className="px-6 py-6">
-                <h3 className="mb-2 font-serif text-2xl text-text-inverse">开启崭新仪式</h3>
-                <p className="text-sm leading-relaxed text-text-inverse-muted">
-                  在这片虚空中，你可以收束意念，让 78 张牌重新排列出当下的共鸣。
-                </p>
-              </div>
-            </div>
-          </NextLink>
-        </m.div>
-
-        {/* Path B: Journey */}
-        <m.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="group relative"
-        >
-          <NextLink href="/journey" className="block text-left">
-            <div className="overflow-hidden rounded-[32px] border border-paper-border bg-paper-raised p-2 transition-all duration-500 hover:border-terracotta/30 hover:shadow-xl">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] bg-paper-muted">
-                {/* Symbolic representation of history */}
-                <div className="absolute inset-0 transition-transform duration-700 scale-110 group-hover:scale-100">
-                  <Image
-                    src="/home/journey_cover.png"
-                    alt="Journey Cover"
-                    fill
-                    sizes="(min-width: 768px) 480px, 90vw"
-                    quality={75}
-                    className="object-cover opacity-80 transition-all duration-700 group-hover:opacity-100"
-                  />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/20 to-transparent p-6">
-                  <span className="chip-warm text-[10px] uppercase tracking-widest">
-                    Memory Archive
-                  </span>
-                </div>
-              </div>
-              <div className="px-6 py-6">
-                <h3 className="mb-2 font-serif text-2xl text-ink">回溯过往旅程</h3>
-                <p className="text-sm leading-relaxed text-text-muted">
-                  在这面镜子前，你曾经的提问与线索依然闪烁，等待着再次被反思。
-                </p>
-              </div>
-            </div>
-          </NextLink>
-        </m.div>
-      </div>
+            </aside>
+          </div>
+        </div>
+      </m.div>
     </section>
   );
 }

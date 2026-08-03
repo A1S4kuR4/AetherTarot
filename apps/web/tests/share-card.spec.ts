@@ -224,7 +224,7 @@ async function startQuickReading(page: Page, reading: StructuredReading) {
   await page
     .getByPlaceholder("今天，你想向内心询问什么？")
     .fill(reading.question);
-  await page.getByRole("button", { name: "快速解读" }).click();
+  await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
   await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
 }
 

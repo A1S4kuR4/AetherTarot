@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { type SyntheticEvent, useCallback, useEffect, useState } from "react";
 import { m, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import type { DrawnCard } from "@aethertarot/shared-types";
@@ -91,213 +91,164 @@ function QuickDrawOverlayContent({
 
   return (
     <m.div
-          key="quick-draw-overlay"
+      key="quick-draw-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/60 p-0 [scrollbar-width:none] backdrop-blur-[3px] [&::-webkit-scrollbar]:hidden md:p-9"
+    >
+      <div className="relative min-h-[100dvh] w-full bg-paper-raised shadow-[0_24px_58px_rgba(24,23,19,0.28)] md:h-[min(760px,calc(100dvh-72px))] md:min-h-0 md:max-w-[1120px] md:overflow-hidden">
+        <div className="absolute inset-x-0 top-0 z-10 h-1 bg-terracotta" />
+        <m.button
+          type="button"
+          onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden"
-          style={{ background: "rgba(11, 13, 18, 0.96)" }}
+          transition={{ delay: 0.2 }}
+          className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-terracotta focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo md:right-7 md:top-6"
+          aria-label="关闭当下之镜"
         >
-          {/* Close button */}
-          <m.button
-            type="button"
-            onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="fixed right-4 top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-full text-text-inverse-muted transition-colors hover:bg-white/10 hover:text-text-inverse md:right-8 md:top-8"
-            aria-label="关闭"
-          >
-            <LegacyIcon name="close" className="text-xl" />
-          </m.button>
+          <LegacyIcon name="close" className="text-2xl" />
+        </m.button>
 
-          {/* Inner wrapper for centering and padding */}
-          <div className="flex min-h-full w-full flex-col items-center justify-center py-6 sm:py-20 md:py-24">
-            {/* Main card display area */}
-            <div
-              className={`flex w-full max-w-4xl items-center justify-center gap-0 px-6 transition-all duration-700 ease-out ${
-                isRevealed
-                  ? "flex-col gap-4 sm:gap-8 md:flex-row md:gap-16"
-                  : "flex-col"
-              }`}
-            >
-            {/* 3D Card */}
+        <div className={`min-h-[100dvh] md:h-full md:min-h-0 ${isRevealed ? "md:grid md:grid-cols-[minmax(300px,0.86fr)_minmax(0,1.14fr)]" : "flex items-center justify-center"}`}>
+          <section
+            className={`relative flex min-h-[54dvh] flex-col items-center justify-center bg-paper-muted px-7 pb-9 pt-20 md:min-h-0 md:px-11 md:pb-12 md:pt-20 ${isRevealed ? "md:h-full" : "h-full w-full"}`}
+            aria-label="抽到的塔罗牌"
+          >
+            <span className="absolute left-6 top-7 font-mono text-[11px] font-semibold tracking-[0.16em] text-terracotta md:left-8 md:top-8">
+              PRESENT STATE · 01
+            </span>
             <m.div
-              initial={{ scale: 0.8, opacity: 0, y: 30 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.6,
-                type: "spring",
-                stiffness: 200,
-                damping: 20,
-                delay: 0.2,
-              }}
+              initial={{ scale: 0.92, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
               className="perspective-card shrink-0"
             >
               <button
                 type="button"
                 onClick={handleCardClick}
                 disabled={phase !== "card-back"}
-                className="block cursor-pointer disabled:cursor-default"
-                aria-label={
-                  phase === "card-back" ? "翻开牌面" : "塔罗牌"
-                }
+                className="block cursor-pointer rounded-[12px] disabled:cursor-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
+                aria-label={phase === "card-back" ? "翻开牌面" : "塔罗牌"}
               >
                 <div
-                  className={`card-flip-inner relative aspect-[1/1.7] h-[38vh] max-h-[340px] w-auto rounded-[12px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:h-auto sm:w-[240px] md:w-[260px] ${
+                  className={`card-flip-inner relative aspect-[1/1.7] h-[44dvh] max-h-[486px] w-auto rounded-[12px] ${
                     isFlipped ? "[transform:rotateY(180deg)]" : ""
                   }`}
                 >
-                  {/* Back face */}
-                  <div className="card-flip-face">
+                  <div className="card-flip-face overflow-hidden rounded-[12px] shadow-[0_15px_30px_rgba(24,23,19,0.22)]">
                     <Image
                       src="/cardsV2/back.png"
                       alt="塔罗牌背面"
                       width={500}
                       height={850}
-                      sizes="260px"
-                      quality={75}
-                      priority
-                      className="h-full w-full rounded-[12px] object-contain"
+                      unoptimized
+                      className="h-full w-full rounded-[12px] object-cover"
                     />
                   </div>
-
-                  {/* Front face */}
-                  <div className="card-flip-face card-flip-front">
+                  <div className="card-flip-face card-flip-front overflow-hidden rounded-[12px] shadow-[0_15px_30px_rgba(24,23,19,0.22)]">
                     {card && (
                       <Image
                         src={getRevealCardImageUrl(card.imageUrl)}
                         alt={card.name}
                         width={500}
                         height={850}
-                        sizes="260px"
-                        quality={75}
-                        className={`h-full w-full rounded-[12px] object-contain ${
-                          isReversed ? "rotate-180" : ""
-                        }`}
+                        unoptimized
+                        onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                          event.currentTarget.src = card.imageUrl;
+                        }}
+                        className={`h-full w-full rounded-[12px] object-cover ${isReversed ? "rotate-180" : ""}`}
                       />
                     )}
                   </div>
                 </div>
               </button>
             </m.div>
-
-            {/* Card info panel — appears after reveal */}
-            <AnimatePresence>
-              {isRevealed && card && (
-                <m.div
-                  key="card-info"
-                  initial={{ opacity: 0, y: 20, x: 0 }}
-                  animate={{ opacity: 1, y: 0, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-                  className="flex max-w-sm flex-col items-center text-center md:items-start md:text-left"
+            {phase === "card-back" && (
+              <div className="absolute inset-x-7 bottom-[clamp(2.75rem,7.5dvh,6.5rem)] flex flex-col items-center md:inset-x-11">
+                <p className="max-w-[18rem] text-center font-serif text-sm italic leading-relaxed text-text-muted">
+                  请在安静里停留片刻。
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCardClick}
+                  className="relative mt-3 font-mono text-[10px] font-medium tracking-[0.1em] text-terracotta focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo before:absolute before:inset-[-0.75rem]"
                 >
-                  {/* Card name */}
-                  <h3 className="font-serif text-2xl font-semibold tracking-wide text-text-inverse sm:text-3xl">
-                    {card.name}
-                  </h3>
-                  <p className="mt-1 font-sans text-sm tracking-wider text-text-inverse-muted">
-                    {card.englishName}
-                  </p>
+                  点击卡牌，翻开牌面
+                </button>
+              </div>
+            )}
+          </section>
 
-                  {/* Orientation badge */}
-                  <span
-                    className={`mt-2 sm:mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium tracking-wide ${
-                      isReversed
-                        ? "bg-indigo-muted text-indigo"
-                        : "bg-terracotta/15 text-terracotta"
-                    }`}
-                  >
-                    {isReversed ? "逆位" : "正位"}
+          <AnimatePresence>
+            {isRevealed && card && (
+              <m.section
+                key="card-info"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, delay: 0.08, ease: "easeOut" }}
+                className="px-6 pb-12 pt-10 sm:px-10 md:overflow-y-auto md:px-[clamp(2rem,5vw,4.625rem)] md:pb-8 md:pt-16 md:[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                aria-labelledby="quick-draw-card-title"
+              >
+                <div className="mx-auto max-w-[34rem]">
+                  <p className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-terracotta">THE DRAWN IMAGE</p>
+                  <h2 id="quick-draw-card-title" className="mb-1 font-serif text-[clamp(2.1rem,4vw,3.1rem)] font-semibold leading-tight tracking-[-0.03em] text-ink">
+                    {card.name}
+                  </h2>
+                  <p className="mb-5 text-sm tracking-[0.06em] text-text-muted">{card.englishName}</p>
+                  <span className={`inline-block font-serif text-sm text-terracotta ${isReversed ? "border-t-2 border-terracotta pt-2" : "border-b-2 border-terracotta pb-2"}`}>
+                    {isReversed ? "逆位 · REVERSED" : "正位 · UPRIGHT"}
                   </span>
 
-                  {/* Divider */}
-                  <div className="my-3 sm:my-5 flex w-48 items-center justify-center md:justify-start">
-                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-text-inverse-muted/30 to-transparent" />
-                    <span className="mx-3 h-1.5 w-1.5 rotate-45 bg-text-inverse-muted/40" />
-                    <span className="h-px flex-1 bg-gradient-to-r from-transparent via-text-inverse-muted/30 to-transparent" />
-                  </div>
-
-                  {/* Keywords */}
                   {keywords && keywords.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-2 md:justify-start">
-                      {keywords.slice(0, 4).map((kw) => (
-                        <span
-                          key={kw}
-                          className="rounded-full border border-midnight-border-subtle bg-midnight-elevated px-3 py-1 text-xs text-text-inverse-muted"
-                        >
-                          {kw}
+                    <div className="my-5 flex flex-wrap gap-x-4 gap-y-1 border-y border-paper-border py-3 font-serif text-sm text-text-muted">
+                      {keywords.slice(0, 4).map((keyword) => (
+                        <span key={keyword} className="before:mr-2 before:text-terracotta before:content-['·']">
+                          {keyword}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  {/* Quick local analysis */}
                   {quickAnalysis && (
-                    <div className="mt-4 space-y-3 sm:mt-6">
-                      <p className="text-sm leading-relaxed text-text-inverse">
-                        {quickAnalysis.core}
-                      </p>
-                      <p className="text-sm leading-relaxed text-text-inverse-muted">
-                        {quickAnalysis.action}
-                      </p>
-                      <p className="text-xs leading-relaxed text-text-inverse-muted/70">
-                        {quickAnalysis.boundary}
-                      </p>
+                    <div className="font-serif text-[1.0625rem] leading-[1.8] text-text-body">
+                      <p className="mb-4 font-semibold text-ink">{quickAnalysis.core}</p>
+                      <aside className="mt-6 border-l border-terracotta pl-4 text-terracotta">
+                        <span className="mb-1 block font-mono text-[10px] font-semibold tracking-[0.11em]">ONE SMALL STEP</span>
+                        <p className="italic">{quickAnalysis.action}</p>
+                      </aside>
                     </div>
                   )}
 
-                  {/* Action buttons */}
-                  <div className="mt-5 flex flex-col items-center gap-3 sm:mt-8 md:items-start">
+                  <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
                     <m.button
                       type="button"
                       onClick={onDeepReading}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5, duration: 0.4 }}
-                      className="inline-flex items-center gap-2 rounded-xl bg-terracotta px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-terracotta-hover hover:shadow-xl active:scale-[0.98]"
+                      transition={{ delay: 0.3, duration: 0.3 }}
+                      className="inline-flex min-h-12 items-center gap-3 bg-terracotta px-5 py-3 font-serif text-base text-paper transition-colors hover:bg-terracotta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
                     >
                       <span>开启深度解读</span>
                       <LegacyIcon name="arrow_forward" className="text-base" />
                     </m.button>
-                    <m.button
+                    <button
                       type="button"
                       onClick={onClose}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6, duration: 0.4 }}
-                      className="text-sm text-text-inverse-muted underline-offset-4 transition-colors hover:text-text-inverse hover:underline"
+                      className="text-sm text-text-muted underline decoration-paper-border underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
                     >
-                      我知道了
-                    </m.button>
+                      先停在这里
+                    </button>
                   </div>
-                </m.div>
-              )}
-            </AnimatePresence>
-          </div> {/* Close Main card display area */}
-          </div> {/* Close Inner wrapper */}
-
-          {/* Pulse hint — only during card-back phase */}
-          <AnimatePresence>
-            {phase === "card-back" && (
-              <m.p
-                key="hint"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="animate-hint-pulse fixed bottom-12 left-1/2 -translate-x-1/2 font-serif text-sm tracking-[0.2em] text-text-inverse-muted md:bottom-16 md:text-base z-10"
-              >
-                点击卡牌翻开牌面
-              </m.p>
+                </div>
+              </m.section>
             )}
           </AnimatePresence>
+        </div>
+      </div>
     </m.div>
   );
 }

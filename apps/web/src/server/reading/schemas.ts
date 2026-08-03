@@ -127,7 +127,7 @@ const groundingClaimSchema = z.object({
 const structuredReadingShape = {
   reading_id: z.string().min(1),
   locale: z.string().min(1),
-  question: z.string().min(1),
+  question: z.string(),
   question_type: questionTypeSchema,
   reading_phase: readingPhaseSchema,
   requires_followup: z.boolean(),
@@ -170,7 +170,6 @@ export const readingRequestPayloadSchema = z
     question: z
       .string()
       .trim()
-      .min(1, "question 不能为空。")
       .max(1000, "question 不能超过 1000 个字符。"),
     spreadId: z.string().trim().min(1, "spreadId 不能为空。"),
     drawnCards: z
@@ -193,6 +192,21 @@ export const readingRequestPayloadSchema = z
     followup_answers: z.array(followupAnswerSchema).optional(),
   })
   .superRefine((payload, context) => {
+    const isQuestionlessQuickMirror =
+      !payload.question
+      && payload.phase === "initial"
+      && payload.agent_profile === "lite"
+      && payload.spreadId === "single"
+      && payload.drawnCards.length === 1;
+
+    if (!payload.question && !isQuestionlessQuickMirror) {
+      context.addIssue({
+        code: "custom",
+        message: "question 不能为空，除非是单牌 lite 当下之镜。",
+        path: ["question"],
+      });
+    }
+
     if (payload.phase !== "final") {
       return;
     }

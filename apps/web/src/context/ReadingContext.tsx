@@ -28,6 +28,7 @@ import {
   READING_DRAFT_STORAGE_KEY,
 } from "@/lib/reading-draft-storage";
 import { fetchJsonWithTimeout } from "@/lib/fetch-json-with-timeout";
+import { isQuickReadingState } from "@/lib/quickReadingFlow";
 
 const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
 const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
@@ -255,6 +256,11 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [safetyIntercept, setSafetyIntercept] = useState<{ reason: string; referral_links?: string[] } | null>(null);
   const [soberGate, setSoberGate] = useState<SoberGateState>(EMPTY_SOBER_GATE);
+  const isQuestionlessQuickReading = isQuickReadingState({
+    agentProfile,
+    selectedSpread,
+    drawnCards,
+  });
   const [continuitySource, setContinuitySource] = useState<ContinuitySource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -363,7 +369,12 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!question.trim() || !selectedSpread || drawnCards.length === 0 || reading) {
+    if (
+      (!question.trim() && !isQuestionlessQuickReading)
+      || !selectedSpread
+      || drawnCards.length === 0
+      || reading
+    ) {
       clearActiveReadingDraft();
       return;
     }
@@ -388,7 +399,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     } catch {
       // Storage can be unavailable.
     }
-  }, [agentProfile, drawSource, drawnCards, isHydrated, question, reading, selectedSpread]);
+  }, [agentProfile, drawSource, drawnCards, isHydrated, isQuestionlessQuickReading, question, reading, selectedSpread]);
 
   const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
     if (!selectedSpread) {
@@ -497,7 +508,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const interpretReading = useCallback(async () => {
     if (
       interpretInFlightRef.current ||
-      !question.trim() ||
+      (!question.trim() && !isQuestionlessQuickReading) ||
       !selectedSpread ||
       drawnCards.length === 0
     ) {
@@ -589,7 +600,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       interpretInFlightRef.current = false;
     }
-  }, [agentProfile, continuitySource, drawSource, drawnCards, persistCompletedReading, question, selectedSpread]);
+  }, [agentProfile, continuitySource, drawSource, drawnCards, isQuestionlessQuickReading, persistCompletedReading, question, selectedSpread]);
 
   const submitFollowupAnswers = useCallback(async (answers: FollowupAnswer[]) => {
     if (

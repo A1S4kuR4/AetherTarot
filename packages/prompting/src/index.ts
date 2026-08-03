@@ -204,6 +204,12 @@ export interface ReadingPrompt {
   user: string;
 }
 
+function formatQuestionForPrompt(question: string) {
+  return question
+    ? `Question: ${question}`
+    : "Question: none provided. Offer a present-moment mirror from the cards only; do not invent a user situation or a hidden question.";
+}
+
 export interface StagedCardInsight {
   index: number;
   interpretation: string;
@@ -1322,7 +1328,7 @@ export function buildInitialReadingPrompt({
       buildOutputContract({ phase: "initial", agentProfile }),
     ].join("\n\n"),
     user: [
-      `Question: ${question}`,
+      formatQuestionForPrompt(question),
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       modeStrategy,
@@ -1393,7 +1399,7 @@ export function buildFinalReadingPrompt({
       buildOutputContract({ phase: "final", agentProfile }),
     ].join("\n\n"),
     user: [
-      `Question: ${question}`,
+      formatQuestionForPrompt(question),
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       modeStrategy,
@@ -1464,7 +1470,7 @@ export function buildCardInsightsPrompt({
       ].join("\n"),
     ].join("\n\n"),
     user: [
-      `Question: ${question}`,
+      formatQuestionForPrompt(question),
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       buildModeStrategyBlock(agentProfile),
@@ -1508,7 +1514,7 @@ export function buildSynthesisPrompt({
       buildSynthesisStageContract({ phase: "initial", agentProfile }),
     ].join("\n\n"),
     user: [
-      `Question: ${question}`,
+      formatQuestionForPrompt(question),
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       buildModeStrategyBlock(agentProfile),
@@ -1554,7 +1560,7 @@ export function buildCompactReadingPrompt(input: {
       ].join("\n"),
     ].join("\n\n"),
     user: [
-      `Question: ${input.question}`,
+      formatQuestionForPrompt(input.question),
       `Question type: ${input.questionType}`,
       `Agent profile: ${input.agentProfile}`,
       buildModeStrategyBlock(input.agentProfile),
@@ -1608,7 +1614,7 @@ export function buildFinalSynthesisRefinementPrompt({
       "Omit evidence_refs in normal generation. If included in a card_refinement anyway, every ref must belong to that same authority card.",
     ].join("\n\n"),
     user: [
-      `Question: ${question}`,
+      formatQuestionForPrompt(question),
       `Question type: ${questionType}`,
       `Agent profile: ${agentProfile}`,
       buildModeStrategyBlock(agentProfile),

@@ -85,65 +85,55 @@ export default function IntroSection() {
 
   return (
     <>
-      <section className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-6 py-12 text-center lg:h-full lg:min-h-0 lg:py-0">
+      <section
+        id="intro"
+        className="flex min-h-[calc(100dvh-4rem)] w-full items-center px-6 py-14 sm:px-10 lg:h-full lg:min-h-0 lg:px-16 lg:py-10"
+      >
         <m.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-3xl space-y-8"
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          className="mx-auto w-full max-w-[1120px]"
         >
-          <h1 className="font-serif text-5xl font-semibold tracking-tight text-ink md:text-7xl">
+          <span className="mb-3 block font-mono text-xs font-semibold tracking-[0.2em] text-terracotta">
+            CHAPTER I
+          </span>
+          <h1 className="mb-8 font-serif text-[clamp(2.75rem,5vw,4.5rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-ink">
             万物皆有回声
           </h1>
-          <div className="space-y-4">
-            <p className="font-serif text-xl leading-relaxed text-text-muted md:text-2xl">
-              塔罗并非开启未来的钥匙，而是映照当下的镜子。
-            </p>
-            <p className="mx-auto max-w-2xl font-sans text-base leading-relaxed text-text-muted opacity-80 md:text-lg">
-              在名为&ldquo;潜意识&rdquo;的湖泊中，那些未被察觉的情绪、渴望与困惑，
-              正通过 78 张古老的象征图景，寻找着与你的共鸣。
-            </p>
-          </div>
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 1 }}
-            className="flex justify-center pt-16"
-          >
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(13rem,1fr)] lg:gap-16">
+            <div className="max-w-[44rem] font-serif text-lg leading-[1.9] text-text-body [&>p:first-child::first-letter]:float-left [&>p:first-child::first-letter]:mr-3 [&>p:first-child::first-letter]:mt-1 [&>p:first-child::first-letter]:font-serif [&>p:first-child::first-letter]:text-[4.1rem] [&>p:first-child::first-letter]:font-bold [&>p:first-child::first-letter]:leading-[0.72] [&>p:first-child::first-letter]:text-terracotta">
+              <p className="mb-6">
+                塔罗并非开启未来的钥匙，而是映照当下的镜子。在名为&ldquo;潜意识&rdquo;的湖泊中，那些未被察觉的情绪、渴望与困惑，正通过 78 张古老的象征图景，寻找着与你的共鸣。
+              </p>
+              <p>
+                我们拒绝将阅读简化为断言式抽卡或宿命论预言。每一幅图案与牌面，都是一次引你回看内心的契机。
+              </p>
+              <div className="mt-10 border-t border-dashed border-terracotta/30 pt-7">
             <m.button
               type="button"
               disabled={isNavigating}
               onClick={handleDrawClick}
-              whileHover={!isNavigating ? "hover" : undefined}
-              initial="rest"
-              animate="rest"
-              variants={{
-                rest: { y: 0 },
-                hover: { y: -4 }
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="group relative flex flex-col items-center gap-8 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              whileHover={!isNavigating ? { y: -2 } : undefined}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="group inline-flex min-h-12 items-center gap-3 border border-terracotta px-6 py-3 font-serif text-lg text-terracotta transition-colors hover:bg-terracotta hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {/* Focus Halo / 背景光晕 */}
-              <m.div
-                variants={{
-                  rest: { opacity: 0, scale: 0.9 },
-                  hover: { opacity: 1, scale: 1 }
-                }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-terracotta/15 blur-2xl"
-              />
-
-              <span className="relative z-10 text-lg font-semibold tracking-widest font-serif text-terracotta/80 transition-colors group-hover:text-terracotta">
-                抽一张当下之镜
-              </span>
+              <span>抽一张当下之镜</span>
               <LegacyIcon
-                name="keyboard_double_arrow_down"
-                className="relative z-10 animate-float-slow text-text-placeholder transition-colors group-hover:text-terracotta/70"
+                name="arrow_forward"
+                className="transition-transform group-hover:translate-x-1"
               />
             </m.button>
-          </m.div>
+              </div>
+            </div>
+            <aside className="self-start border-l border-terracotta pl-4 font-serif text-sm italic leading-relaxed text-terracotta lg:mt-2">
+              <span className="mb-1 block font-mono text-[0.7rem] not-italic font-semibold tracking-[0.12em]">
+                PRESENT STATE
+              </span>
+              让牌面成为一种观察语言，而非替你作出决定的声音。
+            </aside>
+          </div>
         </m.div>
       </section>
 
