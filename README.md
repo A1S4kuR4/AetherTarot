@@ -29,6 +29,7 @@ AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验�
 
 - 单牌、圣三角、四个面向、七张牌、赛尔特十字牌阵
 - 通过 `/api/reading` 返回结构化 reading 输出
+- 登录用户按 `{ user_id, thread_id }` 持久化受限的 thread 级短期摘要，并支持显式清除
 - 对高风险或决策外包问题提供安全阻断与 sober-check 响应
 - 快速解读路径与完整仪式路径
 - 线下抽牌后手动录入实体牌面
@@ -43,7 +44,7 @@ AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验�
 - 公开自助注册
 - Supabase Auth magic-link 登录
 - 长期用户画像或 memory merge
-- thread/session checkpoint 持久化
+- LangGraph session/checkpoint 过程持久化（不包括已上线的账号级 thread 摘要）
 - 支付、订阅或公开账号管理
 
 ## 应用结构
@@ -72,7 +73,7 @@ AetherTarot/
 当前运行时位于 `apps/web`。主要页面与路由包括：
 
 - `/`：入口与回访用户 journey
-- `/new`：问题输入与牌阵选择
+- `/new`：问题输入、塔罗师 / 抽牌方式与牌阵选择
 - `/ritual`：洗牌与抽牌交互
 - `/offline-draw`：线下洗牌后手动录入实体牌面
 - `/reveal`：牌面揭示

@@ -38,7 +38,7 @@ The product should feel like:
 
 ---
 
-## 2. Color Palette & Roles
+## 2. Colors: Color Palette & Roles
 
 ### Primary Brand Colors
 - **Aether Ink** (`#181713`)  
@@ -206,7 +206,7 @@ Preferred stack:
 
 ---
 
-## 4. Component Stylings
+## 4. Components: Component Stylings
 
 ### 4.1 Buttons
 
@@ -585,10 +585,16 @@ Motion is essential, but it must be emotionally aligned.
 ## 10. Page-Specific Guidance
 
 ### Home
-- warm editorial hero
-- one strong question field
-- one clear primary action
-- supporting copy should reduce pressure, not hype prediction
+- warm editorial four-part narrative: introduction, symbolic knowledge, reflective mindset, and final gate
+- no full question composer; the page establishes intent before handing off to `/new`
+- desktop uses one-section-at-a-time snap navigation, while mobile and low-height viewports use natural scrolling
+- the final gate keeps `/new` and `/journey` distinct so starting a reading and revisiting history do not compete
+
+### New / Ritual Initializer
+- paper-mode manuscript workspace, not a midnight ritual stage
+- question and focus prompts lead; profile, draw source, and spread are configuration rather than equal-weight cards
+- desktop may use bounded internal columns; mobile keeps natural scrolling with an accessible action footer
+- quick and full ritual paths share decision-boundary confirmation and do not bypass safety friction
 
 ### Ritual
 - Reader mode selector uses “快速塔罗师 / 日常塔罗师 / 深度塔罗师”. Describe 深度塔罗师 as suitable for multi-card spreads, sorting multiple factors, or validating assumptions; never frame it as a credential or as the mode for outsourcing major decisions.
@@ -650,7 +656,7 @@ Always ask:
 “Use warm parchment surfaces, serif hero typography, soft bordered cards, and a clear primary path into the ritual initializer.”
 
 #### New / Ritual Initializer
-“Use a focused dark ritual surface with a centered reflective question composer, spread selection, reader profile controls, and calm safety microcopy.”
+“Use a focused paper-mode manuscript workspace with a reflective question pane, editorial configuration column, spread selection, reader profile controls, and calm safety microcopy. Reserve midnight mode for the subsequent ritual and reveal stages.”
 
 #### Ritual
 “Switch to midnight mode with minimal chrome, subtle indigo focus states, large centered tarot cards, and restrained cinematic motion.”
