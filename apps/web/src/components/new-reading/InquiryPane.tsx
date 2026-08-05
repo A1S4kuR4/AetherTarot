@@ -53,7 +53,7 @@ export function InquiryPane({
   } else if (needsQuestionReframe) {
     guidanceSlot = <span>试着把“要不要”改写成“我需要看清什么”，让牌面帮助你整理线索，而非替你决定。</span>;
   } else if (isRelationshipQuestion) {
-    guidanceSlot = <span>检测到议题可能聚焦关系，适合使用圣三角形或四个面向梳理其中的张力。</span>;
+    guidanceSlot = <span>这个问题和关系有关。圣三角形或四个面向会帮你从过去、现在与不同面向去梳理。</span>;
   }
 
   useLayoutEffect(() => {
@@ -67,7 +67,7 @@ export function InquiryPane({
   return (
     <section aria-labelledby="new-reading-inquiry-title" className="new-reading-inquiry">
       <div>
-        <p className="new-reading-section-mark">INQUIRY  问询</p>
+        <p className="new-reading-section-mark">RETROSPECT / 问询</p>
         <h1 id="new-reading-inquiry-title" className="new-reading-title">落笔成问</h1>
       </div>
 
@@ -102,11 +102,6 @@ export function InquiryPane({
           {guidanceSlot}
         </aside>
       ) : null}
-
-      <aside className="new-reading-margin-note">
-        <strong>MARGIN NOTE · 提问不必完美</strong>
-        <span>先描述正在发生的处境，再写下你真正想厘清的部分。</span>
-      </aside>
 
       <section aria-labelledby="new-reading-prompt-title" className="new-reading-prompts">
         <div className="new-reading-prompts-header">

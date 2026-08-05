@@ -76,7 +76,7 @@ The product should feel like:
   Primary text on light surfaces.
 - **Text Body** (`#35322C`)  
   Standard paragraph text.
-- **Text Muted** (`#6E685D`)  
+- **Text Muted** (`#59544B`)
   Secondary metadata, helper copy.
 - **Text Inverse** (`#F4F6F8`)  
   Primary text on dark surfaces.
@@ -254,7 +254,7 @@ It should feel safe, spacious, and reflective.
 - Radius: 16px
 - Padding: 16px 18px
 - Text: `#181713`
-- Placeholder: `#8A8377`
+- Placeholder: `#625D53`
 - Focus: paper remains stable; border deepens slightly; ring appears softly
 - Height: generous by default
 

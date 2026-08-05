@@ -20,11 +20,14 @@ export function NotesSection({
   return (
     <section id="reading-notes" className="scroll-mt-32">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="font-serif text-xl text-ink md:text-2xl">你的回望与觉察</h2>
+        <div>
+          <p className="manuscript-label">PRIVATE NOTE</p>
+          <h2 className="mt-2 font-serif text-xl text-ink md:text-2xl">你的回望与觉察</h2>
+        </div>
         <p role="status" aria-live="polite" className="flex items-center gap-1 font-sans text-xs">
           {status === 'saving' && (
             <span className="flex items-center gap-1.5 text-text-muted">
-              <span aria-hidden="true" className="block h-3 w-3 animate-spin rounded-full border-2 border-text-muted/20 border-t-text-muted motion-reduce:animate-none" />
+              <span aria-hidden="true" className="block h-3 w-3 animate-spin border-2 border-text-muted/20 border-t-text-muted motion-reduce:animate-none" />
               保存中…
             </span>
           )}
@@ -50,7 +53,7 @@ export function NotesSection({
         autoComplete="off"
         aria-label="反思手记"
         placeholder={placeholder}
-        className="mt-4 h-32 w-full resize-none rounded-xl border border-paper-border bg-paper-raised p-4 font-serif text-base leading-relaxed text-ink outline-none focus-visible:border-terracotta/50 focus-visible:ring-2 focus-visible:ring-terracotta/40"
+        className="mt-5 h-32 w-full resize-none border-y border-paper-border bg-transparent px-0 py-3 font-serif text-base leading-relaxed text-ink outline-none focus-visible:border-terracotta focus-visible:ring-2 focus-visible:ring-terracotta/20"
       />
     </section>
   );

@@ -1,4 +1,4 @@
-export const PROMPTS_PER_BATCH = 5;
+export const PROMPTS_PER_BATCH = 6;
 
 type PromptCategory = "relationship" | "career" | "self_growth" | "decision";
 

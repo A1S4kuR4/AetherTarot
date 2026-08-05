@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
-import type { AgentProfile, DrawSource, QuestionType, ReadingHistoryEntry } from "@aethertarot/shared-types";
+import type { AgentProfile, DrawSource, DrawnCard, QuestionType, ReadingHistoryEntry } from "@aethertarot/shared-types";
+import { drawCardsForSpread } from "@/lib/tarotDraw";
+import { buildLocalQuickAnalysis, type QuickAnalysis } from "@/lib/quickAnalysis";
+import QuickDrawOverlay from "@/components/home/QuickDrawOverlay";
 import { useReading } from "@/context/ReadingContext";
 import { useQuickDraw } from "@/hooks/useQuickDraw";
 import { ConfigurationPane } from "./ConfigurationPane";
@@ -77,7 +80,7 @@ export function NewReadingWorkspace() {
   const { status: sessionStatus } = useSession();
   const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
   const {
-    agentProfile, clearContinuityMemory, clearContinuitySource, continuitySource, drawSource,
+    agentProfile, clearContinuityMemory, clearContinuitySource, completeRitual, continuitySource, drawSource,
     drawnCards, history, isHydrated, question, reading, selectedSpread, setAgentProfile, setDrawSource, setQuestion,
     setSelectedSpread, startRitual,
   } = useReading();
@@ -95,7 +98,12 @@ export function NewReadingWorkspace() {
   const [isClearingMemory, setIsClearingMemory] = useState(false);
   const [memoryClearMessage, setMemoryClearMessage] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<"restored" | "saved" | null>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const [isQuickDrawOverlayOpen, setIsQuickDrawOverlayOpen] = useState(false);
+  const [quickDrawnCard, setQuickDrawnCard] = useState<DrawnCard | null>(null);
+  const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(null);
   const isQuestionDraftRestored = useRef(false);
+  const columnsRef = useRef<HTMLDivElement>(null);
 
   const trimmedQuestion = question.trim();
   const isNavigationPending = navigationMode !== null || isQuickDrawing;
@@ -157,6 +165,26 @@ export function NewReadingWorkspace() {
     return () => window.clearTimeout(timeoutId);
   }, [drawnCards.length, isHydrated, question, reading, setQuestion]);
 
+  useEffect(() => {
+    const columns = columnsRef.current;
+    if (!columns) return;
+
+    const updateScrollHint = () => {
+      const hasOverflow = columns.scrollHeight > columns.clientHeight;
+      const isAtBottom = columns.scrollHeight - columns.scrollTop - columns.clientHeight < 4;
+      setShowScrollHint(hasOverflow && !isAtBottom);
+    };
+
+    updateScrollHint();
+    columns.addEventListener("scroll", updateScrollHint, { passive: true });
+    window.addEventListener("resize", updateScrollHint);
+
+    return () => {
+      columns.removeEventListener("scroll", updateScrollHint);
+      window.removeEventListener("resize", updateScrollHint);
+    };
+  }, []);
+
   const requestStart = (mode: "ritual" | "quick") => {
     if (isNavigationPending) return false;
     const eventPayload = {
@@ -202,6 +230,48 @@ export function NewReadingWorkspace() {
     requestStart("ritual");
   };
 
+  const handleQuickDrawModalOpen = () => {
+    if (isQuickDrawOverlayOpen || isNavigationPending) return;
+
+    const allSpreadsList = getAllSpreads();
+    const singleSpread = allSpreadsList.find((s) => s.id === "single") ?? allSpreadsList[0];
+
+    if (!singleSpread) return;
+
+    const cards = drawCardsForSpread(singleSpread.positions);
+    if (cards.length !== singleSpread.positions.length || !cards[0]) return;
+
+    const card = cards[0];
+    setQuickDrawnCard(card);
+    setQuickAnalysis(buildLocalQuickAnalysis(card));
+    setIsQuickDrawOverlayOpen(true);
+  };
+
+  const handleQuickDrawModalClose = () => {
+    setIsQuickDrawOverlayOpen(false);
+    setQuickDrawnCard(null);
+    setQuickAnalysis(null);
+  };
+
+  const handleQuickDrawModalDeepReading = () => {
+    if (!quickDrawnCard || isNavigationPending) return;
+
+    setIsQuickDrawOverlayOpen(false);
+    const allSpreadsList = getAllSpreads();
+    const singleSpread = allSpreadsList.find((s) => s.id === "single") ?? allSpreadsList[0];
+
+    if (!singleSpread) return;
+
+    const effectiveQuestion = question.trim() || "我还不知道具体要问什么，请抽取我当下最需要看见的状态。";
+    setQuestion(effectiveQuestion);
+    setAgentProfile("lite");
+    setDrawSource("digital_random");
+    setSelectedSpread(singleSpread);
+    completeRitual([quickDrawnCard]);
+    setNavigationMode("quick");
+    router.push("/reading");
+  };
+
   const confirmDecisionBoundary = () => {
     const pending = pendingStart;
     setPendingStart(null);
@@ -214,8 +284,7 @@ export function NewReadingWorkspace() {
       startMode: pending.mode,
     });
     if (pending.mode === "quick") {
-      setNavigationMode("quick");
-      if (!performQuickDraw()) setNavigationMode(null);
+      handleQuickDrawModalOpen();
       return;
     }
     if (!startRitual()) return;
@@ -262,7 +331,7 @@ export function NewReadingWorkspace() {
         </aside>
       ) : null}
 
-      <div className="new-reading-columns">
+      <div ref={columnsRef} className="new-reading-columns">
         <InquiryPane
           activeCategory={activeCategory}
           categories={PROMPT_CATEGORIES}
@@ -314,7 +383,7 @@ export function NewReadingWorkspace() {
           }}
           onStart={startWithCondensation}
           onStartAnimationEnd={finishCondensation}
-          onQuickStart={() => requestStart("quick")}
+          onQuickStart={handleQuickDrawModalOpen}
           quickButtonDisabled={quickButtonDisabled}
           quickButtonLabel={quickButtonLabel}
           selectedSpread={selectedSpread}
@@ -326,9 +395,17 @@ export function NewReadingWorkspace() {
           startButtonDisabled={startButtonDisabled}
           startButtonLabel={startButtonLabel}
         />
+        <div
+          className={`new-reading-scroll-hint${showScrollHint ? " new-reading-scroll-hint-visible" : ""}`}
+          aria-hidden="true"
+        />
       </div>
 
       <div className="new-reading-mobile-actions" data-testid="new-reading-mobile-actions">
+        <p className="new-reading-mobile-summary">
+          {selectedSpread ? `${selectedSpread.name} · ` : null}
+          {AGENT_PROFILES.find((profile) => profile.id === agentProfile)?.name}
+        </p>
         <button
           type="button"
           disabled={startButtonDisabled}
@@ -341,7 +418,7 @@ export function NewReadingWorkspace() {
         <button
           type="button"
           disabled={quickButtonDisabled}
-          onClick={() => requestStart("quick")}
+          onClick={handleQuickDrawModalOpen}
           className="new-reading-quick-button"
         >
           {quickButtonLabel}
@@ -366,11 +443,19 @@ export function NewReadingWorkspace() {
             </div>
             <div className="new-reading-dialog-actions">
               <button type="button" autoFocus onClick={returnToQuestion} className="btn-secondary">返回修改</button>
-              <button type="button" onClick={confirmDecisionBoundary} className="btn-primary">我已了解，继续仪式</button>
+              <button type="button" onClick={confirmDecisionBoundary} className="btn-primary">我已了解，继续解读</button>
             </div>
           </section>
         </div>
       ) : null}
+
+      <QuickDrawOverlay
+        isOpen={isQuickDrawOverlayOpen}
+        drawnCard={quickDrawnCard}
+        quickAnalysis={quickAnalysis}
+        onClose={handleQuickDrawModalClose}
+        onDeepReading={handleQuickDrawModalDeepReading}
+      />
     </div>
   );
 }

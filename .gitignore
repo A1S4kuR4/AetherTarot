@@ -45,6 +45,21 @@ next-env.d.ts
 prototype/node_modules/
 prototype/dist/
 
+# Local UI design and refactor references
+/PROMPT-reading-ui-handoff-2026-07-29.md
+/WORKLOG-2026-07-29-reading-ui-refactor.md
+/apps/web/scratch-baseline.mjs
+/apps/web/scratch-shots/
+/apps/web/scripts/run-local-reading-batch.ts
+/apps/web/scripts/run-real-llm-reading-batch.ts
+/prototype/audit-new-manuscript.mjs
+/prototype/capture-prototype-shots.mjs
+/prototype/home-manuscript-*.html
+/prototype/new-manuscript*.html
+/prototype/quick-draw-*.html
+/prototype/shots/
+/tmp/
+
 # Personal workspace metadata
 .obsidian/
 .claude/settings.local.json

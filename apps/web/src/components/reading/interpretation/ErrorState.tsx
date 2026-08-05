@@ -7,13 +7,13 @@ interface ErrorStateProps {
 
 export function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
-    <div role="alert" className="border-t border-error/30 pt-6">
+    <div role="alert" className="border-y border-error/30 py-8">
       <h2 className="font-serif text-2xl text-ink">连接受阻</h2>
       <p className="mt-3 leading-relaxed text-text-body">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="btn-primary mt-5"
+        className="mt-6 min-h-11 border border-terracotta-ink bg-terracotta-ink px-5 py-2 font-serif text-sm text-paper transition-colors hover:bg-terracotta-active"
       >
         重新尝试
       </button>

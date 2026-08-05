@@ -23,7 +23,8 @@ export function SpreadHeroGrid({
   const layout = getSpreadLayout(spreadId, drawnCards.length);
 
   return (
-    <section data-testid="hero-spread-display" aria-label="整组牌阵" className="my-2 md:my-4">
+    <section data-testid="hero-spread-display" aria-label="整组牌阵" className="my-2 border-y border-paper-border py-7 md:my-4">
+      <p className="manuscript-label mb-5">THE SPREAD</p>
       <ol className={cn("list-none", layout.container)}>
         {drawnCards.map((drawnCard, index) => {
           const position = positionNames[index] ?? `位置 ${index + 1}`;
@@ -43,7 +44,7 @@ export function SpreadHeroGrid({
             >
               <div
                 className={cn(
-                  "card-hero-glow aspect-[1/1.7] w-full overflow-hidden rounded-card-md border border-paper-border bg-paper-raised",
+                  "aspect-[1/1.7] w-full overflow-hidden border border-paper-border bg-paper-raised",
                   layout.isEmphasized(index) && "border-terracotta/25",
                 )}
               >
@@ -56,7 +57,7 @@ export function SpreadHeroGrid({
                   isReversed={drawnCard.isReversed}
                 />
               </div>
-              <p className="mt-2 text-center font-sans text-[11px] font-medium text-text-muted">
+              <p className="mt-3 text-center font-mono text-[10px] font-semibold tracking-[0.08em] text-text-muted">
                 {position}
               </p>
               <p className="mt-0.5 text-center font-serif text-[13px] text-ink">

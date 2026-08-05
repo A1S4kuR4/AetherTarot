@@ -17,7 +17,7 @@ export function BoundaryNote({ safetyNote, confidenceNote }: BoundaryNoteProps) 
   return (
     <section
       id="reading-boundary"
-      className="scroll-mt-32 rounded-2xl border border-safety/30 bg-safety-bg p-5 md:p-6"
+      className="scroll-mt-32 border-y border-safety/30 py-6"
     >
       <div className="flex items-center gap-2.5">
         <LegacyIcon name="info" className="text-[18px] text-safety-ink" />

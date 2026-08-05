@@ -29,14 +29,14 @@ export function ReadingHero({
   ].filter((part): part is string => Boolean(part));
 
   return (
-    <header>
+    <header className="border-b border-paper-border pb-9">
       <p
         data-testid="reading-hero-meta"
-        className="font-sans text-[13px] font-medium tracking-wide text-text-muted"
+        className="manuscript-label"
       >
         {metaParts.join(" · ")}
       </p>
-      <h1 className="mt-4 max-w-[46rem] font-serif text-[26px] leading-[1.4] text-ink md:text-[34px] md:leading-[1.35]">
+      <h1 className="mt-5 max-w-[46rem] text-balance font-serif text-[28px] leading-[1.4] tracking-[-0.02em] text-ink md:text-[38px] md:leading-[1.3]">
         {hideQuestion ? `${spreadName} · ${phaseLabel}` : `"${question}"`}
       </h1>
     </header>

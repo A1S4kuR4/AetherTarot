@@ -12,7 +12,7 @@ export function SafetyIntercept({ reason, referralLinks }: SafetyInterceptProps)
   const router = useRouter();
 
   return (
-    <div className="rounded-2xl border border-safety/40 bg-safety-bg p-6 md:p-8">
+    <div className="border-y border-safety/40 py-8 md:py-10">
       <div className="flex items-center gap-3">
         <LegacyIcon name="gavel" className="text-2xl text-safety-ink" />
         <h2 className="font-serif text-2xl text-safety-ink">界限阻断</h2>
@@ -42,7 +42,7 @@ export function SafetyIntercept({ reason, referralLinks }: SafetyInterceptProps)
         <button
           type="button"
           onClick={() => router.replace("/")}
-          className="btn-secondary"
+          className="min-h-11 border border-paper-border px-5 py-2 text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta"
         >
           离开并返回首页
         </button>

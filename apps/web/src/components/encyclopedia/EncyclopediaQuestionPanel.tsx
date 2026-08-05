@@ -101,25 +101,26 @@ export default function EncyclopediaQuestionPanel({
   return (
     <section
       data-testid="encyclopedia-agent-panel"
-      className="space-y-4 rounded-2xl border border-paper-border bg-paper p-4"
+      className="space-y-5 border-t border-paper-border pt-8"
     >
-      <div className="flex items-center gap-2.5">
-        <LegacyIcon name="auto_stories" className="text-xl text-terracotta" />
+      <div className="flex items-start gap-3">
+        <LegacyIcon name="auto_stories" className="mt-1 text-lg text-terracotta" />
         <div>
-          <h3 className="font-serif text-xl text-ink">百科问答</h3>
-          <p className="text-xs text-text-muted">
+          <p className="manuscript-label">ASK THE ARCHIVE</p>
+          <h3 className="mt-2 font-serif text-xl text-ink">向百科提问</h3>
+          <p className="mt-1 text-xs leading-6 text-text-muted">
             基于当前知识库回答牌义、概念与牌阵问题。
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
         {quickQuestions.map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setQuery(item)}
-            className="rounded-full border border-paper-border bg-paper-raised px-3 py-1.5 text-xs text-text-muted transition hover:border-terracotta/40 hover:text-terracotta"
+            className="border-b border-paper-border pb-1 text-xs text-text-muted transition-colors hover:border-terracotta hover:text-terracotta"
           >
             {item}
           </button>
@@ -134,7 +135,7 @@ export default function EncyclopediaQuestionPanel({
           rows={3}
           maxLength={500}
           placeholder="问一个牌义、逆位、象征或牌阵问题..."
-          className="w-full resize-none rounded-2xl border border-paper-border bg-paper-raised px-4 py-3 text-sm leading-relaxed text-text-body outline-none transition focus:border-terracotta/40 focus:ring-2 focus:ring-terracotta/10"
+          className="w-full resize-none border-y border-paper-border bg-transparent px-0 py-3 text-sm leading-relaxed text-text-body outline-none transition focus:border-terracotta"
         />
       </label>
 
@@ -147,10 +148,10 @@ export default function EncyclopediaQuestionPanel({
           onClick={submitQuery}
           disabled={!query.trim() || queryState.status === "loading"}
           className={cn(
-            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition",
+            "inline-flex min-h-11 items-center gap-2 border px-4 py-2 font-serif text-sm transition-colors",
             !query.trim() || queryState.status === "loading"
-              ? "cursor-not-allowed bg-paper-border text-text-muted"
-              : "bg-terracotta text-paper shadow-sm hover:bg-terracotta/90",
+              ? "cursor-not-allowed border-paper-border text-text-muted"
+              : "border-terracotta-ink bg-terracotta-ink text-paper hover:bg-terracotta-active",
           )}
         >
           <LegacyIcon
@@ -162,7 +163,7 @@ export default function EncyclopediaQuestionPanel({
       </div>
 
       {queryState.status === "error" ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="border-l border-red-200 px-4 py-3 text-sm text-red-700">
           {queryState.error}
         </div>
       ) : null}
@@ -170,7 +171,7 @@ export default function EncyclopediaQuestionPanel({
       {queryState.status === "safety_intercept" ? (
         <div
           data-testid="encyclopedia-safety-intercept"
-          className="space-y-3 rounded-2xl border border-red-900/30 bg-red-950/10 px-4 py-4 text-sm text-red-200"
+          className="space-y-3 border-l border-red-900/30 px-4 py-4 text-sm text-red-200"
         >
           <div className="flex items-center gap-2 font-medium text-red-300">
             <LegacyIcon name="gavel" className="text-lg" />
@@ -198,28 +199,28 @@ export default function EncyclopediaQuestionPanel({
       {queryState.data ? (
         <div
           data-testid="encyclopedia-agent-answer"
-          className="space-y-4 rounded-2xl border border-paper-border bg-paper-raised p-4"
+          className="space-y-5 border-y border-paper-border py-6"
         >
           <p className="whitespace-pre-line text-sm leading-[1.8] text-text-body">
             {queryState.data.answer}
           </p>
 
           {queryState.data.boundary_note ? (
-            <div className="rounded-2xl border border-terracotta/20 bg-terracotta/10 px-4 py-3 text-xs leading-relaxed text-terracotta">
+            <div className="border-l border-terracotta/40 pl-4 text-xs leading-relaxed text-terracotta">
               {queryState.data.boundary_note}
             </div>
           ) : null}
 
           {queryState.data.sources.length > 0 ? (
             <div className="space-y-2">
-              <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+              <h4 className="manuscript-label">
                 来源
               </h4>
-              <div className="grid gap-2">
+              <div className="space-y-3">
                 {queryState.data.sources.map((source) => (
                   <article
                     key={`${source.path}-${source.excerpt}`}
-                    className="rounded-2xl border border-paper-border bg-paper px-3 py-2"
+                    className="border-l border-paper-border pl-3"
                   >
                     <p className="text-sm font-medium text-ink">{source.title}</p>
                     <p className="mt-1 text-xs leading-relaxed text-text-muted">

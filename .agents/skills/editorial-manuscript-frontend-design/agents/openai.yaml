@@ -1,0 +1,4 @@
+interface:
+  display_name: "Editorial Manuscript Design"
+  short_description: "面向网站与应用的纸张编辑排版风格前端设计与响应式交互工作流"
+  default_prompt: "Use $editorial-manuscript-frontend-design to design or refine an editorial manuscript-style web interface."

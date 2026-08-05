@@ -54,7 +54,7 @@ async function startReading(
       await boundaryCheckbox.check();
     }
     await page
-      .getByRole("button", { name: /确认现实边界并继续|我已了解，继续仪式/i })
+      .getByRole("button", { name: /我已了解，继续解读/i })
       .click();
   }
 

@@ -15,11 +15,11 @@ export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
 
   return (
     <section aria-label="解读操作" className="border-t border-paper-border/70 pt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
         <button
           type="button"
           onClick={onReset}
-          className="btn-primary"
+          className="inline-flex min-h-11 items-center gap-2 border border-terracotta-ink bg-terracotta-ink px-5 py-2 font-serif text-sm text-paper transition-colors hover:bg-terracotta-active"
         >
           <LegacyIcon name="refresh" className="text-[16px]" />
           再来一次解读
@@ -28,7 +28,7 @@ export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
           <button
             type="button"
             onClick={onShare}
-            className="btn-secondary"
+            className="min-h-11 border-b border-ink/30 px-1 py-2 text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta"
           >
             分享
           </button>
@@ -36,7 +36,7 @@ export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
         <button
           type="button"
           onClick={scrollToTop}
-          className="btn-secondary"
+          className="min-h-11 border-b border-paper-border px-1 py-2 text-sm text-text-muted transition-colors hover:border-terracotta hover:text-terracotta"
         >
           回到顶部
         </button>

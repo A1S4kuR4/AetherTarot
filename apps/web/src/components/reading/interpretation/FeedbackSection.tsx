@@ -31,8 +31,9 @@ export function FeedbackSection({
 }: FeedbackSectionProps) {
   return (
     <section id="reading-feedback" className="scroll-mt-32">
-      <h2 className="font-serif text-xl text-ink md:text-2xl">这次解读给你的感觉</h2>
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="反馈标签">
+      <p className="manuscript-label">CLOSING NOTE</p>
+      <h2 className="mt-3 font-serif text-xl text-ink md:text-2xl">这次解读给你的感觉</h2>
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="反馈标签">
         {FEEDBACK_OPTIONS.map((option) => {
           const isSelected = labels.includes(option.value);
 
@@ -44,10 +45,10 @@ export function FeedbackSection({
               aria-pressed={isSelected}
               onClick={() => onToggleLabel(option.value)}
               className={cn(
-                "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors",
+                "min-h-11 border-b-2 px-1 text-sm transition-colors",
                 isSelected
-                  ? "border-terracotta/40 bg-terracotta/10 text-terracotta-ink"
-                  : "border-paper-border bg-paper-raised text-text-body hover:bg-paper-muted",
+                  ? "border-terracotta text-terracotta-ink"
+                  : "border-transparent text-text-body hover:border-paper-border",
                 isSubmitted && "cursor-not-allowed opacity-70",
               )}
             >
@@ -64,7 +65,7 @@ export function FeedbackSection({
         autoComplete="off"
         aria-label="反馈补充（可选）"
         placeholder="可选：哪里准确、哪里模板、哪里太迎合？"
-        className="mt-4 h-24 w-full resize-none rounded-xl border border-paper-border bg-paper-raised p-4 font-serif text-base text-ink outline-none focus-visible:border-terracotta/50 focus-visible:ring-2 focus-visible:ring-terracotta/40 disabled:opacity-70"
+        className="mt-5 h-24 w-full resize-none border-y border-paper-border bg-transparent px-0 py-3 font-serif text-base text-ink outline-none focus-visible:border-terracotta focus-visible:ring-2 focus-visible:ring-terracotta/20 disabled:opacity-70"
       />
       <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-text-muted">
         <input
@@ -87,7 +88,7 @@ export function FeedbackSection({
           type="button"
           disabled={isSubmitted || isSubmitting || labels.length === 0}
           onClick={onSubmit}
-          className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-11 border border-paper-border px-5 py-2 text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "正在提交…" : "提交反馈"}
         </button>

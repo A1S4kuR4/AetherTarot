@@ -13,7 +13,8 @@ interface CardByCardSectionProps {
 export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectionProps) {
   return (
     <section id="reading-cards" className="scroll-mt-32">
-      <h2 className="font-serif text-2xl text-ink md:text-[26px]">逐牌展开</h2>
+      <p className="manuscript-label">THE CARDS</p>
+      <h2 className="mt-3 font-serif text-2xl text-ink md:text-[26px]">逐牌展开</h2>
       <div>
         {readingCards.map((card) => {
           const drawnCard = drawnCards.find(
@@ -33,12 +34,12 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
           return (
             <article
               key={`${card.position_id}-${card.card_id}`}
-              className="grid grid-cols-[92px_1fr] gap-x-4 gap-y-4 border-t border-paper-border/60 py-8 first:border-t-0 first:pt-6 sm:grid-cols-[140px_1fr] sm:gap-x-6 md:grid-cols-[160px_1fr] md:gap-x-8"
+              className="grid grid-cols-[92px_1fr] gap-x-4 gap-y-4 border-t border-paper-border py-9 first:mt-6 sm:grid-cols-[140px_1fr] sm:gap-x-6 md:grid-cols-[160px_1fr] md:gap-x-8"
             >
               {drawnCard ? (
                 <div
                   data-testid="reading-card-image-frame"
-                  className="row-span-3 aspect-[1/1.7] w-full self-start overflow-hidden rounded-card-md shadow-sm ring-1 ring-inset ring-paper-border"
+                  className="row-span-3 aspect-[1/1.7] w-full self-start overflow-hidden border border-paper-border"
                 >
                   <CardImage
                     src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
@@ -50,7 +51,7 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                 </div>
               ) : null}
               <div className="min-w-0">
-                <p className="font-sans text-[13px] text-text-muted">
+                <p className="font-mono text-[11px] font-semibold tracking-[0.08em] text-text-muted">
                   {card.position}
                   <span className="mx-1.5 text-paper-border">·</span>
                   <span className={isReversed ? "text-indigo-ink" : undefined}>

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import type { AgentProfile, DrawSource, Spread } from "@aethertarot/shared-types";
+import type { AgentProfile, DrawSource } from "@aethertarot/shared-types";
 import { cn } from "@/lib/utils";
 import type {
   AgentProfileOption,
@@ -16,13 +15,9 @@ function SpreadDiagram({ count, isSelected }: { count: number; isSelected: boole
     </span>
   );
 }
-interface CompactSpreadCatalogueProps extends SpreadCatalogueProps {
-  onHoverSpread?: (spread: Spread | null) => void;
-}
-
-function SpreadCatalogue({ spreads, selectedSpread, onSelect, onHoverSpread }: CompactSpreadCatalogueProps) {
+function SpreadCatalogue({ spreads, selectedSpread, onSelect }: SpreadCatalogueProps) {
   return (
-    <div className="new-reading-catalogue-grid" role="group" aria-label="选择牌阵">
+    <div className="new-reading-catalogue" role="group" aria-label="选择牌阵">
       {spreads.map((spread, index) => {
         const isSelected = selectedSpread?.id === spread.id;
 
@@ -32,17 +27,14 @@ function SpreadCatalogue({ spreads, selectedSpread, onSelect, onHoverSpread }: C
             type="button"
             aria-pressed={isSelected}
             onClick={() => onSelect(spread)}
-            onMouseEnter={() => onHoverSpread?.(spread)}
-            onMouseLeave={() => onHoverSpread?.(null)}
-            onFocus={() => onHoverSpread?.(spread)}
-            onBlur={() => onHoverSpread?.(null)}
-            className={cn("new-reading-catalogue-item-compact", isSelected && "new-reading-catalogue-item-selected")}
+            className={cn("new-reading-catalogue-item", isSelected && "new-reading-catalogue-item-selected")}
           >
             <span className="min-w-0">
               <span className="new-reading-catalogue-title">
                 <span className="new-reading-catalogue-index">{String(index + 1).padStart(2, "0")}</span>
                 <span>{spread.name}</span>
               </span>
+              <span className="new-reading-catalogue-description">{spread.description}</span>
             </span>
             <SpreadDiagram count={spread.positions.length} isSelected={isSelected} />
           </button>
@@ -57,7 +49,6 @@ interface ChoiceCatalogueProps<T extends string> {
   options: Array<AgentProfileOption | DrawSourceOption>;
   selectedValue: T;
   onSelect: (value: T) => void;
-  onHoverOption?: (option: AgentProfileOption | DrawSourceOption | null) => void;
 }
 
 function ChoiceCatalogue<T extends string>({
@@ -65,7 +56,6 @@ function ChoiceCatalogue<T extends string>({
   options,
   selectedValue,
   onSelect,
-  onHoverOption,
 }: ChoiceCatalogueProps<T>) {
   return (
     <div className="new-reading-catalogue-grid-3" role="group" aria-label={ariaLabel}>
@@ -78,10 +68,6 @@ function ChoiceCatalogue<T extends string>({
             type="button"
             aria-pressed={isSelected}
             onClick={() => onSelect(option.id as T)}
-            onMouseEnter={() => onHoverOption?.(option)}
-            onMouseLeave={() => onHoverOption?.(null)}
-            onFocus={() => onHoverOption?.(option)}
-            onBlur={() => onHoverOption?.(null)}
             className={cn("new-reading-catalogue-item-compact", isSelected && "new-reading-catalogue-item-selected")}
           >
             <span className="min-w-0">
@@ -92,6 +78,9 @@ function ChoiceCatalogue<T extends string>({
                   <span className="new-reading-catalogue-badge">{option.badge}</span>
                 ) : null}
               </span>
+              {"subtitle" in option && option.subtitle ? (
+                <span className="new-reading-catalogue-description">{option.subtitle}</span>
+              ) : null}
             </span>
           </button>
         );
@@ -179,12 +168,6 @@ export function ConfigurationPane({
   startButtonDisabled,
   startButtonLabel,
 }: ConfigurationPaneProps) {
-  const [hoveredSpread, setHoveredSpread] = useState<Spread | null>(null);
-  const [hoveredProfile, setHoveredProfile] = useState<AgentProfileOption | null>(null);
-
-  const activeSpread = hoveredSpread ?? selectedSpread;
-  const activeProfile = hoveredProfile ?? agentProfiles.find((p) => p.id === agentProfile);
-
   return (
     <section aria-label="解读设置" className="new-reading-settings">
       <section aria-labelledby="new-reading-spread-title" className="new-reading-setting-section">
@@ -193,15 +176,7 @@ export function ConfigurationPane({
           spreads={spreads}
           selectedSpread={selectedSpread}
           onSelect={onSelect}
-          onHoverSpread={setHoveredSpread}
         />
-        <div className="new-reading-note-slot-fixed">
-          <p className="new-reading-setting-note" aria-live="polite">
-            {activeSpread
-              ? `${activeSpread.name} · ${activeSpread.positions.length}个位置：${activeSpread.description}`
-              : "先选择一个牌阵，让阅读从不同角度展开。"}
-          </p>
-        </div>
       </section>
 
       <section aria-labelledby="new-reading-profile-title" className="new-reading-setting-section">
@@ -211,15 +186,7 @@ export function ConfigurationPane({
           options={agentProfiles}
           selectedValue={agentProfile}
           onSelect={onAgentProfileSelect}
-          onHoverOption={(option) => setHoveredProfile(option as AgentProfileOption | null)}
         />
-        <div className="new-reading-note-slot-fixed">
-          <p className="new-reading-setting-note" aria-live="polite">
-            {activeProfile
-              ? `${activeProfile.name} · ${activeProfile.subtitle}：${activeProfile.description}`
-              : "选择适合你的解读风格。"}
-          </p>
-        </div>
       </section>
 
       <section aria-labelledby="new-reading-draw-title" className="new-reading-setting-section">
@@ -244,14 +211,17 @@ export function ConfigurationPane({
         >
           {startButtonLabel}
         </button>
-        <button
-          type="button"
-          onClick={onQuickStart}
-          disabled={quickButtonDisabled || isNavigationPending}
-          className="new-reading-quick-button"
-        >
-          {quickButtonLabel}
-        </button>
+        <div className="new-reading-quick-group">
+          <button
+            type="button"
+            onClick={onQuickStart}
+            disabled={quickButtonDisabled || isNavigationPending}
+            className="new-reading-quick-button"
+          >
+            {quickButtonLabel}
+          </button>
+          <p className="new-reading-quick-help">不用写问题，30 秒看当下状态</p>
+        </div>
       </div>
     </section>
   );

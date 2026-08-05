@@ -46,12 +46,15 @@ export default function JourneyView() {
   };
 
   return (
-    <main className="mx-auto min-h-[92vh] max-w-5xl px-6 pb-20 pt-24 lg:px-16">
-      <header className="mb-16 space-y-4 text-center">
+    <main className="mx-auto min-h-[92vh] max-w-6xl px-6 pb-24 pt-24 lg:px-16">
+      <header className="mb-14 max-w-3xl border-b border-paper-border pb-10">
+        <p className="manuscript-label">
+          JOURNEY · PERSONAL ARCHIVE
+        </p>
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-serif text-4xl font-semibold text-ink md:text-5xl"
+          className="mt-4 text-balance font-serif text-4xl font-semibold tracking-[-0.02em] text-ink md:text-5xl"
         >
           意识之流 (The Journey)
         </motion.h1>
@@ -59,29 +62,31 @@ export default function JourneyView() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mx-auto max-w-lg text-base text-text-muted"
+          className="mt-4 max-w-2xl text-base leading-8 text-text-muted"
         >
           塔罗不过是照见潜意识的镜子。在这里，你过去的疑问与线索被收束成主题，映照着你成长的轨迹。
         </motion.p>
       </header>
 
       <section className="space-y-10">
-        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex items-center gap-1 rounded-full border border-paper-border bg-paper-raised p-1">
+        <div className="flex flex-col justify-between gap-6 border-b border-paper-border pb-5 md:flex-row md:items-end">
+          <div className="flex items-center gap-6" aria-label="旅程浏览方式">
             <button
+              type="button"
               onClick={() => setViewMode("timeline")}
               className={cn(
-                "rounded-full px-5 py-1.5 text-xs font-medium transition-all",
-                viewMode === "timeline" ? "bg-paper text-ink shadow-sm ring-1 ring-ink/5" : "text-text-muted hover:text-ink"
+                "min-h-10 border-b-2 px-0 font-sans text-sm transition-colors",
+                viewMode === "timeline" ? "border-terracotta text-ink" : "border-transparent text-text-muted hover:text-ink"
               )}
             >
               时间轴
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("themes")}
               className={cn(
-                "rounded-full px-5 py-1.5 text-xs font-medium transition-all",
-                viewMode === "themes" ? "bg-paper text-ink shadow-sm ring-1 ring-ink/5" : "text-text-muted hover:text-ink"
+                "min-h-10 border-b-2 px-0 font-sans text-sm transition-colors",
+                viewMode === "themes" ? "border-terracotta text-ink" : "border-transparent text-text-muted hover:text-ink"
               )}
             >
               主题星群
@@ -90,7 +95,7 @@ export default function JourneyView() {
           <button
             type="button"
             onClick={handleNewReading}
-            className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
+            className="inline-flex min-h-11 items-center gap-2 border border-terracotta-ink bg-terracotta-ink px-5 py-2 font-serif text-sm text-paper transition-colors hover:bg-terracotta-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
           >
             <LegacyIcon name="add" className="text-[18px]" />
             开启新的抽牌
@@ -105,7 +110,7 @@ export default function JourneyView() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                className="divide-y divide-paper-border"
               >
                 {history.map((entry, index) => (
                   <HistoryCard
@@ -123,26 +128,45 @@ export default function JourneyView() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="grid gap-8 md:grid-cols-2"
+                className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_12rem]"
               >
-                {themeClusters.map((cluster, index) => (
-                  <ThemeClusterCard
-                    key={cluster.name}
-                    cluster={cluster}
-                    index={index}
-                    onSelectEntry={handleSelectHistory}
-                    onContinueEntry={handleContinueLine}
-                  />
-                ))}
+                <div className="space-y-12">
+                  {themeClusters.map((cluster, index) => (
+                    <ThemeClusterCard
+                      key={cluster.name}
+                      cluster={cluster}
+                      index={index}
+                      onSelectEntry={handleSelectHistory}
+                      onContinueEntry={handleContinueLine}
+                    />
+                  ))}
+                </div>
+                <aside className="hidden border-l border-paper-border pl-5 lg:sticky lg:top-24 lg:block lg:self-start">
+                  <p className="manuscript-label">THEME INDEX</p>
+                  <ol className="mt-4 space-y-2">
+                    {themeClusters.map((cluster, index) => (
+                      <li key={`index-${cluster.name}`}>
+                        <a
+                          href={`#journey-theme-${index}`}
+                          className="flex gap-2 text-xs leading-5 text-text-muted transition-colors hover:text-terracotta"
+                        >
+                          <span className="font-mono text-[10px] text-terracotta-ink">{String(index + 1).padStart(2, "0")}</span>
+                          {cluster.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                </aside>
               </motion.div>
             )}
           </AnimatePresence>
         ) : (
-          <div className="reading-card bg-paper/50 py-24 text-center">
+          <div className="border-y border-paper-border py-20 text-center">
             <LegacyIcon
               name="auto_awesome"
-              className="mb-4 text-4xl text-terracotta/40"
+              className="mb-5 text-3xl text-terracotta/60"
             />
+            <p className="manuscript-label">FIRST ENTRY</p>
             <h3 className="font-serif text-xl text-ink">尚无回溯线索</h3>
             <p className="mt-2 text-sm text-text-muted">
               你还没有在这里留下过印记。
@@ -170,41 +194,37 @@ function HistoryCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group flex flex-col justify-between rounded-3xl border border-paper-border bg-paper-raised p-6 transition-all hover:border-terracotta/40 hover:shadow-md"
+      className="group grid gap-5 py-8 md:grid-cols-[6.5rem_minmax(0,1fr)_auto] md:items-start md:gap-8"
     >
-      <div>
-        <div className="mb-4 flex items-start justify-between">
-          <span className="chip-warm text-[10px]">
-            {new Date(entry.createdAt).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
-          </span>
-        </div>
-        <h3 className="mb-4 line-clamp-3 font-serif text-lg leading-relaxed text-ink transition-colors group-hover:text-terracotta">
+      <p className="font-mono text-[10px] font-semibold tracking-[0.08em] text-terracotta [font-variant-numeric:tabular-nums]">
+        {new Date(entry.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" })}
+      </p>
+      <div className="min-w-0 border-l border-paper-border pl-5 transition-colors group-hover:border-terracotta/70">
+        <h3 className="text-balance font-serif text-lg leading-8 text-ink transition-colors group-hover:text-terracotta md:text-xl">
           {`"${entry.reading.question}"`}
         </h3>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-1.5">
+        <p className="mt-4 text-sm leading-7 text-text-muted">
           {entry.reading.themes.slice(0, 3).map((theme) => (
             <span
               key={theme}
-              className="rounded-full border border-paper-border bg-paper px-2.5 py-1 font-sans text-[10px] text-text-muted"
+              className="after:mx-2 after:text-paper-border after:content-['/'] last:after:hidden"
             >
-              #{theme}
+              {theme}
             </span>
           ))}
-        </div>
+        </p>
         {entry.user_notes && (
-          <div className="flex items-center gap-2 border-t border-paper-border/30 pt-4 text-text-muted">
-            <LegacyIcon name="edit_note" className="text-[16px] text-terracotta/60" />
-            <span className="truncate text-[11px]">沉淀了感悟</span>
+          <div className="mt-4 flex items-center gap-2 text-text-muted">
+            <LegacyIcon name="edit_note" className="text-[16px] text-terracotta/70" />
+            <span className="truncate text-xs">沉淀了感悟</span>
           </div>
         )}
-        <div className="flex flex-wrap gap-2 pt-2">
+      </div>
+      <div className="flex flex-wrap gap-x-5 gap-y-3 md:justify-end">
           <button
             type="button"
             onClick={onReplay}
-            className="rounded-full border border-paper-border bg-paper px-4 py-2 text-xs font-medium text-ink transition hover:bg-paper-raised"
+            className="min-h-10 border-b border-ink/30 font-sans text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta"
           >
             回看解读
           </button>
@@ -212,12 +232,11 @@ function HistoryCard({
             <button
               type="button"
               onClick={onContinue}
-              className="rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-medium text-terracotta transition hover:bg-terracotta/10"
+              className="min-h-10 border-b border-terracotta/40 font-sans text-sm text-terracotta transition-colors hover:border-terracotta"
             >
               延续这条线
             </button>
           ) : null}
-        </div>
       </div>
     </motion.div>
   );
@@ -239,41 +258,41 @@ function ThemeClusterCard({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
-      className="relative flex flex-col rounded-[2.5rem] border border-paper-border bg-paper p-8 shadow-sm"
+      id={`journey-theme-${index}`}
+      className="scroll-mt-24 border-t border-paper-border pt-8 first:border-t-0 first:pt-0"
     >
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-7 flex items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-terracotta" />
-            <h3 className="font-serif text-2xl font-medium text-ink">{cluster.name}</h3>
-          </div>
+          <p className="manuscript-label">
+            THEME {String(index + 1).padStart(2, "0")}
+          </p>
+          <h3 className="font-serif text-2xl font-medium text-ink">{cluster.name}</h3>
           <p className="text-xs text-text-muted">{cluster.entries.length} 次意识共振</p>
         </div>
-        <LegacyIcon name="cloud" className="text-4xl text-paper-border/40" />
+        <span className="font-mono text-xs text-text-placeholder [font-variant-numeric:tabular-nums]">{String(cluster.entries.length).padStart(2, "0")}</span>
       </div>
 
       <div className="space-y-4">
         {cluster.entries.slice(0, 4).map((entry) => (
           <div
             key={entry.id}
-            className="border-b border-paper-border/30 pb-3"
+            className="border-b border-paper-border/70 py-4 first:pt-0"
           >
-            <div className="flex items-start gap-4">
-              <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-paper-border" />
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 text-sm text-ink">
+            <div className="grid items-start gap-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-5">
+              <p className="font-mono text-[10px] text-terracotta [font-variant-numeric:tabular-nums]">
+                {new Date(entry.createdAt).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+              </p>
+              <div className="min-w-0">
+                <p className="line-clamp-2 font-serif text-base leading-7 text-ink">
                   {entry.reading.question}
-                </p>
-                <p className="mt-1 text-[10px] text-text-placeholder">
-                  {new Date(entry.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 pl-5">
+            <div className="mt-3 flex flex-wrap gap-4 sm:pl-[7rem]">
               <button
                 type="button"
                 onClick={() => onSelectEntry(entry)}
-                className="rounded-full border border-paper-border bg-paper px-3 py-1.5 text-[11px] font-medium text-ink transition hover:bg-paper-raised"
+                className="border-b border-ink/30 pb-1 text-xs text-ink transition-colors hover:border-terracotta hover:text-terracotta"
               >
                 回看
               </button>
@@ -281,7 +300,7 @@ function ThemeClusterCard({
                 <button
                   type="button"
                   onClick={() => onContinueEntry(entry)}
-                  className="rounded-full border border-terracotta/20 bg-terracotta/5 px-3 py-1.5 text-[11px] font-medium text-terracotta transition hover:bg-terracotta/10"
+                  className="border-b border-terracotta/40 pb-1 text-xs text-terracotta transition-colors hover:border-terracotta"
                 >
                   延续这条线
                 </button>
@@ -290,7 +309,7 @@ function ThemeClusterCard({
           </div>
         ))}
         {cluster.entries.length > 4 && (
-          <p className="pt-2 text-center text-[10px] italic text-text-placeholder">
+          <p className="pt-4 font-serif text-sm italic text-text-placeholder">
             及其他 {cluster.entries.length - 4} 条回响...
           </p>
         )}

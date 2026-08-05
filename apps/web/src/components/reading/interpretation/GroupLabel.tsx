@@ -8,8 +8,9 @@ interface GroupLabelProps {
 // visual rhythm device — section headings carry the document outline.
 export function GroupLabel({ children }: GroupLabelProps) {
   return (
-    <p className="border-t border-paper-border/70 pt-8 font-serif text-[15px] font-semibold text-text-accent">
-      {children}
-    </p>
+    <div className="border-t border-paper-border pt-10">
+      <p className="manuscript-label">READING NOTE</p>
+      <p className="mt-2 font-serif text-lg font-semibold text-ink">{children}</p>
+    </div>
   );
 }

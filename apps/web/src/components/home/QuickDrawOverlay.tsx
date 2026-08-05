@@ -118,7 +118,7 @@ function QuickDrawOverlayContent({
             aria-label="抽到的塔罗牌"
           >
             <span className="absolute left-6 top-7 font-mono text-[11px] font-semibold tracking-[0.16em] text-terracotta md:left-8 md:top-8">
-              PRESENT STATE · 01
+              PRESENT STATE
             </span>
             <m.div
               initial={{ scale: 0.92, opacity: 0, y: 24 }}

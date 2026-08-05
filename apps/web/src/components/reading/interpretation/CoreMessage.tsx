@@ -20,17 +20,18 @@ function firstSentence(value: string): string {
 export function CoreMessage({ quickRead }: CoreMessageProps) {
   return (
     <section id="reading-quick" className="scroll-mt-32" aria-label="当下的关键启示">
-      <h2 className="font-serif text-xl text-ink md:text-2xl">当下的关键启示</h2>
-      <p className="mt-4 max-w-[38rem] font-serif text-[21px] leading-[1.65] text-ink md:text-[24px] md:leading-[1.6]">
+      <p className="manuscript-label">PRELUDE</p>
+      <h2 className="mt-3 font-serif text-xl text-ink md:text-2xl">当下的关键启示</h2>
+      <p className="manuscript-drop-cap mt-5 max-w-[38rem] font-serif text-[21px] leading-[1.65] text-ink md:text-[24px] md:leading-[1.6]">
         {quickRead.core}
       </p>
       <div className="mt-7 grid gap-4 border-t border-paper-border/70 pt-5 md:grid-cols-2 md:gap-8">
         <p className="text-sm leading-relaxed text-text-body">
-          <span className="font-sans font-semibold text-ink">试着问自己——</span>
+          <span className="font-serif font-semibold text-ink">试着问自己——</span>
           {quickRead.action}
         </p>
         <p className="text-sm leading-relaxed text-text-muted">
-          <span className="font-sans font-semibold text-text-body">一个小前提——</span>
+          <span className="font-serif font-semibold text-text-body">一个小前提——</span>
           {firstSentence(quickRead.boundary)}
         </p>
       </div>
