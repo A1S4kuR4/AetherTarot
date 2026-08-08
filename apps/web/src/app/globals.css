@@ -21,6 +21,7 @@
 
   /* Brand Accents */
   --color-terracotta: #C96442;
+  --color-terracotta-bright: #D67A55;
   --color-terracotta-hover: #B4572F;
   --color-terracotta-ink: #A64C2E;
   --color-terracotta-active: #9A4327;
@@ -1447,39 +1448,649 @@
     }
   }
 
-  /* ---- RitualView fullscreen stage ---- */
+  /* ---- RitualView: celestial altar ---- */
   .ritual-view-stage {
+    --ritual-card-width: 90px;
+    --ritual-deck-origin: 112px;
+    --ritual-ring-radius: calc(var(--ritual-deck-origin) + 36px);
+    position: relative;
+    display: grid;
     min-height: calc(100dvh - 4rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    justify-items: center;
+    gap: clamp(0.45rem, 1.2vh, 0.75rem);
+    overflow-x: hidden;
+    background: radial-gradient(
+      ellipse 70% 60% at 50% 46%,
+      var(--color-midnight-panel) 0%,
+      var(--color-night) 74%
+    );
+    padding: clamp(0.65rem, 1.8vh, 1rem) clamp(1rem, 3vw, 2.5rem)
+      calc(clamp(0.55rem, 1.4vh, 0.8rem) + env(safe-area-inset-bottom));
+    color: var(--color-text-inverse);
+  }
+
+  .ritual-intro-hidden {
+    opacity: 0;
+  }
+
+  .ritual-plaque {
+    position: relative;
+    z-index: 70;
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-night);
+    font-weight: 400;
+    transition: opacity 700ms ease;
+  }
+
+  .ritual-plaque-segment {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem clamp(0.7rem, 1.5vw, 1.125rem);
+    white-space: nowrap;
+  }
+
+  .ritual-plaque-segment + .ritual-plaque-segment {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .ritual-plaque-kicker {
+    color: var(--color-text-inverse-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+  }
+
+  .ritual-status-dot {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    background: var(--color-indigo);
+    animation: ritual-status-pulse 2s ease-in-out infinite;
+  }
+
+  .ritual-status-dot-done {
+    background: var(--color-success);
+    animation: none;
+  }
+
+  @keyframes ritual-status-pulse {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .ritual-plaque-name {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .ritual-plaque-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+  }
+
+  .ritual-altar {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 1180px;
+    min-height: 0;
+  }
+
+  .ritual-altar-rings {
+    position: absolute;
+    top: 56%;
+    left: 50%;
+    z-index: 10;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .ritual-altar-ring {
+    position: absolute;
+    width: calc(var(--ritual-ring-radius) * 2);
+    height: calc(var(--ritual-ring-radius) * 2);
+    border: 1px solid var(--color-midnight-border-subtle);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .ritual-altar-axis {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.035);
+    transform: translate(-50%, -50%);
+  }
+
+  .ritual-altar-axis-horizontal {
+    width: min(620px, 72vw);
+    height: 1px;
+  }
+
+  .ritual-altar-axis-vertical {
+    width: 1px;
+    height: min(620px, 66vh);
+  }
+
+  .ritual-altar-center-mark {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.14);
+    transform: translate(-50%, -50%);
+  }
+
+  .ritual-altar-tick {
+    position: absolute;
+    top: 0;
+    left: -0.5px;
+    width: 1px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.09);
+    transform-origin: 50% 0;
+  }
+
+  .ritual-altar-tick-cardinal {
+    height: 20px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .ritual-position-track {
+    --ritual-slot-width: 72px;
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    transition: opacity 700ms ease;
+  }
+
+  .ritual-position {
+    position: absolute;
+    top: calc(56% + var(--ritual-slot-y));
+    left: calc(50% + var(--ritual-slot-x));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transform: translate(-50%, -50%);
+  }
+
+  .ritual-position-label-above .ritual-position-label {
+    order: -1;
+  }
+
+  .ritual-slot {
+    display: grid;
+    width: var(--ritual-slot-width);
+    aspect-ratio: 1 / 1.7;
+    place-items: center;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    background: rgba(11, 13, 18, 0.55);
+    transition: border-color 240ms ease, background-color 240ms ease;
+  }
+
+  .ritual-slot-hint {
+    color: rgba(167, 175, 188, 0.72);
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.1em;
+    writing-mode: vertical-rl;
+  }
+
+  .ritual-position-current .ritual-slot {
+    border: 1px solid var(--color-indigo);
+    background: rgba(113, 112, 255, 0.07);
+  }
+
+  .ritual-slot-filled {
+    border: 1px solid var(--color-midnight-border);
+    border-radius: calc(var(--ritual-slot-width) * 0.1);
+    background: var(--color-midnight-panel);
+    padding: calc(var(--ritual-slot-width) * 0.05);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .ritual-slot-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-midnight-border-subtle);
+    border-radius: calc(var(--ritual-slot-width) * 0.0667);
+    background: var(--color-midnight-elevated);
+  }
+
+  .ritual-position-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    white-space: nowrap;
+  }
+
+  .ritual-position-index {
+    color: var(--color-text-inverse-muted);
+    font-family: var(--font-mono);
+    font-size: 0.65625rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .ritual-position-drawn .ritual-position-index,
+  .ritual-position-current .ritual-position-index {
+    color: var(--color-indigo);
+  }
+
+  .ritual-position-name {
+    color: var(--color-text-inverse-muted);
+    font-family: var(--font-serif);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .ritual-position-current .ritual-position-name {
+    color: var(--color-text-inverse);
+  }
+
+  .ritual-position-track-dense .ritual-position-name {
+    font-size: 0.75rem;
   }
 
   .ritual-deck-field {
-    --ritual-deck-card-width: 90px;
-    --ritual-deck-origin: 112px;
-    height: clamp(260px, 34dvh, 360px);
-    min-height: 260px;
+    position: absolute;
+    top: calc(56% - var(--ritual-deck-origin));
+    right: 0;
+    left: 0;
+    z-index: 30;
+    height: calc(var(--ritual-deck-origin) + 175px);
   }
 
-  @media (min-width: 768px) {
-    .ritual-deck-field {
-      --ritual-deck-card-width: 120px;
-      --ritual-deck-origin: 150px;
-      height: clamp(280px, 32dvh, 380px);
-      min-height: 280px;
-    }
+  .ritual-deck-origin,
+  .ritual-deck-card {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: var(--ritual-card-width);
+    margin-left: calc(var(--ritual-card-width) / -2);
+    aspect-ratio: 1 / 1.7;
   }
 
-  @media (min-width: 768px) and (max-height: 820px) {
-    .ritual-deck-field {
-      --ritual-deck-card-width: 90px;
-      --ritual-deck-origin: 112px;
-      height: clamp(200px, 26dvh, 228px);
-      min-height: 200px;
-    }
+  .ritual-deck-origin {
+    pointer-events: none;
   }
 
-  @media (min-width: 1024px) and (min-height: 720px) {
+  .ritual-deck-card {
+    padding: calc(var(--ritual-card-width) * 0.05);
+    border: 1px solid var(--color-midnight-border);
+    border-radius: calc(var(--ritual-card-width) * 0.1);
+    background: var(--color-midnight-panel);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    cursor: pointer;
+    transform-origin: 50% var(--ritual-deck-origin);
+  }
+
+  .ritual-deck-card-animating {
+    will-change: transform;
+  }
+
+  .ritual-deck-card:disabled {
+    cursor: default;
+  }
+
+  .ritual-deck-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-midnight-border-subtle);
+    border-radius: calc(var(--ritual-card-width) * 0.0667);
+    background: var(--color-midnight-elevated);
+  }
+
+  .ritual-deck-card-image {
+    opacity: 0.82;
+    transition: filter 300ms ease, opacity 300ms ease;
+  }
+
+  .ritual-deck-card-image-hovered {
+    opacity: 1;
+    filter: brightness(1.1);
+  }
+
+  .ritual-deck-card-image-extracting {
+    opacity: 1;
+    filter: brightness(1.25);
+  }
+
+  .ritual-fly-card {
+    position: fixed;
+    z-index: 100;
+    isolation: isolate;
+    border: 1px solid var(--color-midnight-border);
+    background: var(--color-midnight-panel);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.32);
+    pointer-events: none;
+    will-change: left, top, width, height, transform;
+  }
+
+  .ritual-fly-card-major {
+    border-color: rgba(201, 100, 66, 0.8);
+    filter: drop-shadow(0 0 38px rgba(214, 107, 61, 0.55));
+  }
+
+  .ritual-fly-card-glow {
+    position: absolute;
+    inset: -28px;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(214, 107, 61, 0.3), transparent 68%);
+  }
+
+  .ritual-fly-card-inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-midnight-border-subtle);
+    background: var(--color-midnight-elevated);
+  }
+
+  .ritual-actions {
+    position: relative;
+    z-index: 60;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: opacity 700ms ease;
+  }
+
+  .ritual-action-button {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 0;
+    background: transparent;
+    letter-spacing: 0.04em;
+    transition: border-color 160ms ease, background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .ritual-action-button:focus-visible {
+    outline: 2px solid rgba(113, 112, 255, 0.55);
+    outline-offset: 3px;
+  }
+
+  .ritual-action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+  }
+
+  .ritual-action-button-quiet {
+    min-width: 120px;
+    border: 1px solid var(--color-midnight-border);
+    color: var(--color-text-inverse-muted);
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+  }
+
+  .ritual-action-button-quiet:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.24);
+    color: var(--color-text-inverse);
+  }
+
+  .ritual-action-icon {
+    font-size: 1rem;
+  }
+
+  .ritual-action-button-draw,
+  .ritual-action-button-reveal {
+    min-width: 168px;
+    border: 1px solid var(--color-terracotta);
+    color: var(--color-terracotta-bright);
+    font-family: var(--font-serif);
+    font-size: 1rem;
+  }
+
+  .ritual-action-button-draw:hover:not(:disabled) {
+    background: rgba(201, 100, 66, 0.1);
+  }
+
+  .ritual-action-button-reveal {
+    border-color: var(--color-terracotta-ink);
+    background: var(--color-terracotta-ink);
+    color: #fff9f5;
+  }
+
+  .ritual-action-button-reveal:hover:not(:disabled) {
+    background: var(--color-terracotta-active);
+  }
+
+  .ritual-table-note {
+    position: relative;
+    z-index: 60;
+    display: grid;
+    max-width: min(420px, 100%);
+    justify-items: center;
+    gap: 0.25rem;
+    text-align: center;
+    transition: opacity 700ms ease;
+  }
+
+  .ritual-table-note::before {
+    width: 44px;
+    height: 1px;
+    margin-bottom: 0.35rem;
+    background: var(--color-indigo);
+    content: "";
+  }
+
+  .ritual-table-note-ready::before {
+    background: var(--color-terracotta);
+  }
+
+  .ritual-note-label {
+    color: var(--color-text-inverse);
+    font-family: var(--font-mono);
+    font-size: 0.65625rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+  }
+
+  .ritual-table-note-ready .ritual-note-label {
+    color: var(--color-terracotta-bright);
+  }
+
+  .ritual-note-text {
+    color: var(--color-text-inverse-muted);
+    font-family: var(--font-serif);
+    font-size: 0.84375rem;
+    line-height: 1.65;
+  }
+
+  .ritual-skip-hint {
+    position: absolute;
+    right: 1.125rem;
+    bottom: 0.75rem;
+    z-index: 110;
+    color: rgba(167, 175, 188, 0.5);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    animation: ritual-status-pulse 2s ease-in-out infinite;
+  }
+
+  @media (min-width: 900px) {
     .ritual-view-stage {
-      min-height: calc(100dvh - 4rem);
+      --ritual-card-width: 120px;
+      --ritual-deck-origin: 150px;
+      height: calc(100dvh - 4rem);
+      overflow: hidden;
+    }
+
+    .ritual-position-track {
+      pointer-events: none;
+    }
+  }
+
+  @media (max-width: 899px) {
+    .ritual-view-stage {
+      grid-template-rows: auto auto auto auto;
+      overflow-y: auto;
+    }
+
+    .ritual-plaque-segment {
+      gap: 0.4rem;
+      padding: 0.5rem 0.6rem;
+    }
+
+    .ritual-plaque-kicker {
+      font-size: 0.625rem;
+      letter-spacing: 0.11em;
+    }
+
+    .ritual-plaque-name {
+      max-width: 8rem;
+      overflow: hidden;
+      font-size: 0.875rem;
+      text-overflow: ellipsis;
+    }
+
+    .ritual-plaque-count {
+      font-size: 0.6875rem;
+    }
+
+    .ritual-altar {
+      display: flex;
+      height: clamp(414px, 53dvh, 450px);
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .ritual-altar-rings {
+      display: none;
+    }
+
+    .ritual-position-track {
+      --ritual-slot-width: 56px;
+      position: relative;
+      inset: auto;
+      display: flex;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      min-height: 126px;
+      flex: none;
+      justify-content: flex-start;
+      gap: 1.125rem;
+      overflow-x: auto;
+      padding: 0.2rem max(0.25rem, calc((100% - 56px) / 2));
+      scroll-padding-inline: max(0.25rem, calc((100% - 56px) / 2));
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+
+    .ritual-position-track::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ritual-position {
+      position: static;
+      width: 72px;
+      flex: none;
+      scroll-snap-align: center;
+      transform: none;
+    }
+
+    .ritual-position-label-above .ritual-position-label {
+      order: initial;
+    }
+
+    .ritual-position-label {
+      max-width: 72px;
+      gap: 0.3rem;
+    }
+
+    .ritual-position-name {
+      overflow: hidden;
+      font-size: 0.75rem;
+      text-overflow: ellipsis;
+    }
+
+    .ritual-deck-field {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: calc(var(--ritual-deck-origin) + 160px);
+      flex: none;
+    }
+
+    .ritual-actions {
+      gap: 0.5rem;
+    }
+
+    .ritual-action-button {
+      min-height: 46px;
+    }
+
+    .ritual-action-button-quiet {
+      min-width: 104px;
+    }
+
+    .ritual-action-button-draw,
+    .ritual-action-button-reveal {
+      min-width: 152px;
+    }
+
+    .ritual-skip-hint {
+      right: 0.75rem;
+      bottom: 0.4rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .ritual-view-stage {
+      padding-inline: 0.75rem;
+    }
+
+    .ritual-action-button-quiet {
+      min-width: 96px;
+    }
+
+    .ritual-action-button-draw,
+    .ritual-action-button-reveal {
+      min-width: 148px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ritual-view-stage *,
+    .ritual-view-stage *::before,
+    .ritual-view-stage *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
   }
 

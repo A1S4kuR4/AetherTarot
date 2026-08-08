@@ -1469,6 +1469,48 @@ test.describe("AetherTarot smoke flow", () => {
     }
   });
 
+  test("keeps short mobile ritual controls clear of the deck", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await startReading(page, "这件事接下来会如何发展？", /赛尔特十字/i);
+    await expect(page).toHaveURL(/\/ritual\/draw$/);
+    await expect(page.getByRole("button", { name: "从牌堆抽牌" })).toHaveCount(1);
+
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expectNoHorizontalOverflow(page);
+
+      const layout = await page.evaluate(() => {
+        const deckField = document.querySelector<HTMLElement>(".ritual-deck-field");
+        const actions = document.querySelector<HTMLElement>(".ritual-actions");
+
+        if (!deckField || !actions) {
+          throw new Error("Ritual deck field or actions are missing");
+        }
+
+        const actionsRect = actions.getBoundingClientRect();
+        const cardRects = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-testid='deck-card']"),
+        ).map((card) => card.getBoundingClientRect());
+        const overlappingCards = cardRects.filter(
+          (cardRect) =>
+            cardRect.bottom > actionsRect.top && cardRect.top < actionsRect.bottom,
+        ).length;
+
+        return {
+          maxCardBottom: Math.max(...cardRects.map((cardRect) => cardRect.bottom)),
+          actionsTop: actionsRect.top,
+          overlappingCards,
+        };
+      });
+
+      expect(layout.maxCardBottom).toBeLessThanOrEqual(layout.actionsTop);
+      expect(layout.overlappingCards).toBe(0);
+    }
+  });
+
   test("keeps the ritual draw stage inside the desktop viewport", async ({
     page,
   }) => {
@@ -1484,6 +1526,19 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(page.getByRole("button", { name: "抽取一张牌" })).toBeInViewport();
     await expect(page.locator(".deck-card").first()).toBeInViewport();
     await expect(page.getByText("(0/1)", { exact: true })).toBeInViewport();
+  });
+
+  test("draws a card by clicking the desktop deck", async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await startReading(page, "我现在最需要看清什么？", /单牌启示/i);
+
+    const deckCard = page.getByRole("button", { name: "从牌堆抽牌" }).last();
+
+    await expect(deckCard).toBeEnabled({ timeout: 5000 });
+    await deckCard.click();
+    await expect(page.getByText("01 / 01", { exact: true })).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("keeps encyclopedia browsing in a desktop workspace and resets detail scroll on card change", async ({
