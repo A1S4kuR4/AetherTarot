@@ -115,7 +115,7 @@ export default function HomeView() {
   };
 
   return (
-    <main className="relative bg-paper viewport-workspace">
+    <div className="relative bg-paper viewport-workspace">
       {/* Pagination Dots */}
       <PaginationDots 
         total={4} 
@@ -169,6 +169,6 @@ export default function HomeView() {
           <FinalGateSection />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -92,6 +92,7 @@ export default function InterpretationView() {
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareDialogKey, setShareDialogKey] = useState(0);
+  const shareTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const activeReadingId = reading?.reading_id ?? null;
   const isSoberGateCurrent = soberGate.readingId === activeReadingId;
@@ -239,7 +240,8 @@ export default function InterpretationView() {
     router.push("/");
   };
 
-  const openShareDialog = () => {
+  const openShareDialog = (trigger: HTMLButtonElement) => {
+    shareTriggerRef.current = trigger;
     setShareDialogKey((k) => k + 1);
     setShowShareDialog(true);
   };
@@ -693,6 +695,7 @@ export default function InterpretationView() {
                 reading={reading}
                 drawnCards={drawnCards}
                 open={showShareDialog}
+                returnFocusRef={shareTriggerRef}
                 onOpenChange={setShowShareDialog}
               />
             ) : null}

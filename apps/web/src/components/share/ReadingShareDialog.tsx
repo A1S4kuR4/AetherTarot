@@ -2,6 +2,7 @@
 
 import {
   type KeyboardEvent as ReactKeyboardEvent,
+  type RefObject,
   useCallback,
   useEffect,
   useId,
@@ -42,6 +43,7 @@ interface ReadingShareDialogProps {
   reading: StructuredReading;
   drawnCards: DrawnCard[];
   open: boolean;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -50,6 +52,8 @@ type GenerationState =
   | { status: "generating" }
   | { status: "ready"; blob: Blob; previewUrl: string; file: File }
   | { status: "error"; message: string };
+
+const DIALOG_EXIT_DURATION_MS = 300;
 
 // Live preview scale: the card stays at full size for image generation;
 // only its wrapper is scaled down for display.
@@ -76,6 +80,7 @@ export function ReadingShareDialog({
   reading,
   drawnCards,
   open,
+  returnFocusRef,
   onOpenChange,
 }: ReadingShareDialogProps) {
   const id = useId();
@@ -89,7 +94,6 @@ export function ReadingShareDialog({
   const abortRef = useRef<AbortController | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const summaryDisabledReason = getSummaryDisabledReason(reading);
 
@@ -105,7 +109,6 @@ export function ReadingShareDialog({
   useEffect(() => {
     if (!open) return;
 
-    returnFocusRef.current = document.activeElement as HTMLElement | null;
     trackShareEvent("share_dialog_open", { cardCount: drawnCards.length });
 
     // Start loading early; generation awaits the same stylesheet promise.
@@ -113,14 +116,6 @@ export function ReadingShareDialog({
       // System serif fallback remains available if the stylesheet cannot load.
     });
 
-    return () => {
-      const returnTarget = returnFocusRef.current;
-      window.setTimeout(() => {
-        if (returnTarget?.isConnected) {
-          returnTarget.focus({ preventScroll: true });
-        }
-      }, 0);
-    };
   }, [open, drawnCards.length]);
 
   useLayoutEffect(() => {
@@ -233,11 +228,17 @@ export function ReadingShareDialog({
   }, [generation, mode]);
 
   const handleClose = useCallback(() => {
+    const returnTarget = returnFocusRef.current;
     cleanupGeneration();
     setGeneration({ status: "idle" });
     setCompletedAction(null);
     onOpenChange(false);
-  }, [cleanupGeneration, onOpenChange]);
+    window.setTimeout(() => {
+      if (returnTarget?.isConnected) {
+        returnTarget.focus({ preventScroll: true });
+      }
+    }, DIALOG_EXIT_DURATION_MS);
+  }, [cleanupGeneration, onOpenChange, returnFocusRef]);
 
   const handleDialogKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {

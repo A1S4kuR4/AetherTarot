@@ -95,7 +95,17 @@ test.describe("mobile UX regressions", () => {
       );
 
     expect(filterHeights.length).toBeGreaterThan(0);
-    expect(filterHeights.every((height) => height >= 36)).toBe(true);
+    expect(filterHeights.every((height) => height >= 44)).toBe(true);
+
+    const quickQuestionHeights = await page
+      .getByTestId("encyclopedia-agent-panel")
+      .getByRole("button")
+      .evaluateAll((buttons) =>
+        buttons.slice(0, 3).map((button) => button.getBoundingClientRect().height),
+      );
+
+    expect(quickQuestionHeights).toHaveLength(3);
+    expect(quickQuestionHeights.every((height) => height >= 44)).toBe(true);
 
     const scrollContainers = await page.evaluate(() =>
       Array.from(
@@ -122,5 +132,28 @@ test.describe("mobile UX regressions", () => {
       ]),
     );
     await expectNoHorizontalOverflow(page);
+  });
+
+  test("uses one main landmark and renders mapped mobile icons", async ({ page }) => {
+    await gotoAppRoute(page, "/");
+
+    await expect(page.locator("main")).toHaveCount(1);
+    await page.getByRole("button", { name: "打开菜单" }).click();
+    await expect(page.locator(".lucide-circle-help:visible")).toHaveCount(0);
+
+    await gotoAppRoute(page, "/login");
+    await expect(page.locator("main")).toHaveCount(1);
+
+    await gotoAppRoute(page, "/admin");
+    await expect(page.locator("main")).toHaveCount(1);
+
+    const adminFilterHeights = await page
+      .getByRole("link", { name: /^(今日|近 7 日|近 30 日)$/ })
+      .evaluateAll((links) => links.map((link) => link.getBoundingClientRect().height));
+    expect(adminFilterHeights).toHaveLength(3);
+    expect(adminFilterHeights.every((height) => height >= 44)).toBe(true);
+
+    await gotoAppRoute(page, "/encyclopedia");
+    await expect(page.locator(".lucide-circle-help:visible")).toHaveCount(0);
   });
 });

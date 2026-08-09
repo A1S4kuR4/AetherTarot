@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useReading } from "@/context/ReadingContext";
@@ -48,6 +48,7 @@ export default function QuickReadingView() {
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareDialogKey, setShareDialogKey] = useState(0);
+  const shareTriggerRef = useRef<HTMLButtonElement | null>(null);
   const shouldReduceMotion = useReducedMotion() ?? false;
   const isQuickState = isQuickReadingState({
     agentProfile,
@@ -126,7 +127,8 @@ export default function QuickReadingView() {
     router.push("/");
   };
 
-  const openShareDialog = () => {
+  const openShareDialog = (trigger: HTMLButtonElement) => {
+    shareTriggerRef.current = trigger;
     setShareDialogKey((k) => k + 1);
     setShowShareDialog(true);
   };
@@ -194,7 +196,7 @@ export default function QuickReadingView() {
   const readingCard = reading?.cards[0];
 
   return (
-    <main
+    <div
       id="reading-main"
       tabIndex={-1}
       className="mx-auto max-w-3xl px-4 pb-20 pt-20 sm:px-6 lg:pt-24"
@@ -295,6 +297,7 @@ export default function QuickReadingView() {
                   reading={reading}
                   drawnCards={drawnCards}
                   open={showShareDialog}
+                  returnFocusRef={shareTriggerRef}
                   onOpenChange={setShowShareDialog}
                 />
               ) : null}
@@ -302,6 +305,6 @@ export default function QuickReadingView() {
           )
         ) : null}
       </div>
-    </main>
+    </div>
   );
 }

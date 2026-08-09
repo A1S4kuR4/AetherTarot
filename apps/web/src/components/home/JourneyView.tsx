@@ -46,7 +46,7 @@ export default function JourneyView() {
   };
 
   return (
-    <main className="mx-auto min-h-[92vh] max-w-6xl px-6 pb-24 pt-24 lg:px-16">
+    <div className="mx-auto min-h-[92vh] max-w-6xl px-6 pb-24 pt-24 lg:px-16">
       <header className="mb-14 max-w-3xl border-b border-paper-border pb-10">
         <p className="manuscript-label">
           JOURNEY · PERSONAL ARCHIVE
@@ -174,7 +174,7 @@ export default function JourneyView() {
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }
 

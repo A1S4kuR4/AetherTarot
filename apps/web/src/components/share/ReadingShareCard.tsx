@@ -558,7 +558,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
         <BrandHeader exportedDate={exportedDate} />
 
         {mode === "minimal" ? (
-          <main className="flex min-h-0 flex-1 flex-col justify-center px-8 pb-4 pt-3">
+          <div className="flex min-h-0 flex-1 flex-col justify-center px-8 pb-4 pt-3">
             <div className="flex flex-col items-center">
               <SpreadHeading spreadName={model.spreadName} />
               <div className="mt-6 w-full">
@@ -568,9 +568,9 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
                 <Themes themes={themes} />
               </div>
             </div>
-          </main>
+          </div>
         ) : (
-          <main className="flex min-h-0 flex-1 flex-col px-8 pt-3">
+          <div className="flex min-h-0 flex-1 flex-col px-8 pt-3">
             <SpreadHeading spreadName={model.spreadName} />
 
             {question && (
@@ -622,7 +622,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
 
               <GuidanceList items={guidance} maxCount={guidanceCount} />
             </div>
-          </main>
+          </div>
         )}
 
         <ShareFooter mode={mode} exportedDate={exportedDate} />

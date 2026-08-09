@@ -129,7 +129,7 @@ export default function EncyclopediaQuestionPanel({
             key={item}
             type="button"
             onClick={() => setQuery(item)}
-            className="border-b border-paper-border pb-1 text-xs text-text-muted transition-colors hover:border-terracotta hover:text-terracotta"
+            className="inline-flex min-h-11 items-center border-b border-paper-border px-1 py-2 text-xs text-text-muted transition-colors hover:border-terracotta hover:text-terracotta"
           >
             {item}
           </button>

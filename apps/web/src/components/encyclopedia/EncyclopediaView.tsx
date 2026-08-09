@@ -351,7 +351,7 @@ export default function EncyclopediaView({
                   type="button"
                   onClick={() => setRuntimeFilter(filter.id)}
                   className={cn(
-                    "min-h-10 border-b-2 px-0 py-2 text-xs leading-none transition-colors",
+                    "min-h-11 border-b-2 px-0 py-2 text-xs leading-none transition-colors",
                     runtimeFilter === filter.id
                       ? "border-terracotta text-terracotta"
                       : "border-transparent text-text-muted hover:border-paper-border hover:text-ink"

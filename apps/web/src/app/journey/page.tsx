@@ -19,7 +19,7 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[92vh] max-w-5xl flex-col justify-center px-6 pb-24 pt-20 lg:px-16">
+    <div className="mx-auto flex min-h-[92vh] max-w-5xl flex-col justify-center px-6 pb-24 pt-20 lg:px-16">
       <div className="mx-auto max-w-2xl border-y border-paper-border py-16 text-center">
         <p className="manuscript-label">
           JOURNEY · FIRST ENTRY
@@ -42,6 +42,6 @@ export default function JourneyPage() {
           </NextLink>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

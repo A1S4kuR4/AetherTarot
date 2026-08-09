@@ -1,7 +1,7 @@
 "use client";
 
 interface SharePromptProps {
-  onShare: () => void;
+  onShare: (trigger: HTMLButtonElement) => void;
 }
 
 // Quiet in-content share entry inside the "关于这次解读" group — sharing is a
@@ -19,7 +19,7 @@ export function SharePrompt({ onShare }: SharePromptProps) {
             // Safari/WebKit does not focus buttons on pointer click by default.
             // Establish the trigger explicitly so the modal can return focus.
             event.currentTarget.focus({ preventScroll: true });
-            onShare();
+            onShare(event.currentTarget);
           }}
           className="btn-secondary shrink-0"
         >

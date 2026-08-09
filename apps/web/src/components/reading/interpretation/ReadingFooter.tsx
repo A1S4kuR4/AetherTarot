@@ -6,7 +6,7 @@ import { getPreferredScrollBehavior } from "./utils";
 
 interface ReadingFooterProps {
   onReset: () => void;
-  onShare?: () => void;
+  onShare?: (trigger: HTMLButtonElement) => void;
 }
 
 export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
@@ -32,7 +32,7 @@ export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
               // Safari/WebKit does not focus buttons on pointer click by default.
               // Establish the trigger explicitly so the modal can return focus.
               event.currentTarget.focus({ preventScroll: true });
-              onShare();
+              onShare(event.currentTarget);
             }}
             className="min-h-11 border-b border-ink/30 px-1 py-2 text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta"
           >

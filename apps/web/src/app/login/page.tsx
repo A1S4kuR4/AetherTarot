@@ -23,7 +23,7 @@ export default async function LoginPage({
   const safeNextPath = resolveSafeNextPath(firstSearchValue(params?.next));
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-xl flex-col justify-center px-6 py-20">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-xl flex-col justify-center px-6 py-20">
       <section className="reading-card">
         <p className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-text-muted">
           Beta Access
@@ -36,6 +36,6 @@ export default async function LoginPage({
         <LoginForm safeNextPath={safeNextPath} />
         
       </section>
-    </main>
+    </div>
   );
 }

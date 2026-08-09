@@ -49,7 +49,7 @@ function SummaryCard({
   subtext?: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[20px] bg-paper-raised p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-paper-border">
+    <div className="group relative overflow-hidden rounded-[20px] border border-paper-border bg-paper-raised p-6 shadow-sm transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-md">
       <div className="absolute -right-4 -top-4 opacity-[0.03] transition-transform duration-500 group-hover:scale-110 group-hover:opacity-[0.06]">
         {Icon && <Icon className="h-28 w-28" />}
       </div>
@@ -105,14 +105,14 @@ function KeyValueList({
 
 function ForbiddenAdmin() {
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-xl flex-col justify-center px-6 py-20">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-xl flex-col justify-center px-6 py-20">
       <section className="reading-card">
         <h1 className="font-serif text-3xl text-ink">无法访问管理后台</h1>
         <p className="mt-4 text-sm leading-relaxed text-text-body">
           当前账号没有 admin 权限。
         </p>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -126,7 +126,7 @@ function AdminSummaryView({
   const formattedSince = new Date(summary.since).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-24 lg:px-16">
+    <div className="mx-auto max-w-6xl px-6 py-24 lg:px-16">
       {/* 极简网格背景装饰 */}
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
@@ -152,19 +152,19 @@ function AdminSummaryView({
           <div className="flex items-center gap-2 rounded-lg bg-paper-muted p-1 border border-paper-border/30 w-fit">
             <Link
               href="?window=1d"
-              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '1d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+              className={`inline-flex min-h-11 items-center rounded-md px-4 py-1.5 text-xs font-medium transition-colors ${currentWindow === '1d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
             >
               今日
             </Link>
             <Link
               href="?window=7d"
-              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '7d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+              className={`inline-flex min-h-11 items-center rounded-md px-4 py-1.5 text-xs font-medium transition-colors ${currentWindow === '7d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
             >
               近 7 日
             </Link>
             <Link
               href="?window=30d"
-              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-colors ${currentWindow === '30d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
+              className={`inline-flex min-h-11 items-center rounded-md px-4 py-1.5 text-xs font-medium transition-colors ${currentWindow === '30d' ? 'bg-paper shadow-sm text-ink border border-paper-border/50' : 'text-text-muted hover:text-ink'}`}
             >
               近 30 日
             </Link>
@@ -273,7 +273,7 @@ function AdminSummaryView({
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
