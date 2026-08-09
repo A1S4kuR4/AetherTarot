@@ -3,12 +3,14 @@
 import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { ChapterNumber } from "./ChapterNumber";
 
 interface CollapsibleSectionProps {
   id?: string;
   title: string;
   defaultOpen?: boolean;
   collapsedHint?: React.ReactNode;
+  chapterLabel?: string;
   children: React.ReactNode;
   className?: string;
 }
@@ -18,6 +20,7 @@ export function CollapsibleSection({
   title,
   defaultOpen = false,
   collapsedHint,
+  chapterLabel,
   children,
   className,
 }: CollapsibleSectionProps) {
@@ -26,6 +29,7 @@ export function CollapsibleSection({
 
   return (
     <section id={id} className={cn("scroll-mt-32 border-t border-paper-border/70 pt-8", className)}>
+      <ChapterNumber value={chapterLabel} />
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}

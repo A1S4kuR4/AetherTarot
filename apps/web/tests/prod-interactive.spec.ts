@@ -45,7 +45,7 @@ async function gotoAppRoute(page: Page, url: string) {
 }
 
 async function holdToStart(page: Page) {
-  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
+  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /按住确认，进入抽牌/i });
   await expect(startButton).toBeVisible();
   await expect(startButton).toBeEnabled();
 

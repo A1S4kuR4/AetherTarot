@@ -1,6 +1,13 @@
 "use client";
 
-import { type SyntheticEvent, useCallback, useEffect, useState } from "react";
+import {
+  type RefObject,
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { m, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import type { DrawnCard } from "@aethertarot/shared-types";
@@ -9,11 +16,13 @@ import { getRevealCardImageUrl } from "@/lib/card-assets";
 import type { QuickAnalysis } from "@/lib/quickAnalysis";
 
 type Phase = "entering" | "card-back" | "flipping" | "revealed";
+const OVERLAY_EXIT_DURATION_MS = 350;
 
 type QuickDrawOverlayProps = {
   isOpen: boolean;
   drawnCard: DrawnCard | null;
   quickAnalysis: QuickAnalysis | null;
+  triggerRef: RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   onDeepReading: () => void;
 };
@@ -22,6 +31,7 @@ export default function QuickDrawOverlay({
   isOpen,
   drawnCard,
   quickAnalysis,
+  triggerRef,
   onClose,
   onDeepReading,
 }: QuickDrawOverlayProps) {
@@ -31,6 +41,7 @@ export default function QuickDrawOverlay({
         <QuickDrawOverlayContent
           drawnCard={drawnCard}
           quickAnalysis={quickAnalysis}
+          triggerRef={triggerRef}
           onClose={onClose}
           onDeepReading={onDeepReading}
         />
@@ -42,33 +53,86 @@ export default function QuickDrawOverlay({
 function QuickDrawOverlayContent({
   drawnCard,
   quickAnalysis,
+  triggerRef,
   onClose,
   onDeepReading,
 }: Omit<QuickDrawOverlayProps, "isOpen">) {
   const [phase, setPhase] = useState<Phase>("entering");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const revealTimerRef = useRef(0);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPhase("card-back"), 600);
     return () => clearTimeout(timer);
   }, []);
 
-  // ESC to close
+  const handleClose = useCallback(() => {
+    const returnTarget = triggerRef.current;
+    onCloseRef.current();
+    window.setTimeout(() => {
+      if (returnTarget?.isConnected) {
+        returnTarget.focus({ preventScroll: true });
+      }
+    }, OVERLAY_EXIT_DURATION_MS + 50);
+  }, [triggerRef]);
+
+  // Keep the modal claim true for keyboard and assistive-technology users.
   useEffect(() => {
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        handleClose();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusable.length === 0) return;
+
+        const activeIndex = focusable.indexOf(
+          document.activeElement as HTMLElement,
+        );
+        if (e.shiftKey && activeIndex <= 0) {
+          e.preventDefault();
+          focusable[focusable.length - 1].focus();
+        } else if (
+          !e.shiftKey
+          && (activeIndex === -1 || activeIndex === focusable.length - 1)
+        ) {
+          e.preventDefault();
+          focusable[0].focus();
+        }
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleClose]);
 
   // Lock body scroll when overlay is open
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      if (revealTimerRef.current) {
+        window.clearTimeout(revealTimerRef.current);
+      }
     };
   }, []);
 
@@ -77,8 +141,16 @@ function QuickDrawOverlayContent({
 
     setPhase("flipping");
     // After flip animation completes, transition to revealed
-    setTimeout(() => setPhase("revealed"), 850);
+    revealTimerRef.current = window.setTimeout(() => {
+      revealTimerRef.current = 0;
+      setPhase("revealed");
+    }, 850);
   }, [phase, drawnCard]);
+
+  useEffect(() => {
+    if (phase !== "revealed") return;
+    window.requestAnimationFrame(() => titleRef.current?.focus());
+  }, [phase]);
 
   const card = drawnCard?.card;
   const isReversed = drawnCard?.isReversed ?? false;
@@ -98,15 +170,22 @@ function QuickDrawOverlayContent({
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/60 p-0 [scrollbar-width:none] backdrop-blur-[3px] [&::-webkit-scrollbar]:hidden md:p-9"
     >
-      <div className="relative min-h-[100dvh] w-full bg-paper-raised shadow-[0_24px_58px_rgba(24,23,19,0.28)] md:h-[min(760px,calc(100dvh-72px))] md:min-h-0 md:max-w-[1120px] md:overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="当下之镜"
+        className="relative min-h-[100dvh] w-full bg-paper-raised shadow-[0_24px_58px_rgba(24,23,19,0.28)] md:h-[min(760px,calc(100dvh-72px))] md:min-h-0 md:max-w-[1120px] md:overflow-hidden"
+      >
         <div className="absolute inset-x-0 top-0 z-10 h-1 bg-terracotta" />
         <m.button
+          ref={closeButtonRef}
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-terracotta focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo md:right-7 md:top-6"
+          className="absolute right-5 top-5 z-20 flex h-11 w-11 items-center justify-center text-text-muted transition-colors hover:text-terracotta focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo md:right-7 md:top-6"
           aria-label="关闭当下之镜"
         >
           <LegacyIcon name="close" className="text-2xl" />
@@ -114,10 +193,10 @@ function QuickDrawOverlayContent({
 
         <div className={`min-h-[100dvh] md:h-full md:min-h-0 ${isRevealed ? "md:grid md:grid-cols-[minmax(300px,0.86fr)_minmax(0,1.14fr)]" : "flex items-center justify-center"}`}>
           <section
-            className={`relative flex min-h-[54dvh] flex-col items-center justify-center bg-paper-muted px-7 pb-9 pt-20 md:min-h-0 md:px-11 md:pb-12 md:pt-20 ${isRevealed ? "md:h-full" : "h-full w-full"}`}
+            className={`relative flex min-h-[54dvh] flex-col items-center justify-center bg-paper-muted px-7 pb-9 pt-20 md:min-h-0 md:px-11 md:pb-12 md:pt-20 ${isRevealed ? "md:h-full" : "min-h-[100dvh] w-full md:h-full md:min-h-0"}`}
             aria-label="抽到的塔罗牌"
           >
-            <span className="absolute left-6 top-7 font-mono text-[11px] font-semibold tracking-[0.16em] text-terracotta md:left-8 md:top-8">
+            <span className="absolute left-6 top-7 font-mono text-[11px] font-semibold tracking-[0.16em] text-terracotta-ink md:left-8 md:top-8">
               PRESENT STATE
             </span>
             <m.div
@@ -144,6 +223,7 @@ function QuickDrawOverlayContent({
                       alt="塔罗牌背面"
                       width={500}
                       height={850}
+                      loading="eager"
                       unoptimized
                       className="h-full w-full rounded-[12px] object-cover"
                     />
@@ -155,6 +235,7 @@ function QuickDrawOverlayContent({
                         alt={card.name}
                         width={500}
                         height={850}
+                        loading="eager"
                         unoptimized
                         onError={(event: SyntheticEvent<HTMLImageElement>) => {
                           event.currentTarget.src = card.imageUrl;
@@ -174,7 +255,7 @@ function QuickDrawOverlayContent({
                 <button
                   type="button"
                   onClick={handleCardClick}
-                  className="relative mt-3 font-mono text-[10px] font-medium tracking-[0.1em] text-terracotta focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo before:absolute before:inset-[-0.75rem]"
+                  className="relative mt-3 font-mono text-[10px] font-medium tracking-[0.1em] text-terracotta-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo before:absolute before:inset-[-0.75rem]"
                 >
                   点击卡牌，翻开牌面
                 </button>
@@ -194,12 +275,17 @@ function QuickDrawOverlayContent({
                 aria-labelledby="quick-draw-card-title"
               >
                 <div className="mx-auto max-w-[34rem]">
-                  <p className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-terracotta">THE DRAWN IMAGE</p>
-                  <h2 id="quick-draw-card-title" className="mb-1 font-serif text-[clamp(2.1rem,4vw,3.1rem)] font-semibold leading-tight tracking-[-0.03em] text-ink">
+                  <p className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-terracotta-ink">THE DRAWN IMAGE</p>
+                  <h2
+                    ref={titleRef}
+                    id="quick-draw-card-title"
+                    tabIndex={-1}
+                    className="mb-1 font-serif text-[clamp(2.1rem,4vw,3.1rem)] font-semibold leading-tight tracking-[-0.03em] text-ink outline-none"
+                  >
                     {card.name}
                   </h2>
                   <p className="mb-5 text-sm tracking-[0.06em] text-text-muted">{card.englishName}</p>
-                  <span className={`inline-block font-serif text-sm text-terracotta ${isReversed ? "border-t-2 border-terracotta pt-2" : "border-b-2 border-terracotta pb-2"}`}>
+                  <span className={`inline-block font-serif text-sm text-terracotta-ink ${isReversed ? "border-t-2 border-terracotta pt-2" : "border-b-2 border-terracotta pb-2"}`}>
                     {isReversed ? "逆位 · REVERSED" : "正位 · UPRIGHT"}
                   </span>
 
@@ -216,7 +302,7 @@ function QuickDrawOverlayContent({
                   {quickAnalysis && (
                     <div className="font-serif text-[1.0625rem] leading-[1.8] text-text-body">
                       <p className="mb-4 font-semibold text-ink">{quickAnalysis.core}</p>
-                      <aside className="mt-6 border-l border-terracotta pl-4 text-terracotta">
+                      <aside className="mt-6 border-l border-terracotta pl-4 text-terracotta-ink">
                         <span className="mb-1 block font-mono text-[10px] font-semibold tracking-[0.11em]">ONE SMALL STEP</span>
                         <p className="italic">{quickAnalysis.action}</p>
                       </aside>
@@ -230,14 +316,14 @@ function QuickDrawOverlayContent({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3, duration: 0.3 }}
-                      className="inline-flex min-h-12 items-center gap-3 bg-terracotta px-5 py-3 font-serif text-base text-paper transition-colors hover:bg-terracotta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+                      className="inline-flex min-h-12 items-center gap-3 bg-terracotta-ink px-5 py-3 font-serif text-base text-paper transition-colors hover:bg-terracotta-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
                     >
                       <span>开启深度解读</span>
                       <LegacyIcon name="arrow_forward" className="text-base" />
                     </m.button>
                     <button
                       type="button"
-                      onClick={onClose}
+                      onClick={handleClose}
                       className="text-sm text-text-muted underline decoration-paper-border underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
                     >
                       先停在这里

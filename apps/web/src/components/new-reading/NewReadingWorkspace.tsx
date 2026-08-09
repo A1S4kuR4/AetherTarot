@@ -8,10 +8,17 @@ import type { AgentProfile, DrawSource, DrawnCard, QuestionType, ReadingHistoryE
 import { drawCardsForSpread } from "@/lib/tarotDraw";
 import { buildLocalQuickAnalysis, type QuickAnalysis } from "@/lib/quickAnalysis";
 import QuickDrawOverlay from "@/components/home/QuickDrawOverlay";
+import { captureBurnSnapshot } from "@/components/transition/captureBurnSnapshot";
+import {
+  canUsePageBurnTransition,
+  getBurnIgnition,
+  type BurnIgnition,
+} from "@/components/transition/page-burn-transition";
+import { usePageBurnTransition } from "@/components/transition/usePageBurnTransition";
 import { useReading } from "@/context/ReadingContext";
-import { useQuickDraw } from "@/hooks/useQuickDraw";
 import { ConfigurationPane } from "./ConfigurationPane";
 import { InquiryPane } from "./InquiryPane";
+import { RitualStartButton } from "./RitualStartButton";
 import { trackNewReadingEvent } from "./new-reading-analytics";
 import {
   getPromptBatch,
@@ -78,7 +85,7 @@ function findRecentRepeatedTheme(history: ReadingHistoryEntry[], question: strin
 export function NewReadingWorkspace() {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
-  const { performQuickDraw, isNavigating: isQuickDrawing } = useQuickDraw();
+  const { beginCapture, cancel: cancelPageBurn, ignite } = usePageBurnTransition();
   const {
     agentProfile, clearContinuityMemory, clearContinuitySource, completeRitual, continuitySource, drawSource,
     drawnCards, history, isHydrated, question, reading, selectedSpread, setAgentProfile, setDrawSource, setQuestion,
@@ -87,7 +94,6 @@ export function NewReadingWorkspace() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [promptBatchIndex, setPromptBatchIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isCondensing, setIsCondensing] = useState(false);
   const [pendingStart, setPendingStart] = useState<{
     mode: "ritual" | "quick";
     question: string;
@@ -103,28 +109,31 @@ export function NewReadingWorkspace() {
   const [quickDrawnCard, setQuickDrawnCard] = useState<DrawnCard | null>(null);
   const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(null);
   const isQuestionDraftRestored = useRef(false);
+  const isQuestionDraftCommitted = useRef(false);
+  const pendingIgnitionRef = useRef<BurnIgnition | null>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
+  const quickButtonRef = useRef<HTMLButtonElement>(null);
 
   const trimmedQuestion = question.trim();
-  const isNavigationPending = navigationMode !== null || isQuickDrawing;
+  const isNavigationPending = navigationMode !== null;
   const isMajorDecisionQuestion = MAJOR_DECISION_TERM_REGEX.test(trimmedQuestion);
   const currentPrompts = getPromptBatch(
     activeCategory as "all" | "relationship" | "career" | "self_growth" | "decision",
     promptBatchIndex,
   );
   const repeatedThemeNotice = findRecentRepeatedTheme(history, trimmedQuestion);
-  const startButtonDisabled = !trimmedQuestion || !selectedSpread || isNavigationPending || isCondensing;
-  const quickButtonDisabled = isNavigationPending || isCondensing;
+  const startButtonDisabled = !trimmedQuestion || !selectedSpread || isNavigationPending;
+  const quickButtonDisabled = isNavigationPending;
   const startButtonLabel = navigationMode === "ritual"
     ? drawSource === "offline_manual" ? "正在进入录入..." : "正在进入仪式..."
-    : isCondensing ? "正在凝聚牌意……"
-    : drawSource === "offline_manual" ? "确认问询，进入录入 →" : "确认问询，进入抽牌 →";
-  const quickButtonLabel = navigationMode === "quick" || isQuickDrawing ? "正在生成轻量解读..." : "当下之镜 →";
+    : drawSource === "offline_manual" ? "按住确认，进入录入 →" : "按住确认，进入抽牌 →";
+  const quickButtonLabel = navigationMode === "quick" ? "正在生成轻量解读..." : "当下之镜 →";
 
   useEffect(() => {
     if (!pendingStart) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      pendingIgnitionRef.current = null;
       setPendingStart(null);
       setShowDecisionGuidance(true);
       window.requestAnimationFrame(() => {
@@ -143,6 +152,11 @@ export function NewReadingWorkspace() {
 
       if (!question && !reading && drawnCards.length === 0) {
         try {
+          if (continuitySource) {
+            saveNewReadingQuestionDraft(window.localStorage, "");
+            return;
+          }
+
           const draft = readNewReadingQuestionDraft(window.localStorage);
           if (draft) {
             setQuestion(draft);
@@ -154,6 +168,8 @@ export function NewReadingWorkspace() {
       return;
     }
 
+    if (isQuestionDraftCommitted.current) return;
+
     const timeoutId = window.setTimeout(() => {
       try {
         setDraftStatus(saveNewReadingQuestionDraft(window.localStorage, question) ? "saved" : null);
@@ -163,7 +179,7 @@ export function NewReadingWorkspace() {
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [drawnCards.length, isHydrated, question, reading, setQuestion]);
+  }, [continuitySource, drawnCards.length, isHydrated, question, reading, setQuestion]);
 
   useEffect(() => {
     const columns = columnsRef.current;
@@ -185,7 +201,77 @@ export function NewReadingWorkspace() {
     };
   }, []);
 
-  const requestStart = (mode: "ritual" | "quick") => {
+  const clearCommittedQuestionDraft = () => {
+    isQuestionDraftCommitted.current = true;
+    try {
+      saveNewReadingQuestionDraft(window.localStorage, "");
+    } catch {}
+    setDraftStatus(null);
+  };
+
+  const startRitualDirectly = () => {
+    if (!startRitual()) return false;
+    clearCommittedQuestionDraft();
+    setNavigationMode("ritual");
+    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
+    return true;
+  };
+
+  const startRitualWithBurn = async (ignition: BurnIgnition | null) => {
+    if (
+      drawSource !== "digital_random"
+      || !ignition
+      || !canUsePageBurnTransition()
+    ) {
+      return startRitualDirectly();
+    }
+
+    if (!beginCapture()) return false;
+    setNavigationMode("ritual");
+    let ritualStarted = false;
+
+    try {
+      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+      const snapshot = await captureBurnSnapshot();
+      if (!startRitual()) {
+        cancelPageBurn();
+        setNavigationMode(null);
+        return false;
+      }
+      ritualStarted = true;
+      clearCommittedQuestionDraft();
+      ignite({ ignition, snapshot, targetPath: "/ritual/draw" });
+      return true;
+    } catch {
+      cancelPageBurn();
+      if (!ritualStarted && !startRitual()) {
+        setNavigationMode(null);
+        return false;
+      }
+      if (!ritualStarted) clearCommittedQuestionDraft();
+      router.push("/ritual/draw");
+      return true;
+    }
+  };
+
+  const openQuickDrawOverlay = () => {
+    if (isQuickDrawOverlayOpen || isNavigationPending) return;
+
+    const allSpreadsList = getAllSpreads();
+    const singleSpread = allSpreadsList.find((s) => s.id === "single") ?? allSpreadsList[0];
+
+    if (!singleSpread) return;
+
+    const cards = drawCardsForSpread(singleSpread.positions);
+    if (cards.length !== singleSpread.positions.length || !cards[0]) return;
+
+    const card = cards[0];
+    setQuickDrawnCard(card);
+    setQuickAnalysis(buildLocalQuickAnalysis(card));
+    setIsQuickDrawOverlayOpen(true);
+  };
+
+  const requestStart = (mode: "ritual" | "quick", ignition: BurnIgnition | null = null) => {
     if (isNavigationPending) return false;
     const eventPayload = {
       drawSource,
@@ -201,50 +287,33 @@ export function NewReadingWorkspace() {
       confirmedQuestion: confirmedDecisionQuestion,
     })) {
       trackNewReadingEvent("new_reading_boundary_shown", eventPayload);
+      pendingIgnitionRef.current = ignition;
       setPendingStart({ mode, question: normalizedQuestion });
       return true;
     }
     if (mode === "quick") {
-      setNavigationMode("quick");
-      if (!performQuickDraw()) setNavigationMode(null);
+      openQuickDrawOverlay();
       return true;
     }
-    if (!startRitual()) return false;
-    setNavigationMode("ritual");
-    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
+    void startRitualWithBurn(ignition);
     return true;
   };
 
-  const startWithCondensation = () => {
+  const startWithBurn = (button: HTMLButtonElement) => {
     if (startButtonDisabled) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      requestStart("ritual");
-      return;
+    const ignition = getBurnIgnition(
+      button.getBoundingClientRect(),
+      window.innerWidth,
+      window.innerHeight,
+    );
+    requestStart("ritual", ignition);
+  };
+
+  const handleQuickDrawModalOpen = (trigger?: HTMLButtonElement) => {
+    if (trigger) {
+      quickButtonRef.current = trigger;
     }
-    setIsCondensing(true);
-  };
-
-  const finishCondensation = () => {
-    if (!isCondensing) return;
-    setIsCondensing(false);
-    requestStart("ritual");
-  };
-
-  const handleQuickDrawModalOpen = () => {
-    if (isQuickDrawOverlayOpen || isNavigationPending) return;
-
-    const allSpreadsList = getAllSpreads();
-    const singleSpread = allSpreadsList.find((s) => s.id === "single") ?? allSpreadsList[0];
-
-    if (!singleSpread) return;
-
-    const cards = drawCardsForSpread(singleSpread.positions);
-    if (cards.length !== singleSpread.positions.length || !cards[0]) return;
-
-    const card = cards[0];
-    setQuickDrawnCard(card);
-    setQuickAnalysis(buildLocalQuickAnalysis(card));
-    setIsQuickDrawOverlayOpen(true);
+    requestStart("quick");
   };
 
   const handleQuickDrawModalClose = () => {
@@ -268,6 +337,7 @@ export function NewReadingWorkspace() {
     setDrawSource("digital_random");
     setSelectedSpread(singleSpread);
     completeRitual([quickDrawnCard]);
+    clearCommittedQuestionDraft();
     setNavigationMode("quick");
     router.push("/reading");
   };
@@ -284,15 +354,15 @@ export function NewReadingWorkspace() {
       startMode: pending.mode,
     });
     if (pending.mode === "quick") {
-      handleQuickDrawModalOpen();
+      openQuickDrawOverlay();
       return;
     }
-    if (!startRitual()) return;
-    setNavigationMode("ritual");
-    router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
+    void startRitualWithBurn(pendingIgnitionRef.current);
+    pendingIgnitionRef.current = null;
   };
 
   const returnToQuestion = () => {
+    pendingIgnitionRef.current = null;
     setPendingStart(null);
     setShowDecisionGuidance(true);
     window.requestAnimationFrame(() => {
@@ -371,7 +441,6 @@ export function NewReadingWorkspace() {
           agentProfiles={AGENT_PROFILES}
           drawSource={drawSource}
           drawSources={DRAW_SOURCES}
-          isCondensing={isCondensing}
           isNavigationPending={isNavigationPending}
           onAgentProfileSelect={(profile: AgentProfile) => {
             setAgentProfile(profile);
@@ -381,8 +450,7 @@ export function NewReadingWorkspace() {
             setDrawSource(source);
             trackNewReadingEvent("new_reading_draw_source_selected", { drawSource: source });
           }}
-          onStart={startWithCondensation}
-          onStartAnimationEnd={finishCondensation}
+          onStart={startWithBurn}
           onQuickStart={handleQuickDrawModalOpen}
           quickButtonDisabled={quickButtonDisabled}
           quickButtonLabel={quickButtonLabel}
@@ -406,19 +474,20 @@ export function NewReadingWorkspace() {
           {selectedSpread ? `${selectedSpread.name} · ` : null}
           {AGENT_PROFILES.find((profile) => profile.id === agentProfile)?.name}
         </p>
-        <button
-          type="button"
+        <RitualStartButton
           disabled={startButtonDisabled}
-          onClick={startWithCondensation}
-          onAnimationEnd={finishCondensation}
-          className={`new-reading-start-button${isCondensing ? " new-reading-start-button-condensing" : ""}`}
-        >
-          {startButtonLabel}
-        </button>
+          label={startButtonLabel}
+          onComplete={startWithBurn}
+        />
         <button
           type="button"
           disabled={quickButtonDisabled}
-          onClick={handleQuickDrawModalOpen}
+          onClick={(event) => {
+            // Safari/WebKit does not focus buttons on pointer click by default.
+            // The overlay records the active trigger for focus restoration.
+            event.currentTarget.focus({ preventScroll: true });
+            handleQuickDrawModalOpen(event.currentTarget);
+          }}
           className="new-reading-quick-button"
         >
           {quickButtonLabel}
@@ -453,6 +522,7 @@ export function NewReadingWorkspace() {
         isOpen={isQuickDrawOverlayOpen}
         drawnCard={quickDrawnCard}
         quickAnalysis={quickAnalysis}
+        triggerRef={quickButtonRef}
         onClose={handleQuickDrawModalClose}
         onDeepReading={handleQuickDrawModalDeepReading}
       />

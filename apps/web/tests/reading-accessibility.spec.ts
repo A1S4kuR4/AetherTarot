@@ -40,9 +40,10 @@ async function startReading(
   await page.getByPlaceholder("今天，你想向内心询问什么？").fill(question);
   await page.getByRole("button", { name: spreadName }).click();
 
-  const startButton = page.getByTestId("new-reading-actions").getByRole("button", { name: /确认问询，进入抽牌/i });
+  const startButton = page.locator("button.new-reading-start-button:visible").first();
   await expect(startButton).toBeEnabled();
-  await startButton.click();
+  await startButton.focus();
+  await page.keyboard.press("Enter");
 
   const decisionHeading = page.getByRole("heading", {
     name: /重大现实决定前的校准|重大决策风险提示/,
@@ -80,19 +81,20 @@ async function enterReading(page: Page) {
 }
 
 async function completeFollowup(page: Page) {
-  const section = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "回答后进入整合深读" }),
-  });
+  const section = page.locator("#reading-followup");
   const inputs = section.getByRole("textbox");
   const count = await inputs.count();
 
   for (let index = 0; index < count; index += 1) {
-    await inputs
-      .nth(index)
-      .fill(`我会先核对现实条件，再决定下一步如何行动。（${index + 1}）`);
+    const answer = `我会先核对现实条件，再决定下一步如何行动。（${index + 1}）`;
+    const input = inputs.nth(index);
+    await input.fill(answer);
+    await expect(input).toHaveValue(answer);
   }
 
-  await section.getByRole("button", { name: /生成整合深读/i }).click();
+  const submitButton = section.getByRole("button", { name: /生成整合深读/i });
+  await expect(submitButton).toBeEnabled({ timeout: 5000 });
+  await submitButton.click();
   await expect(page.getByTestId("reading-hero-meta")).toContainText("解读结果", {
     timeout: 60000,
   });
@@ -133,7 +135,10 @@ async function auditWcag(page: Page, testInfo: TestInfo, label: string) {
     contentType: "application/json",
   });
   await testInfo.attach(`${label}.png`, {
-    body: await page.screenshot({ fullPage: true }),
+    // At 200% zoom, long reading pages can exceed Firefox/WebKit's 32,767 px
+    // screenshot limit. The Axe result covers the full DOM; this attachment is
+    // intentionally a viewport snapshot for visual debugging.
+    body: await page.screenshot(),
     contentType: "image/png",
   });
 
@@ -345,5 +350,39 @@ test.describe("/reading WCAG 2.2 AA audit", () => {
       timeout: 60000,
     });
     await auditWcag(page, testInfo, "sober-check");
+  });
+});
+
+test.describe("/new 当下之镜 WCAG 2.2 AA audit", () => {
+  test.describe.configure({ timeout: 60000 });
+
+  test("audits modal semantics, focus trap, and focus return", async ({ page }, testInfo) => {
+    await gotoAppRoute(page, "/new");
+    const quickButton = page
+      .getByTestId("new-reading-actions")
+      .getByRole("button", { name: "当下之镜 →" });
+
+    await quickButton.click();
+
+    const dialog = page.getByRole("dialog", { name: "当下之镜" });
+    const closeButton = dialog.getByRole("button", { name: "关闭当下之镜" });
+    await expect(dialog).toBeVisible();
+    await expect(closeButton).toBeFocused();
+    await auditWcag(page, testInfo, "quick-draw-overlay");
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(
+      dialog.getByRole("button", { name: "点击卡牌，翻开牌面", exact: true }),
+    ).toBeFocused();
+
+    await page.keyboard.press("Enter");
+    const revealedTitle = dialog.locator("#quick-draw-card-title");
+    await expect(revealedTitle).toBeVisible();
+    await expect(revealedTitle).toBeFocused();
+    await auditWcag(page, testInfo, "quick-draw-revealed");
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(quickButton).toBeFocused();
   });
 });

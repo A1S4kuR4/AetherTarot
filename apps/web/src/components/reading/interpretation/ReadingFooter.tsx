@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import { getPreferredScrollBehavior } from "./utils";
 
@@ -22,17 +23,28 @@ export function ReadingFooter({ onReset, onShare }: ReadingFooterProps) {
           className="inline-flex min-h-11 items-center gap-2 border border-terracotta-ink bg-terracotta-ink px-5 py-2 font-serif text-sm text-paper transition-colors hover:bg-terracotta-active"
         >
           <LegacyIcon name="refresh" className="text-[16px]" />
-          再来一次解读
+          开启新的解读
         </button>
         {onShare ? (
           <button
             type="button"
-            onClick={onShare}
+            onClick={(event) => {
+              // Safari/WebKit does not focus buttons on pointer click by default.
+              // Establish the trigger explicitly so the modal can return focus.
+              event.currentTarget.focus({ preventScroll: true });
+              onShare();
+            }}
             className="min-h-11 border-b border-ink/30 px-1 py-2 text-sm text-ink transition-colors hover:border-terracotta hover:text-terracotta"
           >
             分享
           </button>
         ) : null}
+        <Link
+          href="/journey"
+          className="inline-flex min-h-11 items-center border-b border-paper-border px-1 py-2 text-sm text-text-muted transition-colors hover:border-terracotta hover:text-terracotta"
+        >
+          返回旅程
+        </Link>
         <button
           type="button"
           onClick={scrollToTop}

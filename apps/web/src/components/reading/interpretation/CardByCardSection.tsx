@@ -4,19 +4,25 @@ import Link from "next/link";
 import CardImage from "@/components/ui/CardImage";
 import type { DrawnCard, ReadingCardResult } from "@aethertarot/shared-types";
 import { cn } from "@/lib/utils";
+import { ChapterNumber } from "./ChapterNumber";
 
 interface CardByCardSectionProps {
   readingCards: ReadingCardResult[];
   drawnCards: DrawnCard[];
+  chapterLabel?: string;
 }
 
-export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectionProps) {
+export function CardByCardSection({
+  readingCards,
+  drawnCards,
+  chapterLabel,
+}: CardByCardSectionProps) {
   return (
     <section id="reading-cards" className="scroll-mt-32">
-      <p className="manuscript-label">THE CARDS</p>
-      <h2 className="mt-3 font-serif text-2xl text-ink md:text-[26px]">逐牌展开</h2>
+      <ChapterNumber value={chapterLabel} />
+      <h2 className="reading-section-title">逐牌展开</h2>
       <div>
-        {readingCards.map((card) => {
+        {readingCards.map((card, index) => {
           const drawnCard = drawnCards.find(
             (item) => item.positionId === card.position_id,
           );
@@ -27,31 +33,40 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                   : drawnCard.card.uprightKeywords
               ).slice(0, 3)
             : [];
-
           const isReversed = card.orientation === "reversed";
           const orientationLabel = isReversed ? "逆位" : "正位";
+          const isMajor = drawnCard?.card.arcana?.toLowerCase().startsWith("major");
 
           return (
             <article
               key={`${card.position_id}-${card.card_id}`}
-              className="grid grid-cols-[92px_1fr] gap-x-4 gap-y-4 border-t border-paper-border py-9 first:mt-6 sm:grid-cols-[140px_1fr] sm:gap-x-6 md:grid-cols-[160px_1fr] md:gap-x-8"
+              className="reading-card-entry"
             >
               {drawnCard ? (
                 <div
                   data-testid="reading-card-image-frame"
-                  className="row-span-3 aspect-[1/1.7] w-full self-start overflow-hidden border border-paper-border"
+                  className={cn(
+                    "reading-card-entry-thumb",
+                    isMajor && "reading-card-entry-thumb-major",
+                  )}
                 >
                   <CardImage
                     src={drawnCard.card.thumbnailUrl ?? drawnCard.card.imageUrl}
                     alt={`${drawnCard.card.name}，${card.position}，${orientationLabel}`}
-                    sizes="(min-width: 768px) 160px, (min-width: 640px) 140px, 92px"
+                    sizes="(min-width: 900px) 152px, (min-width: 640px) 132px, 84px"
                     quality={75}
                     isReversed={drawnCard.isReversed}
+                    className="h-full w-full object-cover"
                   />
+                  {drawnCard.isReversed ? (
+                    <span className="reading-reversed-badge">逆位</span>
+                  ) : null}
                 </div>
               ) : null}
               <div className="min-w-0">
-                <p className="font-mono text-[11px] font-semibold tracking-[0.08em] text-text-muted">
+                <p className="reading-card-entry-meta">
+                  {String(index + 1).padStart(2, "0")}
+                  <span className="mx-1.5 text-paper-border">·</span>
                   {card.position}
                   <span className="mx-1.5 text-paper-border">·</span>
                   <span className={isReversed ? "text-indigo-ink" : undefined}>
@@ -69,39 +84,17 @@ export function CardByCardSection({ readingCards, drawnCards }: CardByCardSectio
                     {card.english_name}
                   </span>
                 </h3>
-              </div>
-              <div className="min-w-0">
-                <h4
-                  className={cn(
-                    "font-sans text-[13px] font-semibold",
-                    isReversed ? "text-indigo-ink" : "text-text-accent",
-                  )}
-                >
-                  这意味着什么
-                </h4>
-                <p className="mt-2 font-serif text-[16px] leading-[1.85] text-text-body md:text-[17px]">
+                <p className="reading-card-entry-interpretation">
                   {card.interpretation}
                 </p>
-              </div>
-              <div className="grid min-w-0 gap-4 sm:grid-cols-2 sm:gap-6">
-                <div>
-                  <h4 className="font-sans text-[13px] font-semibold text-text-muted">
-                    看到什么
-                  </h4>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-text-muted">
-                    {evidenceKeywords.length > 0
-                      ? evidenceKeywords.join(" · ")
-                      : "暂无线索"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-sans text-[13px] font-semibold text-text-muted">
-                    它代表着…
-                  </h4>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-text-muted">
-                    {card.position_meaning}
-                  </p>
-                </div>
+                <p className="reading-card-entry-keywords">
+                  {evidenceKeywords.length > 0
+                    ? evidenceKeywords.join(" · ")
+                    : "暂无线索"}
+                </p>
+                <p className="reading-card-entry-position-note">
+                  <span>牌位</span>{card.position_meaning}
+                </p>
               </div>
             </article>
           );

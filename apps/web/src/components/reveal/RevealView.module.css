@@ -1,0 +1,618 @@
+.stage {
+  display: grid;
+  min-height: calc(100dvh - 4rem);
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--color-night);
+  color: var(--color-text-inverse);
+  overflow-x: hidden;
+}
+
+.altarPane {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto minmax(23rem, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  gap: clamp(0.875rem, 2vh, 1.5rem);
+  padding: clamp(1.25rem, 3vh, 2rem) clamp(1rem, 3vw, 2.5rem) 2rem;
+  background: var(--color-night);
+}
+
+.plaque {
+  z-index: 40;
+  display: flex;
+  max-width: 100%;
+  align-items: stretch;
+  margin: 0;
+  border: 1px solid var(--color-midnight-border);
+  background: var(--color-night);
+}
+
+.plaqueSegment {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.625rem 1.125rem;
+}
+
+.plaqueSegment + .plaqueSegment {
+  border-left: 1px solid var(--color-midnight-border);
+}
+
+.plaqueKicker,
+.plaqueCount,
+.folioKicker,
+.questionBlock h3,
+.pathSteps span,
+.positionIndex,
+.positionMarker,
+.reversedBadge,
+.positionItemHeading span,
+.altarNoteLabel {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.plaqueKicker {
+  color: var(--color-terracotta-bright);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+.statusDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: none;
+  background: var(--color-success);
+}
+
+.plaqueName {
+  overflow: hidden;
+  max-width: 12rem;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plaqueCount {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.altar {
+  position: relative;
+  width: min(100%, 67.5rem);
+  height: clamp(23rem, 62vh, 45rem);
+  min-width: 0;
+}
+
+.rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+}
+
+.ring,
+.axis,
+.centerMark,
+.tick {
+  position: absolute;
+}
+
+.ring {
+  border: 1px solid var(--color-midnight-border-subtle);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ringOuter {
+  width: 40rem;
+  height: 40rem;
+}
+
+.ringInner {
+  width: 30rem;
+  height: 30rem;
+}
+
+.axis {
+  background: rgba(255, 255, 255, 0.035);
+  transform: translate(-50%, -50%);
+}
+
+.axisHorizontal {
+  width: 38.75rem;
+  height: 1px;
+}
+
+.axisVertical {
+  width: 1px;
+  height: 38.75rem;
+}
+
+.centerMark {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  transform: translate(-50%, -50%);
+}
+
+.tick {
+  top: 0;
+  left: -0.5px;
+  width: 1px;
+  height: 0.75rem;
+  background: rgba(255, 255, 255, 0.09);
+  transform-origin: 50% 0;
+}
+
+.positionTrack {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.position {
+  position: absolute;
+  top: calc(50% + var(--slot-y));
+  left: calc(50% + var(--slot-x));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  transform: translate(-50%, -50%);
+}
+
+.cardFrame {
+  position: relative;
+  width: 6.875rem;
+  aspect-ratio: 1 / 1.7;
+  padding: 0.3rem;
+  border: 1px solid var(--color-midnight-border);
+  background: var(--color-midnight-panel);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  transform: rotate(var(--slot-rotation));
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.cardFrame:hover {
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+  transform: rotate(var(--slot-rotation)) translateY(-3px);
+}
+
+.majorCard {
+  border-color: rgba(214, 122, 85, 0.58);
+  filter: drop-shadow(0 10px 24px rgba(201, 100, 66, 0.24));
+}
+
+.cardImageShell {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-midnight-border-subtle);
+  background: var(--color-midnight-elevated);
+}
+
+.cardImage {
+  height: 100%;
+  object-fit: cover;
+}
+
+.positionMarker,
+.reversedBadge {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid var(--color-midnight-border);
+  background: rgba(11, 13, 18, 0.88);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.positionMarker {
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.1rem 0.28rem;
+  color: var(--color-text-inverse-muted);
+}
+
+.reversedBadge {
+  right: 0.5rem;
+  bottom: 0.5rem;
+  padding: 0.12rem 0.32rem;
+  border-color: rgba(113, 112, 255, 0.38);
+  color: var(--color-indigo);
+}
+
+.positionLabel {
+  display: flex;
+  max-width: 9rem;
+  align-items: baseline;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.positionIndex {
+  color: var(--color-indigo);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.positionName {
+  overflow: hidden;
+  color: var(--color-text-inverse-muted);
+  font-family: var(--font-serif);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.altar[data-count="1"] .cardFrame {
+  width: 8.5rem;
+}
+
+.altar[data-count="4"] .cardFrame {
+  width: 6.25rem;
+}
+
+.altar[data-count="7"] .cardFrame {
+  width: 5.125rem;
+}
+
+.altar[data-count="10"] .cardFrame {
+  width: 4.625rem;
+}
+
+.altar[data-count="7"] .positionLabel,
+.altar[data-count="10"] .positionLabel {
+  display: none;
+}
+
+.altarNote {
+  display: grid;
+  width: 100%;
+  max-width: 27rem;
+  justify-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.altarNote::before {
+  width: 2.75rem;
+  height: 1px;
+  margin-bottom: 0.35rem;
+  background: var(--color-terracotta);
+  content: "";
+}
+
+.altarNoteLabel {
+  color: var(--color-terracotta-bright);
+  font-size: 0.65625rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+}
+
+.altarNote p {
+  margin: 0;
+  color: var(--color-text-inverse-muted);
+  font-family: var(--font-serif);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.folioPane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: clamp(1.25rem, 2.5vh, 1.75rem);
+  border-top: 1px solid var(--color-midnight-border);
+  background: var(--color-midnight-panel);
+  padding: clamp(1.5rem, 3vh, 2.125rem) clamp(1.25rem, 2.7vw, 2.125rem) 2rem;
+}
+
+.folioHeader {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.folioKicker {
+  margin: 0;
+  color: var(--color-terracotta-bright);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+}
+
+.folioHeader h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 2.3vw, 2.125rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.questionBlock {
+  border-left: 1px solid var(--color-terracotta);
+  padding-left: 0.875rem;
+}
+
+.questionBlock h3 {
+  margin: 0 0 0.25rem;
+  color: var(--color-text-inverse-muted);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+
+.questionBlock p {
+  margin: 0;
+  color: var(--color-text-inverse);
+  font-family: var(--font-serif);
+  font-size: 0.9375rem;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+}
+
+.readingPath {
+  border: 1px solid var(--color-midnight-border);
+  padding: 1.125rem;
+}
+
+.readingPath h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.625rem;
+  font-family: var(--font-serif);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.pathDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: none;
+  background: var(--color-indigo);
+}
+
+.readingPath > p {
+  margin: 0;
+  color: var(--color-text-inverse-muted);
+  font-family: var(--font-serif);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.pathSteps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.875rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pathSteps li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  border: 1px solid var(--color-midnight-border);
+  padding: 0.25rem 0.55rem;
+  color: var(--color-text-inverse-muted);
+  font-size: 0.6875rem;
+}
+
+.pathSteps span {
+  color: var(--color-indigo);
+  font-size: 0.5625rem;
+  font-weight: 700;
+}
+
+.positionSection {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.positionList {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.positionList > li {
+  display: grid;
+  gap: 0.15rem;
+  border-left: 1px solid var(--color-midnight-border);
+  padding-left: 0.875rem;
+}
+
+.positionItemHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.positionItemHeading span {
+  color: var(--color-indigo);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.positionItemHeading h4 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.positionCardName,
+.positionDescription {
+  margin: 0;
+  font-family: var(--font-serif);
+}
+
+.positionCardName {
+  color: var(--color-terracotta-bright);
+  font-size: 0.8125rem;
+}
+
+.positionDescription {
+  color: var(--color-text-inverse-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.actions {
+  display: grid;
+  gap: 0.625rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .stage {
+    grid-template-columns: minmax(0, 1.35fr) minmax(21.25rem, 26.25rem);
+  }
+
+  .folioPane {
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    border-top: 0;
+    border-left: 1px solid var(--color-midnight-border);
+  }
+}
+
+@media (max-width: 1023px) {
+  .altarPane {
+    grid-template-rows: auto auto auto;
+  }
+
+  .altar {
+    height: auto;
+  }
+
+  .rings {
+    top: 50%;
+    transform: scale(0.56);
+  }
+
+  .positionTrack {
+    position: relative;
+    inset: auto;
+    display: flex;
+    width: min(100vw, 100%);
+    min-height: 18.5rem;
+    align-items: center;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1.5rem max(1rem, calc((100% - 9rem) / 2));
+    scroll-padding-inline: max(1rem, calc((100% - 9rem) / 2));
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .positionTrack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .position {
+    position: static;
+    width: 9rem;
+    flex: none;
+    scroll-snap-align: center;
+    transform: none;
+  }
+
+  .cardFrame,
+  .altar[data-count="1"] .cardFrame,
+  .altar[data-count="4"] .cardFrame,
+  .altar[data-count="7"] .cardFrame,
+  .altar[data-count="10"] .cardFrame {
+    width: 8rem;
+    transform: none;
+  }
+
+  .cardFrame:hover {
+    transform: translateY(-3px);
+  }
+
+  .altar[data-count="7"] .positionLabel,
+  .altar[data-count="10"] .positionLabel {
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
+  .altarPane {
+    padding-inline: 0;
+  }
+
+  .plaque {
+    max-width: calc(100% - 2rem);
+  }
+
+  .plaqueSegment {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .plaqueKicker {
+    font-size: 0.625rem;
+    letter-spacing: 0.11em;
+  }
+
+  .plaqueName {
+    max-width: 7.25rem;
+    font-size: 0.875rem;
+  }
+
+  .plaqueCount {
+    font-size: 0.6875rem;
+  }
+
+  .positionTrack {
+    min-height: 17rem;
+  }
+
+  .cardFrame,
+  .altar[data-count="1"] .cardFrame,
+  .altar[data-count="4"] .cardFrame,
+  .altar[data-count="7"] .cardFrame,
+  .altar[data-count="10"] .cardFrame {
+    width: 7.5rem;
+  }
+
+  .altarNote {
+    padding-inline: 1.25rem;
+  }
+
+  .folioPane {
+    padding: 1.5rem 1.125rem calc(1.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage *,
+  .stage *::before,
+  .stage *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

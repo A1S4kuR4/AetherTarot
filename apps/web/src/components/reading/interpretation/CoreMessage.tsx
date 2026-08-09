@@ -1,5 +1,7 @@
 "use client";
 
+import { ChapterNumber } from "./ChapterNumber";
+
 interface CoreQuickRead {
   core: string;
   keywords: string[];
@@ -9,6 +11,7 @@ interface CoreQuickRead {
 
 interface CoreMessageProps {
   quickRead: CoreQuickRead;
+  chapterLabel?: string;
 }
 
 function firstSentence(value: string): string {
@@ -17,11 +20,11 @@ function firstSentence(value: string): string {
   return match?.[0] ?? normalized;
 }
 
-export function CoreMessage({ quickRead }: CoreMessageProps) {
+export function CoreMessage({ quickRead, chapterLabel }: CoreMessageProps) {
   return (
     <section id="reading-quick" className="scroll-mt-32" aria-label="当下的关键启示">
-      <p className="manuscript-label">PRELUDE</p>
-      <h2 className="mt-3 font-serif text-xl text-ink md:text-2xl">当下的关键启示</h2>
+      <ChapterNumber value={chapterLabel} />
+      <h2 className="reading-section-title">当下的关键启示</h2>
       <p className="manuscript-drop-cap mt-5 max-w-[38rem] font-serif text-[21px] leading-[1.65] text-ink md:text-[24px] md:leading-[1.6]">
         {quickRead.core}
       </p>

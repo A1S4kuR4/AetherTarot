@@ -21,7 +21,7 @@ export function BoundaryNote({ safetyNote, confidenceNote }: BoundaryNoteProps) 
     >
       <div className="flex items-center gap-2.5">
         <LegacyIcon name="info" className="text-[18px] text-safety-ink" />
-        <h2 className="font-serif text-lg font-semibold text-safety-ink">温柔的提醒</h2>
+        <h3 className="font-serif text-lg font-semibold text-safety-ink">温柔的提醒</h3>
       </div>
       <p className="mt-3 text-[15px] leading-[1.85] text-text-body">
         {content}

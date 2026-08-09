@@ -1,5 +1,6 @@
 import type { AgentProfile, DrawSource } from "@aethertarot/shared-types";
 import { cn } from "@/lib/utils";
+import { RitualStartButton } from "./RitualStartButton";
 import type {
   AgentProfileOption,
   DrawSourceOption,
@@ -135,13 +136,11 @@ interface ConfigurationPaneProps extends SpreadCatalogueProps {
   agentProfiles: AgentProfileOption[];
   drawSource: DrawSource;
   drawSources: DrawSourceOption[];
-  isCondensing: boolean;
   isNavigationPending: boolean;
   onAgentProfileSelect: (profile: AgentProfile) => void;
   onDrawSourceSelect: (source: DrawSource) => void;
-  onStart: () => void;
-  onStartAnimationEnd: () => void;
-  onQuickStart: () => void;
+  onStart: (button: HTMLButtonElement) => void;
+  onQuickStart: (button: HTMLButtonElement) => void;
   quickButtonLabel: string;
   quickButtonDisabled: boolean;
   startButtonDisabled: boolean;
@@ -153,12 +152,10 @@ export function ConfigurationPane({
   agentProfiles,
   drawSource,
   drawSources,
-  isCondensing,
   isNavigationPending,
   onAgentProfileSelect,
   onDrawSourceSelect,
   onStart,
-  onStartAnimationEnd,
   onQuickStart,
   quickButtonDisabled,
   quickButtonLabel,
@@ -199,22 +196,18 @@ export function ConfigurationPane({
       </section>
 
       <div className="new-reading-actions" data-testid="new-reading-actions">
-        <button
-          type="button"
+        <RitualStartButton
           disabled={startButtonDisabled}
-          onClick={onStart}
-          onAnimationEnd={onStartAnimationEnd}
-          className={cn(
-            "new-reading-start-button",
-            isCondensing && "new-reading-start-button-condensing",
-          )}
-        >
-          {startButtonLabel}
-        </button>
+          label={startButtonLabel}
+          onComplete={onStart}
+        />
         <div className="new-reading-quick-group">
           <button
             type="button"
-            onClick={onQuickStart}
+            onClick={(event) => {
+              event.currentTarget.focus({ preventScroll: true });
+              onQuickStart(event.currentTarget);
+            }}
             disabled={quickButtonDisabled || isNavigationPending}
             className="new-reading-quick-button"
           >

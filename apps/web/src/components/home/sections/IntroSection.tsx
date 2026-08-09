@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
@@ -28,6 +28,7 @@ export default function IntroSection() {
   const [drawnCard, setDrawnCard] = useState<DrawnCard | null>(null);
   const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const quickDrawTriggerRef = useRef<HTMLButtonElement>(null);
 
   const handleDrawClick = useCallback(() => {
     if (isOverlayOpen || isNavigating) return;
@@ -112,9 +113,13 @@ export default function IntroSection() {
               </p>
               <div className="mt-10 border-t border-dashed border-terracotta/30 pt-7">
             <m.button
+              ref={quickDrawTriggerRef}
               type="button"
               disabled={isNavigating}
-              onClick={handleDrawClick}
+              onClick={(event) => {
+                event.currentTarget.focus({ preventScroll: true });
+                handleDrawClick();
+              }}
               whileHover={!isNavigating ? { y: -2 } : undefined}
               transition={{ duration: 0.18, ease: "easeOut" }}
               className="group inline-flex min-h-12 items-center gap-3 border border-terracotta px-6 py-3 font-serif text-lg text-terracotta transition-colors hover:bg-terracotta hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
@@ -141,6 +146,7 @@ export default function IntroSection() {
         isOpen={isOverlayOpen}
         drawnCard={drawnCard}
         quickAnalysis={quickAnalysis}
+        triggerRef={quickDrawTriggerRef}
         onClose={handleClose}
         onDeepReading={handleDeepReading}
       />

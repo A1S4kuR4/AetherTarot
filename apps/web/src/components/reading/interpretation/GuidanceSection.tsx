@@ -1,10 +1,13 @@
 "use client";
 
+import { ChapterNumber } from "./ChapterNumber";
+
 interface GuidanceSectionProps {
   guidance: string[];
+  chapterLabel?: string;
 }
 
-export function GuidanceSection({ guidance }: GuidanceSectionProps) {
+export function GuidanceSection({ guidance, chapterLabel }: GuidanceSectionProps) {
   if (!guidance || guidance.length === 0) {
     return null;
   }
@@ -13,8 +16,8 @@ export function GuidanceSection({ guidance }: GuidanceSectionProps) {
 
   return (
     <section id="reading-guidance" className="scroll-mt-32">
-      <p className="manuscript-label">IN PRACTICE</p>
-      <h2 className="mt-3 font-serif text-xl text-ink md:text-2xl">可以带走的思考</h2>
+      <ChapterNumber value={chapterLabel} />
+      <h2 className="reading-section-title">可以带走的思考</h2>
       {firstQuestion ? (
         <p className="mt-5 max-w-[40rem] font-serif text-[17px] leading-[1.8] text-ink">
           {firstQuestion}

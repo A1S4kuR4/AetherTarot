@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type {
   EncyclopediaQueryResponse,
   ReadingErrorPayload,
@@ -22,6 +22,10 @@ type QueryState =
       referralLinks: string[];
     };
 
+const subscribeToClientReady = () => () => undefined;
+const getClientReadySnapshot = () => true;
+const getServerReadySnapshot = () => false;
+
 async function readErrorPayload(response: Response) {
   try {
     const payload = (await response.json()) as ReadingErrorPayload;
@@ -39,6 +43,11 @@ export default function EncyclopediaQuestionPanel({
 }) {
   const [query, setQuery] = useState(`这张牌逆位怎么理解？`);
   const [queryState, setQueryState] = useState<QueryState>({ status: "idle" });
+  const isClientReady = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
 
   const submitQuery = async () => {
     const normalizedQuery = query.trim();
@@ -132,6 +141,7 @@ export default function EncyclopediaQuestionPanel({
         <textarea
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          readOnly={!isClientReady}
           rows={3}
           maxLength={500}
           placeholder="问一个牌义、逆位、象征或牌阵问题..."
@@ -146,7 +156,7 @@ export default function EncyclopediaQuestionPanel({
         <button
           type="button"
           onClick={submitQuery}
-          disabled={!query.trim() || queryState.status === "loading"}
+          disabled={!isClientReady || !query.trim() || queryState.status === "loading"}
           className={cn(
             "inline-flex min-h-11 items-center gap-2 border px-4 py-2 font-serif text-sm transition-colors",
             !query.trim() || queryState.status === "loading"

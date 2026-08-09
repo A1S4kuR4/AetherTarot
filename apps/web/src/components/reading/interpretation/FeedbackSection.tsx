@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { FEEDBACK_OPTIONS } from "./constants";
 import type { FeedbackLabel } from "./constants";
+import { ChapterNumber } from "./ChapterNumber";
 
 interface FeedbackSectionProps {
   labels: FeedbackLabel[];
@@ -15,6 +16,7 @@ interface FeedbackSectionProps {
   onNoteChange: (value: string) => void;
   onReplayConsentChange: (value: boolean) => void;
   onSubmit: () => void;
+  chapterLabel?: string;
 }
 
 export function FeedbackSection({
@@ -28,11 +30,12 @@ export function FeedbackSection({
   onNoteChange,
   onReplayConsentChange,
   onSubmit,
+  chapterLabel,
 }: FeedbackSectionProps) {
   return (
     <section id="reading-feedback" className="scroll-mt-32">
-      <p className="manuscript-label">CLOSING NOTE</p>
-      <h2 className="mt-3 font-serif text-xl text-ink md:text-2xl">这次解读给你的感觉</h2>
+      <ChapterNumber value={chapterLabel} />
+      <h2 className="reading-section-title">这次解读给你的感觉</h2>
       <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="反馈标签">
         {FEEDBACK_OPTIONS.map((option) => {
           const isSelected = labels.includes(option.value);

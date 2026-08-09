@@ -1,6 +1,7 @@
 "use client";
 
 import LegacyIcon from "@/components/ui/LegacyIcon";
+import { ChapterNumber } from "./ChapterNumber";
 
 interface NotesSectionProps {
   value: string;
@@ -8,6 +9,7 @@ interface NotesSectionProps {
   placeholder?: string;
   onChange: (value: string) => void;
   onSave: () => void;
+  chapterLabel?: string;
 }
 
 export function NotesSection({
@@ -16,13 +18,14 @@ export function NotesSection({
   placeholder = "随着时间推移，牌意在现实中是如何展开的？写下你的感悟…",
   onChange,
   onSave,
+  chapterLabel,
 }: NotesSectionProps) {
   return (
     <section id="reading-notes" className="scroll-mt-32">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div>
-          <p className="manuscript-label">PRIVATE NOTE</p>
-          <h2 className="mt-2 font-serif text-xl text-ink md:text-2xl">你的回望与觉察</h2>
+          <ChapterNumber value={chapterLabel} />
+          <h2 className="reading-section-title">你的回望与觉察</h2>
         </div>
         <p role="status" aria-live="polite" className="flex items-center gap-1 font-sans text-xs">
           {status === 'saving' && (

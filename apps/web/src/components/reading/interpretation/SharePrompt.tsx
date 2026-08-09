@@ -13,7 +13,16 @@ export function SharePrompt({ onShare }: SharePromptProps) {
         <p className="max-w-[30rem] text-sm leading-relaxed text-text-muted">
           生成一张分享卡——牌阵卡不含你的问题，摘要卡可带走完整解读。
         </p>
-        <button type="button" onClick={onShare} className="btn-secondary shrink-0">
+        <button
+          type="button"
+          onClick={(event) => {
+            // Safari/WebKit does not focus buttons on pointer click by default.
+            // Establish the trigger explicitly so the modal can return focus.
+            event.currentTarget.focus({ preventScroll: true });
+            onShare();
+          }}
+          className="btn-secondary shrink-0"
+        >
           分享这次解读
         </button>
       </div>

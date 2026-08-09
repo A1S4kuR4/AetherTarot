@@ -23,9 +23,11 @@ test("encyclopedia renders safety intercepts as a dedicated reality-safety panel
   });
   const panel = page.getByTestId("encyclopedia-agent-panel");
   await expect(panel).toBeVisible();
-  await panel.getByRole("textbox", { name: "向塔罗百科提问" }).fill(
-    "高风险测试问题",
-  );
+  const questionInput = panel.getByRole("textbox", { name: "向塔罗百科提问" });
+  await expect(questionInput).toHaveValue("这张牌逆位怎么理解？");
+  await expect(questionInput).toBeEditable();
+  await questionInput.fill("高风险测试问题");
+  await expect(questionInput).toHaveValue("高风险测试问题");
   await panel.getByRole("button", { name: "提问" }).click();
 
   const intercept = page.getByTestId("encyclopedia-safety-intercept");

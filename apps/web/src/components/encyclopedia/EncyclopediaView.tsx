@@ -411,7 +411,7 @@ export default function EncyclopediaView({
                           fill
                           sizes="86px"
                           quality={50}
-                          loading={activeCard.id === card.id ? "eager" : "lazy"}
+                          priority={activeCard.id === card.id}
                           className="h-full w-full object-cover"
                         />
                       </button>

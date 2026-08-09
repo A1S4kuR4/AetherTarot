@@ -5,6 +5,8 @@ import { AnimatePresence, m, LazyMotion, domAnimation } from "motion/react";
 import { usePathname } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
+import { PageBurnTransitionOverlay } from "@/components/transition/PageBurnTransitionOverlay";
+import { PageBurnTransitionProvider } from "@/components/transition/PageBurnTransitionProvider";
 import { ReadingProvider } from "@/context/ReadingContext";
 
 /** Routes that use Midnight Mode (dark immersive surface) */
@@ -19,9 +21,12 @@ export default function AppShell({
 
   return (
     <ReadingProvider>
-      <RouteShell key={pathname} pathname={pathname}>
-        {children}
-      </RouteShell>
+      <PageBurnTransitionProvider>
+        <RouteShell key={pathname} pathname={pathname}>
+          {children}
+        </RouteShell>
+        <PageBurnTransitionOverlay />
+      </PageBurnTransitionProvider>
     </ReadingProvider>
   );
 }
@@ -56,6 +61,7 @@ function RouteShell({
 
   return (
     <div
+      data-page-burn-snapshot
       data-route-motion={shouldReduceRouteMotion ? "reduced" : "standard"}
       className={
         isMidnight ? "midnight-surface min-h-screen" : "paper-surface min-h-screen"

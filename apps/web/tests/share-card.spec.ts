@@ -225,6 +225,9 @@ async function startQuickReading(page: Page, reading: StructuredReading) {
     .getByPlaceholder("今天，你想向内心询问什么？")
     .fill(reading.question);
   await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
+  const revealButton = page.getByRole("button", { name: "翻开牌面", exact: true });
+  await expect(revealButton).toBeEnabled({ timeout: 3000 });
+  await revealButton.click();
   await page.getByRole("button", { name: "开启深度解读" }).click();
   await expect(page).toHaveURL(/\/reading$/, { timeout: 10000 });
 }

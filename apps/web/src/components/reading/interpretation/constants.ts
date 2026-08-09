@@ -16,15 +16,30 @@ export const FEEDBACK_OPTIONS = [
 export type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
 
 export const READING_NAV_ITEMS = [
+  { id: "reading-spread", label: "牌阵" },
   { id: "reading-quick", label: "核心" },
   { id: "reading-cards", label: "逐牌" },
   { id: "reading-synthesis", label: "综合" },
   { id: "reading-evidence", label: "依据" },
   { id: "reading-guidance", label: "思考" },
+  { id: "reading-followup", label: "追问" },
+  { id: "reading-radar", label: "能量" },
   { id: "reading-feedback", label: "反馈" },
+  { id: "reading-notes", label: "手记" },
 ] as const;
 
 export type ReadingNavItem = (typeof READING_NAV_ITEMS)[number];
+export type ReadingSectionId = ReadingNavItem["id"];
+
+const CHAPTER_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+
+export function getReadingChapterLabels(
+  visibleSectionIds: readonly ReadingSectionId[],
+): Partial<Record<ReadingSectionId, string>> {
+  return Object.fromEntries(
+    visibleSectionIds.map((id, index) => [id, CHAPTER_NUMERALS[index]]),
+  ) as Partial<Record<ReadingSectionId, string>>;
+}
 
 export const LOADING_STAGES = [
   {

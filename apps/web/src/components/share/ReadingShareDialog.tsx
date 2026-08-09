@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import type { DrawnCard, StructuredReading } from "@aethertarot/shared-types";
@@ -104,12 +113,21 @@ export function ReadingShareDialog({
       // System serif fallback remains available if the stylesheet cannot load.
     });
 
-    // Delay focus slightly to allow the sheet animation to start.
-    const timer = setTimeout(() => {
-      titleRef.current?.focus();
-    }, 50);
-    return () => clearTimeout(timer);
+    return () => {
+      const returnTarget = returnFocusRef.current;
+      window.setTimeout(() => {
+        if (returnTarget?.isConnected) {
+          returnTarget.focus({ preventScroll: true });
+        }
+      }, 0);
+    };
   }, [open, drawnCards.length]);
+
+  useLayoutEffect(() => {
+    if (open) {
+      titleRef.current?.focus({ preventScroll: true });
+    }
+  }, [open]);
 
   useEffect(() => {
     return () => {
@@ -219,48 +237,38 @@ export function ReadingShareDialog({
     setGeneration({ status: "idle" });
     setCompletedAction(null);
     onOpenChange(false);
-    returnFocusRef.current?.focus?.();
   }, [cleanupGeneration, onOpenChange]);
 
-  useEffect(() => {
-    if (!open) return;
+  const handleDialogKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      handleClose();
+      return;
+    }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        handleClose();
-        return;
+    // Bind the trap to the dialog itself so it is active as soon as the
+    // interactive node mounts, without waiting for an effect listener.
+    if (event.key === "Tab" && sheetRef.current) {
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+
+      const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      if (event.shiftKey && activeIndex <= 0) {
+        event.preventDefault();
+        focusable[focusable.length - 1].focus();
+      } else if (
+        !event.shiftKey
+        && (activeIndex === -1 || activeIndex === focusable.length - 1)
+      ) {
+        event.preventDefault();
+        focusable[0].focus();
       }
-
-      // Focus trap: keep Tab/Shift+Tab cycling inside the sheet so the
-      // aria-modal claim holds. The title (tabIndex=-1) is not in the Tab
-      // order, so an unknown active element restarts from the edges.
-      if (event.key === "Tab" && sheetRef.current) {
-        const focusable = Array.from(
-          sheetRef.current.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ),
-        );
-        if (focusable.length === 0) return;
-
-        const activeIndex = focusable.indexOf(
-          document.activeElement as HTMLElement,
-        );
-        if (event.shiftKey && activeIndex <= 0) {
-          event.preventDefault();
-          focusable[focusable.length - 1].focus();
-        } else if (
-          !event.shiftKey
-          && (activeIndex === -1 || activeIndex === focusable.length - 1)
-        ) {
-          event.preventDefault();
-          focusable[0].focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, handleClose]);
+    }
+  }, [handleClose]);
 
   const model = useMemo(
     () => buildShareCardModel({ reading, drawnCards, mode }),
@@ -304,6 +312,7 @@ export function ReadingShareDialog({
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={descId}
+            onKeyDown={handleDialogKeyDown}
           >
             <div className="mx-auto w-full max-w-md px-5 pb-8 pt-5">
               {/* Handle */}

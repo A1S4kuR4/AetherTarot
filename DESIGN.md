@@ -515,6 +515,9 @@ Motion is essential, but it must be emotionally aligned.
 - Use rotate/flip with restraint for card reveal
 - Avoid springy overshoot on serious reading content
 - Avoid constant ambient movement that competes with interpretation
+- The desktop `/new -> /ritual/draw` handoff may use one authored paper-burn transition: ignition begins at the confirmed CTA, fractures spread irregularly upward, and the dissolving Paper surface reveals Midnight beneath it. This effect is continuity between the two surface modes, not a reusable decoration.
+- The paper-burn transition must preserve the direct navigation path for reduced-motion users, mobile and low-height layouts, unavailable WebGL2, failed snapshots, shader failures, and context loss. It must never block the offline card-entry path.
+- The primary `/new` CTA uses a short, cancellable hold on pointer and touch input. Its restrained terracotta fill is functional progress feedback that culminates in the paper ignition; keyboard and assistive-technology activation remains immediate, so the hold is never the only way forward.
 
 ---
 

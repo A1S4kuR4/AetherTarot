@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { FollowupAnswer, ReadingCardResult } from "@aethertarot/shared-types";
 import { useReading } from "@/context/ReadingContext";
@@ -16,7 +15,6 @@ import { EvidencePanel } from "./interpretation/EvidencePanel";
 import { CardByCardSection } from "./interpretation/CardByCardSection";
 import { SynthesisSection } from "./interpretation/SynthesisSection";
 import { GuidanceSection } from "./interpretation/GuidanceSection";
-import { GroupLabel } from "./interpretation/GroupLabel";
 import {
   FollowupSection,
   FollowupAnswerFormSection,
@@ -37,6 +35,7 @@ import type { FeedbackLabel } from "./interpretation/constants";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
 import { READING_NAV_ITEMS } from "./interpretation/constants";
+import { getReadingChapterLabels } from "./interpretation/constants";
 import {
   getLeadSentence,
   getPreferredScrollBehavior,
@@ -91,7 +90,6 @@ export default function InterpretationView() {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
   const [loadingStageIndex, setLoadingStageIndex] = useState(0);
-  const shouldReduceMotion = useReducedMotion() ?? false;
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareDialogKey, setShareDialogKey] = useState(0);
 
@@ -445,14 +443,12 @@ export default function InterpretationView() {
 
   useEffect(() => {
     if (!isLoading) {
-      setLoadingStageIndex(0);
       return;
     }
 
-    setLoadingStageIndex(0);
-    const timers = LOADING_STAGES.slice(1).map((stage, index) =>
+    const timers = LOADING_STAGES.map((stage, index) =>
       window.setTimeout(() => {
-        setLoadingStageIndex(index + 1);
+        setLoadingStageIndex(index);
       }, stage.delayMs),
     );
 
@@ -487,11 +483,27 @@ export default function InterpretationView() {
     return null;
   }
 
-  // Nav mirrors the sections actually rendered for the current phase: the
-  // feedback anchor only exists on completed readings.
-  const navItems = READING_NAV_ITEMS.filter(
-    (item) => item.id !== "reading-feedback" || isCompletedReading,
-  );
+  const navItems = READING_NAV_ITEMS.filter((item) => {
+    if (!reading) {
+      return false;
+    }
+
+    switch (item.id) {
+      case "reading-guidance":
+        return reading.reflective_guidance.length > 0;
+      case "reading-followup":
+        return isInitialAwaitingFollowup || reading.follow_up_questions.length > 0;
+      case "reading-radar":
+        return drawnCards.length > 0;
+      case "reading-feedback":
+        return isCompletedReading;
+      case "reading-notes":
+        return Boolean(currentHistoryEntry);
+      default:
+        return true;
+    }
+  });
+  const chapterLabels = getReadingChapterLabels(navItems.map((item) => item.id));
 
   return (
     <ReadingLayout
@@ -542,10 +554,7 @@ export default function InterpretationView() {
             }
           />
         ) : (
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
+          <div
             className={cn(
               "space-y-10",
               reading.presentation_mode === "void_narrative" &&
@@ -554,43 +563,56 @@ export default function InterpretationView() {
                 "[&_.card-hero-glow]:shadow-none",
             )}
           >
-            {coreQuickRead ? (
-              <CoreMessage quickRead={coreQuickRead} />
-            ) : null}
+            <MobileReadingNav navItems={navItems} />
 
             <SpreadHeroGrid
               spreadId={selectedSpread.id}
+              spreadName={selectedSpread.name}
+              spreadNote={
+                spreadExperience?.revealFocus
+                ?? spreadExperience?.readingMechanism
+                ?? "牌阵按权威位置组织本轮牌面。"
+              }
               drawnCards={drawnCards}
               positionNames={selectedSpread.positions.map(
                 (position) => position.name,
               )}
+              chapterLabel={chapterLabels["reading-spread"]}
             />
 
-            <MobileReadingNav navItems={navItems} />
+            {coreQuickRead ? (
+              <CoreMessage
+                quickRead={coreQuickRead}
+                chapterLabel={chapterLabels["reading-quick"]}
+              />
+            ) : null}
 
             <CardByCardSection
               readingCards={reading.cards}
               drawnCards={drawnCards}
+              chapterLabel={chapterLabels["reading-cards"]}
             />
 
-            <SynthesisSection synthesis={reading.synthesis} />
+            <SynthesisSection
+              synthesis={reading.synthesis}
+              chapterLabel={chapterLabels["reading-synthesis"]}
+            />
 
             <EvidencePanel
               question={question}
               reading={reading}
               spreadName={selectedSpread.name}
+              drawSourceLabel={drawSource === "offline_manual" ? "线下录入" : "线上随机洗牌"}
               trustPathCards={trustPathCards}
               spreadExperience={spreadExperience}
               continuitySource={continuitySource}
+              chapterLabel={chapterLabels["reading-evidence"]}
             />
 
-            {reading.reflective_guidance.length > 0 ? (
-              <GroupLabel>带回现实</GroupLabel>
-            ) : null}
-
-            <GuidanceSection guidance={reading.reflective_guidance} />
-
-            <GroupLabel>继续理解</GroupLabel>
+            <GuidanceSection
+              guidance={reading.reflective_guidance}
+              chapterLabel={chapterLabels["reading-guidance"]}
+            />
 
             {!isInitialAwaitingFollowup && reading.follow_up_questions.length > 0 ? (
               <FollowupSection
@@ -598,6 +620,7 @@ export default function InterpretationView() {
                 readingPhase={reading.reading_phase}
                 questions={reading.follow_up_questions}
                 answers={reading.followup_answers}
+                chapterLabel={chapterLabels["reading-followup"]}
               />
             ) : null}
 
@@ -610,51 +633,53 @@ export default function InterpretationView() {
                 isLoading={isLoading}
                 onDraftChange={handleFollowupChange}
                 onSubmit={() => void handleSubmitFollowup()}
+                chapterLabel={chapterLabels["reading-followup"]}
               />
             ) : null}
 
             {drawnCards.length > 0 ? (
-              <EnergyRadarSection values={radarValues} />
-            ) : null}
-
-            {isCompletedReading || reading.safety_note || reading.confidence_note ? (
-              <GroupLabel>关于这次解读</GroupLabel>
-            ) : null}
-
-            {isCompletedReading ? (
-              <FeedbackSection
-                labels={activeFeedbackLabels}
-                note={activeFeedbackNote}
-                isSubmitted={hasSubmittedFeedback}
-                isSubmitting={isFeedbackSubmitting}
-                error={feedbackError}
-                replayConsent={activeFeedbackConsent}
-                onToggleLabel={toggleFeedbackLabel}
-                onNoteChange={handleFeedbackNoteChange}
-                onReplayConsentChange={handleFeedbackConsentChange}
-                onSubmit={() => void handleSubmitFeedback()}
+              <EnergyRadarSection
+                values={radarValues}
+                chapterLabel={chapterLabels["reading-radar"]}
               />
             ) : null}
 
             {isCompletedReading ? (
-              <SharePrompt onShare={openShareDialog} />
-            ) : null}
-
-            <BoundaryNote
-              safetyNote={reading.safety_note}
-              confidenceNote={reading.confidence_note}
-            />
+              <div className="space-y-7">
+                <FeedbackSection
+                  labels={activeFeedbackLabels}
+                  note={activeFeedbackNote}
+                  isSubmitted={hasSubmittedFeedback}
+                  isSubmitting={isFeedbackSubmitting}
+                  error={feedbackError}
+                  replayConsent={activeFeedbackConsent}
+                  onToggleLabel={toggleFeedbackLabel}
+                  onNoteChange={handleFeedbackNoteChange}
+                  onReplayConsentChange={handleFeedbackConsentChange}
+                  onSubmit={() => void handleSubmitFeedback()}
+                  chapterLabel={chapterLabels["reading-feedback"]}
+                />
+                <SharePrompt onShare={openShareDialog} />
+                <BoundaryNote
+                  safetyNote={reading.safety_note}
+                  confidenceNote={reading.confidence_note}
+                />
+              </div>
+            ) : (
+              <BoundaryNote
+                safetyNote={reading.safety_note}
+                confidenceNote={reading.confidence_note}
+              />
+            )}
 
             {currentHistoryEntry ? (
-              <>
-                <GroupLabel>留下手记</GroupLabel>
-                <NotesSection
-                  value={notes}
-                  status={noteSaveStatus}
-                  onChange={handleNotesChange}
-                  onSave={handleSaveNotes}
-                />
-              </>
+              <NotesSection
+                value={notes}
+                status={noteSaveStatus}
+                onChange={handleNotesChange}
+                onSave={handleSaveNotes}
+                chapterLabel={chapterLabels["reading-notes"]}
+              />
             ) : null}
 
             <ReadingFooter
@@ -671,7 +696,7 @@ export default function InterpretationView() {
                 onOpenChange={setShowShareDialog}
               />
             ) : null}
-          </motion.div>
+          </div>
         )
       ) : null}
     </ReadingLayout>
