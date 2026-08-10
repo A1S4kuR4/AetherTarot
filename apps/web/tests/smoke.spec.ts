@@ -1237,9 +1237,13 @@ test.describe("AetherTarot smoke flow", () => {
 
     const draftQuestion = "只输入问题";
     await input.fill(draftQuestion);
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => (
+      window.localStorage.getItem("aether_tarot_guest_question_draft_v1")
+    ))).toBeNull();
     await expect
       .poll(
-        () => page.evaluate(() => window.localStorage.getItem("aether_tarot_new_question_draft_v1")),
+        () => page.evaluate(() => window.localStorage.getItem("aether_tarot_guest_question_draft_v1")),
         { timeout: 3000 },
       )
       .toBe(draftQuestion);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getAllSpreads } from "@aethertarot/domain-tarot";
@@ -28,12 +28,14 @@ import {
 } from "./new-reading-flow";
 import {
   readNewReadingQuestionDraft,
+  retireLegacyNewReadingQuestionDraft,
   saveNewReadingQuestionDraft,
 } from "./new-reading-question-draft";
 import type { AgentProfileOption, DrawSourceOption } from "./types";
 
 const MAJOR_DECISION_TERM_REGEX =
   /离婚|辞职|分手|退学|堕胎|卖房|买房|投资|炒股|决裂|起诉|诉讼|官司|借贷|贷款|法律|财务|理财/i;
+const QUESTION_DRAFT_SAVE_DELAY_MS = 1_000;
 
 const spreads = getAllSpreads();
 
@@ -89,7 +91,7 @@ export function NewReadingWorkspace({
   anonymousDailyReadingLimit: number;
 }) {
   const router = useRouter();
-  const { status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { beginCapture, cancel: cancelPageBurn, ignite } = usePageBurnTransition();
   const {
     agentProfile, clearContinuityMemory, clearContinuitySource, completeRitual, continuitySource, drawSource,
@@ -113,7 +115,7 @@ export function NewReadingWorkspace({
   const [isQuickDrawOverlayOpen, setIsQuickDrawOverlayOpen] = useState(false);
   const [quickDrawnCard, setQuickDrawnCard] = useState<DrawnCard | null>(null);
   const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(null);
-  const isQuestionDraftRestored = useRef(false);
+  const restoredQuestionDraftIdentityRef = useRef<string | null>(null);
   const isQuestionDraftCommitted = useRef(false);
   const pendingIgnitionRef = useRef<BurnIgnition | null>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
@@ -133,6 +135,17 @@ export function NewReadingWorkspace({
     ? drawSource === "offline_manual" ? "正在进入录入..." : "正在进入仪式..."
     : drawSource === "offline_manual" ? "按住确认，进入录入 →" : "按住确认，进入抽牌 →";
   const quickButtonLabel = navigationMode === "quick" ? "正在生成轻量解读..." : "当下之镜 →";
+  const draftIdentityKey = sessionStatus === "authenticated" && session?.user?.id
+    ? `account:${session.user.id}`
+    : "guest";
+
+  const getQuestionDraftScope = useCallback(() => draftIdentityKey === "guest"
+    ? { kind: "guest" as const, storage: window.localStorage }
+    : {
+        kind: "account" as const,
+        storage: window.sessionStorage,
+        ownerId: draftIdentityKey.slice("account:".length),
+      }, [draftIdentityKey]);
 
   useEffect(() => {
     if (!pendingStart) return;
@@ -150,19 +163,22 @@ export function NewReadingWorkspace({
   }, [pendingStart]);
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || sessionStatus === "loading") return;
+    retireLegacyNewReadingQuestionDraft(window.localStorage);
 
-    if (!isQuestionDraftRestored.current) {
-      isQuestionDraftRestored.current = true;
+    if (restoredQuestionDraftIdentityRef.current !== draftIdentityKey) {
+      restoredQuestionDraftIdentityRef.current = draftIdentityKey;
+      isQuestionDraftCommitted.current = false;
+      setDraftStatus(null);
 
       if (!question && !reading && drawnCards.length === 0) {
         try {
           if (continuitySource) {
-            saveNewReadingQuestionDraft(window.localStorage, "");
+            saveNewReadingQuestionDraft(getQuestionDraftScope(), "");
             return;
           }
 
-          const draft = readNewReadingQuestionDraft(window.localStorage);
+          const draft = readNewReadingQuestionDraft(getQuestionDraftScope());
           if (draft) {
             setQuestion(draft);
             window.requestAnimationFrame(() => setDraftStatus("restored"));
@@ -177,14 +193,14 @@ export function NewReadingWorkspace({
 
     const timeoutId = window.setTimeout(() => {
       try {
-        setDraftStatus(saveNewReadingQuestionDraft(window.localStorage, question) ? "saved" : null);
+        setDraftStatus(saveNewReadingQuestionDraft(getQuestionDraftScope(), question) ? "saved" : null);
       } catch {
         setDraftStatus(null);
       }
-    }, 250);
+    }, QUESTION_DRAFT_SAVE_DELAY_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [continuitySource, drawnCards.length, isHydrated, question, reading, setQuestion]);
+  }, [continuitySource, draftIdentityKey, drawnCards.length, getQuestionDraftScope, isHydrated, question, reading, sessionStatus, setQuestion]);
 
   useEffect(() => {
     const columns = columnsRef.current;
@@ -209,7 +225,7 @@ export function NewReadingWorkspace({
   const clearCommittedQuestionDraft = () => {
     isQuestionDraftCommitted.current = true;
     try {
-      saveNewReadingQuestionDraft(window.localStorage, "");
+      saveNewReadingQuestionDraft(getQuestionDraftScope(), "");
     } catch {}
     setDraftStatus(null);
   };
