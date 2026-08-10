@@ -97,6 +97,7 @@ describe("reading route beta access and quota", () => {
     expect(deps.consumeQuota).toHaveBeenCalledWith({
       actor: ANONYMOUS,
       ipHash: "ip-hash",
+      phase: "initial",
     });
     expect(deps.recordEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -112,7 +113,7 @@ describe("reading route beta access and quota", () => {
       consumeQuota: vi.fn(async () => {
         throw new ReadingServiceError(
           "rate_limited",
-          "你今日的 reading 次数已达上限，请明天再试。",
+          "你今日的完整解读次数已达上限，请明天再试。",
           429,
           undefined,
           undefined,
@@ -136,7 +137,7 @@ describe("reading route beta access and quota", () => {
       consumeQuota: vi.fn(async () => {
         throw new ReadingServiceError(
           "rate_limited",
-          "今日访客 reading 体验次数已用完。登录内测账号可使用更多次数。",
+          "今日访客完整解读次数已用完。登录内测账号可使用更多次数。",
           429,
           undefined,
           undefined,
@@ -153,6 +154,7 @@ describe("reading route beta access and quota", () => {
     expect(deps.consumeQuota).toHaveBeenCalledWith({
       actor: ANONYMOUS,
       ipHash: "ip-hash",
+      phase: "initial",
     });
     expect(deps.generateReading).not.toHaveBeenCalled();
   });
@@ -264,6 +266,7 @@ describe("reading route beta access and quota", () => {
     expect(deps.consumeQuota).toHaveBeenCalledWith({
       actor: TESTER,
       ipHash: "ip-hash",
+      phase: "initial",
     });
     expect(deps.recordEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -472,9 +475,53 @@ describe("reading route beta access and quota", () => {
     expect(finalResponse.status).toBe(200);
     expect(finalReading.reading_phase).toBe("final");
     expect(finalReading.initial_reading_id).toBe(initial.reading_id);
+    expect(deps.consumeQuota).toHaveBeenNthCalledWith(2, {
+      actor: TESTER,
+      ipHash: "ip-hash",
+      phase: "final",
+    });
+    expect(deps.refundQuota).not.toHaveBeenCalled();
     const finalCall = vi.mocked(deps.generateReading).mock.calls.at(-1);
     expect(finalCall?.[1]?.initialReading?.synthesis).toBe(initial.synthesis);
     expect(JSON.stringify(finalCall)).not.toContain("客户端注入");
+  });
+
+  it("does not refund the initial daily slot when a final generation fails", async () => {
+    const deps = buildDependencies({
+      generateReading: vi.fn(async (payload, options) => {
+        if (payload.phase === "final") {
+          throw new Error("temporary final provider failure");
+        }
+        return runReadingGraph(payload, options);
+      }),
+    });
+    const initialRequest = {
+      ...buildSinglePayload("我该怎样稳住现在的节奏？"),
+      request_id: "00000000-0000-4000-8000-000000000105",
+      agent_profile: "standard",
+    };
+    const initialResponse = await handleReadingPost(buildRequest(initialRequest), deps);
+    const initial = await initialResponse.json();
+
+    const finalResponse = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "00000000-0000-4000-8000-000000000106",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我会先观察一周。",
+      })),
+    }), deps);
+
+    expect(initialResponse.status).toBe(200);
+    expect(finalResponse.status).toBe(500);
+    expect(deps.consumeQuota).toHaveBeenNthCalledWith(2, {
+      actor: TESTER,
+      ipHash: "ip-hash",
+      phase: "final",
+    });
+    expect(deps.refundQuota).not.toHaveBeenCalled();
   });
 
   it("rejects a Final request whose follow-up questions differ from the snapshot", async () => {

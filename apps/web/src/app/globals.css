@@ -1023,6 +1023,15 @@
     white-space: nowrap;
   }
 
+  .new-reading-quota-note {
+    margin: 0.35rem 0 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-serif);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    text-align: center;
+  }
+
   .new-reading-mobile-actions {
     position: fixed;
     right: 0;

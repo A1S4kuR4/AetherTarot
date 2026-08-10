@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getBeijingDayWindow } from "@/server/beta/admin-summary";
+import {
+  getBeijingDayWindow,
+  summarizeGrowthEvents,
+} from "@/server/beta/admin-summary";
 
 describe("admin summary day window", () => {
   it("rolls the daily window over at Beijing midnight", () => {
@@ -20,6 +23,39 @@ describe("admin summary day window", () => {
       usageDay: "2026-05-25",
       sinceDay: "2026-05-19",
       since: "2026-05-18T16:00:00.000Z",
+    });
+  });
+});
+
+describe("admin growth funnel summary", () => {
+  it("groups the four launch events by normalized UTM source", () => {
+    const summary = summarizeGrowthEvents([
+      { event_type: "page_view", utm_source: "Douyin" },
+      { event_type: "reading_started", utm_source: " douyin " },
+      { event_type: "reading_completed", utm_source: "douyin" },
+      { event_type: "feedback_submitted", utm_source: "DOUYIN" },
+      { event_type: "page_view", utm_source: null },
+    ]);
+
+    expect(summary.growthFunnel).toEqual({
+      visits: 2,
+      readingStarts: 1,
+      readingCompletions: 1,
+      feedbackSubmissions: 1,
+    });
+    expect(summary.growthBySource).toEqual({
+      douyin: {
+        visits: 1,
+        readingStarts: 1,
+        readingCompletions: 1,
+        feedbackSubmissions: 1,
+      },
+      direct: {
+        visits: 1,
+        readingStarts: 0,
+        readingCompletions: 0,
+        feedbackSubmissions: 0,
+      },
     });
   });
 });

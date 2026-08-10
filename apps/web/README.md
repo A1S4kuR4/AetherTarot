@@ -10,7 +10,8 @@
 - `/history` 查看本地历史记录，并支持“回看这次解读”与“延续这条线”两个分离动作
 - `/encyclopedia` 浏览静态塔罗百科；仅在显式开启 provider 后展示 AI 问答入口
 - `/api/reading` 轻量 BFF Route，返回 `StructuredReading` 或结构化错误 payload
-- `/api/reading-feedback` 记录 completed reading 的轻量质量反馈
+- `/api/reading-feedback` 允许解读所属的登录用户或同 IP 游客提交 completed reading 的四类轻量质量反馈
+- `/api/growth-events` 记录首方 UTM 归因下的访问、开始解读、完成解读与反馈提交事件
 - `/login` 进入 Credentials 登录页；内测账号由管理员预先创建，不开放注册或邮件流程
 - `/admin` 第一轮内测最小观测台，仅 `beta_testers.role = admin` 可访问
 
@@ -26,7 +27,7 @@
 - Tier 1 安全阻断返回 `403 safety_intercept`，前端写入 `safetyIntercept` 并展示不可绕过的界限面板
 - Tier 2 决策外包场景返回 `200`，payload 中包含 `sober_check` 与 `presentation_mode = "sober_anchor"`
 - 快速解读使用 `lite` profile 自动抽牌并直达 `/reading`，但仍复用同一 `/api/reading`、hard stop、sober check 与 completed history 规则
-- 当前已接入最小 LangGraph reading 编排，并支持 `placeholder` 与 OpenAI-compatible `llm` provider；当前第一轮内测 baseline 为 DashScope `qwen3.6-flash`
+- 当前已接入最小 LangGraph reading 编排，并支持 `placeholder` 与 OpenAI-compatible `llm` provider；抖音首轮生产 baseline 为 DeepSeek `deepseek-v4-flash`
 - 真实模型预算保护验收前，reading 使用 `placeholder`，百科问答 provider 保持 `disabled`；两者分别启用
 
 ## Auth And Supabase
@@ -37,8 +38,11 @@
 - 这是因为当前项目基于 Next.js 16，`middleware` 已更名为 `proxy`
 - Auth.js Credentials provider 需要 `AUTH_SECRET`；生产还必须设置正确的 `AUTH_URL`
 - Supabase DB-only 访问需要服务端 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY`；不要配置或依赖 `NEXT_PUBLIC_SUPABASE_*`
-- `/api/reading` 与 `/api/encyclopedia/query` 允许未登录访客按 IP hash 每日各体验一次；已登录用户仍要求 Credentials session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
-- `/api/reading-feedback`、账号级历史接口与 `/admin` 继续要求 Credentials session 与 `beta_testers` 白名单
+- `/api/reading` 允许未登录访客按 IP hash 每日完成 3 次完整解读；initial 预占一次日额度，合法 final 只继续受共享 IP 分钟防刷与全站 Token 预算约束，不重复扣减日额度
+- `/api/encyclopedia/query` 允许未登录访客按 IP hash 每日体验一次；已登录用户仍要求 Credentials session、`beta_testers` 白名单和 Supabase quota / telemetry RPC
+- `/api/reading-feedback` 对游客开放，但只接受同一登录主体或同一 salted IP hash 已完成的 reading；反馈标签固定为“有帮助、太模板、太迎合、没回答问题”，同一主体对同一 reading 幂等
+- 账号级历史接口与 `/admin` 继续要求 Credentials session 与 `beta_testers` 白名单
+- `growth_events` 只保存随机会话/归因/流程 ID、可选用户 ID、salted IP hash、清洗后的 UTM、落地路径和 referrer hostname；不保存完整 referrer、页面 query 或解读正文
 - `role = admin` 可访问 `/admin` 与 `/api/admin/*`，并绕过个人次数/IP 突发限制；真实 LLM token 仍计入全站上限
 - schema 位于 `supabase/migrations/`；生产配额与保留规则由服务端环境变量和数据库 RPC 共同约束
 - 本地 Supabase 端口使用 `55421` 到 `55429`，避免 Windows/WSL 保留 `5432x` 端口导致浏览器无法连接 Auth

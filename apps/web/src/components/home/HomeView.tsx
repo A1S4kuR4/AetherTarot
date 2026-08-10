@@ -11,7 +11,11 @@ import FinalGateSection from "./sections/FinalGateSection";
 import PaginationDots from "./PaginationDots";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 
-export default function HomeView() {
+interface HomeViewProps {
+  anonymousDailyReadingLimit: number;
+}
+
+export default function HomeView({ anonymousDailyReadingLimit }: HomeViewProps) {
   const [activeSection, setActiveSection] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,7 +155,7 @@ export default function HomeView() {
       >
         {/* Section 0: Intro */}
         <div data-index="0" className="scroll-snap-section">
-          <IntroSection />
+          <IntroSection anonymousDailyReadingLimit={anonymousDailyReadingLimit} />
         </div>
 
         {/* Section 1: Knowledge */}

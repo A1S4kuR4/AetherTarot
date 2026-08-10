@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { ReadingPhase } from "@aethertarot/shared-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getBetaOpsConfig,
@@ -23,6 +24,7 @@ interface QuotaRpcResult {
 interface ConsumeReadingQuotaInput {
   actor: PublicFeatureActor;
   ipHash: string;
+  phase: ReadingPhase;
   config?: BetaOpsConfig;
 }
 
@@ -44,13 +46,13 @@ function getLimitMessage(reason: string, actor: PublicFeatureActor) {
   switch (reason) {
     case "user_daily":
       if (!isAuthenticatedTester(actor)) {
-        return "今日访客 reading 体验次数已用完。登录内测账号可使用更多次数。";
+        return "今日访客完整解读次数已用完。登录内测账号可使用更多次数。";
       }
-      return "你今日的 reading 次数已达上限，请明天再试。";
+      return "你今日的完整解读次数已达上限，请明天再试。";
     case "ip_minute":
       return "当前网络请求过于频繁，请稍后再试。";
     default:
-      return "当前 reading 请求已达内测限额，请稍后再试。";
+      return "当前解读请求已达内测限额，请稍后再试。";
   }
 }
 
@@ -75,6 +77,7 @@ export function shouldBypassRequestQuota(tester: AuthenticatedTester) {
 export async function consumeReadingQuota({
   actor,
   ipHash,
+  phase,
   config = getBetaOpsConfig(),
 }: ConsumeReadingQuotaInput) {
   if (isAuthenticatedTester(actor) && shouldBypassRequestQuota(actor)) {
@@ -92,16 +95,18 @@ export async function consumeReadingQuota({
   }
 
   const { data, error } = isAuthenticatedTester(actor)
-    ? await adminClient.rpc("consume_reading_quota", {
+    ? await adminClient.rpc("consume_reading_phase_quota", {
       p_user_id: actor.userId,
       p_ip_hash: ipHash,
       p_user_daily_limit: config.userDailyLimit,
       p_ip_minute_limit: config.ipMinuteLimit,
+      p_charge_daily_quota: phase === "initial",
     })
-    : await adminClient.rpc("consume_anonymous_reading_quota", {
+    : await adminClient.rpc("consume_anonymous_reading_phase_quota", {
       p_ip_hash: ipHash,
       p_anonymous_daily_limit: config.anonymousDailyLimit,
       p_ip_minute_limit: config.ipMinuteLimit,
+      p_charge_daily_quota: phase === "initial",
     });
 
   if (error) {
@@ -137,7 +142,7 @@ export async function consumeReadingQuota({
 export async function refundReadingQuota({
   actor,
   ipHash,
-}: Omit<ConsumeReadingQuotaInput, "config">) {
+}: Pick<ConsumeReadingQuotaInput, "actor" | "ipHash">) {
   if (isAuthenticatedTester(actor) && shouldBypassRequestQuota(actor)) {
     return;
   }

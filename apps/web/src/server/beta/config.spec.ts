@@ -10,7 +10,7 @@ describe("beta ops config", () => {
   it("uses production beta defaults for reading limits", () => {
     expect(getBetaOpsConfig({})).toEqual({
       userDailyLimit: 10,
-      anonymousDailyLimit: 1,
+      anonymousDailyLimit: 3,
       ipMinuteLimit: 6,
     });
   });

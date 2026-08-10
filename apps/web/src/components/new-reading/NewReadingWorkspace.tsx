@@ -7,6 +7,7 @@ import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type { AgentProfile, DrawSource, DrawnCard, QuestionType, ReadingHistoryEntry } from "@aethertarot/shared-types";
 import { drawCardsForSpread } from "@/lib/tarotDraw";
 import { buildLocalQuickAnalysis, type QuickAnalysis } from "@/lib/quickAnalysis";
+import { beginGrowthReadingFlow } from "@/lib/growth-attribution";
 import QuickDrawOverlay from "@/components/home/QuickDrawOverlay";
 import { captureBurnSnapshot } from "@/components/transition/captureBurnSnapshot";
 import {
@@ -82,7 +83,11 @@ function findRecentRepeatedTheme(history: ReadingHistoryEntry[], question: strin
     : null;
 }
 
-export function NewReadingWorkspace() {
+export function NewReadingWorkspace({
+  anonymousDailyReadingLimit,
+}: {
+  anonymousDailyReadingLimit: number;
+}) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
   const { beginCapture, cancel: cancelPageBurn, ignite } = usePageBurnTransition();
@@ -209,8 +214,14 @@ export function NewReadingWorkspace() {
     setDraftStatus(null);
   };
 
-  const startRitualDirectly = () => {
+  const startRitualAndTrack = () => {
     if (!startRitual()) return false;
+    beginGrowthReadingFlow();
+    return true;
+  };
+
+  const startRitualDirectly = () => {
+    if (!startRitualAndTrack()) return false;
     clearCommittedQuestionDraft();
     setNavigationMode("ritual");
     router.push(drawSource === "offline_manual" ? "/offline-draw" : "/ritual/draw");
@@ -233,7 +244,7 @@ export function NewReadingWorkspace() {
     try {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       const snapshot = await captureBurnSnapshot();
-      if (!startRitual()) {
+      if (!startRitualAndTrack()) {
         cancelPageBurn();
         setNavigationMode(null);
         return false;
@@ -244,7 +255,7 @@ export function NewReadingWorkspace() {
       return true;
     } catch {
       cancelPageBurn();
-      if (!ritualStarted && !startRitual()) {
+      if (!ritualStarted && !startRitualAndTrack()) {
         setNavigationMode(null);
         return false;
       }
@@ -336,6 +347,7 @@ export function NewReadingWorkspace() {
     setAgentProfile("lite");
     setDrawSource("digital_random");
     setSelectedSpread(singleSpread);
+    beginGrowthReadingFlow();
     completeRitual([quickDrawnCard]);
     clearCommittedQuestionDraft();
     setNavigationMode("quick");
@@ -439,6 +451,7 @@ export function NewReadingWorkspace() {
         <ConfigurationPane
           agentProfile={agentProfile}
           agentProfiles={AGENT_PROFILES}
+          anonymousDailyReadingLimit={anonymousDailyReadingLimit}
           drawSource={drawSource}
           drawSources={DRAW_SOURCES}
           isNavigationPending={isNavigationPending}

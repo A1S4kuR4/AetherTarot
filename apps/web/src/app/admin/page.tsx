@@ -9,7 +9,8 @@ import {
   Cpu, 
   CheckCircle2, 
   MessagesSquare, 
-  Target 
+  Target,
+  BarChart3,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,11 @@ const ERROR_CODE_LABELS: Record<string, string> = {
 };
 
 const FEEDBACK_LABELS: Record<string, string> = {
+  "helpful": "有帮助",
+  "template_like": "太模板",
+  "too_agreeable": "太迎合",
+  "did_not_answer": "没回答问题",
+  // Historical labels remain readable in windows that span the schema change.
   "insightful": "很有启发",
   "accurate": "描述准确",
   "confusing": "令人困惑",
@@ -68,6 +74,69 @@ function SummaryCard({
         </div>
       )}
     </div>
+  );
+}
+
+function GrowthFunnelTable({ summary }: { summary: AdminSummary }) {
+  const sourceRows = Object.entries(summary.growthBySource).sort(
+    (a, b) => b[1].visits - a[1].visits,
+  );
+
+  return (
+    <section className="reading-card mt-8 overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-paper-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-muted">
+              <BarChart3 className="h-5 w-5 text-terracotta/80" />
+            </div>
+            <h2 className="font-serif text-2xl font-medium text-ink">运营来源漏斗</h2>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-text-muted">
+            依据首方 UTM 归因统计；“douyin”代表带有 utm_source=douyin 的访问。
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard label="访问" value={summary.growthFunnel.visits} />
+        <SummaryCard label="开始解读" value={summary.growthFunnel.readingStarts} />
+        <SummaryCard label="完成解读" value={summary.growthFunnel.readingCompletions} />
+        <SummaryCard label="提交反馈" value={summary.growthFunnel.feedbackSubmissions} />
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-xl border border-paper-border/60">
+        {sourceRows.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-text-muted">暂无来源数据</p>
+        ) : (
+          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+            <caption className="sr-only">按 UTM 来源拆分的访问和解读转化数据</caption>
+            <thead className="bg-paper-muted/70 text-xs uppercase tracking-wider text-text-muted">
+              <tr>
+                <th scope="col" className="px-5 py-3 font-semibold">来源</th>
+                <th scope="col" className="px-5 py-3 font-semibold">访问</th>
+                <th scope="col" className="px-5 py-3 font-semibold">开始解读</th>
+                <th scope="col" className="px-5 py-3 font-semibold">完成解读</th>
+                <th scope="col" className="px-5 py-3 font-semibold">提交反馈</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sourceRows.map(([source, funnel]) => (
+                <tr key={source} className="border-t border-paper-border/50 text-text-body">
+                  <th scope="row" className="px-5 py-3 font-medium text-ink">
+                    {source === "direct" ? "直接访问" : source}
+                  </th>
+                  <td className="px-5 py-3 tabular-nums">{funnel.visits}</td>
+                  <td className="px-5 py-3 tabular-nums">{funnel.readingStarts}</td>
+                  <td className="px-5 py-3 tabular-nums">{funnel.readingCompletions}</td>
+                  <td className="px-5 py-3 tabular-nums">{funnel.feedbackSubmissions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -273,6 +342,8 @@ function AdminSummaryView({
           </div>
         </div>
       </section>
+
+      <GrowthFunnelTable summary={summary} />
     </div>
   );
 }

@@ -69,7 +69,7 @@ export function getBetaOpsConfig(
     anonymousDailyLimit: parsePositiveInteger({
       env,
       name: "AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP",
-      fallback: 1,
+      fallback: 3,
     }),
     ipMinuteLimit: parsePositiveInteger({
       env,

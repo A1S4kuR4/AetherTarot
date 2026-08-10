@@ -51,7 +51,7 @@ describe("reading quota", () => {
     expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 
-  it("checks anonymous reading quota by IP hash", async () => {
+  it("charges an anonymous initial phase against the complete-reading daily quota", async () => {
     const rpc = vi.fn(async () => ({ data: { allowed: true }, error: null }));
     createAdminClientMock.mockReturnValue({ rpc } as unknown as ReturnType<typeof createAdminClient>);
 
@@ -59,18 +59,47 @@ describe("reading quota", () => {
       consumeReadingQuota({
         actor: ANONYMOUS,
         ipHash: "ip-hash",
+        phase: "initial",
         config: {
           userDailyLimit: 10,
-          anonymousDailyLimit: 1,
+          anonymousDailyLimit: 3,
           ipMinuteLimit: 6,
         },
       }),
     ).resolves.toBeUndefined();
 
-    expect(rpc).toHaveBeenCalledWith("consume_anonymous_reading_quota", {
+    expect(rpc).toHaveBeenCalledWith("consume_anonymous_reading_phase_quota", {
       p_ip_hash: "ip-hash",
-      p_anonymous_daily_limit: 1,
+      p_anonymous_daily_limit: 3,
       p_ip_minute_limit: 6,
+      p_charge_daily_quota: true,
+    });
+  });
+
+  it("keeps a valid final phase under the minute guard without charging daily quota again", async () => {
+    const rpc = vi.fn(async () => ({ data: { allowed: true }, error: null }));
+    createAdminClientMock.mockReturnValue({ rpc } as unknown as ReturnType<typeof createAdminClient>);
+    const tester = buildTester("tester");
+
+    await expect(
+      consumeReadingQuota({
+        actor: tester,
+        ipHash: "ip-hash",
+        phase: "final",
+        config: {
+          userDailyLimit: 10,
+          anonymousDailyLimit: 3,
+          ipMinuteLimit: 6,
+        },
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(rpc).toHaveBeenCalledWith("consume_reading_phase_quota", {
+      p_user_id: tester.userId,
+      p_ip_hash: "ip-hash",
+      p_user_daily_limit: 10,
+      p_ip_minute_limit: 6,
+      p_charge_daily_quota: false,
     });
   });
 

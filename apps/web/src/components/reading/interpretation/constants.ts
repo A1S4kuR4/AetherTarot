@@ -1,4 +1,5 @@
 import type { QuestionType } from "@aethertarot/shared-types";
+import type { ReadingFeedbackLabel } from "@/lib/reading-feedback";
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   relationship: "关系议题",
@@ -10,10 +11,15 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
 
 export const FEEDBACK_OPTIONS = [
   { label: "有帮助", value: "helpful" },
-  { label: "还可以更好", value: "could_be_better" },
-] as const;
+  { label: "太模板", value: "template_like" },
+  { label: "太迎合", value: "too_agreeable" },
+  { label: "没回答问题", value: "did_not_answer" },
+] as const satisfies ReadonlyArray<{
+  label: string;
+  value: ReadingFeedbackLabel;
+}>;
 
-export type FeedbackLabel = (typeof FEEDBACK_OPTIONS)[number]["value"];
+export type FeedbackLabel = ReadingFeedbackLabel;
 
 export const READING_NAV_ITEMS = [
   { id: "reading-spread", label: "牌阵" },

@@ -28,6 +28,7 @@ import {
   READING_DRAFT_STORAGE_KEY,
 } from "@/lib/reading-draft-storage";
 import { fetchJsonWithTimeout } from "@/lib/fetch-json-with-timeout";
+import { trackGrowthReadingCompleted } from "@/lib/growth-attribution";
 import { isQuickReadingState } from "@/lib/quickReadingFlow";
 
 const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
@@ -584,6 +585,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
       if (!nextReading.requires_followup) {
         persistCompletedReading(nextReading);
+        trackGrowthReadingCompleted(nextReading.reading_id);
       }
 
       return true;
@@ -698,6 +700,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       }
 
       persistCompletedReading(nextReading);
+      trackGrowthReadingCompleted(nextReading.reading_id);
       return true;
     } catch (error) {
       interpretSignatureRef.current = null;

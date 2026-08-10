@@ -7,6 +7,7 @@ import { getAllSpreads } from "@aethertarot/domain-tarot";
 import type { DrawnCard } from "@aethertarot/shared-types";
 import { drawCardsForSpread } from "@/lib/tarotDraw";
 import { buildLocalQuickAnalysis, type QuickAnalysis } from "@/lib/quickAnalysis";
+import { beginGrowthReadingFlow } from "@/lib/growth-attribution";
 import { useReading } from "@/context/ReadingContext";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import QuickDrawOverlay from "../QuickDrawOverlay";
@@ -14,7 +15,11 @@ import QuickDrawOverlay from "../QuickDrawOverlay";
 const QUICK_DRAW_QUESTION =
   "我还不知道具体要问什么，请抽取我当下最需要看见的状态。";
 
-export default function IntroSection() {
+interface IntroSectionProps {
+  anonymousDailyReadingLimit: number;
+}
+
+export default function IntroSection({ anonymousDailyReadingLimit }: IntroSectionProps) {
   const router = useRouter();
   const {
     setQuestion,
@@ -71,6 +76,7 @@ export default function IntroSection() {
     setAgentProfile("lite");
     setDrawSource("digital_random");
     setSelectedSpread(singleSpread);
+    beginGrowthReadingFlow();
     completeRitual([drawnCard]);
     router.push("/quick-reading");
   }, [
@@ -112,24 +118,27 @@ export default function IntroSection() {
                 我们拒绝将阅读简化为断言式抽卡或宿命论预言。每一幅图案与牌面，都是一次引你回看内心的契机。
               </p>
               <div className="mt-10 border-t border-dashed border-terracotta/30 pt-7">
-            <m.button
-              ref={quickDrawTriggerRef}
-              type="button"
-              disabled={isNavigating}
-              onClick={(event) => {
-                event.currentTarget.focus({ preventScroll: true });
-                handleDrawClick();
-              }}
-              whileHover={!isNavigating ? { y: -2 } : undefined}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="group inline-flex min-h-12 items-center gap-3 border border-terracotta px-6 py-3 font-serif text-lg text-terracotta transition-colors hover:bg-terracotta hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span>抽一张当下之镜</span>
-              <LegacyIcon
-                name="arrow_forward"
-                className="transition-transform group-hover:translate-x-1"
-              />
-            </m.button>
+                <m.button
+                  ref={quickDrawTriggerRef}
+                  type="button"
+                  disabled={isNavigating}
+                  onClick={(event) => {
+                    event.currentTarget.focus({ preventScroll: true });
+                    handleDrawClick();
+                  }}
+                  whileHover={!isNavigating ? { y: -2 } : undefined}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="group inline-flex min-h-12 items-center gap-3 border border-terracotta px-6 py-3 font-serif text-lg text-terracotta transition-colors hover:bg-terracotta hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span>抽一张当下之镜</span>
+                  <LegacyIcon
+                    name="arrow_forward"
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </m.button>
+                <p className="mt-4 font-mono text-[0.72rem] tracking-[0.08em] text-text-muted">
+                  免费内测 · 游客每日可完成 {anonymousDailyReadingLimit} 次完整解读
+                </p>
               </div>
             </div>
             <aside className="self-start border-l border-terracotta pl-4 font-serif text-sm italic leading-relaxed text-terracotta lg:mt-2">

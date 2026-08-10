@@ -134,6 +134,7 @@ function DrawSourceSegmentedControl({
 interface ConfigurationPaneProps extends SpreadCatalogueProps {
   agentProfile: AgentProfile;
   agentProfiles: AgentProfileOption[];
+  anonymousDailyReadingLimit: number;
   drawSource: DrawSource;
   drawSources: DrawSourceOption[];
   isNavigationPending: boolean;
@@ -150,6 +151,7 @@ interface ConfigurationPaneProps extends SpreadCatalogueProps {
 export function ConfigurationPane({
   agentProfile,
   agentProfiles,
+  anonymousDailyReadingLimit,
   drawSource,
   drawSources,
   isNavigationPending,
@@ -216,6 +218,9 @@ export function ConfigurationPane({
           <p className="new-reading-quick-help">不用写问题，30 秒看当下状态</p>
         </div>
       </div>
+      <p className="new-reading-quota-note">
+        免费内测 · 游客每日可完成 {anonymousDailyReadingLimit} 次完整解读；追问整合不重复计次
+      </p>
     </section>
   );
 }

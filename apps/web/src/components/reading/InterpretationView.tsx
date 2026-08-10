@@ -32,6 +32,7 @@ import { SoberCheckGate } from "./interpretation/SoberCheckGate";
 import { ReadingShareDialog } from "@/components/share/ReadingShareDialog";
 import { SharePrompt } from "./interpretation/SharePrompt";
 import type { FeedbackLabel } from "./interpretation/constants";
+import { trackGrowthFeedbackSubmitted } from "@/lib/growth-attribution";
 import { LOADING_STAGES } from "./interpretation/constants";
 import { QUESTION_TYPE_LABELS } from "./interpretation/constants";
 import { READING_NAV_ITEMS } from "./interpretation/constants";
@@ -392,6 +393,7 @@ export default function InterpretationView() {
         ...current,
         [activeReadingId]: true,
       }));
+      trackGrowthFeedbackSubmitted(activeReadingId);
     } catch (error) {
       setFeedbackError(
         error instanceof Error ? error.message : "反馈提交失败，请稍后再试。",

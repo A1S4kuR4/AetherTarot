@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { createHash } from "node:crypto";
 import type {
   ReadingErrorPayload,
+  ReadingPhase,
   ReadingRequestPayload,
   StructuredReading,
 } from "@aethertarot/shared-types";
@@ -58,6 +59,7 @@ interface ReadingRouteDependencies {
   consumeQuota: (input: {
     actor: PublicFeatureActor;
     ipHash: string;
+    phase: ReadingPhase;
     config?: BetaOpsConfig;
   }) => Promise<void>;
   refundQuota: (input: {
@@ -252,12 +254,13 @@ async function executeReadingRequest({
   initialSnapshot?: InitialReadingSnapshot;
   signal?: AbortSignal;
 }): Promise<ReadingResponseSnapshot> {
-  let quotaConsumed = false;
+  let dailyQuotaConsumed = false;
   let trace: ReadingRunTrace | undefined;
 
   try {
-    await deps.consumeQuota({ actor, ipHash });
-    quotaConsumed = true;
+    const phase = parsedPayload.phase ?? "initial";
+    await deps.consumeQuota({ actor, ipHash, phase });
+    dailyQuotaConsumed = phase === "initial";
     const { result, calls } = await deps.collectUsage(() =>
       deps.generateReading(parsedPayload, {
         initialReading: initialSnapshot?.initialReading,
@@ -328,7 +331,7 @@ async function executeReadingRequest({
       trace = actualError.diagnosticTrace;
     }
 
-    if (quotaConsumed) {
+    if (dailyQuotaConsumed) {
       try {
         await deps.refundQuota({ actor, ipHash });
       } catch (refundError) {

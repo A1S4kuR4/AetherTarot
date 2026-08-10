@@ -314,8 +314,8 @@ export interface Database {
           id: string;
           created_at: string;
           reading_id: string;
-          user_id: string;
-          email: string;
+          user_id: string | null;
+          email: string | null;
           ip_hash: string;
           labels: string[];
           note: string | null;
@@ -326,8 +326,8 @@ export interface Database {
           id?: string;
           created_at?: string;
           reading_id: string;
-          user_id: string;
-          email: string;
+          user_id?: string | null;
+          email?: string | null;
           ip_hash: string;
           labels: string[];
           note?: string | null;
@@ -338,8 +338,8 @@ export interface Database {
           id?: string;
           created_at?: string;
           reading_id?: string;
-          user_id?: string;
-          email?: string;
+          user_id?: string | null;
+          email?: string | null;
           ip_hash?: string;
           labels?: string[];
           note?: string | null;
@@ -384,6 +384,63 @@ export interface Database {
           reading?: Json;
           user_notes?: string | null;
           thread_id?: string | null;
+        };
+        Relationships: [];
+      };
+      growth_events: {
+        Row: {
+          event_id: string;
+          created_at: string;
+          event_type: "page_view" | "reading_started" | "reading_completed" | "feedback_submitted";
+          session_id: string;
+          attribution_id: string;
+          flow_id: string | null;
+          reading_id: string | null;
+          user_id: string | null;
+          ip_hash: string;
+          utm_source: string | null;
+          utm_medium: string | null;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_term: string | null;
+          landing_path: string;
+          referrer_host: string | null;
+        };
+        Insert: {
+          event_id: string;
+          created_at?: string;
+          event_type: "page_view" | "reading_started" | "reading_completed" | "feedback_submitted";
+          session_id: string;
+          attribution_id: string;
+          flow_id?: string | null;
+          reading_id?: string | null;
+          user_id?: string | null;
+          ip_hash: string;
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_term?: string | null;
+          landing_path: string;
+          referrer_host?: string | null;
+        };
+        Update: {
+          event_id?: string;
+          created_at?: string;
+          event_type?: "page_view" | "reading_started" | "reading_completed" | "feedback_submitted";
+          session_id?: string;
+          attribution_id?: string;
+          flow_id?: string | null;
+          reading_id?: string | null;
+          user_id?: string | null;
+          ip_hash?: string;
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_term?: string | null;
+          landing_path?: string;
+          referrer_host?: string | null;
         };
         Relationships: [];
       };
@@ -519,11 +576,27 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      consume_growth_event_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_ip_minute_limit: number;
+        };
+        Returns: boolean;
+      };
       consume_anonymous_reading_quota: {
         Args: {
           p_ip_hash: string;
           p_anonymous_daily_limit: number;
           p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
+      consume_anonymous_reading_phase_quota: {
+        Args: {
+          p_ip_hash: string;
+          p_anonymous_daily_limit: number;
+          p_ip_minute_limit: number;
+          p_charge_daily_quota: boolean;
         };
         Returns: Json;
       };
@@ -541,6 +614,16 @@ export interface Database {
           p_ip_hash: string;
           p_user_daily_limit: number;
           p_ip_minute_limit: number;
+        };
+        Returns: Json;
+      };
+      consume_reading_phase_quota: {
+        Args: {
+          p_user_id: string;
+          p_ip_hash: string;
+          p_user_daily_limit: number;
+          p_ip_minute_limit: number;
+          p_charge_daily_quota: boolean;
         };
         Returns: Json;
       };

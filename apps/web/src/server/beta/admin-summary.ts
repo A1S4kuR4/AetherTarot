@@ -39,6 +39,24 @@ interface DailyTokenRow {
   outstanding_reserved_tokens: number | null;
 }
 
+type GrowthEventType =
+  | "page_view"
+  | "reading_started"
+  | "reading_completed"
+  | "feedback_submitted";
+
+interface GrowthEventRow {
+  event_type: GrowthEventType;
+  utm_source: string | null;
+}
+
+export interface GrowthFunnelCounts {
+  visits: number;
+  readingStarts: number;
+  readingCompletions: number;
+  feedbackSubmissions: number;
+}
+
 export function getBeijingDayWindow(now = new Date(), days = 1) {
   const windowDays = Math.max(1, Math.floor(days));
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -81,6 +99,39 @@ function increment(map: Record<string, number>, key: string) {
   map[key] = (map[key] ?? 0) + 1;
 }
 
+function createEmptyGrowthFunnel(): GrowthFunnelCounts {
+  return {
+    visits: 0,
+    readingStarts: 0,
+    readingCompletions: 0,
+    feedbackSubmissions: 0,
+  };
+}
+
+function incrementGrowthFunnel(
+  funnel: GrowthFunnelCounts,
+  eventType: GrowthEventType,
+) {
+  if (eventType === "page_view") funnel.visits++;
+  if (eventType === "reading_started") funnel.readingStarts++;
+  if (eventType === "reading_completed") funnel.readingCompletions++;
+  if (eventType === "feedback_submitted") funnel.feedbackSubmissions++;
+}
+
+export function summarizeGrowthEvents(events: GrowthEventRow[]) {
+  const growthFunnel = createEmptyGrowthFunnel();
+  const growthBySource: Record<string, GrowthFunnelCounts> = {};
+
+  for (const event of events) {
+    const source = event.utm_source?.trim().toLowerCase() || "direct";
+    incrementGrowthFunnel(growthFunnel, event.event_type);
+    growthBySource[source] ??= createEmptyGrowthFunnel();
+    incrementGrowthFunnel(growthBySource[source], event.event_type);
+  }
+
+  return { growthFunnel, growthBySource };
+}
+
 export async function getAdminSummary(days: number = 1) {
   await requireBetaTesterAccess("admin");
 
@@ -113,7 +164,32 @@ export async function getAdminSummary(days: number = 1) {
       finalSuccess: 105,
       twoStageCompletionRate: 0.954,
       feedbackCount: 36,
-      feedbackByLabel: { "insightful": 20, "accurate": 12, "confusing": 4 },
+      feedbackByLabel: {
+        "helpful": 20,
+        "template_like": 8,
+        "too_agreeable": 5,
+        "did_not_answer": 3,
+      },
+      growthFunnel: {
+        visits: 132,
+        readingStarts: 74,
+        readingCompletions: 58,
+        feedbackSubmissions: 36,
+      },
+      growthBySource: {
+        douyin: {
+          visits: 100,
+          readingStarts: 62,
+          readingCompletions: 50,
+          feedbackSubmissions: 31,
+        },
+        direct: {
+          visits: 32,
+          readingStarts: 12,
+          readingCompletions: 8,
+          feedbackSubmissions: 5,
+        },
+      },
     };
   }
 
@@ -133,6 +209,7 @@ export async function getAdminSummary(days: number = 1) {
     { data: encyclopediaEventRows, error: encyclopediaEventError },
     { data: feedbackRows, error: feedbackError },
     { data: tokenRows, error: tokenError },
+    { data: growthRows, error: growthError },
   ] = await Promise.all([
     adminClient
       .from("reading_events")
@@ -155,9 +232,20 @@ export async function getAdminSummary(days: number = 1) {
       .gte("usage_day", sinceDay)
       .lte("usage_day", usageDay)
       .limit(windowDays),
+    adminClient
+      .from("growth_events")
+      .select("event_type, utm_source")
+      .gte("created_at", since)
+      .limit(10000),
   ]);
 
-  if (eventError || encyclopediaEventError || feedbackError || tokenError) {
+  if (
+    eventError
+    || encyclopediaEventError
+    || feedbackError
+    || tokenError
+    || growthError
+  ) {
     throw new ReadingServiceError(
       "provider_unavailable",
       "管理后台统计查询失败，请稍后再试。",
@@ -169,6 +257,8 @@ export async function getAdminSummary(days: number = 1) {
   const encyclopediaEvents = (encyclopediaEventRows ?? []) as EncyclopediaEventRow[];
   const feedback = (feedbackRows ?? []) as FeedbackRow[];
   const tokens = (tokenRows ?? []) as DailyTokenRow[];
+  const growthEvents = (growthRows ?? []) as GrowthEventRow[];
+  const { growthFunnel, growthBySource } = summarizeGrowthEvents(growthEvents);
 
   const registeredUsers = new Set<string>();
   const guestUsers = new Set<string>();
@@ -263,5 +353,7 @@ export async function getAdminSummary(days: number = 1) {
       initialSuccess > 0 ? Math.min(1, finalSuccess / initialSuccess) : 0,
     feedbackCount: feedback.length,
     feedbackByLabel,
+    growthFunnel,
+    growthBySource,
   };
 }

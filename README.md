@@ -8,7 +8,7 @@ AetherTarot 是一个以结构化输出、安全边界和 Next.js 阅读体验�
 
 生产内测入口：[https://aethertarot.cn/](https://aethertarot.cn/)
 
-游客与内测账号额度由运行时服务控制。已登录用户通过邀请制 Credentials 流程管理。
+免费内测期间，游客按 IP hash 每日可完成 3 次完整解读；日常/深度模式的合法追问整合不重复扣减日额度。已登录用户通过邀请制 Credentials 流程管理，具体额度仍由运行时服务控制。
 
 ## 仓库内容
 

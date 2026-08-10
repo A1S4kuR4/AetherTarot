@@ -8,6 +8,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import { PageBurnTransitionOverlay } from "@/components/transition/PageBurnTransitionOverlay";
 import { PageBurnTransitionProvider } from "@/components/transition/PageBurnTransitionProvider";
 import { ReadingProvider } from "@/context/ReadingContext";
+import { GrowthAttributionTracker } from "@/components/analytics/GrowthAttributionTracker";
 
 /** Routes that use Midnight Mode (dark immersive surface) */
 const MIDNIGHT_ROUTES = ["/ritual", "/ritual/draw", "/reveal"];
@@ -21,6 +22,7 @@ export default function AppShell({
 
   return (
     <ReadingProvider>
+      <GrowthAttributionTracker />
       <PageBurnTransitionProvider>
         <RouteShell key={pathname} pathname={pathname}>
           {children}
