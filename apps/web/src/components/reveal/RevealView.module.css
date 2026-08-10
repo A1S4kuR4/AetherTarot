@@ -156,11 +156,13 @@
 
 .positionTrack {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
   z-index: 20;
   margin: 0;
   padding: 0;
   list-style: none;
+  transform-origin: center;
 }
 
 .position {
@@ -504,7 +506,7 @@
   }
 
   .altar {
-    height: auto;
+    height: var(--mobile-spread-height, 23rem);
   }
 
   .rings {
@@ -513,48 +515,7 @@
   }
 
   .positionTrack {
-    position: relative;
-    inset: auto;
-    display: flex;
-    width: min(100vw, 100%);
-    min-height: 18.5rem;
-    align-items: center;
-    gap: 1rem;
-    overflow-x: auto;
-    padding: 1.5rem max(1rem, calc((100% - 9rem) / 2));
-    scroll-padding-inline: max(1rem, calc((100% - 9rem) / 2));
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .positionTrack::-webkit-scrollbar {
-    display: none;
-  }
-
-  .position {
-    position: static;
-    width: 9rem;
-    flex: none;
-    scroll-snap-align: center;
-    transform: none;
-  }
-
-  .cardFrame,
-  .altar[data-count="1"] .cardFrame,
-  .altar[data-count="4"] .cardFrame,
-  .altar[data-count="7"] .cardFrame,
-  .altar[data-count="10"] .cardFrame {
-    width: 8rem;
-    transform: none;
-  }
-
-  .cardFrame:hover {
-    transform: translateY(-3px);
-  }
-
-  .altar[data-count="7"] .positionLabel,
-  .altar[data-count="10"] .positionLabel {
-    display: flex;
+    max-width: none;
   }
 }
 
@@ -583,18 +544,6 @@
 
   .plaqueCount {
     font-size: 0.6875rem;
-  }
-
-  .positionTrack {
-    min-height: 17rem;
-  }
-
-  .cardFrame,
-  .altar[data-count="1"] .cardFrame,
-  .altar[data-count="4"] .cardFrame,
-  .altar[data-count="7"] .cardFrame,
-  .altar[data-count="10"] .cardFrame {
-    width: 7.5rem;
   }
 
   .altarNote {

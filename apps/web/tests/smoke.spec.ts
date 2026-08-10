@@ -231,6 +231,31 @@ async function expectNoHorizontalOverflow(
     .toBeLessThanOrEqual(tolerance);
 }
 
+async function expectAllElementsWithinViewport(
+  page: Page,
+  elements: Locator,
+  expectedCount: number,
+  tolerance = 2,
+) {
+  await expect
+    .poll(
+      () =>
+        elements.evaluateAll(
+          (nodes, allowedOverflow) => ({
+            count: nodes.length,
+            outside: nodes.filter((node) => {
+              const rect = node.getBoundingClientRect();
+              return rect.left < -allowedOverflow
+                || rect.right > window.innerWidth + allowedOverflow;
+            }).length,
+          }),
+          tolerance,
+        ),
+      { timeout: 3000 },
+    )
+    .toEqual({ count: expectedCount, outside: 0 });
+}
+
 async function expectEncyclopediaImagePaneWidth(
   page: Page,
   matcher: { max?: number; min?: number },
@@ -1406,7 +1431,13 @@ test.describe("AetherTarot smoke flow", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await startReading(page, "这段变化接下来会怎样展开？", /七张牌/i);
     await expect(page).toHaveURL(/\/ritual\/draw$/);
-    await expect(page.getByTestId("ritual-position-track")).toBeVisible();
+    const ritualTrack = page.getByTestId("ritual-position-track");
+    await expect(ritualTrack).toBeVisible();
+    await expectAllElementsWithinViewport(
+      page,
+      ritualTrack.locator(".ritual-position"),
+      7,
+    );
     await expectNoHorizontalOverflow(page);
 
     await drawCards(page, 7);
@@ -1420,6 +1451,11 @@ test.describe("AetherTarot smoke flow", () => {
     const revealTrack = page.getByTestId("reveal-card-track");
     await expect(revealTrack).toBeVisible();
     await expect(revealTrack.locator(".reveal-card-container")).toHaveCount(7);
+    await expectAllElementsWithinViewport(
+      page,
+      revealTrack.locator(".reveal-card-container > div:first-child"),
+      7,
+    );
     await expect(page.getByRole("button", { name: /带着整组气候进入深读/i })).toBeVisible();
     await expect
       .poll(
@@ -1496,6 +1532,11 @@ test.describe("AetherTarot smoke flow", () => {
     ]) {
       await page.setViewportSize(viewport);
       await expectNoHorizontalOverflow(page);
+      await expectAllElementsWithinViewport(
+        page,
+        page.getByTestId("ritual-position-track").locator(".ritual-position"),
+        10,
+      );
 
       const layout = await page.evaluate(() => {
         const deckField = document.querySelector<HTMLElement>(".ritual-deck-field");

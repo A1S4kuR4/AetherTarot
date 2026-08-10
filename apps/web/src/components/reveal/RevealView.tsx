@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CardImage from "@/components/ui/CardImage";
 import LegacyIcon from "@/components/ui/LegacyIcon";
 import { useReading } from "@/context/ReadingContext";
@@ -74,11 +74,33 @@ function getFallbackLayout(count: number): RevealPosition[] {
   }));
 }
 
+function getRevealCardWidth(count: number) {
+  if (count === 1) return 136;
+  if (count === 4) return 100;
+  if (count >= 10) return 74;
+  if (count >= 7) return 82;
+  return 110;
+}
+
+function getRevealLayoutMetrics(layout: RevealPosition[], cardWidth: number) {
+  const labelPadding = 44;
+  const cardHeight = cardWidth * 1.7;
+  const maxAbsX = Math.max(...layout.map((position) => Math.abs(position.x)), 0);
+  const maxAbsY = Math.max(...layout.map((position) => Math.abs(position.y)), 0);
+
+  return {
+    fieldWidth: (maxAbsX + cardWidth / 2 + labelPadding) * 2,
+    fieldHeight: (maxAbsY + cardHeight / 2 + labelPadding) * 2,
+  };
+}
+
 export default function RevealView() {
   const router = useRouter();
   const { question, selectedSpread, drawSource, drawnCards, isHydrated } = useReading();
   const [isEnteringReading, setIsEnteringReading] = useState(false);
   const [shareStatus, setShareStatus] = useState<ShareStatus>("idle");
+  const [altarWidth, setAltarWidth] = useState(0);
+  const altarRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
@@ -96,6 +118,26 @@ export default function RevealView() {
     }
   }, [drawSource, drawnCards.length, isHydrated, question, router, selectedSpread]);
 
+  useEffect(() => {
+    const altar = altarRef.current;
+
+    if (!altar) {
+      return;
+    }
+
+    const updateWidth = () => setAltarWidth(altar.clientWidth);
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(altar);
+    return () => observer.disconnect();
+  }, [isHydrated, selectedSpread]);
+
   if (!isHydrated || !selectedSpread || drawnCards.length === 0) {
     return null;
   }
@@ -105,11 +147,17 @@ export default function RevealView() {
     selectedSpread.name,
     selectedSpread.positions.map((position) => position.name),
   );
-  const positionLayout =
-    REVEAL_LAYOUTS[selectedSpread.id]
-    ?? getFallbackLayout(selectedSpread.positions.length);
-  const cardImageWidth = selectedSpread.positions.length >= 7 ? 180 : 240;
   const cardCount = selectedSpread.positions.length;
+  const positionLayout = REVEAL_LAYOUTS[selectedSpread.id]
+    ?? getFallbackLayout(cardCount);
+  const layoutMetrics = getRevealLayoutMetrics(
+    positionLayout,
+    getRevealCardWidth(cardCount),
+  );
+  const layoutScale = altarWidth > 0
+    ? Math.min(1, altarWidth / layoutMetrics.fieldWidth)
+    : 1;
+  const cardImageWidth = cardCount >= 7 ? 180 : 240;
 
   const handleEnterReading = () => {
     if (isEnteringReading) {
@@ -196,7 +244,15 @@ export default function RevealView() {
           </span>
         </h1>
 
-        <div className={styles.altar} data-spread={selectedSpread.id} data-count={cardCount}>
+        <div
+          ref={altarRef}
+          className={styles.altar}
+          data-spread={selectedSpread.id}
+          data-count={cardCount}
+          style={{
+            "--mobile-spread-height": `${Math.round(layoutMetrics.fieldHeight * layoutScale)}px`,
+          } as CSSProperties}
+        >
           <div className={styles.rings} aria-hidden="true">
             <span className={cn(styles.axis, styles.axisHorizontal)} />
             <span className={cn(styles.axis, styles.axisVertical)} />
@@ -216,6 +272,11 @@ export default function RevealView() {
             data-testid="reveal-card-track"
             className={styles.positionTrack}
             aria-label={`${selectedSpread.name}牌面`}
+            style={{
+              width: `${layoutMetrics.fieldWidth}px`,
+              height: `${layoutMetrics.fieldHeight}px`,
+              transform: `translate(-50%, -50%) scale(${layoutScale})`,
+            }}
           >
             {selectedSpread.positions.map((position, index) => {
               const drawn = drawnCards.find(

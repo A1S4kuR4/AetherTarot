@@ -483,6 +483,7 @@ export default function RitualView() {
 
         <ol
           data-testid="ritual-position-track"
+          data-count={selectedSpread.positions.length}
           className={cn(
             "ritual-position-track",
             selectedSpread.positions.length >= 6 && "ritual-position-track-dense",

@@ -2011,7 +2011,7 @@
 
     .ritual-altar {
       display: flex;
-      height: clamp(414px, 53dvh, 450px);
+      min-height: clamp(414px, 53dvh, 450px);
       flex-direction: column;
       align-items: center;
       gap: 1rem;
@@ -2028,28 +2028,30 @@
       display: flex;
       width: 100%;
       min-width: 0;
-      max-width: 100%;
-      min-height: 126px;
+      max-width: 21.25rem;
       flex: none;
-      justify-content: flex-start;
-      gap: 1.125rem;
-      overflow-x: auto;
-      padding: 0.2rem max(0.25rem, calc((100% - 56px) / 2));
-      scroll-padding-inline: max(0.25rem, calc((100% - 56px) / 2));
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-    }
-
-    .ritual-position-track::-webkit-scrollbar {
-      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem 0.5rem;
+      overflow: visible;
+      padding: 0.2rem 0;
     }
 
     .ritual-position {
       position: static;
-      width: 72px;
-      flex: none;
-      scroll-snap-align: center;
+      width: 6rem;
+      flex: 0 0 6rem;
       transform: none;
+    }
+
+    .ritual-position-track[data-count="4"] .ritual-position {
+      width: calc((100% - 1.5rem) / 4);
+      flex-basis: calc((100% - 1.5rem) / 4);
+    }
+
+    .ritual-position-track-dense .ritual-position {
+      width: 56px;
+      flex-basis: 56px;
     }
 
     .ritual-position-label-above .ritual-position-label {
@@ -2057,14 +2059,24 @@
     }
 
     .ritual-position-label {
-      max-width: 72px;
-      gap: 0.3rem;
+      max-width: 100%;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.25rem;
+      text-align: center;
+      white-space: normal;
     }
 
     .ritual-position-name {
-      overflow: hidden;
+      overflow: visible;
       font-size: 0.75rem;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+    }
+
+    .ritual-position-track-dense .ritual-position-name {
+      font-size: 0.625rem;
     }
 
     .ritual-deck-field {
