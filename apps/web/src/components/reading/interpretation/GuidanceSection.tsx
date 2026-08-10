@@ -24,14 +24,14 @@ export function GuidanceSection({ guidance, chapterLabel }: GuidanceSectionProps
         </p>
       ) : null}
       {remainingQuestions.length > 0 ? (
-        <ol start={2} className="mt-5 space-y-3">
+        <ol className="mt-5 space-y-3">
           {remainingQuestions.map((item, index) => (
             <li
               key={item}
               className="flex gap-3 text-[15px] leading-relaxed text-text-body"
             >
               <span aria-hidden="true" className="shrink-0 font-serif text-text-accent">
-                {index + 2}.
+                {index + 1}.
               </span>
               <span>{item}</span>
             </li>
