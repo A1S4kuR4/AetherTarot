@@ -12,6 +12,7 @@ const navItems = [
   { href: "/", label: "首页", icon: "home" },
   { href: "/journey", label: "旅程", icon: "history" },
   { href: "/encyclopedia", label: "百科", icon: "auto_stories" },
+  { href: "/privacy", label: "使用与隐私", icon: "info" },
 ] as const;
 
 /**
@@ -131,6 +132,13 @@ export default function Sidebar({
           <p className="text-xs text-text-muted leading-relaxed">
             本解读用于反思与启发，不替代医疗、法律、财务或其他专业建议。
           </p>
+          <Link
+            href="/privacy"
+            onClick={onClose}
+            className="mt-3 inline-flex min-h-11 items-center text-xs font-medium text-text-body underline decoration-paper-border underline-offset-4 transition-colors hover:text-terracotta"
+          >
+            查看使用与隐私说明
+          </Link>
         </div>
       </aside>
 
