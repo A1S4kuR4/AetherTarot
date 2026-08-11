@@ -8,6 +8,7 @@ import {
   unwrapLlmUsageError,
 } from "@/server/observability/llm-usage";
 import { ReadingGenerationError } from "@/server/reading/errors";
+import { ProviderBulkhead } from "@/server/llm/provider-bulkhead";
 
 const config = {
   baseUrl: "http://provider.test/v1",
@@ -25,6 +26,108 @@ function createTokenGate() {
 }
 
 describe("OpenAI-compatible transport", () => {
+  it("times out while reading a body that never finishes after headers", async () => {
+    const tokenGate = createTokenGate();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"choices":['));
+      },
+    });
+    const transport = new OpenAiCompatibleTransport(
+      { ...config, timeoutMs: 20 },
+      vi.fn(async () => new Response(stream, { status: 200 })),
+      tokenGate,
+      new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 20 }),
+    );
+    await expect(transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x" }))
+      .rejects.toMatchObject({ subtype: "timeout" });
+    expect(tokenGate.settle).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects an oversized provider response and settles once", async () => {
+    const tokenGate = createTokenGate();
+    const transport = new OpenAiCompatibleTransport(
+      { ...config, maxResponseBytes: 16 },
+      vi.fn(async () => new Response("x".repeat(32), { status: 200 })),
+      tokenGate,
+      new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 20 }),
+    );
+    await expect(transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x" }))
+      .rejects.toMatchObject({ subtype: "response_too_large" });
+    expect(tokenGate.settle).toHaveBeenCalledTimes(1);
+  });
+
+  it("honors caller abort while reading the provider body", async () => {
+    const tokenGate = createTokenGate();
+    const controller = new AbortController();
+    const stream = new ReadableStream<Uint8Array>({
+      start(body) {
+        body.enqueue(new TextEncoder().encode('{"choices":['));
+      },
+    });
+    const transport = new OpenAiCompatibleTransport(
+      config,
+      vi.fn(async () => new Response(stream, { status: 200 })),
+      tokenGate,
+      new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 20 }),
+    );
+    const pending = transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x", signal: controller.signal });
+    await Promise.resolve();
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ subtype: "cancelled" });
+    expect(tokenGate.settle).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases its permit when token reservation fails", async () => {
+    const bulkhead = new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 20 });
+    const transport = new OpenAiCompatibleTransport(
+      config,
+      vi.fn(),
+      { reserve: vi.fn(async () => { throw new Error("reserve failed"); }), settle: vi.fn() },
+      bulkhead,
+    );
+    await expect(transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x" })).rejects.toThrow("reserve failed");
+    expect(bulkhead.stats).toEqual({ active: 0, queued: 0 });
+  });
+
+  it("applies the single deadline to token reservation and settles a late reservation", async () => {
+    let resolveReservation!: (value: { id: string; reservedTokens: number }) => void;
+    const reserve = vi.fn(() => new Promise<{ id: string; reservedTokens: number }>((resolve) => {
+      resolveReservation = resolve;
+    }));
+    const settle = vi.fn(async () => undefined);
+    const bulkhead = new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 100 });
+    const transport = new OpenAiCompatibleTransport(
+      { ...config, timeoutMs: 20 },
+      vi.fn(),
+      { reserve, settle },
+      bulkhead,
+    );
+
+    await expect(transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x" }))
+      .rejects.toMatchObject({ subtype: "timeout" });
+    expect(bulkhead.stats.active).toBe(0);
+
+    resolveReservation({ id: "late", reservedTokens: 10 });
+    await vi.waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not hold a provider permit while settlement is permanently hung", async () => {
+    const settle = vi.fn(() => new Promise<void>(() => undefined));
+    const bulkhead = new ProviderBulkhead({ maxConcurrent: 1, maxQueued: 0, queueTimeoutMs: 100 });
+    const response = Response.json({ choices: [{ message: { content: '{"ok":true}' } }] });
+    const transport = new OpenAiCompatibleTransport(
+      { ...config, timeoutMs: 20 },
+      vi.fn(async () => response),
+      { reserve: vi.fn(async () => ({ id: "r", reservedTokens: 10 })), settle },
+      bulkhead,
+    );
+
+    await expect(transport.request({ source: "reading", prompt: { system: "s", user: "u" }, maxOutputTokens: 10, parse: (x) => x, truncatedMessage: "x" }))
+      .resolves.toEqual({ ok: true });
+    expect(settle).toHaveBeenCalledTimes(1);
+    expect(bulkhead.stats).toEqual({ active: 0, queued: 0 });
+  });
   it.each([
     ["plain object", "{\"answer\":\"ok\"}"],
     ["markdown fence", "```json\n{\"answer\":\"ok\"}\n```"],

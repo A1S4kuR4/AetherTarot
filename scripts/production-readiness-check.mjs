@@ -10,6 +10,8 @@ const defaultRouteStatsPath =
   "apps/web/.next/diagnostics/route-bundle-stats.json";
 const defaultOrigin = "https://aethertarot.cn";
 const defaultRoutes = ["/", "/new", "/ritual", "/reveal", "/reading", "/encyclopedia"];
+const edgeResponseTimeoutMs = 130_000;
+const placeholderSecretPattern = /(?:change[-_ ]?me|example|placeholder|replace[-_ ]?me|your[-_ ]?secret|fake)/i;
 
 const requiredEnvNames = [
   "NODE_ENV",
@@ -21,14 +23,13 @@ const requiredEnvNames = [
   "AETHERTAROT_READING_PROVIDER",
   "AETHERTAROT_ENCYCLOPEDIA_PROVIDER",
   "AETHERTAROT_IP_HASH_SALT",
+  "AETHERTAROT_PROXY_SHARED_SECRET",
   "AETHERTAROT_READING_DAILY_LIMIT_PER_USER",
+  "AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP",
   "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_USER",
+  "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP",
   "AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE",
   "AETHERTAROT_LLM_DAILY_TOKEN_LIMIT",
-  "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_EMAIL",
-  "AETHERTAROT_AUTH_EMAIL_DAILY_LIMIT_PER_EMAIL",
-  "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_IP",
-  "AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_GLOBAL",
 ];
 
 const llmEnvNames = [
@@ -40,7 +41,33 @@ const llmEnvNames = [
   "AETHERTAROT_LLM_TEMPERATURE",
   "AETHERTAROT_LLM_TIMEOUT_MS",
   "AETHERTAROT_LLM_MAX_OUTPUT_TOKENS",
+  "AETHERTAROT_LLM_MAX_RESPONSE_BYTES",
+  "AETHERTAROT_LLM_MAX_CONCURRENCY",
+  "AETHERTAROT_LLM_MAX_QUEUE",
+  "AETHERTAROT_LLM_QUEUE_TIMEOUT_MS",
 ];
+
+const numericEnvRanges = {
+  AETHERTAROT_READING_DAILY_LIMIT_PER_USER: [1, 1000],
+  AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP: [1, 100],
+  AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_USER: [1, 1000],
+  AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP: [1, 100],
+  AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE: [1, 1000],
+  AETHERTAROT_LLM_DAILY_TOKEN_LIMIT: [1000, 1_000_000_000],
+  AETHERTAROT_LLM_TIMEOUT_MS: [1000, 600_000],
+  AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: [1, 100_000],
+  AETHERTAROT_LLM_MAX_RESPONSE_BYTES: [1024, 4 * 1024 * 1024],
+  AETHERTAROT_LLM_MAX_CONCURRENCY: [1, 64],
+  AETHERTAROT_LLM_MAX_QUEUE: [0, 512],
+  AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: [100, 120_000],
+};
+
+const urlEnvNames = new Set([
+  "NEXT_PUBLIC_SITE_URL",
+  "AUTH_URL",
+  "SUPABASE_URL",
+  "AETHERTAROT_LLM_BASE_URL",
+]);
 
 const nextBuildArtifacts = [
   { type: "file", path: "apps/web/.next/BUILD_ID" },
@@ -164,7 +191,7 @@ function checkRequiredEnv(env) {
     names.push(...llmEnvNames);
   }
 
-  return names.map((name) => {
+  const checks = names.map((name) => {
     const value = env[name]?.trim();
     if (!value) {
       return fail("env", name, "missing or empty");
@@ -174,8 +201,72 @@ function checkRequiredEnv(env) {
       return fail("env", name, "must be production");
     }
 
+    if (urlEnvNames.has(name)) {
+      try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== "https:") {
+          return fail("env", name, "must be an absolute HTTPS URL");
+        }
+      } catch {
+        return fail("env", name, "must be a valid absolute URL");
+      }
+    }
+
+    const range = numericEnvRanges[name];
+    if (range) {
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < range[0] || number > range[1]) {
+        return fail("env", name, `must be an integer in ${range[0]}-${range[1]}`);
+      }
+    }
+
+    if (
+      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT")
+      && value.length < 32
+    ) {
+      return fail("env", name, "must contain at least 32 characters");
+    }
+
+    if (
+      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT")
+      && placeholderSecretPattern.test(value)
+    ) {
+      return fail("env", name, "must not use an example or placeholder value");
+    }
+
+    if (name === "AETHERTAROT_LLM_TEMPERATURE") {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || number > 2) {
+        return fail("env", name, "must be a number in 0-2");
+      }
+    }
+
+    if (name === "AETHERTAROT_LLM_API_KEY") {
+      const reference = /^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/.exec(value);
+      if (reference && !env[reference[1] ?? reference[2]]?.trim()) {
+        return fail("env", name, "references a missing or empty environment variable");
+      }
+    }
+
     return pass("env", name, "set");
   });
+
+  const proxySecret = env.AETHERTAROT_PROXY_SHARED_SECRET?.trim();
+  const ipSalt = env.AETHERTAROT_IP_HASH_SALT?.trim();
+  if (proxySecret && ipSalt && proxySecret === ipSalt) {
+    checks.push(fail("env", "proxy/IP secrets", "AETHERTAROT_PROXY_SHARED_SECRET and AETHERTAROT_IP_HASH_SALT must be different"));
+  }
+  if (readingProvider === "llm" || encyclopediaProvider === "llm") {
+    const llmDeadlineMs = Number(env.AETHERTAROT_LLM_TIMEOUT_MS);
+    if (Number.isInteger(llmDeadlineMs) && llmDeadlineMs >= edgeResponseTimeoutMs) {
+      checks.push(fail(
+        "env",
+        "LLM/edge deadline",
+        `AETHERTAROT_LLM_TIMEOUT_MS must be lower than the edge response timeout (${edgeResponseTimeoutMs}ms)`,
+      ));
+    }
+  }
+  return checks;
 }
 
 function checkNodeVersion(nodeVersion) {

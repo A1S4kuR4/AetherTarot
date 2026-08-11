@@ -85,9 +85,7 @@ async function waitForPersistedHistoryEntry(
 ) {
   await page.waitForFunction(
     (expectedQuestion) => {
-      const rawHistory =
-        window.localStorage.getItem("aether_tarot_history_v3")
-        ?? window.localStorage.getItem("aether_tarot_history_v2");
+      const rawHistory = window.localStorage.getItem("aether_tarot_guest_history_v1");
 
       if (!rawHistory) {
         return false;
@@ -231,6 +229,57 @@ async function expectNoHorizontalOverflow(
     .toBeLessThanOrEqual(tolerance);
 }
 
+async function refetchAuthSession(page: Page) {
+  const response = page.waitForResponse((candidate) =>
+    candidate.url().includes("/api/auth/session")
+  );
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await response;
+}
+
+function mockCompletedReading(question: string, id: string) {
+  return {
+    reading_id: id,
+    locale: "zh-CN",
+    question,
+    question_type: "other",
+    agent_profile: "lite",
+    reading_phase: "initial",
+    requires_followup: false,
+    initial_reading_id: null,
+    followup_answers: null,
+    spread: {
+      id: "single",
+      name: "单牌启示",
+      englishName: "Single Card",
+      description: "单牌",
+      positions: [{ id: "focus", name: "核心", description: "当前核心" }],
+      icon: "filter_1",
+    },
+    cards: [{
+      card_id: "fool",
+      name: "愚者",
+      english_name: "The Fool",
+      orientation: "upright",
+      position_id: "focus",
+      position: "核心",
+      position_meaning: "当前核心",
+      interpretation: "只属于旧身份的解释。",
+    }],
+    themes: ["身份边界", "现实校准"],
+    synthesis: "只属于旧身份的综合。",
+    reflective_guidance: ["核实事实。", "保留边界。"],
+    follow_up_questions: [],
+    safety_note: null,
+    confidence_note: "仅作反思。",
+    session_capsule: "旧身份 capsule",
+    sober_check: null,
+    presentation_mode: "standard",
+  };
+}
+
 async function expectAllElementsWithinViewport(
   page: Page,
   elements: Locator,
@@ -297,7 +346,7 @@ async function expectHomeSectionsDoNotClipContent(
 async function seedRecentCareerHistory(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "aether_tarot_history_v2",
+      "aether_tarot_guest_history_v1",
       JSON.stringify([
         {
           id: "history-career-reading",
@@ -609,6 +658,182 @@ async function completeFollowup(
 }
 
 test.describe("AetherTarot smoke flow", () => {
+  test("does not temporarily render guest state while the auth session is loading", async ({ page }) => {
+    const guestQuestion = "认证加载期间绝不能出现的游客问题";
+    await page.addInitScript((question) => {
+      localStorage.setItem("aether_tarot_guest_history_v1", JSON.stringify([{
+        id: "guest-loading-reading",
+        createdAt: "2026-08-11T00:00:00.000Z",
+        spreadId: "single",
+        drawnCards: [],
+        reading: { question },
+      }]));
+    }, guestQuestion);
+    let markSessionRequested!: () => void;
+    let releaseSession!: () => void;
+    const sessionRequested = new Promise<void>((resolve) => { markSessionRequested = resolve; });
+    const sessionGate = new Promise<void>((resolve) => { releaseSession = resolve; });
+    await page.route("**/api/auth/session", async (route) => {
+      markSessionRequested();
+      await sessionGate;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: "a@example.test", email: "a@example.test" },
+          expires: "2099-01-01T00:00:00.000Z",
+        }),
+      });
+    });
+    await page.route("**/api/readings", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ readings: [] }),
+    }));
+
+    await page.goto("/history", { waitUntil: "domcontentloaded" });
+    await sessionRequested;
+    await expect(page.getByTestId("reading-identity-loading")).toHaveAttribute("aria-busy", "true");
+    await expect(page.getByText(guestQuestion)).toHaveCount(0);
+
+    releaseSession();
+    await expect(page.getByText("a@example.test").first()).toBeVisible();
+    await expect(page.getByText(guestQuestion)).toHaveCount(0);
+  });
+
+  test("isolates history across account A, account B, and guest identity switches", async ({ page }) => {
+    let identity: "a" | "b" | "guest" = "a";
+    const makeEntry = (id: string, question: string) => ({
+      id,
+      createdAt: "2026-08-10T00:00:00.000Z",
+      spreadId: "single",
+      drawnCards: [],
+      reading: {
+        reading_id: id, locale: "zh-CN", question, question_type: "other", agent_profile: "lite",
+        reading_phase: "final", requires_followup: false, initial_reading_id: null, followup_answers: null,
+        spread: { id: "single", name: "单牌启示", englishName: "Single Card", description: "单牌", positions: [], icon: "filter_1" },
+        cards: [], themes: ["身份隔离"], synthesis: "身份隔离测试。", reflective_guidance: [], follow_up_questions: [],
+        safety_note: null, confidence_note: null, session_capsule: null, sober_check: null, presentation_mode: "standard",
+      },
+    });
+    const accountA = makeEntry("account-a-reading", "只有账号 A 能看到的问题");
+    const guest = makeEntry("guest-reading", "只有游客能看到的问题");
+    await page.addInitScript((entry) => {
+      localStorage.setItem("aether_tarot_guest_history_v1", JSON.stringify([entry]));
+    }, guest);
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      contentType: "application/json",
+      body: identity === "guest"
+        ? "null"
+        : JSON.stringify({ user: { id: `${identity}@example.test`, email: `${identity}@example.test` }, expires: "2099-01-01T00:00:00.000Z" }),
+    }));
+    await page.route("**/api/readings", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ readings: identity === "a" ? [accountA] : [] }),
+    }));
+
+    await gotoAppRoute(page, "/history");
+    await expect(page.getByText("只有账号 A 能看到的问题")).toBeVisible();
+    await expect(page.getByText("只有游客能看到的问题")).toHaveCount(0);
+
+    identity = "b";
+    await refetchAuthSession(page);
+    await expect(page.getByText("b@example.test").first()).toBeVisible();
+    await expect(page.getByText("只有账号 A 能看到的问题")).toHaveCount(0);
+    await expect(page.getByText("只有游客能看到的问题")).toHaveCount(0);
+
+    identity = "guest";
+    await refetchAuthSession(page);
+    await expect(page.getByText("只有游客能看到的问题")).toBeVisible();
+    await expect(page.getByText("只有账号 A 能看到的问题")).toHaveCount(0);
+  });
+
+  test("invalidates a pending account reading before an in-place A to B switch", async ({ page }) => {
+    let identity: "a" | "b" = "a";
+    const oldQuestion = "账号 A 正在生成的私密问题";
+    let markReadingRequested!: () => void;
+    let releaseReading!: () => void;
+    const readingRequested = new Promise<void>((resolve) => { markReadingRequested = resolve; });
+    const readingGate = new Promise<void>((resolve) => { releaseReading = resolve; });
+    let historyPostCount = 0;
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: `${identity}@example.test`, email: `${identity}@example.test` },
+        expires: "2099-01-01T00:00:00.000Z",
+      }),
+    }));
+    await page.route("**/api/readings", (route) => {
+      if (route.request().method() === "POST") historyPostCount += 1;
+      return route.fulfill({ contentType: "application/json", body: JSON.stringify({ readings: [] }) });
+    });
+    await page.route("**/api/reading", async (route) => {
+      markReadingRequested();
+      await readingGate;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(mockCompletedReading(oldQuestion, "account-a-pending")),
+      }).catch(() => undefined);
+    });
+
+    await gotoAppRoute(page, "/new");
+    await page.getByPlaceholder("今天，你想向内心询问什么？").fill(oldQuestion);
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
+    await revealQuickDrawAndStartDeepReading(page);
+    await readingRequested;
+
+    identity = "b";
+    await refetchAuthSession(page);
+    await expect(page.getByText("b@example.test").first()).toBeVisible();
+    await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+    releaseReading();
+    await page.waitForTimeout(300);
+    await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+    expect(historyPostCount).toBe(0);
+  });
+
+  test("does not expose a completed A reading while its outbox POST settles after switching to B", async ({ page }) => {
+    let identity: "a" | "b" = "a";
+    const oldQuestion = "账号 A 等待同步的私密问题";
+    let markPostRequested!: () => void;
+    let releasePost!: () => void;
+    const postRequested = new Promise<void>((resolve) => { markPostRequested = resolve; });
+    const postGate = new Promise<void>((resolve) => { releasePost = resolve; });
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: `${identity}@example.test`, email: `${identity}@example.test` },
+        expires: "2099-01-01T00:00:00.000Z",
+      }),
+    }));
+    await page.route("**/api/reading", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(mockCompletedReading(oldQuestion, "account-a-outbox")),
+    }));
+    await page.route("**/api/readings", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.fulfill({ contentType: "application/json", body: JSON.stringify({ readings: [] }) });
+        return;
+      }
+      markPostRequested();
+      await postGate;
+      await route.fulfill({ status: 200, contentType: "application/json", body: "{}" })
+        .catch(() => undefined);
+    });
+
+    await gotoAppRoute(page, "/new");
+    await page.getByPlaceholder("今天，你想向内心询问什么？").fill(oldQuestion);
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
+    await revealQuickDrawAndStartDeepReading(page);
+    await postRequested;
+
+    identity = "b";
+    await refetchAuthSession(page);
+    await expect(page.getByText("b@example.test").first()).toBeVisible();
+    await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+    releasePost();
+    await page.waitForTimeout(300);
+    await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+  });
+
   test("completes a structured reading and persists it into history", async ({
     page,
   }) => {

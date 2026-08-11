@@ -1,4 +1,5 @@
 import { ReadingServiceError } from "@/server/reading/errors";
+import { segmentSafetyText } from "@/server/safety/text-normalization";
 
 export type SafetyLevel = "standard" | "bounded" | "sober_check" | "hard_stop";
 
@@ -26,11 +27,17 @@ export interface SafetyAssessment {
 }
 
 const SELF_HARM_PATTERN =
-  /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|suicide|kill myself/i;
+  /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|suicide|kill myself|killmyself/i;
 const URGENT_HEALTH_PATTERN =
-  /急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|medical emergency|can't breathe/i;
+  /急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|medical emergency|can't breathe|cantbreathe/i;
+const UNSAFE_TREATMENT_STOP_PATTERN =
+  /(?:你应该|你可以|建议你|我要|我想|我准备|you should|you can|i should|i want to).{0,8}(?:停药|停止治疗|拒绝治疗|stop medication|stop treatment)|(?:youshould|youcan|ishould|iwantto)(?:stopmedication|stoptreatment)/i;
+const SAFE_TREATMENT_CONTEXT_PATTERN =
+  /(?:不要|不能|不应|不可|拒绝|避免).{0,8}(?:停药|停止治疗|拒绝治疗)|(?:do not|don't|should not|cannot|refuse to).{0,8}(?:stop medication|stop treatment)/i;
 const IMMEDIATE_DANGER_PATTERN =
   /(?:正在|现在|此刻).{0,8}(?:打我|殴打我|伤害我|威胁我|追杀我|有危险)|(?:要|想要|准备).{0,5}(?:杀我|伤害我)|持刀|被困住|无法脱身|生命危险|immediate danger|being attacked|trying to kill me/i;
+const IMMEDIATE_VIOLENCE_INTENT_PATTERN =
+  /(?:正在|现在|此刻|马上).{0,10}(?:要|想|准备|打算).{0,6}(?:杀|伤害|袭击|殴打)(?:他|她|对方|别人|他们)|(?:我要|我想|我准备|我打算).{0,6}(?:杀|伤害|袭击|殴打)(?:他|她|对方|别人|他们)|i(?:'m| am)? (?:going to|about to|planning to).{0,8}(?:kill|hurt|attack)|i(?:am)?(?:goingto|aboutto|planningto)(?:kill|hurt|attack)(?:him|her|them|someone)?/i;
 const HEALTH_PATTERN =
   /健康|疾病|生病|诊断|怀孕|治疗|症状|用药|medical|doctor|pregnan/i;
 const LEGAL_PATTERN = /法律|官司|起诉|诉讼|律师|合同|权益|责任|legal|lawsuit/i;
@@ -39,15 +46,17 @@ const FINANCIAL_PATTERN =
 const ABUSE_PATTERN =
   /家暴|家庭暴力|亲密关系暴力|暴力对待|我被.{0,8}(?:打|威胁|恐吓|胁迫|勒索|监控|跟踪|控制)|(?:伴侣|丈夫|妻子|老公|老婆|前任|对方|他|她).{0,8}(?:打我|威胁我|恐吓我|胁迫我|勒索我|监控我|跟踪我|控制我)|abuse|abusive|stalking me|tracking me|controlling me/i;
 const MANIPULATION_INTENT_PATTERN =
-  /(?:怎么|如何|怎样|有什么办法|帮我|教我).{0,12}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制(?:他|她|对方)|让.{0,5}(?:离不开我|听我的|服从我))|我(?:想|要|准备|打算)(?:去|继续)?(?:跟踪|监控|报复|操控|勒索|偷窥|试探)(?:他|她|对方|前任)?|how (?:can|do) i .{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|i want to .{0,8}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
+  /(?:怎么|如何|怎样|有什么办法|帮我|教我|你应该|你可以|应该先).{0,12}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制(?:他|她|对方)|让.{0,5}(?:离不开我|听我的|服从我)|stalk|track|monitor|control|manipulate|blackmail|retaliate)|我(?:想|要|准备|打算)(?:去|继续)?.{0,4}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:他|她|对方|前任)?|how\s*(?:can|do)\s*i.{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:i\s*want\s*to|you\s*should|you\s*can).{0,8}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|howcani.{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:iwantto|youshould|youcan).{0,8}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
+const NON_PERPETRATOR_CONTEXT_PATTERN =
+  /(?:不想|不会|不要|没有|没打算|拒绝|反对|阻止|担心|害怕)(?:去|继续)?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)|(?:他|她|对方|有人|朋友)(?:问我|说|声称|威胁).{0,16}(?:怎么|如何|要|想|应该).{0,8}(?:跟踪|监控|报复|操控|勒索|偷窥|控制)|(?:被|遭到|正在被).{0,8}(?:跟踪|监控|操控|勒索|控制)|do not want to|don't want to|refuse to|being (?:stalked|tracked|monitored|controlled)/i;
 const THIRD_PARTY_CERTAINTY_PATTERN =
   /(?:他|她|对方)(?:到底|会不会|是不是|一定|肯定|真实).{0,10}(?:爱|想|打算|回来|喜欢|讨厌|离开)|真实想法|心里(?:到底)?想|secretly feels|definitely loves|come back/i;
 const RELATIONSHIP_CONFLICT_PATTERN =
   /争吵|吵架|冷战|沟通困难|关系紧张|关系矛盾|相处不顺|relationship conflict|keep arguing/i;
 const MAJOR_DECISION_SUBJECT_PATTERN =
-  /离婚|辞职|分手|退学|堕胎|卖房|买房|大额投资|全部积蓄|炒股|起诉|诉讼|决裂|all in|quit my job|divorce/i;
+  /离婚|辞职|分手|退学|堕胎|卖房|买房|大额投资|全部积蓄|炒股|起诉|诉讼|决裂|all in|quit my job|quitmyjob|divorce/i;
 const DECISION_OUTSOURCING_PATTERN =
-  /要不要|该不该|应不应该|是否应该|我应该|帮我决定|替我决定|告诉我该|should i|decide for me/i;
+  /要不要|该不该|应不应该|是否应该|我应该|帮我决定|替我决定|告诉我该|should i|shouldi|decide for me|decideforme/i;
 
 const CRISIS_REFERRAL_LINKS = [
   "https://english.beijing.gov.cn/travellinginbeijing/quickguideontravelservices/traveltips/202108/t20210811_2466839.html",
@@ -100,21 +109,32 @@ function getPrimaryBoundedCategory(categories: SafetyCategory[]) {
 }
 
 export function assessSafetyText(text: string): SafetyAssessment {
-  const normalized = text.trim();
+  const segments = segmentSafetyText(text);
+  const matches = (pattern: RegExp) => segments.some((segment) =>
+    pattern.test(segment.searchable)
+  );
   const categories: SafetyCategory[] = [];
-  const hasSelfHarm = SELF_HARM_PATTERN.test(normalized);
-  const hasUrgentHealth = URGENT_HEALTH_PATTERN.test(normalized);
-  const hasImmediateDanger = IMMEDIATE_DANGER_PATTERN.test(normalized);
-  const hasManipulationIntent = MANIPULATION_INTENT_PATTERN.test(normalized);
-  const hasAbuseSupport = ABUSE_PATTERN.test(normalized);
-  const hasHealth = HEALTH_PATTERN.test(normalized);
-  const hasLegal = LEGAL_PATTERN.test(normalized);
-  const hasFinancial = FINANCIAL_PATTERN.test(normalized);
-  const hasMajorDecision =
-    MAJOR_DECISION_SUBJECT_PATTERN.test(normalized)
-    && DECISION_OUTSOURCING_PATTERN.test(normalized);
-  const hasThirdPartyCertainty = THIRD_PARTY_CERTAINTY_PATTERN.test(normalized);
-  const hasRelationshipConflict = RELATIONSHIP_CONFLICT_PATTERN.test(normalized);
+  const hasSelfHarm = matches(SELF_HARM_PATTERN);
+  const hasUrgentHealth = matches(URGENT_HEALTH_PATTERN) || segments.some((segment) =>
+    UNSAFE_TREATMENT_STOP_PATTERN.test(segment.searchable)
+    && !SAFE_TREATMENT_CONTEXT_PATTERN.test(segment.searchable)
+  );
+  const hasImmediateDanger = matches(IMMEDIATE_DANGER_PATTERN)
+    || matches(IMMEDIATE_VIOLENCE_INTENT_PATTERN);
+  const hasManipulationIntent = segments.some((segment) =>
+    MANIPULATION_INTENT_PATTERN.test(segment.searchable)
+    && !NON_PERPETRATOR_CONTEXT_PATTERN.test(segment.searchable)
+  );
+  const hasAbuseSupport = matches(ABUSE_PATTERN);
+  const hasHealth = matches(HEALTH_PATTERN) || matches(UNSAFE_TREATMENT_STOP_PATTERN);
+  const hasLegal = matches(LEGAL_PATTERN);
+  const hasFinancial = matches(FINANCIAL_PATTERN);
+  const hasMajorDecision = segments.some((segment) =>
+    MAJOR_DECISION_SUBJECT_PATTERN.test(segment.searchable)
+    && DECISION_OUTSOURCING_PATTERN.test(segment.searchable)
+  );
+  const hasThirdPartyCertainty = matches(THIRD_PARTY_CERTAINTY_PATTERN);
+  const hasRelationshipConflict = matches(RELATIONSHIP_CONFLICT_PATTERN);
 
   addCategory(categories, "self_harm", hasSelfHarm);
   addCategory(categories, "immediate_danger", hasImmediateDanger);
@@ -205,6 +225,24 @@ export function assessSafetyText(text: string): SafetyAssessment {
     safetyNote: null,
     soberCheck: null,
   };
+}
+
+export function assessSafetyFields(fields: readonly string[]): SafetyAssessment {
+  const assessments = fields
+    .map((field) => assessSafetyText(field))
+    .filter((assessment) => assessment.categories.length > 0);
+  if (assessments.length === 0) {
+    return assessSafetyText("");
+  }
+
+  const selected = assessments.find((assessment) => assessment.level === "hard_stop")
+    ?? assessments.find((assessment) => assessment.primaryCategory === "abuse_support")
+    ?? assessments.find((assessment) => assessment.level === "sober_check")
+    ?? assessments.find((assessment) => assessment.level === "bounded")
+    ?? assessments[0];
+  const categories = [...new Set(assessments.flatMap((assessment) => assessment.categories))];
+
+  return { ...selected, categories };
 }
 
 export function assertSafetyAllowsGeneration(assessment: SafetyAssessment) {

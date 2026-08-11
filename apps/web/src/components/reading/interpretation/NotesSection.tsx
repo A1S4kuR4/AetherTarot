@@ -5,7 +5,7 @@ import { ChapterNumber } from "./ChapterNumber";
 
 interface NotesSectionProps {
   value: string;
-  status: 'idle' | 'saving' | 'saved' | 'error';
+  status: 'idle' | 'saving' | 'saved' | 'saved-local' | 'error';
   placeholder?: string;
   onChange: (value: string) => void;
   onSave: () => void;
@@ -38,6 +38,11 @@ export function NotesSection({
             <span className="flex items-center gap-1 text-success">
               <LegacyIcon name="check_circle" className="text-[14px]" />
               已保存
+            </span>
+          )}
+          {status === 'saved-local' && (
+            <span className="text-xs text-emerald-700" role="status">
+              已保存到此浏览器
             </span>
           )}
           {status === 'error' && (

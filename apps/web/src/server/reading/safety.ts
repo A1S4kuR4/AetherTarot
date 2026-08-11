@@ -1,7 +1,9 @@
 import "server-only";
 
 import type { StructuredReading } from "@aethertarot/shared-types";
+import type { FollowupAnswer } from "@aethertarot/shared-types";
 import {
+  assessSafetyFields,
   assessSafetyText,
   type SafetyCategory,
 } from "@/server/safety/policy";
@@ -82,8 +84,18 @@ export type IntentFrictionResult =
   | { type: "sober_check"; sober_check: string; presentation_mode: "sober_anchor"; policy_version: string; rule_ids: string[] }
   | { type: "pass"; policy_version: string; rule_ids: string[] };
 
-export function analyzeIntentFriction(question: string): IntentFrictionResult {
-  const assessment = assessSafetyText(question);
+export function buildSafetySubjects(
+  question: string,
+  followupAnswers: FollowupAnswer[] | undefined,
+) {
+  const answers = followupAnswers
+    ?.map((item) => item.answer.trim())
+    .filter(Boolean) ?? [];
+  return [question.trim(), ...answers].filter(Boolean);
+}
+
+export function analyzeIntentFriction(subjects: readonly string[]): IntentFrictionResult {
+  const assessment = assessSafetyFields(subjects);
   const diagnostics = {
     policy_version: "safety-rules-v1",
     rule_ids: assessment.categories.map((category) => `input.${category}`),
@@ -127,13 +139,13 @@ function withSafetyOverride(
 }
 
 export function applySafetyReview({
-  question,
+  subjects,
   reading,
 }: {
-  question: string;
+  subjects: readonly string[];
   reading: StructuredReading;
 }) {
-  const assessment = assessSafetyText(question);
+  const assessment = assessSafetyFields(subjects);
 
   if (assessment.level === "hard_stop" || !assessment.safetyNote) {
     return reading;

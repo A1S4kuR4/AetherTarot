@@ -311,6 +311,33 @@ describe("adaptive staged reading generation", () => {
     ]);
   });
 
+  it.each(["queue_full", "queue_timeout"] as const)(
+    "does not stage-retry a %s provider rejection",
+    async (subtype) => {
+      class QueueRejectedProvider extends RecordingProvider {
+        override async generateCompactRead(
+          _context: HydratedReadingContext,
+          options: ReadingGenerationCallOptions,
+        ): Promise<never> {
+          this.stages.push(`compact:${options.attempt}:${options.kind}`);
+          throw new ReadingGenerationError({
+            subtype,
+            stage: "compact",
+            message: subtype,
+            retryable: true,
+          });
+        }
+      }
+
+      const provider = new QueueRejectedProvider();
+      await expect(runReadingGraphWithDiagnostics(
+        { ...buildSinglePayload(), agent_profile: "lite" },
+        { provider, generationMode: "adaptive_staged" },
+      )).rejects.toMatchObject({ subtype });
+      expect(provider.stages).toEqual(["compact:1:generate"]);
+    },
+  );
+
   it("marks the second failed attempt as retry_exhausted", async () => {
     class ExhaustedProvider extends RecordingProvider {
       override async generateCompactRead(): Promise<never> {

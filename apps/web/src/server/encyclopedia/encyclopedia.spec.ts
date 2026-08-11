@@ -503,6 +503,30 @@ describe("encyclopedia query route", () => {
     expect(deps.generateAnswer).not.toHaveBeenCalled();
   });
 
+  it("preserves provider queue details and Retry-After", async () => {
+    const deps = buildDependencies({
+      generateAnswer: vi.fn(async () => {
+        throw new ReadingServiceError(
+          "provider_unavailable",
+          "模型请求队列已满，请稍后重试。",
+          503,
+          undefined,
+          undefined,
+          { retry_after_seconds: 4, subtype: "queue_full" },
+        );
+      }),
+    });
+    const response = await handleEncyclopediaQueryPost(
+      buildRequest({ query: "愚者是什么意思？" }),
+      deps,
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("4");
+    expect(payload.error?.code).toBe("provider_unavailable");
+  });
+
   it("rejects oversized query bodies before access and provider work", async () => {
     const deps = buildDependencies();
     const response = await handleEncyclopediaQueryPost(

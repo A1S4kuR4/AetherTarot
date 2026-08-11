@@ -99,10 +99,27 @@ function buildErrorResponse(
   referral_links?: string[],
   details?: Record<string, unknown>,
 ) {
+  const retryAfter = details?.retry_after_seconds;
   return Response.json(
     buildErrorPayload(code, message, intercept_reason, referral_links, details),
-    { status },
+    {
+      status,
+      headers: typeof retryAfter === "number"
+        ? { "Retry-After": String(Math.max(1, Math.ceil(retryAfter))) }
+        : undefined,
+    },
   );
+}
+
+function responseFromSnapshot(snapshot: { payload: object | StructuredReading; status: number }) {
+  const details = (snapshot.payload as Partial<ReadingErrorPayload>).error?.details;
+  const retryAfter = details?.retry_after_seconds;
+  return Response.json(snapshot.payload, {
+    status: snapshot.status,
+    headers: typeof retryAfter === "number"
+      ? { "Retry-After": String(Math.max(1, Math.ceil(retryAfter))) }
+      : undefined,
+  });
 }
 
 function buildErrorPayload(
@@ -546,9 +563,7 @@ export async function handleReadingPost(
       );
     }
     if (claim.status === "replay") {
-      return Response.json(claim.response.payload, {
-        status: claim.response.status,
-      });
+      return responseFromSnapshot(claim.response);
     }
     if (claim.status === "wait") {
       return buildErrorResponse(
@@ -674,7 +689,7 @@ export async function handleReadingPost(
     }
   }
 
-  return Response.json(snapshot.payload, { status: snapshot.status });
+  return responseFromSnapshot(snapshot);
 }
 
 export async function POST(request: Request) {

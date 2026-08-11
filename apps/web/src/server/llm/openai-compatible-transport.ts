@@ -6,7 +6,6 @@ import {
   isReadingGenerationError,
   type ReadingGenerationFailureSubtype,
 } from "@/server/reading/errors";
-import { recordLlmRawCompletion } from "@/server/observability/llm-raw-completions";
 import {
   databaseLlmTokenGate,
   type LlmTokenGate,
@@ -16,6 +15,12 @@ import {
   estimateTokenCount,
   recordLlmCall,
 } from "@/server/observability/llm-usage";
+import {
+  getSharedProviderBulkhead,
+  type ProviderBulkhead,
+} from "@/server/llm/provider-bulkhead";
+
+const MAX_PROVIDER_RESPONSE_BYTES_HARD_LIMIT = 4 * 1024 * 1024;
 
 export interface LlmProviderConfig {
   apiKey?: string;
@@ -26,10 +31,23 @@ export interface LlmProviderConfig {
   temperature: number;
   timeoutMs: number;
   maxOutputTokens: number;
+  maxResponseBytes?: number;
+  maxConcurrentRequests?: number;
+  maxQueuedRequests?: number;
+  queueTimeoutMs?: number;
 }
 
 type JsonRecord = Record<string, unknown>;
 type FetchImplementation = typeof fetch;
+
+function waitWithSignal<T>(promise: Promise<T>, signal: AbortSignal) {
+  if (signal.aborted) return Promise.reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
+  });
+}
 
 function asNonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -62,6 +80,23 @@ function parseNumber(
     throw new ReadingServiceError(
       "provider_unavailable",
       `${name} 必须是大于 0 的${integer ? "整数" : "合法数字"}。`,
+      503,
+    );
+  }
+  return parsed;
+}
+
+function parseBoundedInteger(
+  value: string | undefined,
+  fallback: number,
+  name: string,
+  { min, max }: { min: number; max: number },
+) {
+  const parsed = value === undefined ? fallback : Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new ReadingServiceError(
+      "provider_unavailable",
+      `${name} 必须是 ${min}-${max} 的整数。`,
       503,
     );
   }
@@ -138,7 +173,85 @@ export function resolveLlmProviderConfig(
       "AETHERTAROT_LLM_MAX_OUTPUT_TOKENS",
       true,
     ),
+    maxResponseBytes: parseBoundedInteger(
+      env.AETHERTAROT_LLM_MAX_RESPONSE_BYTES,
+      1024 * 1024,
+      "AETHERTAROT_LLM_MAX_RESPONSE_BYTES",
+      { min: 1024, max: MAX_PROVIDER_RESPONSE_BYTES_HARD_LIMIT },
+    ),
+    maxConcurrentRequests: parseBoundedInteger(
+      env.AETHERTAROT_LLM_MAX_CONCURRENCY,
+      4,
+      "AETHERTAROT_LLM_MAX_CONCURRENCY",
+      { min: 1, max: 64 },
+    ),
+    maxQueuedRequests: parseBoundedInteger(
+      env.AETHERTAROT_LLM_MAX_QUEUE,
+      16,
+      "AETHERTAROT_LLM_MAX_QUEUE",
+      { min: 0, max: 512 },
+    ),
+    queueTimeoutMs: parseBoundedInteger(
+      env.AETHERTAROT_LLM_QUEUE_TIMEOUT_MS,
+      15_000,
+      "AETHERTAROT_LLM_QUEUE_TIMEOUT_MS",
+      { min: 100, max: 120_000 },
+    ),
   };
+}
+
+async function readWithAbort(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal,
+) {
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  return new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+    const abort = () => reject(new DOMException("Aborted", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    reader.read().then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", abort);
+    });
+  });
+}
+
+async function readBoundedProviderResponse(
+  response: Response,
+  maxBytes: number,
+  signal: AbortSignal,
+) {
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await readWithAbort(reader, signal);
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel("provider_response_too_large").catch(() => undefined);
+        throw new ReadingGenerationError({
+          subtype: "response_too_large",
+          message: "llm provider 响应超过允许大小。",
+          code: "provider_unavailable",
+          status: 503,
+          retryable: true,
+        });
+      }
+      chunks.push(value);
+    }
+  } finally {
+    if (signal.aborted) await reader.cancel(signal.reason).catch(() => undefined);
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }
 
 export function parseOpenAiJsonObject(rawText: string): JsonRecord {
@@ -295,6 +408,11 @@ export class OpenAiCompatibleTransport {
     private readonly config: LlmProviderConfig,
     private readonly fetchImplementation: FetchImplementation = fetch,
     private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
+    private readonly bulkhead: ProviderBulkhead = getSharedProviderBulkhead({
+      maxConcurrent: config.maxConcurrentRequests ?? 4,
+      maxQueued: config.maxQueuedRequests ?? 16,
+      queueTimeoutMs: config.queueTimeoutMs ?? 15_000,
+    }),
   ) {}
 
   async request<T>(input: {
@@ -320,18 +438,71 @@ export class OpenAiCompatibleTransport {
         retryable: false,
       });
     }
+    const startedAt = Date.now();
+    const abortController = new AbortController();
+    let timedOut = false;
+    const cancelFromCaller = () => abortController.abort(input.signal?.reason);
+    if (input.signal?.aborted) cancelFromCaller();
+    else input.signal?.addEventListener("abort", cancelFromCaller, { once: true });
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      abortController.abort(new DOMException("Provider deadline exceeded", "TimeoutError"));
+    }, this.config.timeoutMs);
+    const cleanupDeadline = () => {
+      clearTimeout(timeout);
+      input.signal?.removeEventListener("abort", cancelFromCaller);
+    };
+
+    let releasePermit: () => void;
+    try {
+      releasePermit = await this.bulkhead.acquire(abortController.signal);
+    } catch (error) {
+      cleanupDeadline();
+      if (timedOut) {
+        throw new ReadingGenerationError({ subtype: "timeout", message: "llm provider 当前不可用，请稍后再试。", retryable: true });
+      }
+      throw error;
+    }
     const promptText = `${input.prompt.system}\n${input.prompt.user}`;
-    const reservation = await this.tokenGate.reserve({
+    let reservation;
+    const reservationPromise = this.tokenGate.reserve({
       source: input.source,
       promptText,
       maxOutputTokens: input.maxOutputTokens,
     });
-    const startedAt = Date.now();
+    try {
+      reservation = await waitWithSignal(reservationPromise, abortController.signal);
+    } catch (error) {
+      releasePermit();
+      cleanupDeadline();
+      if (abortController.signal.aborted) {
+        void reservationPromise.then((lateReservation) =>
+          this.tokenGate.settle({ reservation: lateReservation }).catch(() => undefined)
+        ).catch(() => undefined);
+        const wasCancelled = input.signal?.aborted && !timedOut;
+        throw new ReadingGenerationError({
+          subtype: wasCancelled ? "cancelled" : "timeout",
+          message: wasCancelled ? "Reading 请求已取消。" : "llm provider 当前不可用，请稍后再试。",
+          retryable: !wasCancelled,
+        });
+      }
+      throw error;
+    }
     let settled = false;
     const settle = async (actualTokens?: number) => {
       if (settled) return;
       settled = true;
-      await this.tokenGate.settle({ reservation, actualTokens });
+      releasePermit();
+      try {
+        await waitWithSignal(
+          this.tokenGate.settle({ reservation, actualTokens }),
+          abortController.signal,
+        );
+      } catch {
+        // Settlement is idempotent server-side; deadline/cancellation must not hold a permit.
+      } finally {
+        cleanupDeadline();
+      }
     };
     const record = (
       success: boolean,
@@ -366,21 +537,6 @@ export class OpenAiCompatibleTransport {
       return totalTokens;
     };
 
-    const abortController = new AbortController();
-    let timedOut = false;
-    const cancelFromCaller = () => abortController.abort(input.signal?.reason);
-    if (input.signal?.aborted) {
-      cancelFromCaller();
-    } else {
-      input.signal?.addEventListener("abort", cancelFromCaller, { once: true });
-    }
-    const timeout = setTimeout(
-      () => {
-        timedOut = true;
-        abortController.abort();
-      },
-      this.config.timeoutMs,
-    );
     let response: Response;
     try {
       response = await this.fetchImplementation(
@@ -413,8 +569,6 @@ export class OpenAiCompatibleTransport {
         },
       );
     } catch (error) {
-      clearTimeout(timeout);
-      input.signal?.removeEventListener("abort", cancelFromCaller);
       const wasCancelled = input.signal?.aborted && !timedOut;
       const code = wasCancelled
         ? "cancelled"
@@ -431,10 +585,8 @@ export class OpenAiCompatibleTransport {
         retryable: !wasCancelled,
       });
     }
-    clearTimeout(timeout);
-    input.signal?.removeEventListener("abort", cancelFromCaller);
-
     if (!response.ok) {
+      await response.body?.cancel("provider_http_error").catch(() => undefined);
       record(
         false,
         "",
@@ -454,8 +606,35 @@ export class OpenAiCompatibleTransport {
 
     let payload: unknown;
     try {
-      payload = await response.json();
-    } catch {
+      const responseBytes = await readBoundedProviderResponse(
+        response,
+        Math.min(
+          this.config.maxResponseBytes ?? 1024 * 1024,
+          MAX_PROVIDER_RESPONSE_BYTES_HARD_LIMIT,
+        ),
+        abortController.signal,
+      );
+      payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(responseBytes));
+    } catch (error) {
+      const wasCancelled = input.signal?.aborted && !timedOut;
+      if (
+        error instanceof ReadingGenerationError
+        && error.subtype === "response_too_large"
+      ) {
+        record(false, "", error.subtype, response.status, undefined, error.subtype);
+        await settle();
+        throw error;
+      }
+      if (wasCancelled || timedOut || (error instanceof Error && error.name === "AbortError")) {
+        const subtype = wasCancelled ? "cancelled" : "timeout";
+        record(false, "", subtype, response.status, undefined, subtype);
+        await settle();
+        throw new ReadingGenerationError({
+          subtype,
+          message: wasCancelled ? "Reading 请求已取消。" : "llm provider 当前不可用，请稍后再试。",
+          retryable: !wasCancelled,
+        });
+      }
       record(
         false,
         "",
@@ -471,7 +650,6 @@ export class OpenAiCompatibleTransport {
         retryable: true,
       });
     }
-
     const usage = extractUsage(payload);
     let messageText = "";
     const finishReason = Array.isArray(
@@ -487,17 +665,6 @@ export class OpenAiCompatibleTransport {
         messageText = extractMessageText(payload);
       } catch {
         // finish_reason remains authoritative.
-      }
-      if (messageText) {
-        recordLlmRawCompletion({
-          run_id: input.metric?.runId,
-          stage_id: input.metric?.stageId,
-          attempt_id: input.metric?.attemptId,
-          stage: input.metric?.stage,
-          attempt: input.metric?.attempt,
-          kind: input.metric?.kind,
-          text: messageText,
-        });
       }
       const total = record(
         false,
@@ -520,15 +687,6 @@ export class OpenAiCompatibleTransport {
     let parsedMessage: JsonRecord | undefined;
     try {
       messageText = extractMessageText(payload);
-      recordLlmRawCompletion({
-        run_id: input.metric?.runId,
-        stage_id: input.metric?.stageId,
-        attempt_id: input.metric?.attemptId,
-        stage: input.metric?.stage,
-        attempt: input.metric?.attempt,
-        kind: input.metric?.kind,
-        text: messageText,
-      });
       parsedMessage = parseOpenAiJsonObject(messageText);
       result = input.parse(parsedMessage);
     } catch (error) {

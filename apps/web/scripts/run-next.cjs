@@ -6,6 +6,11 @@ process.env.NEXT_IGNORE_INCORRECT_LOCKFILE ??= "1";
 
 const nextArgs = process.argv.slice(2);
 const isDevelopmentServer = nextArgs[0] === "dev";
+const isProductionServer = nextArgs[0] === "start";
+
+if (isProductionServer) {
+  process.env.HOSTNAME = "127.0.0.1";
+}
 
 if (isDevelopmentServer) {
   process.env.AETHERTAROT_LOCAL_ONLY ??= "1";

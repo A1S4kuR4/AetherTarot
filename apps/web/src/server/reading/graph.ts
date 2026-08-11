@@ -59,6 +59,7 @@ import { structuredReadingSchema } from "@/server/reading/schemas";
 import {
   analyzeIntentFriction,
   applySafetyReview,
+  buildSafetySubjects,
   sanitizeIncomingSessionCapsule,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
@@ -116,7 +117,7 @@ const ReadingGraphState = new StateSchema({
   sessionMemoryStore: z.custom<SessionMemoryStore>().optional(),
   memoryUserId: z.string().optional(),
   initialReadingOverride: z.custom<StructuredReading>().optional(),
-  maxAgentSteps: z.number().int().positive().optional(),
+  maxAgentSteps: z.number().int().nonnegative().optional(),
   question: z.string().optional(),
   threadId: z.string().optional(),
   questionType: z.custom<QuestionType>().optional(),
@@ -837,8 +838,11 @@ const validateFinalPhaseNode: ReadingGraphNode = (state) => {
 };
 
 const analyzeIntentFrictionNode: ReadingGraphNode = (state) => {
-  const question = requireStateValue(state.question, "question");
-  const frictionResult = analyzeIntentFriction(question);
+  const safetySubjects = buildSafetySubjects(
+    requireStateValue(state.question, "question"),
+    state.followupAnswers,
+  );
+  const frictionResult = analyzeIntentFriction(safetySubjects);
 
   return { frictionResult };
 };
@@ -1059,6 +1063,14 @@ const safetyStopNode: ReadingGraphNode = (state) => {
   );
 
   if (frictionResult.type === "hard_stop") {
+    const tracedState = {
+      ...state,
+      agentActions: appendAgentAction({
+        state,
+        step: Math.max((state.agentStepCount ?? 0) + 1, 1),
+        action: { type: "safety_stop", reason: frictionResult.reason },
+      }),
+    };
     throwWithDiagnosticTrace(
       new ReadingServiceError(
         "safety_intercept",
@@ -1067,7 +1079,7 @@ const safetyStopNode: ReadingGraphNode = (state) => {
         frictionResult.reason,
         frictionResult.referral_links,
       ),
-      state,
+      tracedState,
       "safety_stop",
     );
   }
@@ -1159,6 +1171,12 @@ const generateDraftNode: ReadingGraphNode = async (state) => {
     });
   }
 };
+
+function routeAfterIntentFriction(state: { frictionResult?: IntentFrictionResult }) {
+  return requireStateValue(state.frictionResult, "frictionResult").type === "hard_stop"
+    ? "safety_stop"
+    : "agent_decider";
+}
 
 const validateDraftContractNode: ReadingGraphNode = (state) => {
   const draft = requireStateValue(state.draft, "draft");
@@ -1326,7 +1344,10 @@ const validateGeneratedContentNode: ReadingGraphNode = (state) => {
 const applySafetyReviewNode: ReadingGraphNode = (state) => {
   const reviewedReading = structuredReadingSchema.parse(
     applySafetyReview({
-      question: requireStateValue(state.question, "question"),
+      subjects: buildSafetySubjects(
+        requireStateValue(state.question, "question"),
+        state.followupAnswers,
+      ),
       reading: requireStateValue(state.reading, "reading"),
     }),
   ) as StructuredReading;
@@ -1396,11 +1417,11 @@ const writeSessionMemoryNode: ReadingGraphNode = async (state) => {
     toolName: "write_session_memory",
     input: {
       threadId,
-      userId: memoryUserId,
       patch: buildSessionMemoryPatch(reading),
     },
     context: {
       threadId,
+      userId: memoryUserId,
       permissions: ["public", "session"],
       stateSnapshot: getAgentState(state),
       sessionMemoryStore: state.sessionMemoryStore,
@@ -1441,7 +1462,10 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addEdge("classify_question", "hydrate_context")
   .addEdge("hydrate_context", "validate_final_phase")
   .addEdge("validate_final_phase", "analyze_intent_friction")
-  .addEdge("analyze_intent_friction", "agent_decider")
+  .addConditionalEdges("analyze_intent_friction", routeAfterIntentFriction, {
+    agent_decider: "agent_decider",
+    safety_stop: "safety_stop",
+  })
   .addConditionalEdges("agent_decider", routeAgentAction, {
     final_answer: "ensure_minimum_grounding",
     get_session_memory: "get_session_memory",

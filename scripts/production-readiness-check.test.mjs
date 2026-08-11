@@ -11,21 +11,20 @@ import {
 const fullEnv = {
   NODE_ENV: "production",
   NEXT_PUBLIC_SITE_URL: "https://aethertarot.example",
-  AUTH_SECRET: "fake-auth-secret-value",
+  AUTH_SECRET: "f8N6xQ2mV9rT4kP7sL3cD5wY8uH1jB0z",
   AUTH_URL: "https://aethertarot.example",
   SUPABASE_URL: "https://example.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "fake-service-role-secret",
   AETHERTAROT_READING_PROVIDER: "placeholder",
   AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "disabled",
-  AETHERTAROT_IP_HASH_SALT: "fake-ip-hash-salt",
+  AETHERTAROT_IP_HASH_SALT: "production-ip-hash-salt-value-123456789",
+  AETHERTAROT_PROXY_SHARED_SECRET: "production-proxy-secret-value-123456789",
   AETHERTAROT_READING_DAILY_LIMIT_PER_USER: "10",
+  AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP: "3",
   AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_USER: "20",
+  AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP: "1",
   AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE: "6",
   AETHERTAROT_LLM_DAILY_TOKEN_LIMIT: "200000",
-  AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_EMAIL: "3",
-  AETHERTAROT_AUTH_EMAIL_DAILY_LIMIT_PER_EMAIL: "10",
-  AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_PER_IP: "10",
-  AETHERTAROT_AUTH_EMAIL_HOURLY_LIMIT_GLOBAL: "50",
 };
 
 test("missing required env reports variable names without values", async () => {
@@ -129,6 +128,10 @@ test("formatted report never includes secret values", async () => {
     AETHERTAROT_LLM_TEMPERATURE: "0.3",
     AETHERTAROT_LLM_TIMEOUT_MS: "120000",
     AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+    AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "1048576",
+    AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+    AETHERTAROT_LLM_MAX_QUEUE: "16",
+    AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
     PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----",
   };
 
@@ -141,11 +144,102 @@ test("formatted report never includes secret values", async () => {
   const report = formatReadinessReport(result);
 
   assert.equal(result.ok, true);
-  assert.doesNotMatch(report, /fake-auth-secret-value/);
+  assert.doesNotMatch(report, /f8N6xQ2mV9rT4kP7sL3cD5wY8uH1jB0z/);
   assert.doesNotMatch(report, /fake-service-role-secret/);
-  assert.doesNotMatch(report, /fake-ip-hash-salt/);
+  assert.doesNotMatch(report, /production-ip-hash-salt/);
   assert.doesNotMatch(report, /sk-test-secret-value/);
   assert.doesNotMatch(report, /BEGIN PRIVATE KEY/);
+});
+
+test("env validation rejects bad URLs, numeric ranges, and unresolved references", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      NEXT_PUBLIC_SITE_URL: "http://insecure.example",
+      AETHERTAROT_READING_DAILY_LIMIT_PER_ANONYMOUS_IP: "0",
+      AETHERTAROT_READING_PROVIDER: "llm",
+      AETHERTAROT_LLM_BASE_URL: "not-a-url",
+      AETHERTAROT_LLM_MODEL: "model",
+      AETHERTAROT_LLM_API_KEY: "$MISSING_KEY",
+      AETHERTAROT_LLM_THINKING_MODE: "disabled",
+      AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      AETHERTAROT_LLM_TEMPERATURE: "0.3",
+      AETHERTAROT_LLM_TIMEOUT_MS: "120000",
+      AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+      AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "99999999",
+      AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+      AETHERTAROT_LLM_MAX_QUEUE: "16",
+      AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+  assert.equal(result.ok, false);
+  assert.match(report, /absolute HTTPS URL/);
+  assert.match(report, /AETHERTAROT_LLM_MAX_RESPONSE_BYTES/);
+  assert.match(report, /references a missing/);
+});
+
+test("env validation rejects placeholder and reused proxy/IP secrets", async () => {
+  const repoRoot = makeRepoFixture();
+  const same = "replace-me-production-secret-value-123456789";
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: { ...fullEnv, AETHERTAROT_PROXY_SHARED_SECRET: same, AETHERTAROT_IP_HASH_SALT: same },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+  assert.equal(result.ok, false);
+  assert.match(report, /placeholder/);
+  assert.match(report, /must be different/);
+});
+
+test("env validation rejects weak AUTH_SECRET and an LLM deadline at the edge timeout", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AUTH_SECRET: "replace-me-auth-secret",
+      AETHERTAROT_READING_PROVIDER: "llm",
+      AETHERTAROT_LLM_BASE_URL: "https://llm.example",
+      AETHERTAROT_LLM_MODEL: "model",
+      AETHERTAROT_LLM_API_KEY: "sk-test",
+      AETHERTAROT_LLM_THINKING_MODE: "disabled",
+      AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      AETHERTAROT_LLM_TEMPERATURE: "0.3",
+      AETHERTAROT_LLM_TIMEOUT_MS: "130000",
+      AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+      AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "1048576",
+      AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+      AETHERTAROT_LLM_MAX_QUEUE: "16",
+      AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+  assert.equal(result.ok, false);
+  assert.match(report, /AUTH_SECRET/);
+  assert.match(report, /at least 32 characters|placeholder/);
+  assert.match(report, /edge response timeout/);
+});
+
+test("Caddy example keeps trusted headers, host rejection, redirects, and route body caps", () => {
+  const caddyfile = fs.readFileSync(
+    path.join(import.meta.dirname, "..", "docs", "70-ops", "Caddyfile.aethertarot.example"),
+    "utf8",
+  );
+  assert.match(caddyfile, /request_header -CF-Connecting-IP/);
+  assert.match(caddyfile, /request_header -X-AetherTarot-Client-IP/);
+  assert.match(caddyfile, /request_header X-AetherTarot-Client-IP \{remote_host\}/);
+  assert.match(caddyfile, /http:\/\/\s*\{\s*respond "unrecognized host" 421/s);
+  assert.match(caddyfile, /https:\/\/www\.aethertarot\.cn[\s\S]*redir https:\/\/aethertarot\.cn/);
+  assert.match(caddyfile, /handle \/api\/readings\/migrate[\s\S]*max_size 2MiB/);
+  assert.match(caddyfile, /handle \/api\/reading[\s\S]*max_size 64KiB/);
+  assert.match(caddyfile, /handle \/api\/\*[\s\S]*max_size 256KiB/);
+  assert.match(caddyfile, /response_header_timeout 130s/);
 });
 
 function makeRepoFixture({ includeBuild = true, missingFiles = [] } = {}) {

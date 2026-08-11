@@ -5,10 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useSession } from "next-auth/react";
 import { findCardById, findSpreadById, getAllSpreads } from "@aethertarot/domain-tarot";
 import type {
   AgentProfile,
@@ -30,9 +32,27 @@ import {
 import { fetchJsonWithTimeout } from "@/lib/fetch-json-with-timeout";
 import { trackGrowthReadingCompleted } from "@/lib/growth-attribution";
 import { isQuickReadingState } from "@/lib/quickReadingFlow";
+import {
+  enqueueAccountReading,
+  readAccountReadingOutbox,
+  removeAccountReadingFromOutbox,
+} from "@/lib/account-reading-outbox";
+import {
+  IdentityRequestLifecycle,
+  type IdentityRequest,
+} from "@/lib/identity-request-lifecycle";
+import {
+  GUEST_HISTORY_STORAGE_KEY,
+  mergeGuestHistoryEntry,
+  readGuestHistory,
+} from "@/lib/guest-reading-history";
+import {
+  loadIdentityHistory,
+  saveIdentityNotes,
+  type ReadingIdentity,
+} from "@/lib/identity-reading-history";
 
-const LEGACY_HISTORY_STORAGE_KEY = "aether_tarot_history_v3";
-const LEGACY_HISTORY_STORAGE_KEY_V2 = "aether_tarot_history_v2";
+const READING_DRAFT_IDENTITY_KEY = "aether_tarot_reading_draft_identity_v1";
 const DEFAULT_AGENT_PROFILE: AgentProfile = "standard";
 const DEFAULT_DRAW_SOURCE: DrawSource = "digital_random";
 const allSpreads = getAllSpreads();
@@ -77,6 +97,8 @@ type ReadingContextValue = {
   isLoading: boolean;
   isHydrated: boolean;
   history: ReadingHistoryEntry[];
+  historySyncError: string | null;
+  retryHistorySync: () => Promise<boolean>;
   setQuestion: (question: string) => void;
   setSelectedSpread: (spread: Spread | null) => void;
   setAgentProfile: (profile: AgentProfile) => void;
@@ -91,7 +113,7 @@ type ReadingContextValue = {
   clearContinuitySource: () => void;
   clearContinuityMemory: () => Promise<boolean>;
   resetReading: () => void;
-  updateHistoryNotes: (id: string, notes: string) => Promise<void>;
+  updateHistoryNotes: (id: string, notes: string) => Promise<"saved_to_browser" | "synced">;
 };
 
 const ReadingContext = createContext<ReadingContextValue | null>(null);
@@ -177,52 +199,11 @@ function buildContinuitySource(
   };
 }
 
-function readLegacyLocalStorage(): ReadingHistoryEntry[] | null {
+function readActiveReadingDraft(identityKey: string) {
   try {
-    const saved =
-      localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY)
-      ?? localStorage.getItem(LEGACY_HISTORY_STORAGE_KEY_V2);
-
-    if (saved) {
-      const parsed = JSON.parse(saved) as unknown;
-
-      if (Array.isArray(parsed)) {
-        return normalizeHistoryEntries(parsed as ReadingHistoryEntry[]);
-      }
+    if (sessionStorage.getItem(READING_DRAFT_IDENTITY_KEY) !== identityKey) {
+      return null;
     }
-  } catch {
-    // Ignore parse errors.
-  }
-  return null;
-}
-
-function writeLegacyLocalStorage(entries: ReadingHistoryEntry[]) {
-  try {
-    localStorage.setItem(LEGACY_HISTORY_STORAGE_KEY, JSON.stringify(entries));
-    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
-  } catch {
-    // Storage can be unavailable.
-  }
-}
-
-function dedupeHistoryEntries(entries: ReadingHistoryEntry[]) {
-  const seen = new Set<string>();
-  const deduped: ReadingHistoryEntry[] = [];
-
-  for (const entry of entries) {
-    if (seen.has(entry.id)) {
-      continue;
-    }
-
-    seen.add(entry.id);
-    deduped.push(entry);
-  }
-
-  return deduped;
-}
-
-function readActiveReadingDraft() {
-  try {
     return parseReadingDraftSnapshot(
       sessionStorage.getItem(READING_DRAFT_STORAGE_KEY),
       {
@@ -238,6 +219,7 @@ function readActiveReadingDraft() {
 function clearActiveReadingDraft() {
   try {
     sessionStorage.removeItem(READING_DRAFT_STORAGE_KEY);
+    sessionStorage.removeItem(READING_DRAFT_IDENTITY_KEY);
   } catch {
     // Storage can be unavailable.
   }
@@ -248,6 +230,30 @@ function createReadingRequestId() {
 }
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
+  const { data: session, status: sessionStatus } = useSession();
+
+  if (sessionStatus === "loading") {
+    return <div aria-busy="true" data-testid="reading-identity-loading" />;
+  }
+
+  const identityKey = sessionStatus === "authenticated" && session?.user?.id
+    ? `account:${session.user.id}`
+    : "guest";
+
+  return (
+    <IdentityScopedReadingProvider key={identityKey} identityKey={identityKey}>
+      {children}
+    </IdentityScopedReadingProvider>
+  );
+}
+
+function IdentityScopedReadingProvider({
+  children,
+  identityKey,
+}: {
+  children: ReactNode;
+  identityKey: string;
+}) {
   const [question, setQuestionState] = useState("");
   const [selectedSpread, setSelectedSpreadState] = useState<Spread | null>(DEFAULT_SPREAD);
   const [agentProfile, setAgentProfileState] = useState<AgentProfile>(DEFAULT_AGENT_PROFILE);
@@ -266,70 +272,56 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [history, setHistory] = useState<ReadingHistoryEntry[]>([]);
-  const interpretInFlightRef = useRef(false);
+  const [historySyncError, setHistorySyncError] = useState<string | null>(null);
+  const identityLifecycleRef = useRef(new IdentityRequestLifecycle(identityKey));
+  const renderedIdentityRef = useRef(identityKey);
+  const interpretInFlightRef = useRef<IdentityRequest | null>(null);
   const interpretSignatureRef = useRef<string | null>(null);
   const initialRequestIdRef = useRef<string | null>(null);
   const finalRequestIdentityRef = useRef<{ signature: string; requestId: string } | null>(null);
   const activeThreadIdRef = useRef<string | null>(null);
 
+  const isCurrentIdentityRequest = useCallback((request: IdentityRequest) =>
+    identityLifecycleRef.current.isCurrent(request, renderedIdentityRef.current), []);
+
+  useLayoutEffect(() => {
+    renderedIdentityRef.current = identityKey;
+    identityLifecycleRef.current.transition(identityKey);
+  }, [identityKey]);
+
+  useEffect(() => () => identityLifecycleRef.current.dispose(), []);
+
   useEffect(() => {
-    let cancelled = false;
+    identityLifecycleRef.current.transition(identityKey);
+    const hydrateRequest = identityLifecycleRef.current.begin(identityKey);
 
     async function hydrate() {
       try {
-        const response = await fetch("/api/readings");
-
-        if (cancelled) return;
-
-        if (response.ok) {
-          const payload = await response.json() as { readings?: ReadingHistoryEntry[] };
-          const serverReadings = normalizeHistoryEntries(payload.readings ?? []);
-
-          if (serverReadings.length > 0) {
-            setHistory(serverReadings);
-          } else {
-            const legacy = readLegacyLocalStorage();
-            if (legacy && legacy.length > 0) {
-              const dedupedLegacy = dedupeHistoryEntries(legacy);
-              try {
-                const migrateResponse = await fetch("/api/readings/migrate", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(dedupedLegacy),
-                });
-
-                if (!cancelled && migrateResponse.ok) {
-                  setHistory(dedupedLegacy);
-                  try {
-                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY);
-                    localStorage.removeItem(LEGACY_HISTORY_STORAGE_KEY_V2);
-                  } catch {
-                    // Storage can be unavailable.
-                  }
-                } else if (!cancelled) {
-                  setHistory(legacy);
-                }
-              } catch {
-                if (!cancelled) {
-                  setHistory(dedupedLegacy);
-                }
-              }
-            }
-          }
-        } else {
-          const legacy = readLegacyLocalStorage();
-          if (!cancelled && legacy) {
-            setHistory(dedupeHistoryEntries(legacy));
+        const scopedHistory = await loadIdentityHistory({
+          identity: identityKey === "guest"
+            ? { kind: "guest" }
+            : { kind: "account", id: identityKey.slice("account:".length) },
+          storage: localStorage,
+          fetchImplementation: fetch,
+          signal: hydrateRequest.signal,
+        });
+        if (isCurrentIdentityRequest(hydrateRequest)) {
+          const pending = identityKey === "guest"
+            ? []
+            : readAccountReadingOutbox(localStorage, identityKey.slice("account:".length));
+          setHistory(normalizeHistoryEntries([
+            ...pending,
+            ...scopedHistory.filter((entry) => !pending.some((item) => item.id === entry.id)),
+          ]));
+          if (pending.length > 0) {
+            setHistorySyncError(`有 ${pending.length} 条账号历史仍待同步。`);
           }
         }
       } catch {
-        const legacy = readLegacyLocalStorage();
-        if (!cancelled && legacy) {
-          setHistory(dedupeHistoryEntries(legacy));
-        }
+        if (isCurrentIdentityRequest(hydrateRequest)) setHistory([]);
       } finally {
-        if (!cancelled) {
-          const restoredDraft = readActiveReadingDraft();
+        if (isCurrentIdentityRequest(hydrateRequest)) {
+          const restoredDraft = readActiveReadingDraft(identityKey);
 
           if (restoredDraft) {
             initialRequestIdRef.current = restoredDraft.requestId ?? createReadingRequestId();
@@ -351,15 +343,27 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           setIsHydrated(true);
           (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = true;
         }
+        hydrateRequest.finish();
       }
     }
 
     hydrate();
 
     return () => {
-      cancelled = true;
+      hydrateRequest.cancel();
     };
-  }, []);
+  }, [identityKey, isCurrentIdentityRequest]);
+
+  useEffect(() => {
+    if (identityKey !== "guest") return;
+    const syncGuestHistory = (event: StorageEvent) => {
+      if (event.key === GUEST_HISTORY_STORAGE_KEY) {
+        setHistory(normalizeHistoryEntries(readGuestHistory(localStorage)));
+      }
+    };
+    window.addEventListener("storage", syncGuestHistory);
+    return () => window.removeEventListener("storage", syncGuestHistory);
+  }, [identityKey]);
 
   useEffect(() => {
     (window as HydrationAwareWindow).__AETHERTAROT_READING_HYDRATED__ = isHydrated;
@@ -397,13 +401,17 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
           drawnCards,
         })),
       );
+      sessionStorage.setItem(READING_DRAFT_IDENTITY_KEY, identityKey);
     } catch {
       // Storage can be unavailable.
     }
-  }, [agentProfile, drawSource, drawnCards, isHydrated, isQuestionlessQuickReading, question, reading, selectedSpread]);
+  }, [agentProfile, drawSource, drawnCards, identityKey, isHydrated, isQuestionlessQuickReading, question, reading, selectedSpread]);
 
-  const persistCompletedReading = useCallback((nextReading: StructuredReading) => {
-    if (!selectedSpread) {
+  const persistCompletedReading = useCallback(async (
+    nextReading: StructuredReading,
+    sourceRequest?: IdentityRequest,
+  ) => {
+    if (!selectedSpread || (sourceRequest && !isCurrentIdentityRequest(sourceRequest))) {
       return;
     }
 
@@ -419,20 +427,122 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       threadId: activeThreadIdRef.current ?? undefined,
     };
 
-    setHistory((current) => {
-      const nextHistory = [newEntry, ...current.filter((entry) => entry.id !== newEntry.id)];
-      writeLegacyLocalStorage(nextHistory);
-      return nextHistory;
-    });
+    if (identityKey === "guest") {
+      try {
+        if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+        const merged = await mergeGuestHistoryEntry(
+          localStorage,
+          newEntry,
+          undefined,
+          () => !sourceRequest || isCurrentIdentityRequest(sourceRequest),
+        );
+        if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+        setHistory(normalizeHistoryEntries(merged));
+        setHistorySyncError(null);
+      } catch {
+        if (!sourceRequest || isCurrentIdentityRequest(sourceRequest)) {
+          setHistorySyncError("本机保存失败，请保持当前页面并稍后重试。");
+        }
+      }
+      return;
+    }
 
-    fetch("/api/readings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newEntry),
-    }).catch(() => {
-      // Fire-and-forget; entry is already in local state.
-    });
-  }, [drawSource, drawnCards, selectedSpread]);
+    if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+    const accountId = identityKey.slice("account:".length);
+    setHistory((current) => [newEntry, ...current.filter((entry) => entry.id !== newEntry.id)]);
+    let outboxSaved = false;
+    try {
+      await enqueueAccountReading(
+        localStorage,
+        accountId,
+        newEntry,
+        undefined,
+        () => !sourceRequest || isCurrentIdentityRequest(sourceRequest),
+      );
+      if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+      outboxSaved = true;
+      setHistorySyncError("账号历史正在等待同步。");
+    } catch {
+      if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+      setHistorySyncError("本机保存失败；账号记录尚未同步，请保持当前页面并重试。");
+    }
+
+    if (sourceRequest && !isCurrentIdentityRequest(sourceRequest)) return;
+    const saveRequest = identityLifecycleRef.current.begin(identityKey);
+    try {
+      const response = await fetch("/api/readings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEntry),
+        signal: saveRequest.signal,
+      });
+      if (!isCurrentIdentityRequest(saveRequest)) return;
+      if (!response.ok) throw new Error("账号历史同步失败，请稍后重试。");
+      if (outboxSaved) {
+        await removeAccountReadingFromOutbox(
+          localStorage,
+          accountId,
+          newEntry.id,
+          undefined,
+          () => isCurrentIdentityRequest(saveRequest),
+        );
+      }
+      if (!isCurrentIdentityRequest(saveRequest)) return;
+      setHistorySyncError(null);
+    } catch {
+      if (!isCurrentIdentityRequest(saveRequest)) return;
+      setHistorySyncError(outboxSaved
+        ? "账号同步失败，记录仍待同步并保存在此浏览器。"
+        : "本机保存失败；账号记录尚未同步，请保持当前页面并重试。"
+      );
+    } finally {
+      saveRequest.finish();
+    }
+  }, [drawSource, drawnCards, identityKey, isCurrentIdentityRequest, selectedSpread]);
+
+  const retryHistorySync = useCallback(async () => {
+    if (identityKey === "guest") return true;
+    const accountId = identityKey.slice("account:".length);
+    const pending = readAccountReadingOutbox(localStorage, accountId);
+    if (pending.length === 0) {
+      setHistorySyncError(null);
+      return true;
+    }
+    const retryRequest = identityLifecycleRef.current.begin(identityKey);
+    try {
+      for (const entry of pending) {
+        if (!isCurrentIdentityRequest(retryRequest)) return false;
+        const response = await fetch("/api/readings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry),
+          signal: retryRequest.signal,
+        });
+        if (!isCurrentIdentityRequest(retryRequest)) return false;
+        if (!response.ok) {
+          setHistorySyncError("账号历史同步失败，记录仍保存在此浏览器的待同步队列中。");
+          return false;
+        }
+        await removeAccountReadingFromOutbox(
+          localStorage,
+          accountId,
+          entry.id,
+          undefined,
+          () => isCurrentIdentityRequest(retryRequest),
+        );
+        if (!isCurrentIdentityRequest(retryRequest)) return false;
+      }
+      setHistorySyncError(null);
+      return true;
+    } catch {
+      if (isCurrentIdentityRequest(retryRequest)) {
+        setHistorySyncError("账号历史同步失败，记录仍保存在此浏览器的待同步队列中。");
+      }
+      return false;
+    } finally {
+      retryRequest.finish();
+    }
+  }, [identityKey, isCurrentIdentityRequest]);
 
   const clearGeneratedState = () => {
     interpretSignatureRef.current = null;
@@ -508,7 +618,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const interpretReading = useCallback(async () => {
     if (
-      interpretInFlightRef.current ||
+      (interpretInFlightRef.current && isCurrentIdentityRequest(interpretInFlightRef.current)) ||
       (!question.trim() && !isQuestionlessQuickReading) ||
       !selectedSpread ||
       drawnCards.length === 0
@@ -535,7 +645,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    interpretInFlightRef.current = true;
+    const identityRequest = identityLifecycleRef.current.begin(identityKey);
+    interpretInFlightRef.current = identityRequest;
     setIsLoading(true);
     setErrorMessage(null);
     setSafetyIntercept(null);
@@ -562,7 +673,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         }),
         timeoutMs: READING_REQUEST_TIMEOUT_MS,
         timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
+        signal: identityRequest.signal,
       });
+
+      if (!isCurrentIdentityRequest(identityRequest)) return false;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -584,12 +698,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       clearActiveReadingDraft();
 
       if (!nextReading.requires_followup) {
-        persistCompletedReading(nextReading);
-        trackGrowthReadingCompleted(nextReading.reading_id);
+        void persistCompletedReading(nextReading, identityRequest);
+        if (isCurrentIdentityRequest(identityRequest)) {
+          trackGrowthReadingCompleted(nextReading.reading_id);
+        }
       }
 
       return true;
     } catch (error) {
+      if (!isCurrentIdentityRequest(identityRequest)) return false;
       interpretSignatureRef.current = null;
       setReading(null);
       setErrorMessage(
@@ -599,14 +716,20 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     } finally {
-      setIsLoading(false);
-      interpretInFlightRef.current = false;
+      if (
+        interpretInFlightRef.current === identityRequest
+        && isCurrentIdentityRequest(identityRequest)
+      ) {
+        setIsLoading(false);
+        interpretInFlightRef.current = null;
+      }
+      identityRequest.finish();
     }
-  }, [agentProfile, continuitySource, drawSource, drawnCards, isQuestionlessQuickReading, persistCompletedReading, question, selectedSpread]);
+  }, [agentProfile, continuitySource, drawSource, drawnCards, identityKey, isCurrentIdentityRequest, isQuestionlessQuickReading, persistCompletedReading, question, selectedSpread]);
 
   const submitFollowupAnswers = useCallback(async (answers: FollowupAnswer[]) => {
     if (
-      interpretInFlightRef.current ||
+      (interpretInFlightRef.current && isCurrentIdentityRequest(interpretInFlightRef.current)) ||
       !question.trim() ||
       !selectedSpread ||
       drawnCards.length === 0 ||
@@ -640,7 +763,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    interpretInFlightRef.current = true;
+    const identityRequest = identityLifecycleRef.current.begin(identityKey);
+    interpretInFlightRef.current = identityRequest;
     setIsLoading(true);
     setErrorMessage(null);
     setSafetyIntercept(null);
@@ -669,7 +793,10 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         }),
         timeoutMs: READING_REQUEST_TIMEOUT_MS,
         timeoutMessage: READING_REQUEST_TIMEOUT_MESSAGE,
+        signal: identityRequest.signal,
       });
+
+      if (!isCurrentIdentityRequest(identityRequest)) return false;
 
       if (!response.ok) {
         if (payload && "error" in payload && payload.error?.code === "safety_intercept") {
@@ -699,10 +826,13 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      persistCompletedReading(nextReading);
-      trackGrowthReadingCompleted(nextReading.reading_id);
+      void persistCompletedReading(nextReading, identityRequest);
+      if (isCurrentIdentityRequest(identityRequest)) {
+        trackGrowthReadingCompleted(nextReading.reading_id);
+      }
       return true;
     } catch (error) {
+      if (!isCurrentIdentityRequest(identityRequest)) return false;
       interpretSignatureRef.current = null;
       setErrorMessage(
         error instanceof Error
@@ -711,10 +841,16 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     } finally {
-      setIsLoading(false);
-      interpretInFlightRef.current = false;
+      if (
+        interpretInFlightRef.current === identityRequest
+        && isCurrentIdentityRequest(identityRequest)
+      ) {
+        setIsLoading(false);
+        interpretInFlightRef.current = null;
+      }
+      identityRequest.finish();
     }
-  }, [continuitySource, drawSource, drawnCards, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
+  }, [continuitySource, drawSource, drawnCards, identityKey, isCurrentIdentityRequest, persistCompletedReading, question, reading, selectedSpread, soberGate.input, soberGate.isPassed, soberGate.readingId]);
 
   const selectHistoryReading = (historyEntry: ReadingHistoryEntry) => {
     interpretSignatureRef.current = null;
@@ -787,14 +923,17 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     if (!threadId) {
       return true;
     }
+    const identityRequest = identityLifecycleRef.current.begin(identityKey);
     try {
       const response = await fetch(
         `/api/reading/threads/${encodeURIComponent(threadId)}`,
-        { method: "DELETE" },
+        { method: "DELETE", signal: identityRequest.signal },
       );
-      return response.ok;
+      return isCurrentIdentityRequest(identityRequest) && response.ok;
     } catch {
       return false;
+    } finally {
+      identityRequest.finish();
     }
   };
 
@@ -815,23 +954,37 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   };
 
-  const updateHistoryNotes = async (id: string, notes: string): Promise<void> => {
-    setHistory((currentHistory) => {
-      const nextHistory = currentHistory.map((entry) =>
+  const updateHistoryNotes = async (id: string, notes: string) => {
+    const identityRequest = identityLifecycleRef.current.begin(identityKey);
+    const identity: ReadingIdentity = identityKey === "guest"
+      ? { kind: "guest" }
+      : { kind: "account", id: identityKey.slice("account:".length) };
+    try {
+      const result = await saveIdentityNotes({
+        identity,
+        storage: localStorage,
+        fetchImplementation: fetch,
+        readingId: id,
+        notes,
+        signal: identityRequest.signal,
+        guestShouldCommit: () => isCurrentIdentityRequest(identityRequest),
+      });
+      if (!isCurrentIdentityRequest(identityRequest)) {
+        throw new Error("Identity changed while saving notes");
+      }
+      if (result.status === "failed") {
+        throw new Error("Failed to save notes");
+      }
+      if (result.history) {
+        setHistory(normalizeHistoryEntries(result.history));
+        return result.status;
+      }
+      setHistory((currentHistory) => currentHistory.map((entry) =>
         entry.id === id ? { ...entry, user_notes: notes } : entry
-      );
-      writeLegacyLocalStorage(nextHistory);
-      return nextHistory;
-    });
-
-    const response = await fetch("/api/readings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reading_id: id, user_notes: notes }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save notes");
+      ));
+      return result.status;
+    } finally {
+      identityRequest.finish();
     }
   };
 
@@ -852,6 +1005,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         isLoading,
         isHydrated,
         history,
+        historySyncError,
+        retryHistorySync,
         setQuestion,
         setSelectedSpread,
         setAgentProfile,

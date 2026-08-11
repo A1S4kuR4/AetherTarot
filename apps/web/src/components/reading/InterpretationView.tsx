@@ -64,6 +64,8 @@ export default function InterpretationView() {
     interpretReading,
     submitFollowupAnswers,
     history,
+    historySyncError,
+    retryHistorySync,
     continuitySource,
     updateHistoryNotes,
     resetReading,
@@ -72,7 +74,7 @@ export default function InterpretationView() {
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldScrollToSynthesisRef = useRef(false);
-  const [noteSaveStatus, setNoteSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [noteSaveStatus, setNoteSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'saved-local' | 'error'>('idle');
   const [followupDraftsByReadingId, setFollowupDraftsByReadingId] = useState<
     Record<string, Record<number, string>>
   >({});
@@ -260,8 +262,8 @@ export default function InterpretationView() {
     setNoteSaveStatus('saving');
 
     try {
-      await updateHistoryNotes(currentHistoryEntryId, trimmedNotes);
-      setNoteSaveStatus('saved');
+      const result = await updateHistoryNotes(currentHistoryEntryId, trimmedNotes);
+      setNoteSaveStatus(result === "saved_to_browser" ? "saved-local" : "saved");
 
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
@@ -567,6 +569,14 @@ export default function InterpretationView() {
                 "[&_.card-hero-glow]:shadow-none",
             )}
           >
+            {historySyncError ? (
+              <div className="flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+                <span>{historySyncError}</span>
+                {!historySyncError.startsWith("本机保存失败") ? (
+                  <button type="button" className="underline" onClick={() => void retryHistorySync()}>重试同步</button>
+                ) : null}
+              </div>
+            ) : null}
             <MobileReadingNav navItems={navItems} />
 
             <SpreadHeroGrid

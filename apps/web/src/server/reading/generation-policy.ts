@@ -225,7 +225,12 @@ async function executeStage<T extends ReadingStageDraft>({
       throw firstError;
     }
     attempts.push(buildAttempt(firstOptions, false, firstError.subtype));
-    if (!firstError.retryable || firstError.subtype === "cancelled") {
+    if (
+      !firstError.retryable
+      || firstError.subtype === "cancelled"
+      || firstError.subtype === "queue_full"
+      || firstError.subtype === "queue_timeout"
+    ) {
       firstError.attempts = [...attempts];
       throw firstError;
     }

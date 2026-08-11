@@ -66,6 +66,33 @@ prototype/dist/
 
 # Local operator notes
 docs/
+!docs/
+docs/*
+!docs/20-domain/
+docs/20-domain/*
+!docs/20-domain/reading-contract.md
+!docs/30-agent/
+docs/30-agent/*
+!docs/30-agent/context-strategy.md
+!docs/30-agent/output-schema.md
+!docs/40-architecture/
+docs/40-architecture/*
+!docs/40-architecture/architecture.md
+!docs/50-safety/
+docs/50-safety/*
+!docs/50-safety/safety-principles.md
+!docs/60-evals/
+docs/60-evals/*
+!docs/60-evals/rubrics.md
+!docs/70-ops/
+docs/70-ops/*
+!docs/70-ops/production-deployment.md
+!docs/70-ops/Caddyfile.aethertarot.example
+!docs/80-decisions/
+docs/80-decisions/*
+!docs/80-decisions/adr/
+docs/80-decisions/adr/*
+!docs/80-decisions/adr/0009-guest-launch-identity-safety-and-edge-trust.md
 memory/
 outputs/
 scratch/

@@ -2,6 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassword } from "@/server/auth/password";
+import { checkAuthRateLimit } from "@/server/auth/rate-limit";
 import { getClientIpHash } from "@/server/beta/ip";
 
 declare module "next-auth" {
@@ -13,42 +14,6 @@ declare module "next-auth" {
 }
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>;
-
-// --- Rate limiting ---
-
-// 硬编码的登录限流阈值。内测阶段不通过环境变量暴露，
-// 如需调整，直接修改此对象后重新部署。
-const RATE_LIMITS = {
-  p_email_hourly_limit: 10,
-  p_email_daily_limit: 30,
-  p_ip_hourly_limit: 20,
-  p_global_hourly_limit: 200,
-} as const;
-
-async function checkAuthRateLimit(
-  admin: AdminClient,
-  email: string,
-  ipHash: string,
-): Promise<boolean> {
-  try {
-    const { data, error } = await admin.rpc("consume_auth_email_quota", {
-      p_email: email,
-      p_ip_hash: ipHash,
-      ...RATE_LIMITS,
-    });
-
-    if (error) {
-      console.error("[auth] rate limit RPC failed, degrading to allow:", error);
-      return true;
-    }
-
-    const result = data as { allowed?: boolean } | null;
-    return result?.allowed !== false;
-  } catch (err) {
-    console.error("[auth] rate limit check threw, degrading to allow:", err);
-    return true;
-  }
-}
 
 // --- Audit logging ---
 

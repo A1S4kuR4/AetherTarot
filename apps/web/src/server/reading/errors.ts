@@ -5,6 +5,9 @@ export type ReadingGenerationFailureSubtype =
   | "transport_error"
   | "provider_http_error"
   | "timeout"
+  | "response_too_large"
+  | "queue_full"
+  | "queue_timeout"
   | "truncated_output"
   | "empty_completion"
   | "malformed_json"
@@ -88,6 +91,7 @@ export class ReadingGenerationError extends ReadingServiceError {
     issues = [],
     attempts = [],
     httpStatus,
+    details,
   }: {
     subtype: ReadingGenerationFailureSubtype;
     message: string;
@@ -100,6 +104,7 @@ export class ReadingGenerationError extends ReadingServiceError {
     issues?: string[];
     attempts?: ReadingGenerationAttempt[];
     httpStatus?: number;
+    details?: Record<string, unknown>;
   }) {
     super(
       code ?? (
@@ -117,6 +122,9 @@ export class ReadingGenerationError extends ReadingServiceError {
           ? 503
           : 500
       ),
+      undefined,
+      undefined,
+      details,
     );
     this.name = "ReadingGenerationError";
     this.subtype = subtype;

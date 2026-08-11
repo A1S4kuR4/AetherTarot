@@ -1,4 +1,5 @@
 import type { StructuredReading } from "@aethertarot/shared-types";
+import { segmentSafetyText } from "@/server/safety/text-normalization";
 
 export type GeneratedContentAction = "pass" | "restrict" | "replace";
 
@@ -27,14 +28,14 @@ const SAFE_MANIPULATION_BOUNDARY =
 const SAFE_DIAGNOSIS_BOUNDARY =
   /(?:不能|无法|不应|不可|不代表).{0,10}(?:诊断|确诊|患有|怀孕)|(?:cannot|can't|should not).{0,10}(?:diagnose|confirm a diagnosis|confirm pregnancy)/i;
 const SAFE_HARM_BOUNDARY =
-  /(?:不要|不能|不应|不可|拒绝|避免).{0,10}(?:自杀|自残|伤害自己|伤害他人|暴力)|(?:do not|don't|should not|cannot).{0,10}(?:self-harm|suicide|hurt yourself|hurt someone)/i;
+  /(?:不要|不能|不应|不可|拒绝|避免).{0,10}(?:自杀|自残|伤害自己|伤害他人|暴力)|(?:do not|don't|should not|cannot).{0,10}(?:self-harm|suicide|kill yourself|hurt yourself|hurt someone)|(?:donot|shouldnot|cannot)(?:selfharm|suicide|killyourself|hurtyourself|hurtsomeone)/i;
 const SAFE_PROFESSIONAL_BOUNDARY =
-  /(?:不要|不能|不应|不应该|不可|不建议|避免|不宜).{0,12}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药)|你应该(?:不要|避免|谨慎).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药)|(?:do not|don't|should not|shouldn't|cannot|you should not|you should avoid).{0,12}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery)/i;
+  /(?:不要|不能|不应|不应该|不可|不建议|避免|不宜).{0,12}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|你应该(?:不要|避免|谨慎).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|(?:do not|don't|should not|shouldn't|cannot|you should not|you should avoid).{0,12}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery|quit your job|divorce)|(?:donot|shouldnot|cannot)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i;
 
 const SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT =
-  /(?:你可以|你应该|你必须|不如|值得|建议你|去).{0,8}(?:自杀|自残|结束生命|伤害自己|伤害他人|实施暴力)|(?:you should|you can|go ahead and).{0,8}(?:self-harm|kill yourself|hurt yourself|hurt them)/i;
+  /(?:你可以|你应该|你必须|不如|值得|建议你|去|我要|我准备|我打算).{0,8}(?:自杀|自残|结束生命|伤害自己|伤害他人|杀他|杀她|实施暴力)|(?:you should|you can|go ahead and).{0,8}(?:self-harm|kill yourself|hurt yourself|hurt them)|(?:youshould|youcan|goaheadand)(?:selfharm|killyourself|hurtyourself|hurtthem)|i(?:'m| am)? (?:going to|about to|planning to).{0,8}(?:kill|hurt|attack)|i(?:am)?(?:goingto|aboutto|planningto)(?:kill|hurt|attack)(?:him|her|them|someone)?/i;
 const MANIPULATION_INSTRUCTION =
-  /(?:你可以|你应该|你必须|建议|方法是|步骤是|先|然后).{0,14}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)|(?:you should|you can|first|then).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
+  /(?:你可以|你应该|你必须|建议|方法是|步骤是|先|然后|教我|怎么|如何).{0,14}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)|(?:you should|you can|first|then|how can i|how do i).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:youshould|youcan|howcani|howdoi).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
 const TREATMENT_DISCONTINUATION =
   /(?:你可以|你应该|你必须|建议|直接|不妨).{0,8}(?:停药|停止治疗|拒绝治疗)|(?:停药|停止治疗|拒绝治疗).{0,8}(?:就好|即可|更好)|(?:you should|you can).{0,8}(?:stop medication|stop treatment)/i;
 const MEDICAL_DIAGNOSIS =
@@ -46,7 +47,7 @@ const DETERMINISTIC_CLAIM =
 const THIRD_PARTY_CERTAINTY =
   /(?:他|她|对方).{0,8}(?:一定|肯定|真实).{0,10}(?:爱|想|打算|回来|离开|喜欢|讨厌)|(?:他|她|对方)的真实想法是|they definitely (?:love|want|will return)/i;
 const PROFESSIONAL_DIRECTIVE =
-  /你(?:必须|应该|需要).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药)|(?:you must|you should).{0,10}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery)/i;
+  /你(?:必须|应该|需要).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|(?:you must|you should).{0,10}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery|quit your job|divorce)|(?:youmust|youshould)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i;
 
 const RESTRICTED_SAFETY_NOTE =
   "系统已移除生成内容中的绝对化或越界表述。请把保留内容仅作为反思线索，并以现实信息、可观察行为和合格专业意见为准。";
@@ -66,38 +67,44 @@ function appendUnique<T>(values: T[], value: T) {
 function inspectGeneratedText(text: string) {
   const violations: GeneratedContentViolation[] = [];
 
-  if (
-    SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT.test(text)
-    && !SAFE_HARM_BOUNDARY.test(text)
-  ) {
-    appendUnique(violations, "self_harm_or_violence_encouragement");
-  }
-  if (MANIPULATION_INSTRUCTION.test(text) && !SAFE_MANIPULATION_BOUNDARY.test(text)) {
-    appendUnique(violations, "manipulation_instruction");
-  }
-  if (
-    TREATMENT_DISCONTINUATION.test(text)
-    && !SAFE_TREATMENT_BOUNDARY.test(text)
-  ) {
-    appendUnique(violations, "treatment_discontinuation");
-  }
-  if (MEDICAL_DIAGNOSIS.test(text) && !SAFE_DIAGNOSIS_BOUNDARY.test(text)) {
-    appendUnique(violations, "medical_diagnosis");
-  }
-  if (ABUSE_MINIMIZATION.test(text)) {
-    appendUnique(violations, "abuse_minimization");
-  }
-  if (DETERMINISTIC_CLAIM.test(text) && !SAFE_CERTAINTY_BOUNDARY.test(text)) {
-    appendUnique(violations, "deterministic_claim");
-  }
-  if (THIRD_PARTY_CERTAINTY.test(text) && !SAFE_CERTAINTY_BOUNDARY.test(text)) {
-    appendUnique(violations, "third_party_certainty");
-  }
-  if (
-    PROFESSIONAL_DIRECTIVE.test(text)
-    && !SAFE_PROFESSIONAL_BOUNDARY.test(text)
-  ) {
-    appendUnique(violations, "professional_directive");
+  for (const segment of segmentSafetyText(text)) {
+    const searchable = segment.searchable;
+    if (
+      SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT.test(searchable)
+      && !SAFE_HARM_BOUNDARY.test(searchable)
+    ) {
+      appendUnique(violations, "self_harm_or_violence_encouragement");
+    }
+    if (
+      MANIPULATION_INSTRUCTION.test(searchable)
+      && !SAFE_MANIPULATION_BOUNDARY.test(searchable)
+    ) {
+      appendUnique(violations, "manipulation_instruction");
+    }
+    if (
+      TREATMENT_DISCONTINUATION.test(searchable)
+      && !SAFE_TREATMENT_BOUNDARY.test(searchable)
+    ) {
+      appendUnique(violations, "treatment_discontinuation");
+    }
+    if (MEDICAL_DIAGNOSIS.test(searchable) && !SAFE_DIAGNOSIS_BOUNDARY.test(searchable)) {
+      appendUnique(violations, "medical_diagnosis");
+    }
+    if (ABUSE_MINIMIZATION.test(searchable)) {
+      appendUnique(violations, "abuse_minimization");
+    }
+    if (DETERMINISTIC_CLAIM.test(searchable) && !SAFE_CERTAINTY_BOUNDARY.test(searchable)) {
+      appendUnique(violations, "deterministic_claim");
+    }
+    if (THIRD_PARTY_CERTAINTY.test(searchable) && !SAFE_CERTAINTY_BOUNDARY.test(searchable)) {
+      appendUnique(violations, "third_party_certainty");
+    }
+    if (
+      PROFESSIONAL_DIRECTIVE.test(searchable)
+      && !SAFE_PROFESSIONAL_BOUNDARY.test(searchable)
+    ) {
+      appendUnique(violations, "professional_directive");
+    }
   }
 
   return violations;

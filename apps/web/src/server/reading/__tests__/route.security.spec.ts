@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { handleReadingPost } from "@/app/api/reading/route";
-import { ReadingServiceError } from "@/server/reading/errors";
+import { ReadingGenerationError, ReadingServiceError } from "@/server/reading/errors";
 import { runReadingGraph } from "@/server/reading/graph";
 import { buildSinglePayload } from "@/server/reading/__tests__/fixtures";
 import type { AuthenticatedTester, PublicFeatureActor } from "@/server/beta/access";
@@ -360,6 +360,24 @@ describe("reading route beta access and quota", () => {
     expect(deps.refundQuota).not.toHaveBeenCalled();
   });
 
+  it("returns Retry-After for provider bulkhead rejection", async () => {
+    const deps = buildDependencies({
+      generateReading: vi.fn(async () => {
+        throw new ReadingGenerationError({
+          subtype: "queue_full",
+          code: "provider_unavailable",
+          status: 503,
+          message: "模型请求队列已满，请稍后重试。",
+          retryable: true,
+          details: { retry_after_seconds: 3 },
+        });
+      }),
+    });
+    const response = await handleReadingPost(buildRequest(buildSinglePayload()), deps);
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("3");
+  });
+
   it("replays a completed request without consuming quota or recording another event", async () => {
     const requestPayload = {
       ...buildSinglePayload("我现在最需要看清什么？"),
@@ -484,6 +502,69 @@ describe("reading route beta access and quota", () => {
     const finalCall = vi.mocked(deps.generateReading).mock.calls.at(-1);
     expect(finalCall?.[1]?.initialReading?.synthesis).toBe(initial.synthesis);
     expect(JSON.stringify(finalCall)).not.toContain("客户端注入");
+  });
+
+  it("releases a safety-intercepted Final snapshot so corrected answers can retry", async () => {
+    const deps = buildDependencies();
+    const initialRequest = {
+      ...buildSinglePayload("我想从职业成长角度理解最近的选择与阻力。"),
+      request_id: "10000000-0000-4000-8000-000000000001",
+      thread_id: "thread-final-safety-retry",
+    };
+    const initialResponse = await handleReadingPost(buildRequest(initialRequest), deps);
+    const initial = await initialResponse.json();
+    const baseFinal = {
+      ...initialRequest,
+      request_id: "10000000-0000-4000-8000-000000000002",
+      phase: "final" as const,
+      initial_reading_id: initial.reading_id,
+    };
+
+    const intercepted = await handleReadingPost(buildRequest({
+      ...baseFinal,
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我现在想自杀。",
+      })),
+    }), deps);
+    expect(intercepted.status).toBe(403);
+
+    const corrected = await handleReadingPost(buildRequest({
+      ...baseFinal,
+      request_id: "10000000-0000-4000-8000-000000000003",
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我会先区分事实与感受。",
+      })),
+    }), deps);
+    expect(corrected.status).toBe(200);
+    expect((await corrected.json()).reading_phase).toBe("final");
+  });
+
+  it("returns Final Tier 2 as 200 with sober_check and sober_anchor", async () => {
+    const deps = buildDependencies();
+    const initialRequest = {
+      ...buildSinglePayload("我想梳理接下来一年的现实选择。"),
+      request_id: "20000000-0000-4000-8000-000000000001",
+      agent_profile: "standard" as const,
+    };
+    const initialResponse = await handleReadingPost(buildRequest(initialRequest), deps);
+    const initial = await initialResponse.json();
+    const response = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "20000000-0000-4000-8000-000000000002",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我该不该把全部积蓄投进股票？",
+      })),
+    }), deps);
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.sober_check).toBeTruthy();
+    expect(payload.presentation_mode).toBe("sober_anchor");
   });
 
   it("does not refund the initial daily slot when a final generation fails", async () => {

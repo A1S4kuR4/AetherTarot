@@ -78,7 +78,13 @@ function buildErrorResponse(
     },
   };
 
-  return Response.json(payload, { status });
+  const retryAfter = details?.retry_after_seconds;
+  return Response.json(payload, {
+    status,
+    headers: typeof retryAfter === "number" && Number.isFinite(retryAfter)
+      ? { "Retry-After": String(Math.max(1, Math.ceil(retryAfter))) }
+      : undefined,
+  });
 }
 
 function getEventBase({
