@@ -8,7 +8,10 @@ import {
   type PublicFeatureActor,
 } from "@/server/beta/access";
 import { getClientIpHash } from "@/server/beta/ip";
-import { readBoundedJsonBody } from "@/server/http/json-body";
+import {
+  INVALID_JSON_BODY_MESSAGE,
+  readBoundedJsonBody,
+} from "@/server/http/json-body";
 import { isReadingServiceError, ReadingServiceError } from "@/server/reading/errors";
 
 export const runtime = "nodejs";
@@ -160,7 +163,7 @@ export async function handleGrowthEventPost(
     if (isReadingServiceError(error)) {
       return errorResponse(error.code, error.message, error.status);
     }
-    return errorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
+    return errorResponse("invalid_request", INVALID_JSON_BODY_MESSAGE, 400);
   }
 
   try {

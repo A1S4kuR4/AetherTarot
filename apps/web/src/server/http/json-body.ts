@@ -2,6 +2,8 @@ import "server-only";
 
 import { ReadingServiceError } from "@/server/reading/errors";
 
+export const INVALID_JSON_BODY_MESSAGE = "请求体不是有效的 JSON。";
+
 async function readWithSignal(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   signal: AbortSignal,
@@ -95,7 +97,7 @@ export async function readBoundedJsonBody(
   } catch {
     throw new ReadingServiceError(
       "invalid_request",
-      `${label}请求体不是有效的 JSON。`,
+      INVALID_JSON_BODY_MESSAGE,
       400,
     );
   }

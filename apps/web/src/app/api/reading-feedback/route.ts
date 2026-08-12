@@ -7,7 +7,10 @@ import {
   type PublicFeatureActor,
 } from "@/server/beta/access";
 import { getClientIpHash } from "@/server/beta/ip";
-import { readBoundedJsonBody } from "@/server/http/json-body";
+import {
+  INVALID_JSON_BODY_MESSAGE,
+  readBoundedJsonBody,
+} from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import {
   persistReadingFeedback,
@@ -68,7 +71,7 @@ export async function handleFeedbackPost(
     if (isReadingServiceError(error)) {
       return buildErrorResponse(error.code, error.message, error.status);
     }
-    return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
+    return buildErrorResponse("invalid_request", INVALID_JSON_BODY_MESSAGE, 400);
   }
 
   try {

@@ -45,6 +45,17 @@ describe("readBoundedJsonBody", () => {
     await expect(readBoundedJsonBody(input.request, 10, "test")).rejects.toMatchObject({ status: 400 });
   });
 
+  it.each(["Reading", "百科问答", "反馈"])(
+    "keeps the malformed JSON API contract label-independent for %s",
+    async (label) => {
+      const input = requestFromChunks(["{"]);
+      await expect(readBoundedJsonBody(input.request, 10, label)).rejects.toMatchObject({
+        status: 400,
+        message: "请求体不是有效的 JSON。",
+      });
+    },
+  );
+
   it("cancels body reading when the caller aborts", async () => {
     const cancel = vi.fn();
     const stream = new ReadableStream<Uint8Array>({ cancel });

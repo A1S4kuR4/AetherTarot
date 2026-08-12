@@ -346,15 +346,34 @@ test("readiness trims runtime enums and reserves ten seconds below Caddy", async
   assert.match(report, /1000-120000/);
 });
 
-test("Web CI runs readiness tests and watches its Caddy contract", () => {
+test("Web CI runs readiness and the complete three-browser Playwright gate", () => {
   const workflow = fs.readFileSync(
     path.join(import.meta.dirname, "..", ".github", "workflows", "web-ci.yml"),
     "utf8",
   );
 
   assert.match(workflow, /node --test scripts\/production-readiness-check\.test\.mjs/);
+  assert.match(workflow, /timeout-minutes:\s*45/);
+  assert.match(
+    workflow,
+    /playwright install --with-deps chromium firefox webkit/,
+  );
+  assert.match(workflow, /run:\s*npm run test:e2e/);
   assert.match(workflow, /docs\/70-ops\/Caddyfile\.aethertarot\.example/);
   assert.match(workflow, /docs\/70-ops\/production-deployment\.md/);
+});
+
+test("Playwright keeps three browser projects and the remote-target guard", () => {
+  const config = fs.readFileSync(
+    path.join(import.meta.dirname, "..", "apps", "web", "playwright.config.ts"),
+    "utf8",
+  );
+
+  for (const browser of ["chromium", "firefox", "webkit"]) {
+    assert.match(config, new RegExp(`name:\\s*["']${browser}["']`));
+  }
+  assert.match(config, /AETHERTAROT_ALLOW_REMOTE_E2E === ["']1["']/);
+  assert.match(config, /Refusing to run E2E against a non-loopback URL/);
 });
 
 test("Caddy example keeps trusted headers, host rejection, redirects, and route body caps", () => {

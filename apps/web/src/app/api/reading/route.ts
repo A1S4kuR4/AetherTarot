@@ -18,7 +18,10 @@ import {
   type PublicFeatureActor,
 } from "@/server/beta/access";
 import { consumeReadingQuota, refundReadingQuota } from "@/server/beta/quota";
-import { readBoundedJsonBody } from "@/server/http/json-body";
+import {
+  INVALID_JSON_BODY_MESSAGE,
+  readBoundedJsonBody,
+} from "@/server/http/json-body";
 import { isReadingServiceError } from "@/server/reading/errors";
 import { readingRequestPayloadSchema } from "@/server/reading/schemas";
 import {
@@ -476,7 +479,7 @@ export async function handleReadingPost(
       return buildErrorResponse(error.code, error.message, error.status);
     }
 
-    return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
+    return buildErrorResponse("invalid_request", INVALID_JSON_BODY_MESSAGE, 400);
   }
 
   try {

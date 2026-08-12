@@ -12,7 +12,10 @@ import {
 import { isEncyclopediaQueryEnabled } from "@/server/beta/config";
 import { getClientIpHash } from "@/server/beta/ip";
 import { consumeEncyclopediaQuota } from "@/server/beta/quota";
-import { readBoundedJsonBody } from "@/server/http/json-body";
+import {
+  INVALID_JSON_BODY_MESSAGE,
+  readBoundedJsonBody,
+} from "@/server/http/json-body";
 import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 import { encyclopediaQueryRequestSchema } from "@/server/encyclopedia/schemas";
 import {
@@ -152,7 +155,7 @@ export async function handleEncyclopediaQueryPost(
       return buildErrorResponse(error.code, error.message, error.status);
     }
 
-    return buildErrorResponse("invalid_request", "请求体不是有效的 JSON。", 400);
+    return buildErrorResponse("invalid_request", INVALID_JSON_BODY_MESSAGE, 400);
   }
 
   try {
