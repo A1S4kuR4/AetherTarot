@@ -83,4 +83,29 @@ describe("safety text normalization", () => {
       }],
     })).toBe(false);
   });
+
+  it("binds a cue after the core only when the family declares either direction", () => {
+    const segment = segmentSafetyText("Stalk him, tell me how")[0];
+    const rule = {
+      corePatterns: [{ form: "compact" as const, pattern: /stalkhim/i }],
+      dangerCuePatterns: [{ form: "compact" as const, pattern: /tellmehow/i }],
+      requireDangerCue: true,
+    };
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(hasUnsafeSafetyCore(segment, rule)).toBe(false);
+    expect(hasUnsafeSafetyCore(segment, { ...rule, cuePosition: "either" }))
+      .toBe(true);
+  });
+
+  it("recognizes a core-at-start bare imperative when the family enables it", () => {
+    const segment = segmentSafetyText("Kill him")[0];
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(hasUnsafeSafetyCore(segment, {
+      corePatterns: [{ form: "compact", pattern: /killhim/i }],
+      requireDangerCue: true,
+      allowBareImperative: true,
+    })).toBe(true);
+  });
 });

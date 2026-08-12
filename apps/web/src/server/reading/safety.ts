@@ -15,6 +15,7 @@ const CAPSULE_REDACTED_CATEGORIES: SafetyCategory[] = [
   "urgent_health",
   "manipulation",
   "abuse_support",
+  "self_harm_support",
   "third_party_certainty",
 ];
 
@@ -163,6 +164,18 @@ export function applySafetyReview({
       [
         "为了让自己更安全，你现在最需要联系谁或确认哪项现实支持？",
       ],
+    );
+  }
+
+  if (assessment.primaryCategory === "self_harm_support") {
+    return withSafetyOverride(
+      reading,
+      assessment.safetyNote,
+      [
+        "把重点放在当下是否安全、可获得的支持，以及需要由合格专业人士判断的现实信息上。",
+        ...reading.reflective_guidance.slice(0, 1),
+      ],
+      ["现在有哪些可信任的人或现实支持可以一起确认安全与下一步？"],
     );
   }
 

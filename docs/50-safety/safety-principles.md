@@ -4,6 +4,8 @@
 
 > 同日 RC 收口：高风险检测集中到六个共享 semantic family（自伤/自杀状态、对他人暴力、紧急呼吸/医疗危险、跟踪监控控制、停止治疗、直接诊断），并把 want/need/plan/intend、help/show/teach/tell/steps、should/must/do/stop 及常见中文表达归入可复用 cue。明确否定、reported speech、受害者求助与专业边界只有覆盖同一 family 的 core/cue 才能豁免；同一局部窗口的未覆盖危险 cue 优先。
 
+> RC 残余收口：暴力与操控规则把 intent、directive 和裸祈使作为三种声明式句法形态；directive / immediacy cue 可以位于 core 前后，但普通 intent cue 仍需与后续 core 局部绑定，避免把另一安全目的误绑到已被否定的动作。即时受害者以攻击/威胁 core 配合“现在、right now、持刀”等 cue hard-stop；非即时受害者、明确当前否认保持非危机路径，恢复期、百科教育和帮助他人的自伤相关表达进入带 `safety_note` 的受限支持。
+
 ## 1. 文档目的
 
 规定 AetherTarot 在表达方式、敏感场景与高风险主题上的安全边界，避免把塔罗解读演变成误导性建议或心理操控工具。
@@ -45,6 +47,7 @@ Reading 与 Encyclopedia 共用同一输入分类策略；Reading 再把分类�
 - **Tier 1 (Hard Stop / 危机干预)**：自伤、即时现实危险、紧急健康风险或明确要求跟踪、监控、报复、勒索、操控第三方时，两条 pipeline 都必须在 provider 前返回 `403 safety_intercept`。
 - **Tier 2 (Sober Check / 现实摩擦)**：当用户意图涉及将重大现实决策外包（如离婚、辞职、大额投资等），系统保持 `200 OK` 继续生成，但会在提示词层降级其确定感，并在 `StructuredReading` 的 payload 中强制封入 `sober_check` 字段；前端必须通过交互式强制反思（要求手写输入）拦截最终解释内容。
 - **Bounded Support / 受限支持**：普通健康、法律、财务、第三方确定性或非即时的暴力/控制受害者求助可以继续，但必须带显式边界说明并收窄内容。受害者求助优先于普通重大决策 gate，不能因为出现“家暴、控制、跟踪”等词就误判为施害者意图。
+- **Self-harm reference support / 自伤相关支持**：明确“当前没有自伤打算”的否认不自动附加危机标签；已明确安全的恢复期表达、百科教育和帮助他人的请求进入 bounded support，并提示在安全状态变化时优先寻求现实支持。reported speech 或教育语境只保护其覆盖的同一 core，不能抵消同字段另一条当前危险意图。
 - **Ordinary Relationship Conflict / 一般关系冲突**：争吵、冷战、沟通困难和关系张力不自动升级安全等级；只有出现操控意图、现实暴力、即时危险或第三方确定性请求时才进入更高层级。
 - **Pre-ritual boundary confirmation / 提交前现实边界确认**：`/new` 的完整仪式与“当下之镜”入口在进入抽牌前都会对明显重大现实决策类提问加入轻量确认动作，要求用户先承认现实信息、专业意见与个人底线优先于塔罗结果。该前台摩擦只用于提前降低决策外包倾向，不能替代 reading graph 的 Tier 1 / Tier 2 服务端判断。
 - **Mandatory generated-content validation / 强制生成内容验证**：Reading 的所有用户可见生成字段和 Encyclopedia 的 `answer` 都必须独立扫描，并与输入策略复用同一 normalized/compact 与 core/cue/context span 合同。可收窄的绝对化/专业越界内容按字段替换；伤害鼓励、操控步骤、停药、直接诊断、合理化暴力或责怪受害者时，整份生成正文必须由服务端安全内容替代。安全句只能覆盖其明确修饰的同类别 core 与 cue，不能使同字段的另一条危险指令通过。

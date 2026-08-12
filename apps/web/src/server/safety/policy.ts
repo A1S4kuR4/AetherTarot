@@ -6,6 +6,7 @@ import {
 } from "@/server/safety/text-normalization";
 import {
   findSafetySemanticFamilies,
+  SELF_HARM_SUPPORT_CONTEXTS,
   VICTIM_SUPPORT_CONTEXTS,
   type SafetySemanticFamilyId,
 } from "@/server/safety/semantic-rules";
@@ -18,6 +19,7 @@ export type SafetyCategory =
   | "urgent_health"
   | "manipulation"
   | "abuse_support"
+  | "self_harm_support"
   | "health"
   | "legal"
   | "financial"
@@ -67,6 +69,8 @@ const SOBER_CHECK =
 const SAFETY_NOTES: Partial<Record<SafetyCategory, string>> = {
   abuse_support:
     "如果这段关系中存在暴力、威胁、胁迫、跟踪或控制，现实安全应高于塔罗解释。请优先评估当下风险、联系可信任的人或合格支持资源，并避免独自承担或贸然对抗。",
+  self_harm_support:
+    "这次内容只适合用于理解、恢复支持或帮助他人，不能替代危机评估。若你或当事人的安全状态发生变化，请优先联系可信任的人、合格专业支持或当地紧急资源。",
   health:
     "这次内容只能帮助整理关注点，不能替代医疗判断、诊断或治疗建议。涉及症状、怀孕、用药或疾病风险时，请以合格专业意见为准。",
   legal:
@@ -92,6 +96,7 @@ function addCategory(
 function getPrimaryBoundedCategory(categories: SafetyCategory[]) {
   const priority: SafetyCategory[] = [
     "abuse_support",
+    "self_harm_support",
     "health",
     "legal",
     "financial",
@@ -120,6 +125,7 @@ export function assessSafetyText(text: string): SafetyAssessment {
   const hasManipulationIntent = matchedFamilyIds.has("stalking_monitoring_control");
   const hasAbuseSupport = matches(ABUSE_PATTERN)
     || matchesPatterns(VICTIM_SUPPORT_CONTEXTS);
+  const hasSelfHarmSupport = matchesPatterns(SELF_HARM_SUPPORT_CONTEXTS);
   const hasHealth = matches(HEALTH_PATTERN)
     || matchedFamilyIds.has("treatment_discontinuation");
   const hasLegal = matches(LEGAL_PATTERN);
@@ -136,6 +142,7 @@ export function assessSafetyText(text: string): SafetyAssessment {
   addCategory(categories, "urgent_health", hasUrgentHealth);
   addCategory(categories, "manipulation", hasManipulationIntent);
   addCategory(categories, "abuse_support", hasAbuseSupport);
+  addCategory(categories, "self_harm_support", hasSelfHarmSupport);
   addCategory(categories, "health", hasHealth);
   addCategory(categories, "legal", hasLegal);
   addCategory(categories, "financial", hasFinancial);

@@ -79,7 +79,7 @@ P2 memory / persistence 边界：
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
 3. final 阶段一致性验证（仅 `phase = final`）
-4. 意图摩擦分析（共享声明式 semantic-family registry 分离 core、intent/directive cue 与同-span safe context，标记 pass / sober_check / hard_stop；服务端条件边将 hard_stop 直接送入 `safety_stop` 并抛出 403）
+4. 意图摩擦分析（共享声明式 semantic-family registry 分离 core、intent/directive/immediacy cue、bare imperative 与同-span safe context；cue 方向由 family rule 声明，明确否认、恢复/教育/助人和受害者语境只作用于其覆盖的 core，随后标记 pass / bounded / sober_check / hard_stop；服务端条件边将 hard_stop 直接送入 `safety_stop` 并抛出 403）
 5. 仅非 hard-stop 状态进入 `agent_decider`，选择 `retrieve_knowledge`、`get_session_memory`、`request_clarification` 或 `final_answer`
 6. `retrieve_knowledge` 批量检索全部牌并写入 observation/tool audit；同一 thread 可先读 memory；`request_clarification` 与 `safety_stop` early exit
 7. `ensure_minimum_grounding` 强制补齐每张牌的 Wiki 或 authority fallback 后，才进入 provider
@@ -237,6 +237,7 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - Route 不能重新承载业务真相
 - 安全规则必须在生成前和生成后分别检查，不能只靠 prompt 自觉
 - Reading 与 Encyclopedia 必须共享同一输入分类；生成内容验证必须是不可跳过的 service node，而不是 agent 可选 tool
+- 共享分类器必须独立识别 cue-before、cue-after、裸祈使和即时受害者组合；恢复/教育/帮助他人的自伤引用由同一确定性策略分层，不得委托外部 LLM 充当唯一边界
 - hard-stop 危机转介当前按中国大陆固定资源顺序提示：`120` -> `110` -> `12356`
 - 前端不再依赖 markdown 作为主协议
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history

@@ -91,6 +91,8 @@
 - Encyclopedia 与 Reading 使用同一输入安全分类；Tier 1 均返回 `403 safety_intercept`，普通敏感百科问题返回 `200 + boundary_note`
 - 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则；core、danger cue 与 context 各有具体 span，否定、引用和受害者语境只有在同类别 context 覆盖同一 core 与 cue 时才能豁免
 - 六个高风险 semantic family 必须由 Reading 与 Encyclopedia 共用；新增 core/cue/context 变体时优先扩展 family 数据和 metamorphic 种子，不得回到两条 pipeline 分别追加整句 regex
+- 暴力/操控 family 必须分别覆盖 cue-before、cue-after 与 bare imperative，并用中英文动作和目标实体替换证明同一语义不变量；即时受害者由危险动作与当前性/武器 cue 组合升级，非即时受害者保持 bounded
+- 明确当前否认不得误报；恢复期、百科教育和帮助他人的自伤相关表达应按契约进入 standard 或 bounded，而不是统一放行或统一 hard-stop
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
 ### 3.7 结构化输出稳定性
@@ -149,6 +151,7 @@
 - 重大决策类问题是否在 `/new` 进入抽牌前触发现实边界确认，且完成确认后仍保留后续 `sober_check` 流程
 - 普通敏感主题是否补出 `safety_note`
 - 家暴受害者求助、操控者意图和一般关系冲突是否走向不同安全结果
+- cue-before / cue-after / bare imperative、即时受害者、明确否认、恢复期、百科教育与帮助他人的分层是否同时通过 Reading、Encyclopedia 和 Graph 前置阻断回归
 - 强制生成内容验证是否覆盖 card interpretation、themes、synthesis、guidance、follow-up、confidence note 与百科 answer
 - 被限制或替换的 provider 原文是否未进入 response、capsule、memory 或 history
 - history 回放是否能恢复结构化 reading

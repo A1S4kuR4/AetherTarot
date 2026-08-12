@@ -45,7 +45,7 @@ describe("reading generated-content safety", () => {
 
   it("replaces severe provider output before capsule and thread memory writes", async () => {
     const memoryStore = createInMemorySessionMemoryStore();
-    const unsafeText = "You should s t o p medication.";
+    const unsafeText = "You should stop taking antidepressants";
     const result = await runReadingGraphWithDiagnostics(
       {
         ...buildSinglePayload("我该如何理解现在的状态？"),
@@ -64,12 +64,22 @@ describe("reading generated-content safety", () => {
     );
     const visibleReading = JSON.stringify(result.reading);
     const memory = await memoryStore.get("safety-output-thread");
+    const completedHistory = [{
+      id: result.reading.reading_id,
+      createdAt: "2026-08-12T00:00:00.000Z",
+      spreadId: result.reading.spread.id,
+      drawnCards: buildSinglePayload().drawnCards,
+      reading: result.reading,
+      threadId: "safety-output-thread",
+    }];
 
     expect(visibleReading).not.toContain(unsafeText);
+    expect(JSON.stringify(result.reading.grounding)).not.toContain(unsafeText);
     expect(result.reading.safety_note).toMatch(/替换/);
     expect(result.reading.session_capsule).toBeTruthy();
     expect(result.reading.session_capsule).not.toContain(unsafeText);
     expect(JSON.stringify(memory)).not.toContain(unsafeText);
+    expect(JSON.stringify(completedHistory)).not.toContain(unsafeText);
     expect(JSON.stringify(result.agentState)).not.toContain(unsafeText);
     expect(JSON.stringify(result.trace)).not.toContain(unsafeText);
     expect(result.reading.grounding?.status).toBe("degraded");
@@ -118,10 +128,13 @@ describe("reading generated-content safety", () => {
     ]);
   });
 
-  it("keeps English stalking-victim safety help on bounded abuse support", async () => {
+  it.each([
+    "I am being stalked by my ex and need safety help",
+    "My partner monitors my phone and I need help",
+  ])("keeps English monitoring-victim help on bounded abuse support: %s", async (question) => {
     const result = await runReadingGraphWithDiagnostics(
       {
-        ...buildSinglePayload("I am being stalked by my ex and need safety help"),
+        ...buildSinglePayload(question),
         agent_profile: "lite",
       },
       {

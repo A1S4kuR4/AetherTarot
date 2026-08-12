@@ -19,6 +19,8 @@ export type SafetyCoreRule = {
   dangerCuePatterns?: readonly SafetyPattern[];
   safeContextPatterns?: readonly SafetyPattern[];
   requireDangerCue?: boolean;
+  allowBareImperative?: boolean;
+  cuePosition?: "before" | "either";
   maxCueDistance?: number;
 };
 
@@ -113,6 +115,15 @@ function spanDistance(left: SafetyMatchSpan, right: SafetyMatchSpan) {
   return 0;
 }
 
+function isBareImperativePosition(
+  segment: SafetyTextSegment,
+  core: SafetyMatchSpan,
+) {
+  if (core.start === 0) return true;
+  const prefix = segment.normalized.slice(0, core.start);
+  return /(?:[,，:：]\s*(?:then\s*)?|(?:then|然后|接着|再)\s*)$/iu.test(prefix);
+}
+
 export function hasUnsafeSafetyCore(
   segment: SafetyTextSegment,
   rule: SafetyCoreRule,
@@ -127,15 +138,19 @@ export function hasUnsafeSafetyCore(
       spanContains(safe, core)
     );
     const nearbyCues = cues.filter((cue) =>
-      cue.start <= core.start && spanDistance(cue, core) <= maxCueDistance
+      (rule.cuePosition === "either" || cue.start <= core.start)
+      &&
+      spanDistance(cue, core) <= maxCueDistance
     );
     const hasUncoveredDangerCue = nearbyCues.some((cue) =>
       !coveringSafeContexts.some((safe) => spanContains(safe, cue))
     );
+    const isBareImperative = rule.allowBareImperative === true
+      && isBareImperativePosition(segment, core);
 
     if (hasUncoveredDangerCue) return true;
     if (coveringSafeContexts.length > 0) return false;
-    return rule.requireDangerCue !== true || nearbyCues.length > 0;
+    return rule.requireDangerCue !== true || nearbyCues.length > 0 || isBareImperative;
   });
 }
 
