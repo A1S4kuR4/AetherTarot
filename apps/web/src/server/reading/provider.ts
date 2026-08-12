@@ -140,7 +140,7 @@ export class PlaceholderReadingProvider implements ReadingProvider {
 
 export function getReadingProvider(): ReadingProvider {
   const configuredProvider =
-    process.env.AETHERTAROT_READING_PROVIDER ?? "placeholder";
+    (process.env.AETHERTAROT_READING_PROVIDER ?? "placeholder").trim();
 
   if (configuredProvider === "placeholder") {
     return new PlaceholderReadingProvider();

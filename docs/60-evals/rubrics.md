@@ -89,7 +89,7 @@
 - 非即时家暴、胁迫、跟踪或控制受害者求助返回受限支持，不得误判为操控者；即时现实危险仍必须 hard stop
 - provider 输出中的绝对预言、第三方读心、专业确定性指令或危险行为说明必须在 capsule / memory / history 前被替换，原文不可见
 - Encyclopedia 与 Reading 使用同一输入安全分类；Tier 1 均返回 `403 safety_intercept`，普通敏感百科问题返回 `200 + boundary_note`
-- 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则；每个危险命中有具体 span，否定、引用和受害者语境只有在同类别 context span 覆盖该危险 span 时才能豁免
+- 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则；core、danger cue 与 context 各有具体 span，否定、引用和受害者语境只有在同类别 context 覆盖同一 core 与 cue 时才能豁免
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
 ### 3.7 结构化输出稳定性

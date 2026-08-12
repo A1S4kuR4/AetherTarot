@@ -44,7 +44,7 @@ export interface ReadingGenerationResult {
 export function resolveReadingGenerationMode(
   env: Partial<NodeJS.ProcessEnv> = process.env,
 ): ReadingGenerationMode {
-  const value = env.AETHERTAROT_READING_GENERATION_MODE ?? "monolithic";
+  const value = (env.AETHERTAROT_READING_GENERATION_MODE ?? "monolithic").trim();
   if (value === "monolithic" || value === "adaptive_staged") {
     return value;
   }

@@ -218,6 +218,18 @@ describe("llm provider baseline", () => {
     ).toThrow(/AETHERTAROT_LLM_THINKING_MODE/);
   });
 
+  it("trims LLM enum values consistently with readiness", () => {
+    const config = resolveLlmProviderConfig({
+      AETHERTAROT_LLM_BASE_URL: "https://api.deepseek.com",
+      AETHERTAROT_LLM_MODEL: "deepseek-v4-flash",
+      AETHERTAROT_LLM_THINKING_MODE: "  disabled  ",
+      AETHERTAROT_LLM_RESPONSE_FORMAT: "  json_object  ",
+    });
+
+    expect(config.thinkingMode).toBe("disabled");
+    expect(config.responseFormat).toBe("json_object");
+  });
+
   it("normalizes initial llm draft output and trims oversized arrays", () => {
     const context = buildHydratedContext();
     const normalized = normalizeReadingDraft({

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   findSafetyMatchSpans,
+  hasUnsafeSafetyCore,
   hasUncoveredSafetyMatch,
   normalizeSafetyText,
   segmentSafetyText,
@@ -56,5 +57,30 @@ describe("safety text normalization", () => {
 
     if (!segment) throw new Error("expected one normalized segment");
     expect(hasUncoveredSafetyMatch(segment, danger, safe)).toBe(true);
+  });
+
+  it("gives an uncovered danger cue priority over a separate safe phrase", () => {
+    const segment = segmentSafetyText("不要，你应该停药")[0];
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(hasUnsafeSafetyCore(segment, {
+      corePatterns: [{ form: "normalized", pattern: /停药/i }],
+      dangerCuePatterns: [{ form: "normalized", pattern: /你应该/i }],
+      safeContextPatterns: [{ form: "normalized", pattern: /不要停药/i }],
+    })).toBe(true);
+  });
+
+  it("lets one explicit safe context cover its own core and cue", () => {
+    const segment = segmentSafetyText("You should not stop taking medication")[0];
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(hasUnsafeSafetyCore(segment, {
+      corePatterns: [{ form: "compact", pattern: /stoptakingmedication/i }],
+      dangerCuePatterns: [{ form: "compact", pattern: /youshould/i }],
+      safeContextPatterns: [{
+        form: "compact",
+        pattern: /youshouldnotstoptakingmedication/i,
+      }],
+    })).toBe(false);
   });
 });

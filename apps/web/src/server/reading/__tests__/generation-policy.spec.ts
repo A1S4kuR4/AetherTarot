@@ -5,6 +5,7 @@ import {
 } from "@/server/reading/errors";
 import {
   buildReadingGenerationPlan,
+  resolveReadingGenerationMode,
 } from "@/server/reading/generation-policy";
 import {
   runReadingGraphWithDiagnostics,
@@ -65,6 +66,12 @@ class RecordingProvider extends PlaceholderReadingProvider {
 }
 
 describe("adaptive staged reading generation", () => {
+  it("trims the generation mode consistently with readiness", () => {
+    expect(resolveReadingGenerationMode({
+      AETHERTAROT_READING_GENERATION_MODE: "  monolithic  ",
+    })).toBe("monolithic");
+  });
+
   it("routes Lite 1-4 card Initial through one compact stage", async () => {
     const provider = new RecordingProvider();
     const result = await runReadingGraphWithDiagnostics(

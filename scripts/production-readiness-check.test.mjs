@@ -308,6 +308,55 @@ test("guest launch requires monolithic generation and bounds retained staged mod
   assert.match(report, /adaptive staged whole-route deadline/);
 });
 
+test("readiness trims runtime enums and reserves ten seconds below Caddy", async () => {
+  const repoRoot = makeRepoFixture();
+  const sharedLlmEnv = {
+    AETHERTAROT_LLM_BASE_URL: "https://llm.example",
+    AETHERTAROT_LLM_MODEL: "model",
+    AETHERTAROT_LLM_API_KEY: "sk-test",
+    AETHERTAROT_LLM_THINKING_MODE: "  disabled  ",
+    AETHERTAROT_LLM_RESPONSE_FORMAT: "  json_object  ",
+    AETHERTAROT_LLM_TEMPERATURE: "0.3",
+    AETHERTAROT_LLM_TIMEOUT_MS: "129999",
+    AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+    AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "1048576",
+    AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+    AETHERTAROT_LLM_MAX_QUEUE: "16",
+    AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
+  };
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_READING_PROVIDER: "  llm  ",
+      AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "  llm  ",
+      AETHERTAROT_READING_GENERATION_MODE: "  monolithic  ",
+      ...sharedLlmEnv,
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+
+  assert.equal(result.ok, false);
+  assert.doesNotMatch(report, /must be placeholder or llm/);
+  assert.doesNotMatch(report, /guest launch requires monolithic/);
+  assert.doesNotMatch(report, /must be enabled or disabled/);
+  assert.doesNotMatch(report, /must be json_object/);
+  assert.match(report, /AETHERTAROT_LLM_TIMEOUT_MS/);
+  assert.match(report, /1000-120000/);
+});
+
+test("Web CI runs readiness tests and watches its Caddy contract", () => {
+  const workflow = fs.readFileSync(
+    path.join(import.meta.dirname, "..", ".github", "workflows", "web-ci.yml"),
+    "utf8",
+  );
+
+  assert.match(workflow, /node --test scripts\/production-readiness-check\.test\.mjs/);
+  assert.match(workflow, /docs\/70-ops\/Caddyfile\.aethertarot\.example/);
+  assert.match(workflow, /docs\/70-ops\/production-deployment\.md/);
+});
+
 test("Caddy example keeps trusted headers, host rejection, redirects, and route body caps", () => {
   const caddyfile = fs.readFileSync(
     path.join(import.meta.dirname, "..", "docs", "70-ops", "Caddyfile.aethertarot.example"),

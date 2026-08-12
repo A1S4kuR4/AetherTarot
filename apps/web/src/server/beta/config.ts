@@ -48,13 +48,13 @@ function parsePositiveInteger({
 }
 
 export function getReadingProviderName(env: RuntimeEnvironment = process.env) {
-  return env.AETHERTAROT_READING_PROVIDER ?? "placeholder";
+  return (env.AETHERTAROT_READING_PROVIDER ?? "placeholder").trim();
 }
 
 export function isEncyclopediaQueryEnabled(
   env: RuntimeEnvironment = process.env,
 ) {
-  return (env.AETHERTAROT_ENCYCLOPEDIA_PROVIDER ?? "disabled") === "llm";
+  return (env.AETHERTAROT_ENCYCLOPEDIA_PROVIDER ?? "disabled").trim() === "llm";
 }
 
 export function getBetaOpsConfig(

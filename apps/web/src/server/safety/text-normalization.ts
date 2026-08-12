@@ -14,6 +14,14 @@ export type SafetyMatchSpan = {
   end: number;
 };
 
+export type SafetyCoreRule = {
+  corePatterns: readonly SafetyPattern[];
+  dangerCuePatterns?: readonly SafetyPattern[];
+  safeContextPatterns?: readonly SafetyPattern[];
+  requireDangerCue?: boolean;
+  maxCueDistance?: number;
+};
+
 const CONTRAST_BOUNDARY = /\b(?:but|however|yet)\b|(?:但是|但|然而|不过|却)/giu;
 const SENTENCE_BOUNDARY = /[。！？!?；;\r\n]+|(?<=[A-Za-z])\.(?=\s|$)/gu;
 const OBFUSCATED_ENGLISH_DOT = /(?<=[A-Za-z])\.(?=[A-Za-z])/gu;
@@ -93,6 +101,42 @@ export function hasUncoveredSafetyMatch(
   return findSafetyMatchSpans(segment, dangerousPatterns).some((danger) =>
     !safeSpans.some((safe) => safe.start <= danger.start && safe.end >= danger.end)
   );
+}
+
+function spanContains(container: SafetyMatchSpan, target: SafetyMatchSpan) {
+  return container.start <= target.start && container.end >= target.end;
+}
+
+function spanDistance(left: SafetyMatchSpan, right: SafetyMatchSpan) {
+  if (left.end < right.start) return right.start - left.end;
+  if (right.end < left.start) return left.start - right.end;
+  return 0;
+}
+
+export function hasUnsafeSafetyCore(
+  segment: SafetyTextSegment,
+  rule: SafetyCoreRule,
+) {
+  const cores = findSafetyMatchSpans(segment, rule.corePatterns);
+  const cues = findSafetyMatchSpans(segment, rule.dangerCuePatterns ?? []);
+  const safeContexts = findSafetyMatchSpans(segment, rule.safeContextPatterns ?? []);
+  const maxCueDistance = rule.maxCueDistance ?? 24;
+
+  return cores.some((core) => {
+    const coveringSafeContexts = safeContexts.filter((safe) =>
+      spanContains(safe, core)
+    );
+    const nearbyCues = cues.filter((cue) =>
+      cue.end <= core.start && spanDistance(cue, core) <= maxCueDistance
+    );
+    const hasUncoveredDangerCue = nearbyCues.some((cue) =>
+      !coveringSafeContexts.some((safe) => spanContains(safe, cue))
+    );
+
+    if (hasUncoveredDangerCue) return true;
+    if (coveringSafeContexts.length > 0) return false;
+    return rule.requireDangerCue !== true || nearbyCues.length > 0;
+  });
 }
 
 export function segmentSafetyText(text: string): SafetyTextSegment[] {

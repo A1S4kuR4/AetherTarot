@@ -1332,7 +1332,7 @@ describe("reading graph contract hardening", () => {
     );
 
     expect(reading.session_capsule).toBeTruthy();
-    expect(reading.session_capsule).toContain("[越界行为略]");
+    expect(reading.session_capsule).toContain("现实安全与边界");
     expect(reading.session_capsule).not.toContain("用户补充");
     expect(reading.session_capsule).not.toContain("控制她");
     expect(reading.session_capsule).not.toContain("监控");

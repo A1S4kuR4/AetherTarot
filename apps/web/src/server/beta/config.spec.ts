@@ -3,6 +3,7 @@ import {
   getBetaOpsConfig,
   getEncyclopediaQuotaConfig,
   getLlmTokenBudgetConfig,
+  getReadingProviderName,
   isEncyclopediaQueryEnabled,
 } from "@/server/beta/config";
 
@@ -36,5 +37,14 @@ describe("beta ops config", () => {
         AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "llm",
       }),
     ).toBe(true);
+  });
+
+  it("trims provider enum values consistently with readiness", () => {
+    expect(getReadingProviderName({
+      AETHERTAROT_READING_PROVIDER: "  llm  ",
+    })).toBe("llm");
+    expect(isEncyclopediaQueryEnabled({
+      AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "  llm  ",
+    })).toBe(true);
   });
 });

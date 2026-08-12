@@ -115,7 +115,7 @@ export function resolveLlmProviderConfig(
       503,
     );
   }
-  const rawThinkingMode = env.AETHERTAROT_LLM_THINKING_MODE;
+  const rawThinkingMode = env.AETHERTAROT_LLM_THINKING_MODE?.trim();
   if (
     rawThinkingMode
     && rawThinkingMode !== "enabled"
@@ -127,7 +127,7 @@ export function resolveLlmProviderConfig(
       503,
     );
   }
-  const rawResponseFormat = env.AETHERTAROT_LLM_RESPONSE_FORMAT;
+  const rawResponseFormat = env.AETHERTAROT_LLM_RESPONSE_FORMAT?.trim();
   if (rawResponseFormat && rawResponseFormat !== "json_object") {
     throw new ReadingServiceError(
       "provider_unavailable",

@@ -205,7 +205,7 @@ AETHERTAROT_IP_HASH_SALT=
 AETHERTAROT_PROXY_SHARED_SECRET=
 ```
 
-Readiness 只接受 `AETHERTAROT_READING_PROVIDER=placeholder|llm`、`AETHERTAROT_ENCYCLOPEDIA_PROVIDER=disabled|llm`，并要求游客首发固定 `AETHERTAROT_READING_GENERATION_MODE=monolithic`；非法值在发布前失败，不能留到运行时 503。代码仍保留 `adaptive_staged` 实验路径，但不属于本轮可发布配置；readiness 还计算其最多四次 provider deadline 的最坏值并要求低于 Caddy 130 秒预算，避免未来放宽模式门禁时遗漏 whole-route 上限。
+Readiness 与运行时都会先 `trim` provider、generation mode、thinking mode 与 response format，再按相同枚举解释；因此运维文件中的偶然首尾空白不会造成 readiness 通过而运行时 503。Readiness 只接受 `AETHERTAROT_READING_PROVIDER=placeholder|llm`、`AETHERTAROT_ENCYCLOPEDIA_PROVIDER=disabled|llm`，并要求游客首发固定 `AETHERTAROT_READING_GENERATION_MODE=monolithic`；非法值在发布前失败。单次 provider deadline 最大为 `120000ms`，必须为 Caddy `response_header_timeout 130s` 保留至少 10 秒的 route 收尾与错误映射余量，`129999ms` 等“仅略低于边缘 timeout”的配置仍然失败。代码仍保留 `adaptive_staged` 实验路径，但不属于本轮可发布配置；readiness 还计算其最多四次 provider deadline 的最坏值并要求低于 Caddy 130 秒预算，避免未来放宽模式门禁时遗漏 whole-route 上限。
 
 `AETHERTAROT_LLM_MAX_CONCURRENCY/MAX_QUEUE/QUEUE_TIMEOUT_MS` 只控制单个 Node.js 实例；先获取 permit，再预留 token。多实例部署不会共享这个 semaphore，仍需供应商硬预算或共享网关限制。`MAX_RESPONSE_BYTES` 受代码 4 MiB 硬上限约束。生产必须使用不同的高熵值配置 IP hash salt 与 proxy shared secret。
 
@@ -280,7 +280,7 @@ node scripts/production-readiness-check.mjs --origin https://aethertarot.cn
 
 仓库示例见 `docs/70-ops/Caddyfile.aethertarot.example`，要求 Caddy `>= 2.10`。Caddy 必须删除外部传入的 `CF-Connecting-IP`、`X-Forwarded-For`、`X-Real-IP` 与两条内部头，再用 TCP peer 写内部 IP/secret；80 只跳转正式域名，HTTPS `www` 跳 apex，未知 Host/SNI 与源站 IP 拒绝。`/api/reading`、普通 API 与仍保留的 `/api/readings/migrate` 分别使用 `64KiB`、`256KiB`、`2MiB` body cap，配置和验收统一使用二进制单位，避免全局 cap 使 migrate 合同不可达。
 
-Standalone 启动脚本会把 `HOSTNAME` 明确设为 `127.0.0.1`；systemd 仍应显式写入并验收。Caddy 不继承 `aethertarot-web.service` 的 env：为 `caddy.service` 单独配置权限 `0600` 的 `EnvironmentFile`（只含 `AETHERTAROT_PROXY_SHARED_SECRET`）或等价 drop-in，然后 `systemctl daemon-reload`。`AUTH_SECRET`、proxy secret 与 IP salt 都必须至少 32 字符且不是示例占位符，proxy secret 与 IP salt 必须彼此不同；应用/readiness 会拒绝不安全配置。当前边缘 `response_header_timeout = 130s`、上游读取上限 `140s`；有 provider 时 readiness 要求单一 `AETHERTAROT_LLM_TIMEOUT_MS` 严格小于 `130000`，默认 `120000`，从排队前覆盖 acquire、reservation、headers/body 与 settlement，不能用更长应用 deadline 穿透边缘超时。
+Standalone 启动脚本会把 `HOSTNAME` 明确设为 `127.0.0.1`；systemd 仍应显式写入并验收。Caddy 不继承 `aethertarot-web.service` 的 env：为 `caddy.service` 单独配置权限 `0600` 的 `EnvironmentFile`（只含 `AETHERTAROT_PROXY_SHARED_SECRET`）或等价 drop-in，然后 `systemctl daemon-reload`。`AUTH_SECRET`、proxy secret 与 IP salt 都必须至少 32 字符且不是示例占位符，proxy secret 与 IP salt 必须彼此不同；应用/readiness 会拒绝不安全配置。当前边缘 `response_header_timeout = 130s`、上游读取上限 `140s`；有 provider 时 readiness 要求单一 `AETHERTAROT_LLM_TIMEOUT_MS` 不超过 `120000`，从排队前覆盖 acquire、reservation、headers/body 与 settlement，并为 route 收尾、settlement 与错误映射保留至少 10 秒边缘余量。
 
 人工批准后在服务器执行并保存结果（本轮不自动执行）：
 

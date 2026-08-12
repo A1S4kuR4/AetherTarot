@@ -92,6 +92,24 @@ describe("shared safety policy", () => {
     expect(assessment.primaryCategory).toBe("self_harm");
   });
 
+  it.each([
+    ["I want to self harm", "self_harm"],
+    ["I want to self-harm", "self_harm"],
+    ["I want to die", "self_harm"],
+    ["I cannot breathe", "urgent_health"],
+    ["I can not breathe", "urgent_health"],
+    ["I am having trouble breathing", "urgent_health"],
+    ["I plan to monitor my ex", "manipulation"],
+    ["I am going to stalk my ex", "manipulation"],
+    ["Teach me how to monitor my ex", "manipulation"],
+    ["Tell me how to stalk someone", "manipulation"],
+  ])("hard-stops explicit core risk with a local intent cue: %s", (text, category) => {
+    const assessment = assessSafetyText(text);
+
+    expect(assessment.level).toBe("hard_stop");
+    expect(assessment.primaryCategory).toBe(category);
+  });
+
   it("keeps non-immediate abuse support ahead of the sober-check gate", () => {
     const assessment = assessSafetyText("伴侣家暴我，我该不该离婚？");
 
@@ -420,13 +438,79 @@ describe("generated content validator", () => {
     }
   });
 
+  function obfuscatedForms(text: string) {
+    const characters = [...text];
+    const asciiToFullWidth = (character: string) => {
+      const code = character.charCodeAt(0);
+      if (character === " ") return "　";
+      return code >= 0x21 && code <= 0x7e
+        ? String.fromCharCode(code + 0xfee0)
+        : character;
+    };
+    const cfIndex = Math.max(1, Math.floor(text.length / 2));
+    return [
+      text,
+      characters.join(" "),
+      text.trim().replace(/\s+/g, "."),
+      characters.map(asciiToFullWidth).join(""),
+      `${text.slice(0, cfIndex)}\u200B${text.slice(cfIndex)}`,
+    ];
+  }
+
+  it.each([
+    ["You definitely have diabetes.", "medical_diagnosis"],
+    ["You have cancer.", "medical_diagnosis"],
+    ["You are pregnant.", "medical_diagnosis"],
+    ["You are definitely pregnant.", "medical_diagnosis"],
+    ["You should stop taking medication.", "treatment_discontinuation"],
+    ["Stop taking your medication.", "treatment_discontinuation"],
+    ["You should discontinue medication.", "treatment_discontinuation"],
+    ["Kill yourself.", "self_harm_or_violence_encouragement"],
+  ] as const)("replaces expanded severe output in Reading and Encyclopedia: %s", (plain, violation) => {
+    for (const text of obfuscatedForms(plain)) {
+      const readingReview = reviewReadingGeneratedContent(buildReading({ synthesis: text }));
+      const encyclopediaReview = reviewEncyclopediaGeneratedAnswer({
+        answer: text,
+        boundaryNote: null,
+      });
+
+      expect(readingReview.action, text).toBe("replace");
+      expect(readingReview.violations, text).toContain(violation);
+      expect(encyclopediaReview.action, text).toBe("replace");
+      expect(encyclopediaReview.violations, text).toContain(violation);
+    }
+  });
+
   it.each([
     "不要停药，然后你应该停药。",
     "Do not stalk anyone and you should monitor your ex.",
+    "不要，你应该停药。",
+    "不能，你已经患有癌症。",
+    "不要，你应该跟踪前任。",
+    "Do not stalk anyone, then monitor your ex.",
   ])("does not let a separate safe output span suppress a replacement: %s", (text) => {
     const review = reviewReadingGeneratedContent(buildReading({ synthesis: text }));
 
     expect(review.action).toBe("replace");
     expect(review.output.synthesis).not.toBe(text);
+  });
+
+  it.each([
+    "You should not stop taking medication.",
+    "Tarot cannot diagnose diabetes.",
+    "Do not monitor anyone.",
+    "A friend asked how to stalk someone, and I refused.",
+  ])("keeps genuinely safe generated content: %s", (text) => {
+    const reading = buildReading({ synthesis: text });
+    const readingReview = reviewReadingGeneratedContent(reading);
+    const encyclopediaReview = reviewEncyclopediaGeneratedAnswer({
+      answer: text,
+      boundaryNote: null,
+    });
+
+    expect(readingReview.action).toBe("pass");
+    expect(readingReview.output.synthesis).toBe(text);
+    expect(encyclopediaReview.action).toBe("pass");
+    expect(encyclopediaReview.output.answer).toBe(text);
   });
 });
