@@ -118,6 +118,37 @@ describe("reading generated-content safety", () => {
     ]);
   });
 
+  it("keeps English stalking-victim safety help on bounded abuse support", async () => {
+    const result = await runReadingGraphWithDiagnostics(
+      {
+        ...buildSinglePayload("I am being stalked by my ex and need safety help"),
+        agent_profile: "lite",
+      },
+      {
+        provider: new TestReadingProvider(),
+      },
+    );
+
+    expect(result.reading.safety_note).toMatch(/现实安全/);
+    expect(result.reading.sober_check).toBeNull();
+    expect(result.reading.presentation_mode).toBe("standard");
+  });
+
+  it("keeps all-savings investment outsourcing on the sober gate", async () => {
+    const result = await runReadingGraphWithDiagnostics(
+      {
+        ...buildSinglePayload("Should I invest all my savings?"),
+        agent_profile: "lite",
+      },
+      {
+        provider: new TestReadingProvider(),
+      },
+    );
+
+    expect(result.reading.sober_check).toBeTruthy();
+    expect(result.reading.presentation_mode).toBe("sober_anchor");
+  });
+
   it("leaves ordinary relationship conflict on the standard path", async () => {
     const result = await runReadingGraphWithDiagnostics(
       {

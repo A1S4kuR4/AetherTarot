@@ -127,7 +127,7 @@ export function hasUnsafeSafetyCore(
       spanContains(safe, core)
     );
     const nearbyCues = cues.filter((cue) =>
-      cue.end <= core.start && spanDistance(cue, core) <= maxCueDistance
+      cue.start <= core.start && spanDistance(cue, core) <= maxCueDistance
     );
     const hasUncoveredDangerCue = nearbyCues.some((cue) =>
       !coveringSafeContexts.some((safe) => spanContains(safe, cue))

@@ -123,6 +123,7 @@ AetherTarot 的解读应：
 - **降温审查 (Sober Check)**：当用户试图将核心生存决策（辞职、分手、投资）直接交由塔罗决定时，系统不会拒绝生成，但会下发“降温审查（Sober Check）”阻拦，强制用户先进行主观现实条件的补齐反思后，再进行解读。
 - **受害者支持 (Bounded Support)**：提及家暴、胁迫、跟踪或控制，不等同于用户正在请求操控他人。非即时危险的受害者求助返回 `200 + safety_note`，把 guidance / follow-up 收窄到安全、边界与现实支持；存在即时危险信号时才升级为 Hard Stop。一般争吵、冷战或沟通困难保持普通关系解读。
 - **生成内容验证**：provider 生成后、capsule 与 memory 写入前，服务端必须扫描所有用户可见生成字段。输入分类与输出验证共用 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则，并分别标注核心危险行为/状态、危险意图 cue 与安全/转述/受害者 context span。只有同类别 context 明确覆盖同一个 core 及其 cue 时才豁免；未被覆盖的局部危险 cue 或另一 core 仍优先。绝对预言、第三方读心和专业确定性指令必须被替换；伤害鼓励、操控步骤、停药建议、直接诊断或合理化暴力必须触发整份正文的安全替代。被拦截的原文不得进入 response、history、capsule 或 memory。
+- **声明式语义族**：Tier 1 与生成内容替换不得继续靠入口各自追加整句 regex。服务端共享六个高风险 family：`self_harm_state`、`violence_toward_others`、`urgent_medical_danger`、`stalking_monitoring_control`、`treatment_discontinuation`、`direct_diagnosis`。每个 family 分别声明 core、输入/输出适用规则，并复用 intent/directive cue 与明确否定、转述、受害者求助、专业边界 context；外部 LLM 分类只能补充，不能替代该确定性边界。
 - **提交前现实边界确认**：当前 `/new` 会对明显重大现实决策类提问加入轻量前置摩擦；完整仪式与“当下之镜”入口都要求用户先确认“塔罗只用于整理线索，现实信息、专业意见与个人底线优先”，再进入抽牌。该机制用于降低决策外包倾向，不替代服务端 `sober_check`。
 
 当前中国大陆固定资源策略：
@@ -134,6 +135,8 @@ AetherTarot 的解读应：
 ### 8.1 Final 追问的统一安全主体
 
 每次 provider 调用前，服务端分别分类原始 question 与每个用户填写的 follow-up answer，再按最高产品风险聚合。分类器分别定位 core、danger cue 与 context；否定、引用或受害者语境必须由同类别 context span 覆盖同一 core 与 cue 才能豁免，不能抵消同字段另一危险命中或另一答案。服务端生成的 follow-up question 只校验对应关系，不作为用户意图。任何字段触发 Tier 1 时，Graph 强制边直接返回 `403 safety_intercept`，不调用 decider/tool/provider、不生成 capsule、不写 thread memory，并释放而不消费 initial snapshot，允许修改答案后重试。bounded / sober-check 同样按字段聚合，Final 必须返回相应 safety note 或 `200 + sober_check + sober_anchor`。
+
+安全回归必须从语义种子生成 metamorphic matrix，至少覆盖 NFKC 全角、Cf/零宽、空格拆词、点号/标点拆词、大小写、安全句追加不降级、同义 cue 替换不降级，以及真正否定不误判。离散 fixture 与该矩阵共同构成最低回归证据，不能把其中任一方表述为自然语言穷尽证明。
 
 ---
 

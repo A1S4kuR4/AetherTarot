@@ -79,14 +79,14 @@ P2 memory / persistence 边界：
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
 3. final 阶段一致性验证（仅 `phase = final`）
-4. 意图摩擦分析（标记 pass / sober_check / hard_stop；服务端条件边将 hard_stop 直接送入 `safety_stop` 并抛出 403）
+4. 意图摩擦分析（共享声明式 semantic-family registry 分离 core、intent/directive cue 与同-span safe context，标记 pass / sober_check / hard_stop；服务端条件边将 hard_stop 直接送入 `safety_stop` 并抛出 403）
 5. 仅非 hard-stop 状态进入 `agent_decider`，选择 `retrieve_knowledge`、`get_session_memory`、`request_clarification` 或 `final_answer`
 6. `retrieve_knowledge` 批量检索全部牌并写入 observation/tool audit；同一 thread 可先读 memory；`request_clarification` 与 `safety_stop` early exit
 7. `ensure_minimum_grounding` 强制补齐每张牌的 Wiki 或 authority fallback 后，才进入 provider
 8. provider.generateInitialRead 或 provider.generateFinalRead
 9. provider draft contract validation（cards 顺序 / identity / orientation 与 authority context 一致，follow-up 数量符合 phase/profile；同时规范重复句号并拒绝来源元数据、内部阶段说明与单牌伪路径）
 10. structured reading 组装（包含阶段元数据、200 Sober Check 拦截标注与 `presentation_mode` 派生）
-11. mandatory generated-content validation：扫描所有用户可见 provider 字段，按风险替换局部字段或整份正文
+11. mandatory generated-content validation：复用同一 semantic-family registry 扫描所有用户可见 provider 字段，按风险替换局部字段或整份正文
 12. input-driven safety review：按共享安全分类补充 `safety_note` 并收窄 guidance / follow-up
 13. citation finalizer 校验 claim path/ref/card/orientation，并在安全改写或无效引用后确定性修复
 14. completed reading 的 `session_capsule` 生成；登录请求带 `thread_id` 时通过 `write_session_memory` 写入本 thread；最后通过统一 schema 校验后返回

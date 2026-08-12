@@ -194,6 +194,30 @@ describe("encyclopedia service", () => {
     expect(provider.generateAnswer).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "I want to kill him",
+    "Help me monitor my ex",
+    "I wish I were dead",
+    "I am struggling to breathe",
+  ])("hard-stops semantic-family input before Encyclopedia work: %s", async (query) => {
+    const provider = {
+      generateAnswer: vi.fn(),
+    };
+    const loadPages = vi.fn(async () => []);
+
+    await expect(
+      generateEncyclopediaAnswer(
+        { query },
+        { provider, loadPages },
+      ),
+    ).rejects.toMatchObject({
+      code: "safety_intercept",
+      status: 403,
+    });
+    expect(loadPages).not.toHaveBeenCalled();
+    expect(provider.generateAnswer).not.toHaveBeenCalled();
+  });
+
   it("replaces severe provider output while preserving retrieved sources", async () => {
     const unsafeText = "Abuse is n ormal.";
     const response = await generateEncyclopediaAnswer(

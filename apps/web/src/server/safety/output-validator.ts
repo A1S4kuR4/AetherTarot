@@ -2,10 +2,10 @@ import type { StructuredReading } from "@aethertarot/shared-types";
 import {
   hasSafetyMatch,
   hasUncoveredSafetyMatch,
-  hasUnsafeSafetyCore,
   segmentSafetyText,
   type SafetyPattern,
 } from "@/server/safety/text-normalization";
+import { findSafetySemanticFamilies } from "@/server/safety/semantic-rules";
 
 export type GeneratedContentAction = "pass" | "restrict" | "replace";
 
@@ -33,66 +33,16 @@ const patterns = (
   { form: "compact", pattern: compact },
 ];
 
-const SAFE_TREATMENT_BOUNDARY = patterns(
-  /(?:不要|不能|不应|不可|不建议|避免|拒绝建议)(?:自行)?(?:停药|停止治疗|拒绝治疗)/i,
-  /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:stop(?:taking)?(?:your)?medication|stoptreatment|discontinuemedication)/i,
-);
 const SAFE_CERTAINTY_BOUNDARY: SafetyPattern[] = [
   { form: "normalized", pattern: /(?:不能|无法|不应|不可|不代表|并非).{0,12}?(?:一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定|真实想法)|(?:一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定|真实想法).{0,12}?(?:无法确认|不能确定|不应断定)/i },
   { form: "normalized", pattern: /(?:不能|无法|不应|不可|不代表|并非).{0,12}?(?:他|她|对方).{0,8}?(?:一定|肯定|真实).{0,10}?(?:爱|想|打算|回来|离开|喜欢|讨厌)/i },
   { form: "compact", pattern: /(?:cannot|cant|shouldnot)(?:knowforsure|guarantee|predict)/i },
 ];
-const SAFE_MANIPULATION_BOUNDARY: SafetyPattern[] = [
-  { form: "normalized", pattern: /(?:不要|不能|不应|不可|不鼓励|拒绝|避免)(?:去|继续)?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制)(?:他|她|对方|前任|别人|任何人)?/i },
-  { form: "normalized", pattern: /(?:朋友|他|她|对方|有人)(?:问我|说|声称).{0,16}?(?:怎么|如何|要|想|应该).{0,8}?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)(?:他|她|对方|前任|别人|任何人)?/i },
-  { form: "compact", pattern: /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:someone|anyone|them|him|her|myex|yourex)?/i },
-  { form: "compact", pattern: /(?:afriend|friend|he|she|they)(?:asked|askedme|said).{0,16}?(?:howto|youshould)(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:someone|anyone|them|him|her|myex|yourex)?/i },
-];
-const SAFE_DIAGNOSIS_BOUNDARY = patterns(
-  /(?:不能|无法|不应|不可)(?:直接)?(?:诊断|确诊)|不代表(?:患有|怀孕)/i,
-  /(?:cannot|cant|shouldnot)(?:diagnose|confirmadiagnosis|confirmpregnancy)/i,
-);
-const SAFE_HARM_BOUNDARY = patterns(
-  /(?:不要|不能|不应|不可|拒绝|避免)(?:自杀|自残|伤害自己|伤害他人|实施暴力)/i,
-  /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:selfharm|suicide|killyourself|hurtyourself|hurtsomeone)/i,
-);
 const SAFE_PROFESSIONAL_BOUNDARY = patterns(
   /(?:不要|不能|不应|不应该|不可|不建议|避免|不宜).{0,12}?(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|你应该(?:不要|避免|谨慎).{0,10}?(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)/i,
   /(?:donot|dont|shouldnot|shouldnt|cannot|youshouldnot|youshouldavoid)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i,
 );
 
-const SELF_HARM_OR_VIOLENCE_CORE = patterns(
-  /自杀|自残|结束生命|伤害自己|伤害他人|杀他|杀她|实施暴力/i,
-  /selfharm|killyourself|hurtyourself|hurtsomeone|hurtthem|kill(?:him|her|them|someone)|hurt(?:him|her|them|someone)|attack(?:him|her|them|someone)/i,
-);
-const HARM_DANGER_CUES = patterns(
-  /你可以|你应该|你必须|不如|值得|建议你|去|我要|我准备|我打算/i,
-  /youshould|youcan|goaheadand|iamgoingto|imgoingto|iamaboutto|iamplanningto/i,
-);
-const MANIPULATION_CORE = patterns(
-  /(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制)(?:他|她|对方|前任|别人|任何人)?/i,
-  /(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:my|your|the)?(?:ex|partner|someone|anyone|him|her|them|person|people)?/i,
-);
-const MANIPULATION_DANGER_CUES = patterns(
-  /你可以|你应该|你必须|建议|方法是|步骤是|教我|怎么|如何/i,
-  /youshould|youcan|howcani|howdoi|teachmehowto|tellmehowto/i,
-);
-const TREATMENT_DISCONTINUATION_CORE = patterns(
-  /停药|停止治疗|拒绝治疗/i,
-  /stop(?:taking)?(?:your)?medication|stoptreatment|discontinuemedication/i,
-);
-const TREATMENT_DANGER_CUES = patterns(
-  /你可以|你应该|你必须|建议|直接|不妨/i,
-  /youshould|youcan/i,
-);
-const MEDICAL_DIAGNOSIS_CORE = patterns(
-  /(?:你|他|她).{0,6}(?:已经|就是|肯定|确定)?(?:患有|得了|确诊为|怀孕了)/i,
-  /(?:you|they|he|she)(?:definitely)?(?:have|has)(?:cancer|diabetes|adisease|thecondition)|(?:you|they|he|she)(?:are|is)(?:definitely)?pregnant|(?:you|they|he|she)(?:are|is)diagnosedwith/i,
-);
-const DIAGNOSIS_DANGER_CUES = patterns(
-  /肯定|确定|已经|就是/i,
-  /definitely|diagnosed/i,
-);
 const ABUSE_MINIMIZATION = patterns(
   /(?:家暴|暴力|被打).{0,12}(?:很正常|应该忍|需要忍|接受就好|是爱你的表现)|(?:被家暴|被打).{0,8}(?:活该|是你的错|你造成)|你.{0,8}(?:招来|导致).{0,6}(?:家暴|暴力)/i,
   /abuse(?:isnormal|isyourfault|meanstheyloveyou)/i,
@@ -129,39 +79,24 @@ function inspectGeneratedText(text: string) {
   const violations: GeneratedContentViolation[] = [];
 
   for (const segment of segmentSafetyText(text)) {
-    if (
-      hasUnsafeSafetyCore(segment, {
-        corePatterns: SELF_HARM_OR_VIOLENCE_CORE,
-        dangerCuePatterns: HARM_DANGER_CUES,
-        safeContextPatterns: SAFE_HARM_BOUNDARY,
-      })
-    ) {
-      appendUnique(violations, "self_harm_or_violence_encouragement");
-    }
-    if (
-      hasUnsafeSafetyCore(segment, {
-        corePatterns: MANIPULATION_CORE,
-        dangerCuePatterns: MANIPULATION_DANGER_CUES,
-        safeContextPatterns: SAFE_MANIPULATION_BOUNDARY,
-      })
-    ) {
-      appendUnique(violations, "manipulation_instruction");
-    }
-    if (
-      hasUnsafeSafetyCore(segment, {
-        corePatterns: TREATMENT_DISCONTINUATION_CORE,
-        dangerCuePatterns: TREATMENT_DANGER_CUES,
-        safeContextPatterns: SAFE_TREATMENT_BOUNDARY,
-      })
-    ) {
-      appendUnique(violations, "treatment_discontinuation");
-    }
-    if (hasUnsafeSafetyCore(segment, {
-      corePatterns: MEDICAL_DIAGNOSIS_CORE,
-      dangerCuePatterns: DIAGNOSIS_DANGER_CUES,
-      safeContextPatterns: SAFE_DIAGNOSIS_BOUNDARY,
-    })) {
-      appendUnique(violations, "medical_diagnosis");
+    for (const family of findSafetySemanticFamilies([segment], "output")) {
+      switch (family.id) {
+        case "self_harm_state":
+        case "violence_toward_others":
+          appendUnique(violations, "self_harm_or_violence_encouragement");
+          break;
+        case "stalking_monitoring_control":
+          appendUnique(violations, "manipulation_instruction");
+          break;
+        case "treatment_discontinuation":
+          appendUnique(violations, "treatment_discontinuation");
+          break;
+        case "direct_diagnosis":
+          appendUnique(violations, "medical_diagnosis");
+          break;
+        case "urgent_medical_danger":
+          break;
+      }
     }
     if (hasSafetyMatch(segment, ABUSE_MINIMIZATION)) {
       appendUnique(violations, "abuse_minimization");

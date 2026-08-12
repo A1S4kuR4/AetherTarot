@@ -2,6 +2,8 @@
 
 > 2026-08-12 补充：两阶段 Reading 对原始问题和每条用户追问答案独立分类后聚合。输入分类与生成内容验证共用 NFKC、Unicode Cf/零宽与双向控制符清理、异常空格、全角字符及 normalized/compact 两种声明式匹配视图。规则分别返回核心危险行为/状态、危险意图 cue 与安全/引用/受害者 context span；context 只有覆盖同一 core 与 cue 时才豁免，未被覆盖的危险 cue 或另一 core 仍优先。Tier 1 由 Graph 强制边在 decider/tool/provider/capsule/memory 前停止，并安全释放 initial snapshot。服务端生成的问题不是用户意图。
 
+> 同日 RC 收口：高风险检测集中到六个共享 semantic family（自伤/自杀状态、对他人暴力、紧急呼吸/医疗危险、跟踪监控控制、停止治疗、直接诊断），并把 want/need/plan/intend、help/show/teach/tell/steps、should/must/do/stop 及常见中文表达归入可复用 cue。明确否定、reported speech、受害者求助与专业边界只有覆盖同一 family 的 core/cue 才能豁免；同一局部窗口的未覆盖危险 cue 优先。
+
 ## 1. 文档目的
 
 规定 AetherTarot 在表达方式、敏感场景与高风险主题上的安全边界，避免把塔罗解读演变成误导性建议或心理操控工具。
@@ -106,6 +108,7 @@ Reading 与 Encyclopedia 共用同一输入分类策略；Reading 再把分类�
 - 建设性阻力是否仍然服从上述边界，没有削弱 hard-stop、sober-check 或 `safety_note`
 - provider 越界原文是否在 capsule、thread memory、history 与百科回答中完全不可见
 - 家暴受害者求助、明确操控意图与一般关系冲突是否被正确区分
+- metamorphic/property 回归是否证明全角、Cf、空格/点号拆词、大小写、无关安全句追加和 cue 同义替换都不能降低风险，同时真正否定仍保持安全
 
 ---
 

@@ -1302,7 +1302,7 @@ describe("reading graph contract hardening", () => {
       initial_reading: initial,
       followup_answers: initial.follow_up_questions.map((question) => ({
         question,
-        answer: "我担心自己会彻底崩溃，也一直想监控对方现在在做什么。",
+        answer: "我担心自己会彻底崩溃，也一直担心对方正在监控我。",
       })),
     });
 
