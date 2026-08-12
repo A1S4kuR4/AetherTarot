@@ -115,6 +115,7 @@ replay 与账号作用域的 thread 短期记忆，但仍未引入 LangGraph ses
 - `prior_session_capsule` 的优先级低于当前问题、当前牌阵与本轮抽牌
 - completed `session_capsule` 当前固定收敛为“问题 / 牌阵 / 核心主题 / 1-2 条延续主轴 / 边界提醒”模板
 - `session_capsule` 不再直带 `用户补充` 或高风险细节，长度也会在服务层硬限制
+- outgoing capsule build 与 incoming sanitize 复用同一分类/脱敏 helper；自伤恢复/教育/助人与非即时受害者支持即使允许完成 reading，也只在问题行保留安全占位，不复制原问题
 
 P2 设计边界：
 

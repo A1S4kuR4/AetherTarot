@@ -7,6 +7,8 @@ import {
 import {
   findSafetySemanticFamilies,
   SELF_HARM_SUPPORT_CONTEXTS,
+  SUPPORT_REQUEST_CONTEXTS,
+  VICTIM_REPORT_CONTEXTS,
   VICTIM_SUPPORT_CONTEXTS,
   type SafetySemanticFamilyId,
 } from "@/server/safety/semantic-rules";
@@ -123,8 +125,11 @@ export function assessSafetyText(text: string): SafetyAssessment {
     || matchedFamilyIds.has("treatment_discontinuation");
   const hasImmediateDanger = matchedFamilyIds.has("violence_toward_others");
   const hasManipulationIntent = matchedFamilyIds.has("stalking_monitoring_control");
+  const hasCrossSegmentVictimSupport = matchesPatterns(VICTIM_REPORT_CONTEXTS)
+    && matchesPatterns(SUPPORT_REQUEST_CONTEXTS);
   const hasAbuseSupport = matches(ABUSE_PATTERN)
-    || matchesPatterns(VICTIM_SUPPORT_CONTEXTS);
+    || matchesPatterns(VICTIM_SUPPORT_CONTEXTS)
+    || hasCrossSegmentVictimSupport;
   const hasSelfHarmSupport = matchesPatterns(SELF_HARM_SUPPORT_CONTEXTS);
   const hasHealth = matches(HEALTH_PATTERN)
     || matchedFamilyIds.has("treatment_discontinuation");

@@ -199,6 +199,10 @@ describe("encyclopedia service", () => {
     "Help me monitor my ex",
     "I wish I were dead",
     "I am struggling to breathe",
+    "Please shoot him",
+    "Could I install a GPS tracker on my ex's car?",
+    "Could I stop insulin?",
+    "I am choking",
   ])("hard-stops semantic-family input before Encyclopedia work: %s", async (query) => {
     const provider = {
       generateAnswer: vi.fn(),
@@ -216,6 +220,22 @@ describe("encyclopedia service", () => {
     });
     expect(loadPages).not.toHaveBeenCalled();
     expect(provider.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("keeps cross-sentence victim help bounded while preserving safe education", async () => {
+    const loadPages = vi.fn(async () => []);
+    const victim = await generateEncyclopediaAnswer(
+      { query: "My partner monitors my phone. I need help staying safe." },
+      { loadPages },
+    );
+    const education = await generateEncyclopediaAnswer(
+      { query: "I do not want to hurt him, tell me how to calm down" },
+      { loadPages },
+    );
+
+    expect(victim.boundary_note).toMatch(/现实安全/);
+    expect(education.answer).toMatch(/没有在当前塔罗百科资料中找到/);
+    expect(loadPages).toHaveBeenCalledTimes(2);
   });
 
   it("replaces severe provider output while preserving retrieved sources", async () => {
@@ -236,6 +256,31 @@ describe("encyclopedia service", () => {
 
     expect(response.answer).not.toContain(unsafeText);
     expect(response.answer).toMatch(/原始回答触及安全边界/);
+    expect(response.boundary_note).toMatch(/不会提供/);
+    expect(response.sources.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    "Please shoot him",
+    "Install spyware on your ex's phone",
+    "Stop heart medication",
+    "You are depressed",
+  ])("removes compositional provider output from the Encyclopedia response: %s", async (unsafeText) => {
+    const response = await generateEncyclopediaAnswer(
+      { query: "愚者逆位怎么理解？", cardId: "fool" },
+      {
+        provider: {
+          generateAnswer: vi.fn(async () => ({
+            answer: unsafeText,
+            related_cards: [],
+            related_concepts: [],
+            related_spreads: [],
+          })),
+        },
+      },
+    );
+
+    expect(response.answer).not.toContain(unsafeText);
     expect(response.boundary_note).toMatch(/不会提供/);
     expect(response.sources.length).toBeGreaterThan(0);
   });
@@ -446,6 +491,10 @@ describe("encyclopedia query route", () => {
     "Someone is attacking me right now",
     "My partner threatened to kill me and is outside with a knife",
     "我现在被打",
+    "Please shoot him",
+    "Could I install a GPS tracker on my ex's car?",
+    "Could I stop insulin?",
+    "I am choking",
   ])("returns a Tier 1 safety intercept before quota and provider work: %s", async (query) => {
     const deps = buildDependencies();
     const response = await handleEncyclopediaQueryPost(

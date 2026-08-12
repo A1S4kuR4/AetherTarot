@@ -7,6 +7,7 @@ import {
   assessSafetyText,
   type SafetyCategory,
 } from "@/server/safety/policy";
+import { normalizeSafetyText } from "@/server/safety/text-normalization";
 
 const USER_DETAIL_LINE_PATTERN = /^(用户补充|现实补充|followup|follow-up answers?)[:：]/i;
 const CAPSULE_REDACTED_CATEGORIES: SafetyCategory[] = [
@@ -34,18 +35,26 @@ function isCapsuleRedFlag(value: string) {
   );
 }
 
-function sanitizeCapsuleLine(line: string) {
-  const normalized = line.replace(/\s+/g, " ").trim();
+export function sanitizeSessionCapsuleFragment(
+  value: string,
+  maxLength: number,
+  redactedReplacement: string | null = null,
+) {
+  const displayValue = value
+    .replace(/\p{Cf}/gu, "")
+    .replace(/[\p{Z}\s]+/gu, " ")
+    .trim();
+  const normalized = normalizeSafetyText(displayValue);
 
   if (!normalized || USER_DETAIL_LINE_PATTERN.test(normalized)) {
-    return null;
+    return redactedReplacement;
   }
 
   if (isCapsuleRedFlag(normalized)) {
-    return null;
+    return redactedReplacement;
   }
 
-  return normalized;
+  return truncateText(displayValue, maxLength);
 }
 
 export function sanitizeIncomingSessionCapsule(
@@ -59,7 +68,7 @@ export function sanitizeIncomingSessionCapsule(
   const sanitizedLines = [...new Set(
     priorSessionCapsule
       .split(/\r?\n/)
-      .map((line) => sanitizeCapsuleLine(line))
+      .map((line) => sanitizeSessionCapsuleFragment(line, maxLength))
       .filter((line): line is string => Boolean(line)),
   )].filter((line, _, lines) => {
     if (line !== "延续主轴：") {

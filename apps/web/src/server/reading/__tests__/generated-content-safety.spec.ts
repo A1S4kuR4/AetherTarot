@@ -88,6 +88,53 @@ describe("reading generated-content safety", () => {
     )).toBe(true);
   });
 
+  it.each([
+    "Please shoot him",
+    "Install spyware on your ex's phone",
+    "Stop heart medication",
+    "You are depressed",
+  ])("fully replaces compositional provider output across every persistence surface: %s", async (unsafeText) => {
+    const threadId = `rc-output-${unsafeText.length}`;
+    const memoryStore = createInMemorySessionMemoryStore();
+    const result = await runReadingGraphWithDiagnostics(
+      {
+        ...buildSinglePayload("我该如何理解现在的状态？"),
+        agent_profile: "lite",
+        thread_id: threadId,
+      },
+      {
+        provider: new TestReadingProvider({
+          initial: (draft) => ({
+            ...draft,
+            synthesis: unsafeText,
+          }),
+        }),
+        sessionMemoryStore: memoryStore,
+      },
+    );
+    const completedHistory = [{
+      id: result.reading.reading_id,
+      createdAt: "2026-08-12T00:00:00.000Z",
+      spreadId: result.reading.spread.id,
+      drawnCards: buildSinglePayload().drawnCards,
+      reading: result.reading,
+      threadId,
+    }];
+    const serializedSurfaces = JSON.stringify({
+      response: result.reading,
+      grounding: result.reading.grounding,
+      capsule: result.reading.session_capsule,
+      threadMemory: await memoryStore.get(threadId),
+      completedHistory,
+      agentState: result.agentState,
+      trace: result.trace,
+    });
+
+    expect(result.reading.safety_note).toMatch(/替换/);
+    expect(serializedSurfaces).not.toContain(unsafeText);
+    expect(result.reading.grounding?.status).toBe("degraded");
+  });
+
   it("keeps safe negated boundary wording intact", async () => {
     const safeText = "不能确定他一定会回来，也不要停药；请回到现实信息。";
     const result = await runReadingGraphWithDiagnostics(

@@ -6,6 +6,8 @@
 
 > RC 残余收口：暴力与操控规则把 intent、directive 和裸祈使作为三种声明式句法形态；directive / immediacy cue 可以位于 core 前后，但普通 intent cue 仍需与后续 core 局部绑定，避免把另一安全目的误绑到已被否定的动作。即时受害者以攻击/威胁 core 配合“现在、right now、持刀”等 cue hard-stop；非即时受害者、明确当前否认保持非危机路径，恢复期、百科教育和帮助他人的自伤相关表达进入带 `safety_note` 的受限支持。
 
+> 独立 RC 审计收口：确定性规则进一步拆成 `speech act × action/core × target/entity × cue placement × context`。`please`、can/could/would/may/should、`is it safe`、`best option` 与中文“请”是可复用 speech act，不属于某个完整句 fixture；暴力、监控、停治与诊断实体独立声明。裸祈使由局部从句语法识别，不再以 core 是否位于字符串起点近似。completed/outgoing 与 incoming capsule 复用同一分类和脱敏 helper，受限支持问题原文不进入 capsule、history capsule 字段或下一轮 continuity。
+
 ## 1. 文档目的
 
 规定 AetherTarot 在表达方式、敏感场景与高风险主题上的安全边界，避免把塔罗解读演变成误导性建议或心理操控工具。
@@ -54,6 +56,7 @@ Reading 与 Encyclopedia 共用同一输入分类策略；Reading 再把分类�
 - 前端可以将 `safety_note` 视觉降温为 Safety Rose Clay / 暖色提示，但标题、正文和交互位置都不能把它降级为装饰性安慰；其语义仍是现实边界提醒。
 - 当前中国大陆固定 hard-stop 资源顺序为：`120`（急性医疗风险） -> `110`（现实危险 / 人身威胁） -> `12356`（立即心理支持）。
 - continuity 也受 safety layer 约束：incoming `prior_session_capsule` 在进入 provider 前会先剔除高风险细节与原始补充文本，避免把危机信息重新带回普通解读链路。
+- completed capsule 的 outgoing build 使用与 incoming 相同的分类/脱敏 helper；允许继续生成的 `self_harm_support`、`abuse_support` 也只保留安全占位和受控主轴，不复制原始问题。
 ---
 
 ## 4. 禁止性输出方向

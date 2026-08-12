@@ -79,7 +79,7 @@ P2 memory / persistence 边界：
 1. 问题分类，并读取 `agent_profile` / `phase` / `prior_session_capsule`
 2. canonical context 组装
 3. final 阶段一致性验证（仅 `phase = final`）
-4. 意图摩擦分析（共享声明式 semantic-family registry 分离 core、intent/directive/immediacy cue、bare imperative 与同-span safe context；cue 方向由 family rule 声明，明确否认、恢复/教育/助人和受害者语境只作用于其覆盖的 core，随后标记 pass / bounded / sober_check / hard_stop；服务端条件边将 hard_stop 直接送入 `safety_stop` 并抛出 403）
+4. 意图摩擦分析（共享声明式 semantic-family registry 以 `speech act × action/core × target/entity × cue placement × context` 组合规则分离 intent/directive/modal/immediacy、危险动作、对象实体、bare imperative 与同-span safe context；cue 方向和距离由 rule 声明，裸祈使按局部从句语法识别，不依赖字符串起点。明确否认、恢复/教育/助人和受害者语境只作用于其覆盖的 core，随后标记 pass / bounded / sober_check / hard_stop；Route 在 quota 前执行同一确定性 preflight，Graph 条件边仍独立将 hard_stop 送入 `safety_stop` 并抛出 403）
 5. 仅非 hard-stop 状态进入 `agent_decider`，选择 `retrieve_knowledge`、`get_session_memory`、`request_clarification` 或 `final_answer`
 6. `retrieve_knowledge` 批量检索全部牌并写入 observation/tool audit；同一 thread 可先读 memory；`request_clarification` 与 `safety_stop` early exit
 7. `ensure_minimum_grounding` 强制补齐每张牌的 Wiki 或 authority fallback 后，才进入 provider
@@ -89,7 +89,7 @@ P2 memory / persistence 边界：
 11. mandatory generated-content validation：复用同一 semantic-family registry 扫描所有用户可见 provider 字段，按风险替换局部字段或整份正文
 12. input-driven safety review：按共享安全分类补充 `safety_note` 并收窄 guidance / follow-up
 13. citation finalizer 校验 claim path/ref/card/orientation，并在安全改写或无效引用后确定性修复
-14. completed reading 的 `session_capsule` 生成；登录请求带 `thread_id` 时通过 `write_session_memory` 写入本 thread；最后通过统一 schema 校验后返回
+14. completed reading 的 `session_capsule` 生成；outgoing build 与 incoming continuity 共用同一分类/脱敏 helper，受限支持问题只写安全占位而不复制原问题。登录请求带 `thread_id` 时通过 `write_session_memory` 写入本 thread；最后通过统一 schema 校验后返回
 
 Agent core 的内部 state 包含 `agent_step_count`、`max_agent_steps`、`agent_actions[]`、`observations[]`、`tool_calls[]`、`pending_clarification`、`grounding_status` 与可选 `sessionMemory`。Generation 还可使用 invocation-only 的 mode、plan、stage、attempt、usage 与 failure subtype。Raw diagnostics 不进入公开错误 envelope；生产仅把去正文、去标题、去 decision reason 的 `PersistedReadingTraceV3` 写入 `reading_events`。公开成功协议只新增可选 `StructuredReading.grounding`。
 
@@ -238,6 +238,7 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - 安全规则必须在生成前和生成后分别检查，不能只靠 prompt 自觉
 - Reading 与 Encyclopedia 必须共享同一输入分类；生成内容验证必须是不可跳过的 service node，而不是 agent 可选 tool
 - 共享分类器必须独立识别 cue-before、cue-after、裸祈使和即时受害者组合；恢复/教育/帮助他人的自伤引用由同一确定性策略分层，不得委托外部 LLM 充当唯一边界
+- Route 的 deterministic safety preflight 必须先于 reading/encyclopedia quota；Graph/service 内的独立强制边界继续保留，不能把 route 预检或外部 LLM 当作唯一防线
 - hard-stop 危机转介当前按中国大陆固定资源顺序提示：`120` -> `110` -> `12356`
 - 前端不再依赖 markdown 作为主协议
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history

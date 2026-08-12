@@ -92,6 +92,7 @@
 - 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则；core、danger cue 与 context 各有具体 span，否定、引用和受害者语境只有在同类别 context 覆盖同一 core 与 cue 时才能豁免
 - 六个高风险 semantic family 必须由 Reading 与 Encyclopedia 共用；新增 core/cue/context 变体时优先扩展 family 数据和 metamorphic 种子，不得回到两条 pipeline 分别追加整句 regex
 - 暴力/操控 family 必须分别覆盖 cue-before、cue-after 与 bare imperative，并用中英文动作和目标实体替换证明同一语义不变量；即时受害者由危险动作与当前性/武器 cue 组合升级，非即时受害者保持 bounded
+- 组合矩阵必须交叉生成 speech act、危险动作、目标/实体与 cue placement；至少覆盖礼貌祈使、情态问句、枪/刀/殴打/投毒、GPS/spyware/messages/location、具体治疗实体与系表诊断。安全前缀、否认或帮助语境不得覆盖后续独立 core，cue 也不得误绑到相邻安全动作
 - 明确当前否认不得误报；恢复期、百科教育和帮助他人的自伤相关表达应按契约进入 standard 或 bounded，而不是统一放行或统一 hard-stop
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
@@ -158,6 +159,7 @@
 - 线下塔罗模式是否能恢复实体牌录入来源、牌面与正逆位，且仍通过同一 `/api/reading` 流程生成结果
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`
 - completed `session_capsule` 是否足够短、稳定，且不带 `用户补充`、高风险安全细节或未验证第三方意图
+- completed 与 incoming capsule 是否复用同一 sanitizer；受限自伤/受害者支持问题在游客、账号 history 的 capsule 字段及再次 continuity 注入中是否都不保留原问题逐字内容
 - P6 同一 `thread_id` 追问是否通过 `get_session_memory` 读取上一轮 thread-level memory，并在不要求用户重复背景的情况下结合上一轮主题、牌面与建议摘要
 - future thread/session 或 long-term memory 若被引入，是否已有 identity、read/write、merge/overwrite、eviction/deletion 与 safety redaction 规则
 - reading 是否包含建设性阻力点，且该阻力点没有变成确定性预言、第三方读心、医疗/法律/财务替代建议或命令式决策

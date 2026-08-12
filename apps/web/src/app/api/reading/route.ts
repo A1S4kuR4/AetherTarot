@@ -25,6 +25,10 @@ import {
   generateStructuredReadingWithDiagnostics,
   type ReadingServiceOptions,
 } from "@/server/reading/service";
+import {
+  analyzeIntentFriction,
+  buildSafetySubjects,
+} from "@/server/reading/safety";
 import type { ReadingGraphDiagnostics } from "@/server/reading/graph";
 import {
   getDefaultReadingRuntimeStores,
@@ -478,6 +482,19 @@ export async function handleReadingPost(
   try {
     parsedPayload = readingRequestPayloadSchema.parse(payload);
     actor = await deps.requireAccess();
+    const safetyPreflight = analyzeIntentFriction(buildSafetySubjects(
+      parsedPayload.question,
+      parsedPayload.followup_answers,
+    ));
+    if (safetyPreflight.type === "hard_stop") {
+      throw new ReadingServiceError(
+        "safety_intercept",
+        "问题触发了高风险安全界限保护。",
+        403,
+        safetyPreflight.reason,
+        safetyPreflight.referral_links,
+      );
+    }
   } catch (error) {
     const code = error instanceof ZodError
       ? "invalid_request"

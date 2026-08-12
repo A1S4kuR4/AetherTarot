@@ -61,6 +61,7 @@ import {
   applySafetyReview,
   buildSafetySubjects,
   sanitizeIncomingSessionCapsule,
+  sanitizeSessionCapsuleFragment,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
 import { reviewReadingGeneratedContent } from "@/server/safety/output-validator";
@@ -734,23 +735,6 @@ function normalizeAndValidateDraftProse(
   } satisfies ReadingDraft;
 }
 
-function normalizeCapsuleLine(value: string, maxLength = 140) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  const sanitized = normalized
-    .replace(/用户补充[:：]\s*/gi, "")
-    .replace(/自杀|自残|不想活|结束生命|kill myself/gi, "[高风险细节略]")
-    .replace(/崩溃|绝望|撑不下去|受不了了|活不下去/gi, "[急性情绪略]")
-    .replace(/急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|emergency|can't breathe/gi, "[紧急健康细节略]")
-    .replace(/跟踪|监控|报复|操控|控制他|控制她|pua|勒索|偷窥|家暴|胁迫/gi, "[越界行为略]")
-    .replace(/(他|她|对方)(到底|会不会|是不是|真实).{0,8}(爱|想|打算|回|喜欢|讨厌)/gi, "[第三方意图推测略]");
-
-  if (sanitized.length <= maxLength) {
-    return sanitized;
-  }
-
-  return `${sanitized.slice(0, maxLength - 1)}…`;
-}
-
 function truncateCapsule(value: string, maxLength = MAX_SESSION_CAPSULE_LENGTH) {
   if (value.length <= maxLength) {
     return value;
@@ -779,11 +763,24 @@ function buildSessionCapsule({
 }) {
   const carryForwardLines = reflectiveGuidance
     .slice(0, 2)
-    .map((item, index) => `${index + 1}. ${normalizeCapsuleLine(item, 56)}`);
+    .map((item, index) => `${index + 1}. ${sanitizeSessionCapsuleFragment(
+      item,
+      56,
+      "[受限支持细节已省略]",
+    )}`);
+  const safeQuestion = sanitizeSessionCapsuleFragment(
+    question,
+    64,
+    "[受限支持原问题已省略]",
+  );
   const lines = [
-    `本轮问题：${normalizeCapsuleLine(question, 64)}`,
+    `本轮问题：${safeQuestion}`,
     `牌阵：${spread.name}`,
-    `核心主题：${themes.map((theme) => normalizeCapsuleLine(theme, 14)).join("、")}`,
+    `核心主题：${themes.map((theme) => sanitizeSessionCapsuleFragment(
+      theme,
+      14,
+      "现实安全与边界",
+    )).join("、")}`,
     "延续主轴：",
     ...carryForwardLines,
     "边界提醒：不延续急性情绪、未验证的第三方意图和高风险安全细节。",

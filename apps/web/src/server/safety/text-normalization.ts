@@ -24,8 +24,27 @@ export type SafetyCoreRule = {
   maxCueDistance?: number;
 };
 
+export type SafetySpeechActRule = {
+  patterns: readonly SafetyPattern[];
+  placement: "before" | "after" | "either";
+  maxDistance?: number;
+  trailingOnlyWhenAfter?: boolean;
+};
+
+export type SafetyCompositionRule = {
+  actionPatterns: readonly SafetyPattern[];
+  targetPatterns?: readonly SafetyPattern[];
+  speechActs?: readonly SafetySpeechActRule[];
+  safeContextPatterns?: readonly SafetyPattern[];
+  requireTarget?: boolean;
+  requireSpeechAct?: boolean;
+  allowBareDirective?: boolean;
+  maxTargetDistance?: number;
+  bridgePattern?: RegExp;
+};
+
 const CONTRAST_BOUNDARY = /\b(?:but|however|yet)\b|(?:但是|但|然而|不过|却)/giu;
-const SENTENCE_BOUNDARY = /[。！？!?；;\r\n]+|(?<=[A-Za-z])\.(?=\s|$)/gu;
+const SENTENCE_BOUNDARY = /[。！？!?；;]+|(?<=[A-Za-z])\.(?=\s|$)/gu;
 const OBFUSCATED_ENGLISH_DOT = /(?<=[A-Za-z])\.(?=[A-Za-z])/gu;
 
 export function normalizeSafetyText(text: string) {
@@ -115,13 +134,73 @@ function spanDistance(left: SafetyMatchSpan, right: SafetyMatchSpan) {
   return 0;
 }
 
-function isBareImperativePosition(
+function compactSyntax(value: string) {
+  return value.replace(/[\s\p{P}\p{S}]/gu, "").toLocaleLowerCase();
+}
+
+function isBareDirectiveSpeechAct(
   segment: SafetyTextSegment,
-  core: SafetyMatchSpan,
+  action: SafetyMatchSpan,
 ) {
-  if (core.start === 0) return true;
-  const prefix = segment.normalized.slice(0, core.start);
-  return /(?:[,，:：]\s*(?:then\s*)?|(?:then|然后|接着|再)\s*)$/iu.test(prefix);
+  const rawPrefix = segment.normalized.slice(0, action.start);
+  const clausePrefix = rawPrefix.slice(
+    Math.max(
+      rawPrefix.lastIndexOf(","),
+      rawPrefix.lastIndexOf("，"),
+      rawPrefix.lastIndexOf(":"),
+      rawPrefix.lastIndexOf("："),
+      rawPrefix.lastIndexOf("—"),
+    ) + 1,
+  );
+  const prefix = compactSyntax(clausePrefix);
+  const directPrefixes = [
+    "",
+    "please",
+    "pleaseyou",
+    "then",
+    "andthen",
+    "请",
+    "请你",
+    "然后",
+    "接着",
+    "再",
+  ];
+  return directPrefixes.includes(prefix)
+    || ["andthen", "then", "然后", "接着", "再"].some((marker) =>
+      prefix.endsWith(marker)
+    );
+}
+
+function isTrailingSpeechAct(
+  segment: SafetyTextSegment,
+  cue: SafetyMatchSpan,
+) {
+  const suffix = compactSyntax(segment.normalized.slice(cue.end));
+  return ["", "please", "thanks", "thankyou", "请", "谢谢"].includes(suffix);
+}
+
+function speechActMatchesCore({
+  segment,
+  cue,
+  core,
+  placement,
+  maxDistance,
+  trailingOnlyWhenAfter,
+}: {
+  segment: SafetyTextSegment;
+  cue: SafetyMatchSpan;
+  core: SafetyMatchSpan;
+  placement: "before" | "after" | "either";
+  maxDistance: number;
+  trailingOnlyWhenAfter: boolean;
+}) {
+  if (spanDistance(cue, core) > maxDistance) return false;
+  if (cue.end <= core.start) return placement !== "after";
+  if (cue.start >= core.end) {
+    return placement !== "before"
+      && (!trailingOnlyWhenAfter || isTrailingSpeechAct(segment, cue));
+  }
+  return placement === "either";
 }
 
 export function hasUnsafeSafetyCore(
@@ -137,20 +216,107 @@ export function hasUnsafeSafetyCore(
     const coveringSafeContexts = safeContexts.filter((safe) =>
       spanContains(safe, core)
     );
-    const nearbyCues = cues.filter((cue) =>
-      (rule.cuePosition === "either" || cue.start <= core.start)
-      &&
-      spanDistance(cue, core) <= maxCueDistance
-    );
+    const nearbyCues = cues.filter((cue) => speechActMatchesCore({
+      segment,
+      cue,
+      core,
+      placement: rule.cuePosition === "either" ? "either" : "before",
+      maxDistance: maxCueDistance,
+      trailingOnlyWhenAfter: true,
+    }));
     const hasUncoveredDangerCue = nearbyCues.some((cue) =>
       !coveringSafeContexts.some((safe) => spanContains(safe, cue))
     );
     const isBareImperative = rule.allowBareImperative === true
-      && isBareImperativePosition(segment, core);
+      && isBareDirectiveSpeechAct(segment, core);
 
     if (hasUncoveredDangerCue) return true;
     if (coveringSafeContexts.length > 0) return false;
     return rule.requireDangerCue !== true || nearbyCues.length > 0 || isBareImperative;
+  });
+}
+
+function mergeSpans(left: SafetyMatchSpan, right: SafetyMatchSpan) {
+  return {
+    start: Math.min(left.start, right.start),
+    end: Math.max(left.end, right.end),
+  };
+}
+
+function matchesCompositionBridge(
+  segment: SafetyTextSegment,
+  action: SafetyMatchSpan,
+  target: SafetyMatchSpan,
+  bridgePattern: RegExp | undefined,
+) {
+  if (!bridgePattern) return true;
+  const bridgeStart = Math.min(action.end, target.end);
+  const bridgeEnd = Math.max(action.start, target.start);
+  const bridge = bridgeStart < bridgeEnd
+    ? compactSyntax(segment.normalized.slice(bridgeStart, bridgeEnd))
+    : "";
+  return new RegExp(
+    bridgePattern.source,
+    bridgePattern.flags.replace(/[gy]/g, ""),
+  ).test(bridge);
+}
+
+export function hasUnsafeSafetyComposition(
+  segment: SafetyTextSegment,
+  rule: SafetyCompositionRule,
+) {
+  const actions = findSafetyMatchSpans(segment, rule.actionPatterns);
+  const targets = findSafetyMatchSpans(segment, rule.targetPatterns ?? []);
+  const safeContexts = findSafetyMatchSpans(
+    segment,
+    rule.safeContextPatterns ?? [],
+  );
+  const maxTargetDistance = rule.maxTargetDistance ?? 64;
+
+  return actions.some((action) => {
+    const matchingTargets = targets.filter((target) =>
+      spanDistance(action, target) <= maxTargetDistance
+      && matchesCompositionBridge(
+        segment,
+        action,
+        target,
+        rule.bridgePattern,
+      )
+    );
+    if (rule.requireTarget !== false && rule.targetPatterns && matchingTargets.length === 0) {
+      return false;
+    }
+
+    const cores = matchingTargets.length > 0
+      ? matchingTargets.map((target) => mergeSpans(action, target))
+      : [action];
+
+    return cores.some((core) => {
+      const coveringSafeContexts = safeContexts.filter((safe) =>
+        spanContains(safe, core)
+      );
+      const matchingCues = (rule.speechActs ?? []).flatMap((speechAct) =>
+        findSafetyMatchSpans(segment, speechAct.patterns).filter((cue) =>
+          speechActMatchesCore({
+            segment,
+            cue,
+            core,
+            placement: speechAct.placement,
+            maxDistance: speechAct.maxDistance ?? 48,
+            trailingOnlyWhenAfter: speechAct.trailingOnlyWhenAfter ?? false,
+          })
+        )
+      );
+      const hasUncoveredSpeechAct = matchingCues.some((cue) =>
+        !coveringSafeContexts.some((safe) => spanContains(safe, cue))
+      );
+      const hasBareDirective = rule.allowBareDirective === true
+        && isBareDirectiveSpeechAct(segment, action);
+
+      if (hasUncoveredSpeechAct) return true;
+      if (coveringSafeContexts.length > 0) return false;
+      return rule.requireSpeechAct !== true || hasBareDirective;
+    });
   });
 }
 

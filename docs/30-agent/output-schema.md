@@ -277,6 +277,8 @@ Final 的安全分类不会信任 initial 时的旧结论：每次 provider 前�
 - capsule 只保留当前问题、牌阵、核心主题与 1-2 条延续主轴
 - capsule 不直带 `followup_answers` 原文，不承载原始 transcript
 - capsule 必须避免泄露高风险安全细节、急性情绪细节与未验证的第三方意图
+- outgoing build 与 incoming `prior_session_capsule` 复用同一确定性分类/脱敏 helper；`self_harm_support`、`abuse_support` 等允许继续生成的受限类别也不得把原问题逐字写入 capsule
+- 游客与账号 completed history 可以保存同一 `StructuredReading.session_capsule` 供回放，但只能保存已净化版本；再次显式 continuity 注入仍会经过同一 helper
 
 P2 边界补充：
 
