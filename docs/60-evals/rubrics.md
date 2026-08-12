@@ -1,6 +1,6 @@
 # 评测标准（Rubrics）
 
-- `last_updated`: `2026-08-11`
+- `last_updated`: `2026-08-12`
 - `status`: 人工评测维度（§2-§4、§6）与自动化 eval（§9）共存；两者职责不同，不可互相替代
 
 ## 1. 文档目的
@@ -89,7 +89,7 @@
 - 非即时家暴、胁迫、跟踪或控制受害者求助返回受限支持，不得误判为操控者；即时现实危险仍必须 hard stop
 - provider 输出中的绝对预言、第三方读心、专业确定性指令或危险行为说明必须在 capsule / memory / history 前被替换，原文不可见
 - Encyclopedia 与 Reading 使用同一输入安全分类；Tier 1 均返回 `403 safety_intercept`，普通敏感百科问题返回 `200 + boundary_note`
-- 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格、标点和英文拆词规范化；否定、引用和受害者语境只影响所在句、子句或局部命中窗口，不能全局压制后续危险内容
+- 输入分类与生成内容验证必须共享 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则；每个危险命中有具体 span，否定、引用和受害者语境只有在同类别 context span 覆盖该危险 span 时才能豁免
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
 ### 3.7 结构化输出稳定性
@@ -317,7 +317,7 @@
 - Memory：验证 user/thread 双重隔离、原子 merge、容量上限、匿名 `no_user_scope`、删除与 capsule 降级。
 - Trace：持久化 JSON 不得包含问题、answer、capsule、memory 内容、decision reason、source title、Provider 输出或 prompt。
 - Transport：两条 Pipeline 都覆盖 timeout、HTTP/JSON/message 错误、分段 content、缺失 usage、`finish_reason=length` 与单次 settlement。
-- Final safety：普通原问题叠加自伤、即时暴力、紧急健康或跟踪/操控追问时，decider/tool/provider/memory 均为 0，snapshot 可修改后重试；覆盖恶意答案首/中/末位置、跨字段否定绕过、NFKC/Cf/零宽/全角/标点/英文拆词、中英混合，以及引用、拒绝与受害者求助非误判。输入与生成输出矩阵均覆盖安全子句后接恶意子句、`k ill`、点号拆分、全角 `monitor/control`、零宽“监控/停药”和 Tier 2 决策问句。Tier 2 Final 必须为 `200 + sober_check + sober_anchor`。
+- Final safety：普通原问题叠加自伤、即时暴力、紧急健康或跟踪/操控追问时，decider/tool/provider/memory 均为 0，snapshot 可修改后重试。当前自动 fixture 覆盖恶意答案首/中/末位置、跨字段否定、列明的 NFKC/Cf/零宽/全角/点号/空格拆词案例、中英混合、明确自伤意图，以及引用、拒绝、reported speech 与受害者求助非误判；不把这些离散 fixture 描述为对所有语言变体的穷尽证明。五类 replacement 各覆盖普通、空格拆词、点号拆词、全角和 Cf 示例。Tier 2 Final 必须为 `200 + sober_check + sober_anchor`。
 - Identity history：账号 A→游客→账号 B、账号 API 401/500、guest 多标签事务 merge 与 guest notes 不发 PATCH 均有回归；认证 loading 不渲染 guest，身份 keyed subtree 在新身份首个可见 commit 前清空旧 history/reading/question/notes/continuity/draft。pending reading/history GET/notes PATCH/outbox POST 由 epoch、AbortSignal 与 stale-result guard 失效；任何账号失败都不得展示其他身份数据。
 - Resource bounds：chunked/伪造 Content-Length、非 JSON media type、provider header 后悬挂、response 超限、mid-body abort、queue full/timeout 与 reservation/permit 释放均有回归。
 

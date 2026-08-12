@@ -17,6 +17,7 @@ const fullEnv = {
   SUPABASE_SERVICE_ROLE_KEY: "fake-service-role-secret",
   AETHERTAROT_READING_PROVIDER: "placeholder",
   AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "disabled",
+  AETHERTAROT_READING_GENERATION_MODE: "monolithic",
   AETHERTAROT_IP_HASH_SALT: "production-ip-hash-salt-value-123456789",
   AETHERTAROT_PROXY_SHARED_SECRET: "production-proxy-secret-value-123456789",
   AETHERTAROT_READING_DAILY_LIMIT_PER_USER: "10",
@@ -224,6 +225,87 @@ test("env validation rejects weak AUTH_SECRET and an LLM deadline at the edge ti
   assert.match(report, /AUTH_SECRET/);
   assert.match(report, /at least 32 characters|placeholder/);
   assert.match(report, /edge response timeout/);
+});
+
+test("env validation rejects unsupported providers before runtime", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_READING_PROVIDER: "typo-provider",
+      AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "enabled",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+
+  assert.equal(result.ok, false);
+  assert.match(report, /AETHERTAROT_READING_PROVIDER/);
+  assert.match(report, /placeholder or llm/);
+  assert.match(report, /AETHERTAROT_ENCYCLOPEDIA_PROVIDER/);
+  assert.match(report, /disabled or llm/);
+});
+
+test("env validation rejects unsupported LLM enum values before runtime", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_READING_PROVIDER: "llm",
+      AETHERTAROT_LLM_BASE_URL: "https://llm.example",
+      AETHERTAROT_LLM_MODEL: "model",
+      AETHERTAROT_LLM_API_KEY: "sk-test",
+      AETHERTAROT_LLM_THINKING_MODE: "sometimes",
+      AETHERTAROT_LLM_RESPONSE_FORMAT: "text",
+      AETHERTAROT_LLM_TEMPERATURE: "0.3",
+      AETHERTAROT_LLM_TIMEOUT_MS: "120000",
+      AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+      AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "1048576",
+      AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+      AETHERTAROT_LLM_MAX_QUEUE: "16",
+      AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+
+  assert.equal(result.ok, false);
+  assert.match(report, /AETHERTAROT_LLM_THINKING_MODE/);
+  assert.match(report, /enabled or disabled/);
+  assert.match(report, /AETHERTAROT_LLM_RESPONSE_FORMAT/);
+  assert.match(report, /json_object/);
+});
+
+test("guest launch requires monolithic generation and bounds retained staged mode", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_READING_PROVIDER: "llm",
+      AETHERTAROT_READING_GENERATION_MODE: "adaptive_staged",
+      AETHERTAROT_LLM_BASE_URL: "https://llm.example",
+      AETHERTAROT_LLM_MODEL: "model",
+      AETHERTAROT_LLM_API_KEY: "sk-test",
+      AETHERTAROT_LLM_THINKING_MODE: "disabled",
+      AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
+      AETHERTAROT_LLM_TEMPERATURE: "0.3",
+      AETHERTAROT_LLM_TIMEOUT_MS: "40000",
+      AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: "1800",
+      AETHERTAROT_LLM_MAX_RESPONSE_BYTES: "1048576",
+      AETHERTAROT_LLM_MAX_CONCURRENCY: "4",
+      AETHERTAROT_LLM_MAX_QUEUE: "16",
+      AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: "15000",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+
+  assert.equal(result.ok, false);
+  assert.match(report, /guest launch requires monolithic/);
+  assert.match(report, /adaptive staged whole-route deadline/);
 });
 
 test("Caddy example keeps trusted headers, host rejection, redirects, and route body caps", () => {

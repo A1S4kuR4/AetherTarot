@@ -1,5 +1,10 @@
 import { ReadingServiceError } from "@/server/reading/errors";
-import { segmentSafetyText } from "@/server/safety/text-normalization";
+import {
+  hasSafetyMatch,
+  hasUncoveredSafetyMatch,
+  segmentSafetyText,
+  type SafetyPattern,
+} from "@/server/safety/text-normalization";
 
 export type SafetyLevel = "standard" | "bounded" | "sober_check" | "hard_stop";
 
@@ -26,14 +31,21 @@ export interface SafetyAssessment {
   referralLinks?: string[];
 }
 
-const SELF_HARM_PATTERN =
-  /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|suicide|kill myself|killmyself/i;
+const SELF_HARM_PATTERNS: SafetyPattern[] = [
+  { form: "normalized", pattern: /自杀|自残|不想活|活不下去|不该活下去|不该活着|不想继续活|结束生命|伤害自己|伤害我自己/i },
+  { form: "compact", pattern: /自杀|自残|伤害自己|伤害我自己|suicid(?:e|al)|killmyself|iwanttohurtmyself|ifeelsuicidal|iplantoendmylife/i },
+];
 const URGENT_HEALTH_PATTERN =
   /急救|急诊|胸痛|无法呼吸|呼吸困难|大量出血|昏迷|服药过量|overdose|medical emergency|can't breathe|cantbreathe/i;
-const UNSAFE_TREATMENT_STOP_PATTERN =
-  /(?:你应该|你可以|建议你|我要|我想|我准备|you should|you can|i should|i want to).{0,8}(?:停药|停止治疗|拒绝治疗|stop medication|stop treatment)|(?:youshould|youcan|ishould|iwantto)(?:stopmedication|stoptreatment)/i;
-const SAFE_TREATMENT_CONTEXT_PATTERN =
-  /(?:不要|不能|不应|不可|拒绝|避免).{0,8}(?:停药|停止治疗|拒绝治疗)|(?:do not|don't|should not|cannot|refuse to).{0,8}(?:stop medication|stop treatment)/i;
+const UNSAFE_TREATMENT_STOP_PATTERNS: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:你应该|你可以|建议你|我要|我想|我准备).{0,8}?(?:停药|停止治疗|拒绝治疗)/i },
+  { form: "compact", pattern: /(?:youshould|youcan|ishould|iwantto)(?:stopmedication|stoptreatment)/i },
+];
+const SAFE_TREATMENT_CONTEXT_PATTERNS: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:不要|不能|不应|不可|拒绝|避免).{0,8}?(?:停药|停止治疗|拒绝治疗)/i },
+  { form: "compact", pattern: /(?:donot|dont|shouldnot|cannot|refuseto)(?:stopmedication|stoptreatment)/i },
+  { form: "compact", pattern: /youshouldnot(?:stopmedication|stoptreatment)/i },
+];
 const IMMEDIATE_DANGER_PATTERN =
   /(?:正在|现在|此刻).{0,8}(?:打我|殴打我|伤害我|威胁我|追杀我|有危险)|(?:要|想要|准备).{0,5}(?:杀我|伤害我)|持刀|被困住|无法脱身|生命危险|immediate danger|being attacked|trying to kill me/i;
 const IMMEDIATE_VIOLENCE_INTENT_PATTERN =
@@ -45,10 +57,21 @@ const FINANCIAL_PATTERN =
   /财务|投资|股票|理财|借贷|贷款|赔偿|积蓄|finance|money|stock|loan/i;
 const ABUSE_PATTERN =
   /家暴|家庭暴力|亲密关系暴力|暴力对待|我被.{0,8}(?:打|威胁|恐吓|胁迫|勒索|监控|跟踪|控制)|(?:伴侣|丈夫|妻子|老公|老婆|前任|对方|他|她).{0,8}(?:打我|威胁我|恐吓我|胁迫我|勒索我|监控我|跟踪我|控制我)|abuse|abusive|stalking me|tracking me|controlling me/i;
-const MANIPULATION_INTENT_PATTERN =
-  /(?:怎么|如何|怎样|有什么办法|帮我|教我|你应该|你可以|应该先).{0,12}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制(?:他|她|对方)|让.{0,5}(?:离不开我|听我的|服从我)|stalk|track|monitor|control|manipulate|blackmail|retaliate)|我(?:想|要|准备|打算)(?:去|继续)?.{0,4}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:他|她|对方|前任)?|how\s*(?:can|do)\s*i.{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:i\s*want\s*to|you\s*should|you\s*can).{0,8}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|howcani.{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:iwantto|youshould|youcan).{0,8}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
-const NON_PERPETRATOR_CONTEXT_PATTERN =
-  /(?:不想|不会|不要|没有|没打算|拒绝|反对|阻止|担心|害怕)(?:去|继续)?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)|(?:他|她|对方|有人|朋友)(?:问我|说|声称|威胁).{0,16}(?:怎么|如何|要|想|应该).{0,8}(?:跟踪|监控|报复|操控|勒索|偷窥|控制)|(?:被|遭到|正在被).{0,8}(?:跟踪|监控|操控|勒索|控制)|do not want to|don't want to|refuse to|being (?:stalked|tracked|monitored|controlled)/i;
+const MANIPULATION_INTENT_PATTERNS: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:怎么|如何|怎样|有什么办法|帮我|教我|你应该|你可以|应该先).{0,12}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制(?:他|她|对方)|让.{0,5}?(?:离不开我|听我的|服从我))/i },
+  { form: "normalized", pattern: /我(?:想|要|准备|打算)(?:去|继续)?.{0,4}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探)(?:他|她|对方|前任)?/i },
+  { form: "compact", pattern: /(?:howcani|howdoi|iwantto|youshould|youcan).{0,12}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+  { form: "compact", pattern: /(?:怎么|如何|怎样|有什么办法|帮我|教我|你应该|你可以|应该先).{0,12}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+  { form: "compact", pattern: /我(?:想|要|准备|打算).{0,4}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+];
+const NON_PERPETRATOR_CONTEXT_PATTERNS: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:不想|不会|不要|没有|没打算|拒绝|反对|阻止|担心|害怕)(?:去|继续)?.{0,4}?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)/i },
+  { form: "normalized", pattern: /(?:他|她|对方|有人|朋友)(?:问我|说|声称|威胁).{0,16}?(?:怎么|如何|要|想|应该).{0,8}?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)/i },
+  { form: "normalized", pattern: /(?:被|遭到|正在被).{0,8}(?:跟踪|监控|操控|勒索|控制)/i },
+  { form: "compact", pattern: /(?:afriend|friend)askedmehowto(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)(?:someone|anyone|them)?/i },
+  { form: "compact", pattern: /(?:donotwantto|dontwantto|refuseto)(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+  { form: "compact", pattern: /being(?:stalked|tracked|monitored|controlled)/i },
+];
 const THIRD_PARTY_CERTAINTY_PATTERN =
   /(?:他|她|对方)(?:到底|会不会|是不是|一定|肯定|真实).{0,10}(?:爱|想|打算|回来|喜欢|讨厌|离开)|真实想法|心里(?:到底)?想|secretly feels|definitely loves|come back/i;
 const RELATIONSHIP_CONFLICT_PATTERN =
@@ -113,20 +136,29 @@ export function assessSafetyText(text: string): SafetyAssessment {
   const matches = (pattern: RegExp) => segments.some((segment) =>
     pattern.test(segment.searchable)
   );
+  const matchesPatterns = (patterns: readonly SafetyPattern[]) => segments.some((segment) =>
+    hasSafetyMatch(segment, patterns)
+  );
   const categories: SafetyCategory[] = [];
-  const hasSelfHarm = matches(SELF_HARM_PATTERN);
+  const hasSelfHarm = matchesPatterns(SELF_HARM_PATTERNS);
   const hasUrgentHealth = matches(URGENT_HEALTH_PATTERN) || segments.some((segment) =>
-    UNSAFE_TREATMENT_STOP_PATTERN.test(segment.searchable)
-    && !SAFE_TREATMENT_CONTEXT_PATTERN.test(segment.searchable)
+    hasUncoveredSafetyMatch(
+      segment,
+      UNSAFE_TREATMENT_STOP_PATTERNS,
+      SAFE_TREATMENT_CONTEXT_PATTERNS,
+    )
   );
   const hasImmediateDanger = matches(IMMEDIATE_DANGER_PATTERN)
     || matches(IMMEDIATE_VIOLENCE_INTENT_PATTERN);
   const hasManipulationIntent = segments.some((segment) =>
-    MANIPULATION_INTENT_PATTERN.test(segment.searchable)
-    && !NON_PERPETRATOR_CONTEXT_PATTERN.test(segment.searchable)
+    hasUncoveredSafetyMatch(
+      segment,
+      MANIPULATION_INTENT_PATTERNS,
+      NON_PERPETRATOR_CONTEXT_PATTERNS,
+    )
   );
   const hasAbuseSupport = matches(ABUSE_PATTERN);
-  const hasHealth = matches(HEALTH_PATTERN) || matches(UNSAFE_TREATMENT_STOP_PATTERN);
+  const hasHealth = matches(HEALTH_PATTERN) || matchesPatterns(UNSAFE_TREATMENT_STOP_PATTERNS);
   const hasLegal = matches(LEGAL_PATTERN);
   const hasFinancial = matches(FINANCIAL_PATTERN);
   const hasMajorDecision = segments.some((segment) =>

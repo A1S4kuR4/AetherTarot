@@ -138,7 +138,7 @@ P2 设计边界：
 
 账号 history 的服务端 GET/POST/PATCH 是唯一 canonical source；401/500 或保存失败时必须显示空账号历史或明确同步失败，绝不回退游客/旧账号数据。登录、登出与 A→B 切换会清空内存 history、reading、continuity、draft 与安全态，但不会删除独立 guest key。因此，`stored_readings` 不改变 `prior_session_capsule` 的显式 opt-in 语义，也不等同于 provider memory 或长期画像。账号级 thread memory 是另一条独立、受限的连续性链路。
 
-账号 POST 失败时，completed entry 会先进入按账号 fingerprint 分区的浏览器 outbox，并以“待同步”状态显示和提供显式重试；刷新不会丢失它。Outbox 不是新的 canonical history，也不会注入 provider；服务端幂等成功后立即移除。账号 outbox 与 guest history 都用 Web Locks 包住完整读-合并-写事务；锁不可用或本机写失败时向用户显示失败，不使用会丢并发更新的 fallback。认证 loading 不视为 guest；解析后的 identity-keyed provider 在新身份首个可见 commit 前建立全新内存态。身份 epoch 与 AbortSignal 会取消旧身份的 initial/final/GET/POST/PATCH，并禁止旧 promise 的状态、growth completion 与 finally 写入新身份。
+账号 POST 失败时，completed entry 会先进入按账号 fingerprint 分区的浏览器 outbox，并以“待同步”状态显示和提供显式重试；刷新不会丢失它。Outbox 不是新的 canonical history，也不会注入 provider；服务端幂等成功后立即移除。账号 outbox 与 guest history 都用 Web Locks 包住完整读-合并-写事务；锁不可用或本机写失败时向用户显示失败，不使用会丢并发更新的 fallback。认证 loading 不视为 guest；解析后的 identity-keyed provider 在新身份首个可见 commit 前建立全新内存态，其 layout-effect cleanup 在旧身份 unmount commit 阶段同步 abort 并推进 epoch。AbortSignal 与 stale guard 继续禁止旧 promise 的状态、growth completion、outbox commit 与 finally 写入新身份。
 
 当前 thread persistence 及未来 session checkpoint 应共同遵守：
 

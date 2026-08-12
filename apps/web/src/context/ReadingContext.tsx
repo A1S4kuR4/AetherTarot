@@ -285,11 +285,11 @@ function IdentityScopedReadingProvider({
     identityLifecycleRef.current.isCurrent(request, renderedIdentityRef.current), []);
 
   useLayoutEffect(() => {
+    const lifecycle = identityLifecycleRef.current;
     renderedIdentityRef.current = identityKey;
-    identityLifecycleRef.current.transition(identityKey);
+    lifecycle.transition(identityKey);
+    return () => lifecycle.dispose();
   }, [identityKey]);
-
-  useEffect(() => () => identityLifecycleRef.current.dispose(), []);
 
   useEffect(() => {
     identityLifecycleRef.current.transition(identityKey);

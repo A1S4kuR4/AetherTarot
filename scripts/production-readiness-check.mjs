@@ -22,6 +22,7 @@ const requiredEnvNames = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "AETHERTAROT_READING_PROVIDER",
   "AETHERTAROT_ENCYCLOPEDIA_PROVIDER",
+  "AETHERTAROT_READING_GENERATION_MODE",
   "AETHERTAROT_IP_HASH_SALT",
   "AETHERTAROT_PROXY_SHARED_SECRET",
   "AETHERTAROT_READING_DAILY_LIMIT_PER_USER",
@@ -68,6 +69,14 @@ const urlEnvNames = new Set([
   "SUPABASE_URL",
   "AETHERTAROT_LLM_BASE_URL",
 ]);
+
+const allowedEnvValues = {
+  AETHERTAROT_READING_PROVIDER: ["placeholder", "llm"],
+  AETHERTAROT_ENCYCLOPEDIA_PROVIDER: ["disabled", "llm"],
+  AETHERTAROT_READING_GENERATION_MODE: ["monolithic"],
+  AETHERTAROT_LLM_THINKING_MODE: ["enabled", "disabled"],
+  AETHERTAROT_LLM_RESPONSE_FORMAT: ["json_object"],
+};
 
 const nextBuildArtifacts = [
   { type: "file", path: "apps/web/.next/BUILD_ID" },
@@ -201,6 +210,14 @@ function checkRequiredEnv(env) {
       return fail("env", name, "must be production");
     }
 
+    const allowedValues = allowedEnvValues[name];
+    if (allowedValues && !allowedValues.includes(value)) {
+      const message = name === "AETHERTAROT_READING_GENERATION_MODE"
+        ? "guest launch requires monolithic"
+        : `must be ${allowedValues.join(" or ")}`;
+      return fail("env", name, message);
+    }
+
     if (urlEnvNames.has(name)) {
       try {
         const parsed = new URL(value);
@@ -263,6 +280,20 @@ function checkRequiredEnv(env) {
         "env",
         "LLM/edge deadline",
         `AETHERTAROT_LLM_TIMEOUT_MS must be lower than the edge response timeout (${edgeResponseTimeoutMs}ms)`,
+      ));
+    }
+  }
+  if (env.AETHERTAROT_READING_GENERATION_MODE?.trim() === "adaptive_staged") {
+    const llmDeadlineMs = Number(env.AETHERTAROT_LLM_TIMEOUT_MS);
+    const stagedWholeRouteDeadlineMs = llmDeadlineMs * 4;
+    if (
+      Number.isInteger(llmDeadlineMs)
+      && stagedWholeRouteDeadlineMs >= edgeResponseTimeoutMs
+    ) {
+      checks.push(fail(
+        "env",
+        "adaptive staged whole-route deadline",
+        `four provider deadlines (${stagedWholeRouteDeadlineMs}ms) must stay below the edge response timeout (${edgeResponseTimeoutMs}ms)`,
       ));
     }
   }

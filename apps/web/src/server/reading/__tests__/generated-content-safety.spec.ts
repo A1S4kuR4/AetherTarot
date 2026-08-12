@@ -45,7 +45,7 @@ describe("reading generated-content safety", () => {
 
   it("replaces severe provider output before capsule and thread memory writes", async () => {
     const memoryStore = createInMemorySessionMemoryStore();
-    const unsafeText = "你应该停药。";
+    const unsafeText = "You should s t o p medication.";
     const result = await runReadingGraphWithDiagnostics(
       {
         ...buildSinglePayload("我该如何理解现在的状态？"),

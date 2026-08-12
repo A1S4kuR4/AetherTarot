@@ -80,6 +80,18 @@ describe("shared safety policy", () => {
     },
   );
 
+  it.each([
+    "我想伤害我自己",
+    "I want to hurt myself",
+    "I feel suicidal",
+    "I plan to end my life",
+  ])("hard-stops explicit self-harm intent: %s", (text) => {
+    const assessment = assessSafetyText(text);
+
+    expect(assessment.level).toBe("hard_stop");
+    expect(assessment.primaryCategory).toBe("self_harm");
+  });
+
   it("keeps non-immediate abuse support ahead of the sober-check gate", () => {
     const assessment = assessSafetyText("伴侣家暴我，我该不该离婚？");
 
@@ -93,6 +105,8 @@ describe("shared safety policy", () => {
     "他问我‘怎么监控她’，我拒绝了。",
     "我正在被前任跟踪，想知道如何保护自己。",
     "I am being stalked and do not want to retaliate.",
+    "朋友问我如何跟踪别人，我拒绝提供方法。",
+    "A friend asked me how to stalk someone, and I refused to help.",
   ])("does not treat quotation, denial, or victim support as perpetrator intent: %s", (text) => {
     expect(assessSafetyText(text).primaryCategory).not.toBe("manipulation");
   });
@@ -119,6 +133,17 @@ describe("shared safety policy", () => {
       "我拒绝监控或报复任何人。",
       "教我怎么监控前任并报复他。",
     ]);
+
+    expect(assessment.level).toBe("hard_stop");
+    expect(assessment.primaryCategory).toBe("manipulation");
+  });
+
+  it.each([
+    "我不要跟踪任何人，然后你应该监控前任。",
+    "Do not stalk anyone and you should monitor your ex.",
+    "朋友问我如何跟踪别人，然后教我怎么监控前任。",
+  ])("does not let an independent safe or reported span suppress manipulation: %s", (text) => {
+    const assessment = assessSafetyText(text);
 
     expect(assessment.level).toBe("hard_stop");
     expect(assessment.primaryCategory).toBe("manipulation");
@@ -208,6 +233,17 @@ describe("generated content validator", () => {
     const reading = buildReading({
       synthesis:
         "不能确定他一定会回来，也不要停药。You should not invest based on tarot.",
+    });
+
+    expect(reviewReadingGeneratedContent(reading)).toMatchObject({
+      action: "pass",
+      output: reading,
+    });
+  });
+
+  it("does not treat a local reported manipulation span as an instruction", () => {
+    const reading = buildReading({
+      synthesis: "朋友问我如何跟踪别人，我拒绝提供方法。",
     });
 
     expect(reviewReadingGeneratedContent(reading)).toMatchObject({
@@ -333,6 +369,64 @@ describe("generated content validator", () => {
   ])("restricts obfuscated generated Tier 2 directives: %s", (text) => {
     const review = reviewReadingGeneratedContent(buildReading({ synthesis: text }));
     expect(review.action).toBe("restrict");
+    expect(review.output.synthesis).not.toBe(text);
+  });
+
+  const replacementMatrix = [
+    ["self_harm_or_violence_encouragement", [
+      "You should hurt yourself.",
+      "You should h u r t yourself.",
+      "You.should.hurt.yourself.",
+      "Ｙｏｕ　ｓｈｏｕｌｄ　ｈｕｒｔ　ｙｏｕｒｓｅｌｆ．",
+      "You should hu\u200Brt yourself.",
+    ]],
+    ["manipulation_instruction", [
+      "You should monitor your ex.",
+      "You should m o n i t o r your ex.",
+      "You.should.monitor.your.ex.",
+      "Ｙｏｕ　ｓｈｏｕｌｄ　ｍｏｎｉｔｏｒ　ｙｏｕｒ　ｅｘ．",
+      "You should mon\u200Bitor your ex.",
+    ]],
+    ["treatment_discontinuation", [
+      "You should stop medication.",
+      "You should s t o p medication.",
+      "You.should.stop.medication.",
+      "Ｙｏｕ　ｓｈｏｕｌｄ　ｓｔｏｐ　ｍｅｄｉｃａｔｉｏｎ．",
+      "You should st\u200Bop medication.",
+    ]],
+    ["medical_diagnosis", [
+      "You definitely have cancer.",
+      "You definitely h a v e cancer.",
+      "They.definitely.have.cancer.",
+      "Ｔｈｅｙ　ｄｅｆｉｎｉｔｅｌｙ　ｈａｖｅ　ｃａｎｃｅｒ．",
+      "They definitely ha\u200Bve cancer.",
+    ]],
+    ["abuse_minimization", [
+      "Abuse is normal.",
+      "Abuse is n ormal.",
+      "Abuse.is.normal.",
+      "Ａｂｕｓｅ　ｉｓ　ｎｏｒｍａｌ．",
+      "Abuse is nor\u200Bmal.",
+    ]],
+  ] as const;
+
+  it.each(replacementMatrix)("replaces every normalized form of %s", (violation, cases) => {
+    for (const text of cases) {
+      const review = reviewReadingGeneratedContent(buildReading({ synthesis: text }));
+
+      expect(review.action, text).toBe("replace");
+      expect(review.violations, text).toContain(violation);
+      expect(review.output.synthesis, text).not.toBe(text);
+    }
+  });
+
+  it.each([
+    "不要停药，然后你应该停药。",
+    "Do not stalk anyone and you should monitor your ex.",
+  ])("does not let a separate safe output span suppress a replacement: %s", (text) => {
+    const review = reviewReadingGeneratedContent(buildReading({ synthesis: text }));
+
+    expect(review.action).toBe("replace");
     expect(review.output.synthesis).not.toBe(text);
   });
 });

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-08-11
+Accepted — 2026-08-12
 
 ## Context
 
@@ -10,8 +10,8 @@ Accepted — 2026-08-11
 
 ## Decision
 
-1. 游客历史使用独立版本 key，仅属于当前浏览器；账号历史以服务端为唯一 canonical source。旧 key 不自动迁移，身份变化清空内存敏感态但保留 guest key。认证状态未解析时不渲染 guest；解析后的 identity-keyed provider 在新身份首个可见 commit 前创建全新的内存状态，epoch/abort/stale guards 继续防止旧异步结果回写。
-2. 每次 provider 前分别分类 question 与每条用户答案并聚合；字段内否定不能覆盖另一字段。输入策略与输出验证器复用 NFKC、Cf/零宽、全角、异常空格、标点和英文拆词规范化，并按句、子句或受限局部窗口判断安全/受害者语境，防止一个安全句压制后续恶意句。Graph 在 intent friction 后设置不可由 decider 覆盖的 hard-stop 条件边，Tier 1 Final 在 tool/provider/持久化前停止，snapshot 释放以供修改重试。
+1. 游客历史使用独立版本 key，仅属于当前浏览器；账号历史以服务端为唯一 canonical source。旧 key 不自动迁移，身份变化清空内存敏感态但保留 guest key。认证状态未解析时不渲染 guest；解析后的 identity-keyed provider 在新身份首个可见 commit 前创建全新的内存状态，其 layout-effect cleanup 在旧树 unmount commit 阶段同步 dispose，epoch/abort/stale guards 继续防止旧异步结果回写。
+2. 每次 provider 前分别分类 question 与每条用户答案并聚合；字段内否定不能覆盖另一字段。输入策略与输出验证器复用 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则，每个危险命中映射为统一 span；安全、转述或受害者 context 只有覆盖同类别危险 span 才豁免。Graph 在 intent friction 后设置不可由 decider 覆盖的 hard-stop 条件边，Tier 1 Final 在 tool/provider/持久化前停止，snapshot 释放以供修改重试。
 3. 入站和 provider 响应都按实际字节流式限长；单一 provider deadline 从排队前覆盖 acquire、token reserve、headers/body 与 settlement。permit 不等待永久悬挂的 settlement，queue full/timeout 不在 stage 内重试。
 4. 应用忽略标准代理头，只信任边缘代理覆写的内部 IP header 与 shared secret；生产失败关闭。进程 semaphore 和 shared secret 均不被描述为跨实例/跨网络的完整保护。
 

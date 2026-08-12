@@ -122,7 +122,7 @@ AetherTarot 的解读应：
 - **危机转介 (Hard Stop)**：当系统识别到自伤、即时现实危险、紧急健康风险，或明确要求跟踪、监控、报复、勒索、操控第三方时，AetherTarot 将在 provider 前完全停止生成，返回 `403 safety_intercept` 并导向现实支持界面。
 - **降温审查 (Sober Check)**：当用户试图将核心生存决策（辞职、分手、投资）直接交由塔罗决定时，系统不会拒绝生成，但会下发“降温审查（Sober Check）”阻拦，强制用户先进行主观现实条件的补齐反思后，再进行解读。
 - **受害者支持 (Bounded Support)**：提及家暴、胁迫、跟踪或控制，不等同于用户正在请求操控他人。非即时危险的受害者求助返回 `200 + safety_note`，把 guidance / follow-up 收窄到安全、边界与现实支持；存在即时危险信号时才升级为 Hard Stop。一般争吵、冷战或沟通困难保持普通关系解读。
-- **生成内容验证**：provider 生成后、capsule 与 memory 写入前，服务端必须扫描所有用户可见生成字段。输入分类与输出验证共用 NFKC、Cf/零宽、全角、异常空格、标点和英文拆词规范化，并按句、子句或受限局部窗口判断否定、引用与受害者语境，不能让一个安全句压制后续危险句。绝对预言、第三方读心和专业确定性指令必须被替换；伤害鼓励、操控步骤、停药建议、直接诊断或合理化暴力必须触发整份正文的安全替代。被拦截的原文不得进入 response、history、capsule 或 memory。
+- **生成内容验证**：provider 生成后、capsule 与 memory 写入前，服务端必须扫描所有用户可见生成字段。输入分类与输出验证共用 NFKC、Cf/零宽、全角、异常空格及 normalized/compact 声明式规则。每个危险命中映射到规范化文本的具体 span；只有同类别安全、引用或受害者 context span 明确覆盖它时才豁免，独立危险命中仍优先。绝对预言、第三方读心和专业确定性指令必须被替换；伤害鼓励、操控步骤、停药建议、直接诊断或合理化暴力必须触发整份正文的安全替代。被拦截的原文不得进入 response、history、capsule 或 memory。
 - **提交前现实边界确认**：当前 `/new` 会对明显重大现实决策类提问加入轻量前置摩擦；完整仪式与“当下之镜”入口都要求用户先确认“塔罗只用于整理线索，现实信息、专业意见与个人底线优先”，再进入抽牌。该机制用于降低决策外包倾向，不替代服务端 `sober_check`。
 
 当前中国大陆固定资源策略：
@@ -133,7 +133,7 @@ AetherTarot 的解读应：
 
 ### 8.1 Final 追问的统一安全主体
 
-每次 provider 调用前，服务端分别分类原始 question 与每个用户填写的 follow-up answer，再按最高产品风险聚合。否定、引用或受害者语境只影响所在字段内同一句、同一子句或规则限定的局部窗口，不能抵消后续子句或另一答案的恶意意图；服务端生成的 follow-up question 只校验对应关系，不作为用户意图。任何字段触发 Tier 1 时，Graph 强制边直接返回 `403 safety_intercept`，不调用 decider/tool/provider、不生成 capsule、不写 thread memory，并释放而不消费 initial snapshot，允许修改答案后重试。bounded / sober-check 同样按字段聚合，Final 必须返回相应 safety note 或 `200 + sober_check + sober_anchor`。
+每次 provider 调用前，服务端分别分类原始 question 与每个用户填写的 follow-up answer，再按最高产品风险聚合。否定、引用或受害者语境必须由同类别 context span 覆盖具体危险 span 才能豁免，不能抵消同字段另一危险命中或另一答案；服务端生成的 follow-up question 只校验对应关系，不作为用户意图。任何字段触发 Tier 1 时，Graph 强制边直接返回 `403 safety_intercept`，不调用 decider/tool/provider、不生成 capsule、不写 thread memory，并释放而不消费 initial snapshot，允许修改答案后重试。bounded / sober-check 同样按字段聚合，Final 必须返回相应 safety note 或 `200 + sober_check + sober_anchor`。
 
 ---
 

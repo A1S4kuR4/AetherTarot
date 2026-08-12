@@ -15,7 +15,7 @@
 - `cards[]` 的顺序必须与牌阵位置顺序一致
 - 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
-- provider 生成内容在组装后必须经过强制安全验证；验证器与输入策略共享 Unicode/空格/标点/英文拆词规范化和局部分段边界，可替换越界字段或整份用户可见正文，但必须保持同一 `StructuredReading` shape
+- provider 生成内容在组装后必须经过强制安全验证；验证器与输入策略共享 Unicode/空格 normalized/compact 规则和 match-span 覆盖合同，可替换越界字段或整份用户可见正文，但必须保持同一 `StructuredReading` shape
 - 前端当前按“问题与阶段 metadata → 完整牌阵 → 当下的关键启示 → 逐牌展开 → 综合深读 → 可折叠证据路径 → 带回现实 → 继续理解 → 能量构成 → 反馈与边界 → 留下手记 → 页尾操作”的呈现顺序消费结果，不应把结构化结果重新折叠为单段长文。`/reading` 只为实际可见章节连续生成 Chapter 编号；快速解读复用的综合与指引组件默认不带 Chapter 标记。
 - 前端允许从既有字段派生“此刻的核心讯息”首屏摘要，但它不是协议字段：一句核心判断来自 `synthesis` 的安全截取，行动提醒来自 `reflective_guidance`，边界提醒来自 `confidence_note`
 - 前端允许展示可折叠的“解读依据”（用户输入、牌面线索、解释连接）来降低迎合错觉；该展示仍必须保留 `cards[]`、`spread` 与 `synthesis` 的结构边界，不能反向要求 provider 输出隐藏推理过程
@@ -56,7 +56,7 @@
 
 `phase = initial` 时不提交 initial identity 与 `followup_answers`。`phase = final` 时必须提交 `initial_reading_id` 与答案；服务端按 subject claim 并恢复 canonical snapshot。legacy `initial_reading` 仅兼容 `{ reading_id }`，正文被忽略。`prior_session_capsule` 为显式 opt-in 的低优先级 continuity context。`thread_id` 可选；登录用户以 `{ user_id, thread_id }` 作用域读写持久化短期 `SessionMemory`，匿名用户只使用 capsule，不建立持久身份。
 
-Final 的安全分类不会信任 initial 时的旧结论：每次 provider 前分别评估原始 `question` 与每个 `followup_answers[].answer`，按最高风险聚合。否定、引用和受害者语境只在同一句、同一子句或规则限定的局部窗口内生效，不能抵消后续或另一字段；`followup_answers[].question` 只匹配 snapshot，不是用户意图。Tier 1 返回错误 payload 而非 `StructuredReading`，且不经过 decider/tool/provider，不生成 capsule 或写 thread memory。
+Final 的安全分类不会信任 initial 时的旧结论：每次 provider 前分别评估原始 `question` 与每个 `followup_answers[].answer`，按最高风险聚合。否定、引用和受害者语境只有在同类别 context span 覆盖具体危险 span 时才生效，不能抵消同字段另一危险命中或另一字段；`followup_answers[].question` 只匹配 snapshot，不是用户意图。Tier 1 返回错误 payload 而非 `StructuredReading`，且不经过 decider/tool/provider，不生成 capsule 或写 thread memory。
 
 `question` 通常为非空文本。协议层唯一的空文本例外是 `phase = initial + agent_profile = lite + spreadId = single + 1 drawn card`，response 会原样保留空字符串；它表示用户没有提供问题，不是隐藏上下文。当前 `/new` 快速入口会在用户未填写时显式提供“当下状态”默认问题，因此通常不会触发该兼容例外；其他路径的空文本仍是 `400 invalid_request`。
 

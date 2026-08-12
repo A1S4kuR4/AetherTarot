@@ -1,6 +1,6 @@
 # 安全原则（Safety Principles）
 
-> 2026-08-11 补充：两阶段 Reading 对原始问题和每条用户追问答案独立分类后聚合。输入分类与生成内容验证共用同一安全文本规范化：NFKC、Unicode Cf/零宽与双向控制符清理、异常空格、全角字符、标点分隔和基础英文拆词。否定、引用与受害者语境只在同一句、同一子句或规则限定的局部窗口内生效，不能压制后续或其他字段的恶意意图。Tier 1 由 Graph 强制边在 decider/tool/provider/capsule/memory 前停止，并安全释放 initial snapshot。服务端生成的问题不是用户意图。
+> 2026-08-12 补充：两阶段 Reading 对原始问题和每条用户追问答案独立分类后聚合。输入分类与生成内容验证共用 NFKC、Unicode Cf/零宽与双向控制符清理、异常空格、全角字符及 normalized/compact 两种声明式匹配视图。每个危险规则都返回规范化文本上的具体 match span；否定、引用与受害者语境只有在同类别 context span 覆盖该危险 span 时才豁免，不能压制同字段后续或其他字段的独立危险命中。Tier 1 由 Graph 强制边在 decider/tool/provider/capsule/memory 前停止，并安全释放 initial snapshot。服务端生成的问题不是用户意图。
 
 ## 1. 文档目的
 
@@ -45,7 +45,7 @@ Reading 与 Encyclopedia 共用同一输入分类策略；Reading 再把分类�
 - **Bounded Support / 受限支持**：普通健康、法律、财务、第三方确定性或非即时的暴力/控制受害者求助可以继续，但必须带显式边界说明并收窄内容。受害者求助优先于普通重大决策 gate，不能因为出现“家暴、控制、跟踪”等词就误判为施害者意图。
 - **Ordinary Relationship Conflict / 一般关系冲突**：争吵、冷战、沟通困难和关系张力不自动升级安全等级；只有出现操控意图、现实暴力、即时危险或第三方确定性请求时才进入更高层级。
 - **Pre-ritual boundary confirmation / 提交前现实边界确认**：`/new` 的完整仪式与“当下之镜”入口在进入抽牌前都会对明显重大现实决策类提问加入轻量确认动作，要求用户先承认现实信息、专业意见与个人底线优先于塔罗结果。该前台摩擦只用于提前降低决策外包倾向，不能替代 reading graph 的 Tier 1 / Tier 2 服务端判断。
-- **Mandatory generated-content validation / 强制生成内容验证**：Reading 的所有用户可见生成字段和 Encyclopedia 的 `answer` 都必须独立扫描，并与输入策略复用同一规范化与局部分段边界。可收窄的绝对化/专业越界内容按字段替换；伤害鼓励、操控步骤、停药、直接诊断、合理化暴力或责怪受害者时，整份生成正文必须由服务端安全内容替代。安全句、引用或受害者描述只能豁免它所在的局部片段，不能使后续危险指令通过。
+- **Mandatory generated-content validation / 强制生成内容验证**：Reading 的所有用户可见生成字段和 Encyclopedia 的 `answer` 都必须独立扫描，并与输入策略复用同一 normalized/compact 规则合同和 match-span 覆盖语义。可收窄的绝对化/专业越界内容按字段替换；伤害鼓励、操控步骤、停药、直接诊断、合理化暴力或责怪受害者时，整份生成正文必须由服务端安全内容替代。安全句只能覆盖其明确包含的同类别危险 span，不能使同字段的另一条危险指令通过。
 - 前端可以将 `safety_note` 视觉降温为 Safety Rose Clay / 暖色提示，但标题、正文和交互位置都不能把它降级为装饰性安慰；其语义仍是现实边界提醒。
 - 当前中国大陆固定 hard-stop 资源顺序为：`120`（急性医疗风险） -> `110`（现实危险 / 人身威胁） -> `12356`（立即心理支持）。
 - continuity 也受 safety layer 约束：incoming `prior_session_capsule` 在进入 provider 前会先剔除高风险细节与原始补充文本，避免把危机信息重新带回普通解读链路。

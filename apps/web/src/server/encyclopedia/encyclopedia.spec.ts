@@ -195,12 +195,13 @@ describe("encyclopedia service", () => {
   });
 
   it("replaces severe provider output while preserving retrieved sources", async () => {
+    const unsafeText = "Abuse is n ormal.";
     const response = await generateEncyclopediaAnswer(
       { query: "愚者逆位怎么理解？", cardId: "fool" },
       {
         provider: {
           generateAnswer: vi.fn(async () => ({
-            answer: "你应该停药。",
+            answer: unsafeText,
             related_cards: [],
             related_concepts: [],
             related_spreads: [],
@@ -209,7 +210,7 @@ describe("encyclopedia service", () => {
       },
     );
 
-    expect(response.answer).not.toContain("你应该停药");
+    expect(response.answer).not.toContain(unsafeText);
     expect(response.answer).toMatch(/原始回答触及安全边界/);
     expect(response.boundary_note).toMatch(/不会提供/);
     expect(response.sources.length).toBeGreaterThan(0);

@@ -793,20 +793,33 @@ test.describe("AetherTarot smoke flow", () => {
   test("does not expose a completed A reading while its outbox POST settles after switching to B", async ({ page }) => {
     let identity: "a" | "b" = "a";
     const oldQuestion = "账号 A 等待同步的私密问题";
+    const oldReadingId = "account-a-outbox";
+    let sessionRequestCount = 0;
+    let markSwitchRequested!: () => void;
+    let releaseSwitch!: () => void;
     let markPostRequested!: () => void;
     let releasePost!: () => void;
+    const switchRequested = new Promise<void>((resolve) => { markSwitchRequested = resolve; });
+    const switchGate = new Promise<void>((resolve) => { releaseSwitch = resolve; });
     const postRequested = new Promise<void>((resolve) => { markPostRequested = resolve; });
     const postGate = new Promise<void>((resolve) => { releasePost = resolve; });
-    await page.route("**/api/auth/session", (route) => route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        user: { id: `${identity}@example.test`, email: `${identity}@example.test` },
-        expires: "2099-01-01T00:00:00.000Z",
-      }),
-    }));
+    await page.route("**/api/auth/session", async (route) => {
+      sessionRequestCount += 1;
+      if (sessionRequestCount > 1) {
+        markSwitchRequested();
+        await switchGate;
+      }
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: `${identity}@example.test`, email: `${identity}@example.test` },
+          expires: "2099-01-01T00:00:00.000Z",
+        }),
+      });
+    });
     await page.route("**/api/reading", (route) => route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(mockCompletedReading(oldQuestion, "account-a-outbox")),
+      body: JSON.stringify(mockCompletedReading(oldQuestion, oldReadingId)),
     }));
     await page.route("**/api/readings", async (route) => {
       if (route.request().method() !== "POST") {
@@ -826,12 +839,113 @@ test.describe("AetherTarot smoke flow", () => {
     await postRequested;
 
     identity = "b";
-    await refetchAuthSession(page);
+    const refetch = refetchAuthSession(page);
+    await switchRequested;
+    releaseSwitch();
+    releasePost();
+    await refetch;
     await expect(page.getByText("b@example.test").first()).toBeVisible();
     await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
-    releasePost();
     await page.waitForTimeout(300);
     await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+    const bOutboxContainsA = await page.evaluate((readingId) => {
+      const records = JSON.parse(
+        localStorage.getItem("aether_tarot_account_reading_outbox_v1") ?? "[]",
+      ) as Array<{ owner?: string; entry?: { id?: string } }>;
+      const fingerprint = (identityValue: string) => {
+        let hash = 0x811c9dc5;
+        for (const byte of new TextEncoder().encode(identityValue)) {
+          hash ^= byte;
+          hash = Math.imul(hash, 0x01000193);
+        }
+        return `v1-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+      };
+      return records.some((record) =>
+        record.owner === fingerprint("b@example.test") && record.entry?.id === readingId
+      );
+    }, oldReadingId);
+    expect(bOutboxContainsA).toBe(false);
+  });
+
+  test("invalidates A completion in the same scheduling window as an A to B auth commit", async ({ page }) => {
+    let identity: "a" | "b" = "a";
+    const oldQuestion = "账号 A 同调度窗口内的私密问题";
+    const oldReadingId = "account-a-same-window";
+    let sessionRequestCount = 0;
+    let markSwitchRequested!: () => void;
+    let releaseSwitch!: () => void;
+    let markReadingRequested!: () => void;
+    let releaseReading!: () => void;
+    const switchRequested = new Promise<void>((resolve) => { markSwitchRequested = resolve; });
+    const switchGate = new Promise<void>((resolve) => { releaseSwitch = resolve; });
+    const readingRequested = new Promise<void>((resolve) => { markReadingRequested = resolve; });
+    const readingGate = new Promise<void>((resolve) => { releaseReading = resolve; });
+    const historyPosts: string[] = [];
+
+    await page.route("**/api/auth/session", async (route) => {
+      sessionRequestCount += 1;
+      if (sessionRequestCount > 1) {
+        markSwitchRequested();
+        await switchGate;
+      }
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: `${identity}@example.test`, email: `${identity}@example.test` },
+          expires: "2099-01-01T00:00:00.000Z",
+        }),
+      });
+    });
+    await page.route("**/api/reading", async (route) => {
+      markReadingRequested();
+      await readingGate;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(mockCompletedReading(oldQuestion, oldReadingId)),
+      }).catch(() => undefined);
+    });
+    await page.route("**/api/readings", async (route) => {
+      if (route.request().method() === "POST") {
+        historyPosts.push(route.request().postData() ?? "");
+      }
+      await route.fulfill({ contentType: "application/json", body: JSON.stringify({ readings: [] }) })
+        .catch(() => undefined);
+    });
+
+    await gotoAppRoute(page, "/new");
+    await page.getByPlaceholder("今天，你想向内心询问什么？").fill(oldQuestion);
+    await page.getByTestId("new-reading-actions").getByRole("button", { name: "当下之镜 →" }).click();
+    await revealQuickDrawAndStartDeepReading(page);
+    await readingRequested;
+
+    identity = "b";
+    const refetch = refetchAuthSession(page);
+    await switchRequested;
+    releaseSwitch();
+    releaseReading();
+    await refetch;
+
+    await expect(page.getByText("b@example.test").first()).toBeVisible();
+    await expect(page.getByText(oldQuestion, { exact: false })).toHaveCount(0);
+    await page.waitForTimeout(300);
+    expect(historyPosts.some((body) => body.includes(oldReadingId))).toBe(false);
+    const bOutboxContainsA = await page.evaluate((readingId) => {
+      const records = JSON.parse(
+        localStorage.getItem("aether_tarot_account_reading_outbox_v1") ?? "[]",
+      ) as Array<{ owner?: string; entry?: { id?: string } }>;
+      const fingerprint = (identityValue: string) => {
+        let hash = 0x811c9dc5;
+        for (const byte of new TextEncoder().encode(identityValue)) {
+          hash ^= byte;
+          hash = Math.imul(hash, 0x01000193);
+        }
+        return `v1-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+      };
+      return records.some((record) =>
+        record.owner === fingerprint("b@example.test") && record.entry?.id === readingId
+      );
+    }, oldReadingId);
+    expect(bOutboxContainsA).toBe(false);
   });
 
   test("completes a structured reading and persists it into history", async ({

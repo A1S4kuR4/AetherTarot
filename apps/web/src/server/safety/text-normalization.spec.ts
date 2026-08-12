@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  findSafetyMatchSpans,
+  hasUncoveredSafetyMatch,
   normalizeSafetyText,
   segmentSafetyText,
+  type SafetyPattern,
 } from "@/server/safety/text-normalization";
 
 describe("safety text normalization", () => {
@@ -22,5 +25,36 @@ describe("safety text normalization", () => {
   it("keeps a compact search copy for basic split-word evasion", () => {
     expect(segmentSafetyText("I want to k ill my self")[0]?.compact)
       .toBe("Iwanttokillmyself");
+  });
+
+  it("maps normalized and compact matches into one concrete span coordinate", () => {
+    const segment = segmentSafetyText("You should m o n i t o r your ex")[0];
+    const patterns: SafetyPattern[] = [{
+      form: "compact",
+      pattern: /youshouldmonitor/i,
+    }];
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(findSafetyMatchSpans(segment, patterns)).toEqual([{
+      start: 0,
+      end: "You should m o n i t o r".length,
+    }]);
+  });
+
+  it("only exempts a danger match covered by the same local context span", () => {
+    const danger: SafetyPattern[] = [{
+      form: "compact",
+      pattern: /youshouldmonitor/i,
+    }];
+    const safe: SafetyPattern[] = [{
+      form: "compact",
+      pattern: /donotstalk/i,
+    }];
+    const segment = segmentSafetyText(
+      "Do not stalk anyone and you should monitor your ex",
+    )[0];
+
+    if (!segment) throw new Error("expected one normalized segment");
+    expect(hasUncoveredSafetyMatch(segment, danger, safe)).toBe(true);
   });
 });

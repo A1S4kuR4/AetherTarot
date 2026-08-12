@@ -338,8 +338,8 @@ server-owned Initial + follow-up integration work order；normalizer 只对“�
 经过既有 generated-content safety、citation finalizer、capsule 与 completed persistence。
 # 游客上线 P0 信任边界（2026-08-10）
 
-- 身份历史：游客浏览器存储与账号服务端 `stored_readings` 是两个不可互相回退的 source。认证 loading 不视为 guest；身份解析后以 identity-keyed provider remount，使新身份首个可见 commit 就是空白内存态，再从新身份 canonical source hydrate。epoch、AbortSignal 与 stale guard 继续失效旧 initial/final/GET/POST/PATCH 及后续副作用；旧 guest history key 只保留待未来显式导入，旧全局草稿 key 只删除不导入。
-- Reading 安全：Graph 分别分类 question 与每个用户 follow-up answer，再按产品优先级聚合；输入和生成输出共用 NFKC/Cf/全角/空格/标点/英文拆词规范化，并在句、子句或受限局部窗口内解释否定、引用和受害者语境。局部安全语境不能抵消后续或另一字段的 hard stop。`analyze_intent_friction` 后的强制条件边直接进入 `safety_stop`，decider 无权覆盖。
+- 身份历史：游客浏览器存储与账号服务端 `stored_readings` 是两个不可互相回退的 source。认证 loading 不视为 guest；身份解析后以 identity-keyed provider remount，使新身份首个可见 commit 就是空白内存态，再从新身份 canonical source hydrate。keyed provider 的 layout-effect cleanup 在旧树 unmount commit 阶段同步 `dispose()`；epoch、AbortSignal 与 stale guard 继续失效旧 initial/final/GET/POST/PATCH 及后续副作用。旧 guest history key 只保留待未来显式导入，旧全局草稿 key 只删除不导入。
+- Reading 安全：Graph 分别分类 question 与每个用户 follow-up answer，再按产品优先级聚合；输入和生成输出共用 NFKC/Cf/全角/空格 normalized/compact 规则。危险 regex 的 normalized/compact 命中映射到统一 span；只有同类别 context span 覆盖该危险 span 才豁免，独立危险命中不能被同字段安全句或另一字段抵消。`analyze_intent_friction` 后的强制条件边直接进入 `safety_stop`，decider 无权覆盖。
 - I/O：所有 JSON 入站路由按实际字节流式限长并强制 `application/json`；共享 transport 的单一端到端 deadline 从排队前开始，覆盖 permit、reservation、headers/body 与 settlement，并有响应硬上限。
 - 舱壁：单 Node 进程共享 provider semaphore，permit 先于 token reservation；它只保护单实例，不是多实例全局并发控制。多实例仍需供应商硬预算、外部网关或共享协调层。
 - IP：应用只接受 Caddy 覆写的内部 IP + shared secret；CF/XFF/X-Real-IP 永不参与应用身份。生产缺失或错误时失败关闭，非生产只允许显式私网/回环 fallback。

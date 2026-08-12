@@ -8,6 +8,16 @@ function deferred<T>() {
 }
 
 describe("identity request lifecycle", () => {
+  it("invalidates and aborts an old request synchronously on dispose", () => {
+    const lifecycle = new IdentityRequestLifecycle("account:a");
+    const request = lifecycle.begin("account:a");
+
+    lifecycle.dispose();
+
+    expect(request.signal.aborted).toBe(true);
+    expect(lifecycle.isCurrent(request, "account:a")).toBe(false);
+  });
+
   it("invalidates an account A initial response after logout to guest", async () => {
     const lifecycle = new IdentityRequestLifecycle("account:a");
     const request = lifecycle.begin("account:a");

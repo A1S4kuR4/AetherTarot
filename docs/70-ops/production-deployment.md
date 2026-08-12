@@ -181,6 +181,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 # 首次部署保持禁用真实模型，供应商硬预算验收后才改为 llm
 AETHERTAROT_READING_PROVIDER=placeholder
 AETHERTAROT_ENCYCLOPEDIA_PROVIDER=disabled
+AETHERTAROT_READING_GENERATION_MODE=monolithic
 AETHERTAROT_LLM_BASE_URL=
 AETHERTAROT_LLM_MODEL=
 AETHERTAROT_LLM_API_KEY=
@@ -203,6 +204,8 @@ AETHERTAROT_LLM_DAILY_TOKEN_LIMIT=1000000
 AETHERTAROT_IP_HASH_SALT=
 AETHERTAROT_PROXY_SHARED_SECRET=
 ```
+
+Readiness 只接受 `AETHERTAROT_READING_PROVIDER=placeholder|llm`、`AETHERTAROT_ENCYCLOPEDIA_PROVIDER=disabled|llm`，并要求游客首发固定 `AETHERTAROT_READING_GENERATION_MODE=monolithic`；非法值在发布前失败，不能留到运行时 503。代码仍保留 `adaptive_staged` 实验路径，但不属于本轮可发布配置；readiness 还计算其最多四次 provider deadline 的最坏值并要求低于 Caddy 130 秒预算，避免未来放宽模式门禁时遗漏 whole-route 上限。
 
 `AETHERTAROT_LLM_MAX_CONCURRENCY/MAX_QUEUE/QUEUE_TIMEOUT_MS` 只控制单个 Node.js 实例；先获取 permit，再预留 token。多实例部署不会共享这个 semaphore，仍需供应商硬预算或共享网关限制。`MAX_RESPONSE_BYTES` 受代码 4 MiB 硬上限约束。生产必须使用不同的高熵值配置 IP hash salt 与 proxy shared secret。
 

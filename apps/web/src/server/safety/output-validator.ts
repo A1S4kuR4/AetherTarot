@@ -1,5 +1,10 @@
 import type { StructuredReading } from "@aethertarot/shared-types";
-import { segmentSafetyText } from "@/server/safety/text-normalization";
+import {
+  hasSafetyMatch,
+  hasUncoveredSafetyMatch,
+  segmentSafetyText,
+  type SafetyPattern,
+} from "@/server/safety/text-normalization";
 
 export type GeneratedContentAction = "pass" | "restrict" | "replace";
 
@@ -19,35 +24,74 @@ export interface GeneratedContentReview<T> {
   output: T;
 }
 
-const SAFE_TREATMENT_BOUNDARY =
-  /(?:不要|不能|不应|不可|不建议|避免|拒绝建议).{0,8}(?:停药|停止治疗|拒绝治疗)|(?:do not|don't|should not|cannot).{0,8}(?:stop medication|stop treatment)/i;
-const SAFE_CERTAINTY_BOUNDARY =
-  /(?:不能|无法|不应|不可|不代表|并非).{0,12}(?:确定|断定|保证|一定会|必然|命中注定|真实想法)|(?:一定会|必然|命中注定|真实想法).{0,12}(?:无法确认|不能确定|不应断定)|(?:cannot|can't|should not).{0,12}(?:know for sure|guarantee|predict)/i;
-const SAFE_MANIPULATION_BOUNDARY =
-  /(?:不要|不能|不应|不可|不鼓励|拒绝|避免).{0,10}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)|(?:do not|don't|should not|cannot).{0,10}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
-const SAFE_DIAGNOSIS_BOUNDARY =
-  /(?:不能|无法|不应|不可|不代表).{0,10}(?:诊断|确诊|患有|怀孕)|(?:cannot|can't|should not).{0,10}(?:diagnose|confirm a diagnosis|confirm pregnancy)/i;
-const SAFE_HARM_BOUNDARY =
-  /(?:不要|不能|不应|不可|拒绝|避免).{0,10}(?:自杀|自残|伤害自己|伤害他人|暴力)|(?:do not|don't|should not|cannot).{0,10}(?:self-harm|suicide|kill yourself|hurt yourself|hurt someone)|(?:donot|shouldnot|cannot)(?:selfharm|suicide|killyourself|hurtyourself|hurtsomeone)/i;
-const SAFE_PROFESSIONAL_BOUNDARY =
-  /(?:不要|不能|不应|不应该|不可|不建议|避免|不宜).{0,12}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|你应该(?:不要|避免|谨慎).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|(?:do not|don't|should not|shouldn't|cannot|you should not|you should avoid).{0,12}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery|quit your job|divorce)|(?:donot|shouldnot|cannot)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i;
+const patterns = (
+  normalized: RegExp,
+  compact: RegExp,
+): SafetyPattern[] => [
+  { form: "normalized", pattern: normalized },
+  { form: "compact", pattern: compact },
+];
 
-const SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT =
-  /(?:你可以|你应该|你必须|不如|值得|建议你|去|我要|我准备|我打算).{0,8}(?:自杀|自残|结束生命|伤害自己|伤害他人|杀他|杀她|实施暴力)|(?:you should|you can|go ahead and).{0,8}(?:self-harm|kill yourself|hurt yourself|hurt them)|(?:youshould|youcan|goaheadand)(?:selfharm|killyourself|hurtyourself|hurtthem)|i(?:'m| am)? (?:going to|about to|planning to).{0,8}(?:kill|hurt|attack)|i(?:am)?(?:goingto|aboutto|planningto)(?:kill|hurt|attack)(?:him|her|them|someone)?/i;
-const MANIPULATION_INSTRUCTION =
-  /(?:你可以|你应该|你必须|建议|方法是|步骤是|先|然后|教我|怎么|如何).{0,14}(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)|(?:you should|you can|first|then|how can i|how do i).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)|(?:youshould|youcan|howcani|howdoi).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i;
-const TREATMENT_DISCONTINUATION =
-  /(?:你可以|你应该|你必须|建议|直接|不妨).{0,8}(?:停药|停止治疗|拒绝治疗)|(?:停药|停止治疗|拒绝治疗).{0,8}(?:就好|即可|更好)|(?:you should|you can).{0,8}(?:stop medication|stop treatment)/i;
-const MEDICAL_DIAGNOSIS =
-  /(?:你|他|她).{0,6}(?:已经|就是|肯定|确定)?(?:患有|得了|确诊为|怀孕了)|(?:you|they|he|she).{0,6}(?:definitely has|is diagnosed with|is pregnant)/i;
-const ABUSE_MINIMIZATION =
-  /(?:家暴|暴力|被打).{0,12}(?:很正常|应该忍|需要忍|接受就好|是爱你的表现)|(?:被家暴|被打).{0,8}(?:活该|是你的错|你造成)|你.{0,8}(?:招来|导致).{0,6}(?:家暴|暴力)|abuse.{0,12}(?:is normal|is your fault|means they love you)/i;
-const DETERMINISTIC_CLAIM =
-  /一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定|definitely will|guaranteed to|destined to/i;
-const THIRD_PARTY_CERTAINTY =
-  /(?:他|她|对方).{0,8}(?:一定|肯定|真实).{0,10}(?:爱|想|打算|回来|离开|喜欢|讨厌)|(?:他|她|对方)的真实想法是|they definitely (?:love|want|will return)/i;
-const PROFESSIONAL_DIRECTIVE =
-  /你(?:必须|应该|需要).{0,10}(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|(?:you must|you should).{0,10}(?:buy|sell|invest|borrow|sue|sign|take medication|have surgery|quit your job|divorce)|(?:youmust|youshould)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i;
+const SAFE_TREATMENT_BOUNDARY = patterns(
+  /(?:不要|不能|不应|不可|不建议|避免|拒绝建议).{0,8}?(?:停药|停止治疗|拒绝治疗)/i,
+  /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:stopmedication|stoptreatment)/i,
+);
+const SAFE_CERTAINTY_BOUNDARY: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:不能|无法|不应|不可|不代表|并非).{0,12}?(?:一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定|真实想法)|(?:一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定|真实想法).{0,12}?(?:无法确认|不能确定|不应断定)/i },
+  { form: "normalized", pattern: /(?:不能|无法|不应|不可|不代表|并非).{0,12}?(?:他|她|对方).{0,8}?(?:一定|肯定|真实).{0,10}?(?:爱|想|打算|回来|离开|喜欢|讨厌)/i },
+  { form: "compact", pattern: /(?:cannot|cant|shouldnot)(?:knowforsure|guarantee|predict)/i },
+];
+const SAFE_MANIPULATION_BOUNDARY: SafetyPattern[] = [
+  { form: "normalized", pattern: /(?:不要|不能|不应|不可|不鼓励|拒绝|避免).{0,10}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)/i },
+  { form: "normalized", pattern: /(?:朋友|他|她|对方|有人)(?:问我|说|声称).{0,16}?(?:怎么|如何|要|想|应该).{0,8}?(?:跟踪|监控|报复|操控|勒索|偷窥|控制)/i },
+  { form: "compact", pattern: /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+  { form: "compact", pattern: /(?:afriend|friend|he|she|they)(?:askedme|said).{0,16}?(?:howto|youshould)(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i },
+];
+const SAFE_DIAGNOSIS_BOUNDARY = patterns(
+  /(?:不能|无法|不应|不可|不代表).{0,10}?(?:诊断|确诊|患有|怀孕)/i,
+  /(?:cannot|cant|shouldnot)(?:diagnose|confirmadiagnosis|confirmpregnancy)/i,
+);
+const SAFE_HARM_BOUNDARY = patterns(
+  /(?:不要|不能|不应|不可|拒绝|避免).{0,10}?(?:自杀|自残|伤害自己|伤害他人|暴力)/i,
+  /(?:donot|dont|shouldnot|cannot|youshouldnot)(?:selfharm|suicide|killyourself|hurtyourself|hurtsomeone)/i,
+);
+const SAFE_PROFESSIONAL_BOUNDARY = patterns(
+  /(?:不要|不能|不应|不应该|不可|不建议|避免|不宜).{0,12}?(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)|你应该(?:不要|避免|谨慎).{0,10}?(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)/i,
+  /(?:donot|dont|shouldnot|shouldnt|cannot|youshouldnot|youshouldavoid)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i,
+);
+
+const SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT = patterns(
+  /(?:你可以|你应该|你必须|不如|值得|建议你|去|我要|我准备|我打算).{0,8}?(?:自杀|自残|结束生命|伤害自己|伤害他人|杀他|杀她|实施暴力)/i,
+  /(?:youshould|youcan|goaheadand)(?:selfharm|killyourself|hurtyourself|hurtthem)|i(?:am)?(?:goingto|aboutto|planningto)(?:kill|hurt|attack)(?:him|her|them|someone)?/i,
+);
+const MANIPULATION_INSTRUCTION = patterns(
+  /(?:你可以|你应该|你必须|建议|方法是|步骤是|先|然后|教我|怎么|如何).{0,14}?(?:跟踪|监控|报复|操控|勒索|偷窥|试探|控制对方)/i,
+  /(?:youshould|youcan|first|then|howcani|howdoi).{0,14}(?:stalk|track|monitor|control|manipulate|blackmail|retaliate)/i,
+);
+const TREATMENT_DISCONTINUATION = patterns(
+  /(?:你可以|你应该|你必须|建议|直接|不妨).{0,8}?(?:停药|停止治疗|拒绝治疗)|(?:停药|停止治疗|拒绝治疗).{0,8}?(?:就好|即可|更好)/i,
+  /(?:youshould|youcan)(?:stopmedication|stoptreatment)/i,
+);
+const MEDICAL_DIAGNOSIS = patterns(
+  /(?:你|他|她).{0,6}(?:已经|就是|肯定|确定)?(?:患有|得了|确诊为|怀孕了)/i,
+  /(?:you|they|he|she)definitely(?:have|has)(?:cancer|adisease|thecondition)|(?:you|they|he|she)isdiagnosedwith|(?:you|they|he|she)ispregnant/i,
+);
+const ABUSE_MINIMIZATION = patterns(
+  /(?:家暴|暴力|被打).{0,12}(?:很正常|应该忍|需要忍|接受就好|是爱你的表现)|(?:被家暴|被打).{0,8}(?:活该|是你的错|你造成)|你.{0,8}(?:招来|导致).{0,6}(?:家暴|暴力)/i,
+  /abuse(?:isnormal|isyourfault|meanstheyloveyou)/i,
+);
+const DETERMINISTIC_CLAIM = patterns(
+  /一定会|必然会|绝对会|肯定会|百分之百|命中注定|已经注定/i,
+  /definitelywill|guaranteedto|destinedto/i,
+);
+const THIRD_PARTY_CERTAINTY = patterns(
+  /(?:他|她|对方).{0,8}?(?:一定|肯定|真实).{0,10}?(?:爱|想|打算|回来|离开|喜欢|讨厌)|(?:他|她|对方)的真实想法是/i,
+  /theydefinitely(?:love|want|willreturn)/i,
+);
+const PROFESSIONAL_DIRECTIVE = patterns(
+  /你(?:必须|应该|需要).{0,10}?(?:买入|卖出|投资|贷款|借钱|起诉|签署|认罪|做手术|服用|用药|辞职|离婚)/i,
+  /(?:youmust|youshould)(?:buy|sell|invest|borrow|sue|sign|takemedication|havesurgery|quityourjob|divorce)/i,
+);
 
 const RESTRICTED_SAFETY_NOTE =
   "系统已移除生成内容中的绝对化或越界表述。请把保留内容仅作为反思线索，并以现实信息、可观察行为和合格专业意见为准。";
@@ -68,40 +112,35 @@ function inspectGeneratedText(text: string) {
   const violations: GeneratedContentViolation[] = [];
 
   for (const segment of segmentSafetyText(text)) {
-    const searchable = segment.searchable;
     if (
-      SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT.test(searchable)
-      && !SAFE_HARM_BOUNDARY.test(searchable)
+      hasUncoveredSafetyMatch(segment, SELF_HARM_OR_VIOLENCE_ENCOURAGEMENT, SAFE_HARM_BOUNDARY)
     ) {
       appendUnique(violations, "self_harm_or_violence_encouragement");
     }
     if (
-      MANIPULATION_INSTRUCTION.test(searchable)
-      && !SAFE_MANIPULATION_BOUNDARY.test(searchable)
+      hasUncoveredSafetyMatch(segment, MANIPULATION_INSTRUCTION, SAFE_MANIPULATION_BOUNDARY)
     ) {
       appendUnique(violations, "manipulation_instruction");
     }
     if (
-      TREATMENT_DISCONTINUATION.test(searchable)
-      && !SAFE_TREATMENT_BOUNDARY.test(searchable)
+      hasUncoveredSafetyMatch(segment, TREATMENT_DISCONTINUATION, SAFE_TREATMENT_BOUNDARY)
     ) {
       appendUnique(violations, "treatment_discontinuation");
     }
-    if (MEDICAL_DIAGNOSIS.test(searchable) && !SAFE_DIAGNOSIS_BOUNDARY.test(searchable)) {
+    if (hasUncoveredSafetyMatch(segment, MEDICAL_DIAGNOSIS, SAFE_DIAGNOSIS_BOUNDARY)) {
       appendUnique(violations, "medical_diagnosis");
     }
-    if (ABUSE_MINIMIZATION.test(searchable)) {
+    if (hasSafetyMatch(segment, ABUSE_MINIMIZATION)) {
       appendUnique(violations, "abuse_minimization");
     }
-    if (DETERMINISTIC_CLAIM.test(searchable) && !SAFE_CERTAINTY_BOUNDARY.test(searchable)) {
+    if (hasUncoveredSafetyMatch(segment, DETERMINISTIC_CLAIM, SAFE_CERTAINTY_BOUNDARY)) {
       appendUnique(violations, "deterministic_claim");
     }
-    if (THIRD_PARTY_CERTAINTY.test(searchable) && !SAFE_CERTAINTY_BOUNDARY.test(searchable)) {
+    if (hasUncoveredSafetyMatch(segment, THIRD_PARTY_CERTAINTY, SAFE_CERTAINTY_BOUNDARY)) {
       appendUnique(violations, "third_party_certainty");
     }
     if (
-      PROFESSIONAL_DIRECTIVE.test(searchable)
-      && !SAFE_PROFESSIONAL_BOUNDARY.test(searchable)
+      hasUncoveredSafetyMatch(segment, PROFESSIONAL_DIRECTIVE, SAFE_PROFESSIONAL_BOUNDARY)
     ) {
       appendUnique(violations, "professional_directive");
     }
