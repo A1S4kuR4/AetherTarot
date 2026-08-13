@@ -73,13 +73,13 @@ const SELF_HARM_DENIAL_CONTEXTS = patterns(
 );
 
 export const SELF_HARM_SUPPORT_CONTEXTS = patterns(
-  /我(?:以前|曾经).{0,8}(?:想自杀|有自杀念头|感到想死)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|他|她|有人).{0,12}(?:说|提到).{0,12}(?:想自杀|自杀).{0,16}(?:如何|怎么|帮助)/i,
-  /我(?:以前|曾经).{0,8}(?:想自杀|有自杀念头|感到想死)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|他|她|有人).{0,12}(?:说|提到).{0,12}(?:想自杀|自杀).{0,16}(?:如何|怎么|帮助)|iamnolongersuicidal|iusedtofeelsuicidal|whatdoessuicidalideationmean|howcanihelpsomeonewhoissuicidal|(?:afriend|friend|he|she|someone)(?:said|mentioned).{0,20}(?:suicidal|suicide|wantstodie).{0,20}(?:howcan|howdo|help)/i,
+  /我(?:以前|曾经).{0,12}(?:想自杀|有自杀念头|感到想死|想结束生命)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?/i,
+  /我(?:以前|曾经).{0,12}(?:想自杀|有自杀念头|感到想死|想结束生命)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?|iamnolongersuicidal|iusedto(?:feel|thinkabout|consider|wantto)?(?:suicidal|suicide|dying|end(?:ing)?mylife)|whatdoessuicidalideationmean|howcanihelpsomeonewhoissuicidal|(?:afriend|friend|student|client|he|she|someone)(?:asked|said|mentioned).{0,24}(?:suicidal|suicide|wantstodie|endtheirlife|suicidalideation)/i,
 );
 
-const SELF_HARM_REPORTED_CONTEXTS = patterns(
-  /(?:朋友|他|她|对方|有人).{0,16}(?:问|说|提到).{0,16}(?:自杀|自残|伤害自己|结束生命).{0,16}(?:我拒绝|我没有同意|我劝阻)/i,
-  /(?:afriend|friend|he|she|they)(?:asked|said|mentioned).{0,20}(?:selfharm|suicide|killmyself|hurtmyself|endmylife).{0,20}(?:irefused|ididnotagree|itriedtostop)/i,
+export const SELF_HARM_REPORTED_CONTEXTS = patterns(
+  /(?:朋友|学生|来访者|他|她|对方|有人).{0,16}(?:问|说|提到).{0,16}(?:自杀|自残|伤害自己|结束生命|想死)/i,
+  /(?:afriend|friend|student|client|he|she|they|someone)(?:asked|said|mentioned).{0,24}(?:selfharm|suicide|suicidal|killmyself|hurtmyself|endmylife|wanttodie)/i,
 );
 
 const SELF_HARM_SAFE_CONTEXTS: SafetyPattern[] = [
@@ -88,10 +88,16 @@ const SELF_HARM_SAFE_CONTEXTS: SafetyPattern[] = [
   ...SELF_HARM_REPORTED_CONTEXTS,
 ];
 
-const VIOLENCE_SAFE_CONTEXTS = patterns(
-  /(?:我)?(?:不想|不会|不打算|没有计划|拒绝|避免)(?:去)?(?:杀|伤害|袭击|殴打|弄死|枪击|刺|捅|毒)(?:他|她|对方|别人|他们|任何人)|(?:朋友|他|她|有人).{0,16}(?:说|问|提到).{0,16}(?:帮我|教我|如何|怎么)?.{0,8}(?:杀|伤害|袭击|殴打|枪击|刺|捅|毒)(?:他|她|别人|任何人).{0,16}(?:我拒绝|我劝阻|我没有同意)/i,
-  /i(?:do)?not(?:want|plan|intend)to(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|iwont(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|irefuseto(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|(?:afriend|friend|he|she|someone)(?:said|asked|mentioned).{0,20}(?:helpme|teachme|howto)?(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone).{0,20}(?:irefused|itriedtostop|ididnotagree)/i,
-);
+const VIOLENCE_SAFE_CONTEXTS: SafetyPattern[] = [
+  ...patterns(
+    /(?:我)?(?:不想|不会|不打算|没有计划|拒绝|避免)(?:去)?(?:杀|伤害|袭击|殴打|弄死|枪击|刺|捅|毒)(?:他|她|对方|别人|他们|任何人)|(?:朋友|他|她|有人).{0,16}(?:说|问|提到).{0,16}(?:帮我|教我|如何|怎么)?.{0,8}(?:杀|伤害|袭击|殴打|枪击|刺|捅|毒)(?:他|她|别人|任何人).{0,16}(?:我拒绝|我劝阻|我没有同意)/i,
+    /i(?:do)?not(?:want|plan|intend)to(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|iwont(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|irefuseto(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|(?:afriend|friend|he|she|someone)(?:said|asked|mentioned).{0,20}(?:helpme|teachme|howto)?(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone).{0,20}(?:irefused|itriedtostop|ididnotagree)/i,
+  ),
+  ...patterns(
+    /(?:please\s+)?(?:can|could|would|should|may)\s+(?:you|i)\s+(?:please\s+)?not\s+(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\s+(?:(?:my|your|the|our|his|her|their)\s+)?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|please\s+do\s+not\s+(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\s+\S+/i,
+    /(?:please)?(?:can|could|would|should|may)(?:you|i)(?:please)?not(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:(?:my|your|the|our|his|her|their))?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|pleasedonot(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\p{L}+/iu,
+  ),
+];
 
 const HARM_OUTPUT_SAFE_CONTEXTS: SafetyPattern[] = [
   ...SELF_HARM_SAFE_CONTEXTS,
@@ -99,6 +105,10 @@ const HARM_OUTPUT_SAFE_CONTEXTS: SafetyPattern[] = [
   ...patterns(
     /(?:不要|不能|不应|不应该|不可|拒绝|避免)(?:去)?(?:死|自杀|自残|伤害自己|伤害他人|杀死自己|杀|袭击|殴打)(?:他|她|对方|别人|他们|任何人)?/i,
     /(?:donot|dont|shouldnot|shouldnt|cannot|cant|youshouldnot)(?:die|selfharm|suicide|killyourself|hurtyourself|hurt|kill|attack|punch)(?:him|her|them|someone|anyone)?/i,
+  ),
+  ...patterns(
+    /\b(?:suicide|self-harm)\s+prevention\b|\bprevention\s+of\s+(?:suicide|self-harm)\b/i,
+    /(?:suicide|selfharm)prevention|preventionof(?:suicide|selfharm)/i,
   ),
 ];
 
@@ -108,8 +118,8 @@ export const VICTIM_REPORT_CONTEXTS = patterns(
 );
 
 export const SUPPORT_REQUEST_CONTEXTS = patterns(
-  /(?:我)?(?:需要|寻求|想要).{0,8}(?:帮助|求助|保护|安全)|(?:求助|怎么办|如何保护自己|保持安全)/i,
-  /i(?:need|want)(?:safety)?help|needsafetyhelp|needprotection|howcanistaysafe|helpmestaysafe/i,
+  /(?:我)?(?:需要|寻求|想要).{0,8}(?:帮助|求助|保护|安全)|(?:求助|怎么办|如何保护自己|如何帮助|怎么帮助|保持安全)/i,
+  /i(?:need|want)(?:safety)?help|needsafetyhelp|needprotection|howcanistaysafe|helpmestaysafe|howcan(?:i|we)(?:help|support).{0,20}(?:safe|safety)|howdo(?:i|we)(?:help|support)/i,
 );
 
 export const VICTIM_SUPPORT_CONTEXTS: SafetyPattern[] = [
@@ -137,49 +147,70 @@ const MANIPULATION_SAFE_CONTEXTS: SafetyPattern[] = [
     /(?:塔罗|系统|助手|专业人士).{0,12}(?:不能|不会|不应|拒绝)(?:帮助|教|提供)?.{0,10}(?:跟踪|监控|监视|定位|操控|控制)/i,
     /(?:tarot|thesystem|theassistant|aprofessional)(?:cannot|cant|willnot|shouldnot|refusesto)(?:help|teach|provide)?(?:stalk|track|monitor|control|manipulate)/i,
   ),
+  ...patterns(
+    /(?:please\s+)?(?:can|could|would|should|may)\s+(?:you|i)\s+(?:please\s+)?not\s+(?:secretly\s+)?(?:stalk|track|monitor|spy\s+on|record|locate|control|manipulate|blackmail|check|find)\s+.+/i,
+    /(?:please)?(?:can|could|would|should|may)(?:you|i)(?:please)?not(?:secretly)?(?:stalk|track|monitor|spyon|record|locate|control|manipulate|blackmail|check|find)\p{L}+/iu,
+  ),
 ];
 
-const TREATMENT_SAFE_CONTEXTS = patterns(
-  /(?:不要|不能|不应|不应该|不可|不建议|避免|拒绝建议)(?:自行|立即)?(?:停|停止|停用|拒绝)(?:服用|使用)?(?:药|药物|服药|用药|治疗|化疗|胰岛素|抗抑郁药|抗生素|心脏药)/i,
-  /(?:donot|dont|shouldnot|shouldnt|cannot|cant|youshouldnot)(?:(?:stop|quit|discontinue)(?:taking)?(?:your)?(?:medicine|medication|treatment|chemotherapy|insulin|antidepressants?|antibiotics?|heartmedication))/i,
-);
+const TREATMENT_SAFE_CONTEXTS: SafetyPattern[] = [
+  ...patterns(
+    /(?:不要|不能|不应|不应该|不可|不建议|避免|拒绝建议)(?:自行|立即)?(?:停|停止|停用|拒绝|跳过|漏服|丢弃|改变|调整)(?:服用|使用)?(?:药|药物|服药|用药|治疗|剂量|化疗|胰岛素|抗抑郁药|抗生素|心脏药)/i,
+    /(?:donot|dont|shouldnot|shouldnt|cannot|cant|youshouldnot)(?:(?:stop|quit|discontinue|skip|miss|discard|throwaway|change|adjust)(?:taking)?(?:your)?(?:medicine|medication|treatment|dose|dosage|chemotherapy|insulin|antidepressants?|antibiotics?|heartmedication|bloodpressuremedication|seizuremedication))/i,
+  ),
+  ...patterns(
+    /(?:please\s+)?(?:can|could|would|should|may)\s+(?:you|i)\s+(?:please\s+)?not\s+(?:stop|quit|discontinue|skip|miss|discard|throw\s+away|change|adjust)\s+.+/i,
+    /(?:please)?(?:can|could|would|should|may)(?:you|i)(?:please)?not(?:stop|quit|discontinue|skip|miss|discard|throwaway|change|adjust)\p{L}+/iu,
+  ),
+];
 
 const DIAGNOSIS_SAFE_CONTEXTS = patterns(
   /(?:塔罗|系统|助手|我).{0,10}(?:不能|无法|不应|不可)(?:直接)?(?:诊断|确诊|确认怀孕)|(?:你|他|她)(?:没有|并非|不是)(?:癌症|糖尿病|白血病|抑郁症|怀孕)/i,
-  /(?:tarot|thesystem|theassistant|i)(?:cannot|cant|shouldnot)(?:diagnose|confirmadiagnosis|confirmpregnancy)|(?:you|they|he|she)(?:donot|dont|doesnot|isnot|arent|isnt)(?:have)?(?:cancer|diabetes|leukemia|depression|depressed|pregnant)/i,
+  /(?:tarot|thesystem|theassistant|i)(?:cannot|cant|shouldnot)(?:diagnose|confirmadiagnosis|confirmpregnancy)|(?:you|they|he|she)(?:donot|dont|doesnot|isnot|arenot|arent|isnt)(?:have)?(?:cancer|diabetes|leukemia|depression|depressed|bipolardisorder|pregnant)|youhavequestionsabout(?:cancer|diabetes|leukemia|depression|bipolardisorder|pregnancy)/i,
 );
 
 const SELF_HARM_EXPLICIT_CORE = patterns(
   /自杀|自残|伤害自己|伤害我自己|结束生命|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
-  /自杀|自残|伤害自己|伤害我自己|结束生命|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|endmylife/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife/i,
 );
 const SELF_HARM_STATE_CORE = patterns(
   /活着|活下去/i,
-  /死(?!他|她|对方|别人|他们|任何人)|dead|die|alive/i,
+  /死(?!他|她|对方|别人|他们|任何人)|dead|die|alive|liveanymore/i,
 );
 const SELF_HARM_STATE_CUES = patterns(
-  /我(?:想|要|希望|需要|计划|准备|打算|感觉|不想继续|不想再)|I\s*(?:want|wish|need|feel|plan|intend)|I\s*(?:do not|don't)\s*want\s*to\s*be/i,
-  /我(?:想|要|希望|需要|计划|准备|打算|感觉|不想继续|不想再)|i(?:want|wish|need|feel|plan|intend)(?:to|iwere)?|i(?:donot|dont)wanttobe/i,
+  /我(?:想|要|希望|需要|计划|准备|打算|感觉|不想继续|不想再)|I\s*(?:want|wish|need|feel|plan|intend|am\s+thinking\s+about)|I\s*(?:do not|don't)\s*want\s*to(?:\s*be)?/i,
+  /我(?:想|要|希望|需要|计划|准备|打算|感觉|不想继续|不想再)|i(?:want|wish|need|feel|plan|intend|amthinkingabout)(?:to|iwere)?|i(?:donot|dont)wantto(?:be)?/i,
 );
 const SELF_HARM_OUTPUT_CORE: SafetyPattern[] = [
   {
     form: "normalized",
-    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|\bdie\b|\bself[ -]?harm\b|\bsuicide\b|\bkill(?:ing)? yourself\b|\bhurt yourself\b|\bend your life\b/i,
+    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|\bdie\b|\bdead\b|\bself[ -]?harm\b|\bsuicide\b|\bkill(?:ing)? yourself\b|\bhurt yourself\b|\bend your life\b/i,
   },
   {
     form: "compact",
-    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|^(?:die)$|(?:youshould|go)die|selfharm|suicide|killyourself|killingyourself|hurtyourself|endyourlife|hurtsomeone|hurtthem/i,
+    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|^(?:die|dead)$|(?:youshould|go)die|betteroffdead|selfharm|suicide|killyourself|killingyourself|hurtyourself|end(?:ing)?yourlife|hurtsomeone|hurtthem/i,
   },
+];
+
+const SELF_HARM_OUTPUT_ENCOURAGEMENT_CUES: SafetyPattern[] = [
+  ...DIRECTIVE_CUES,
+  ...patterns(
+    /\b(?:better\s+off|best\s+option|recommend|encourage)\b/i,
+    /(?:betteroff|bestoption|recommend|encourage)/i,
+  ),
 ];
 
 const VIOLENCE_ACTIONS = patterns(
   /\b(?:kill|hurt|punch|shoot|stab|beat|poison|attack)(?:s|ed|ing)?\b|杀死|弄死|伤害|袭击|殴打|枪击|开枪|刺伤|捅伤|毒死|(?<!自)杀|打|刺|捅|毒/i,
   /(?:kill|hurt|punch|shoot|stab|beat|poison|attack)(?:s|ed|ing)?|杀死|弄死|伤害|袭击|殴打|枪击|开枪|刺伤|捅伤|毒死|(?<!自)杀|打|刺|捅|毒/i,
 );
-const OTHER_PERSON_TARGETS = patterns(
-  /\b(?:him|her|them|someone|anyone|another person|people)\b|他|她|对方|别人|他们|任何人/i,
-  /(?:him|her|them|someone|anyone|anotherperson|people)|他|她|对方|别人|他们|任何人/i,
-);
+const OTHER_PERSON_TARGETS: SafetyPattern[] = [
+  ...patterns(
+    /\b(?:(?:my|your|the|our|his|her|their)\s+)?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor)\b|\b(?:him|her|them|someone|anyone|another person|people|an unknown person)\b|他|她|对方|别人|他们|任何人|陌生人/i,
+    /(?:(?:my|your|the|our|his|her|their))?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor)|(?:him|her|them|someone|anyone|anotherperson|people|anunknownperson)|他|她|对方|别人|他们|任何人|陌生人/i,
+  ),
+  { form: "normalized", pattern: /\b[A-Z][a-z]{1,24}\b/ },
+];
 const IMMEDIATE_VICTIM_DANGER_CORE = patterns(
   /(?:被打|被殴打|被枪击|被刺|打我|殴打我|伤害我|威胁我|持刀威胁|持枪威胁|追杀我)|(?:威胁|扬言).{0,12}(?:杀我|伤害我|枪击我|刺我)/i,
   /(?:(?:attacking|hitting|hurting|beating|shooting|stabbing)(?:at)?me|threatenedto(?:kill|hurt|shoot|stab)me|being(?:attacked|hit|beaten|shot|stabbed))/i,
@@ -191,6 +222,22 @@ const IMMEDIATE_DANGER_CUES = patterns(
 const ACUTE_DANGER_CORE = patterns(
   /持刀|被困住|无法脱身|生命危险/i,
   /immediatedanger|beingattacked|tryingtokillme|tryingtohurtme/i,
+);
+const IMMEDIATE_ASSAULT_CORE = patterns(
+  /(?:pointing|aiming).{0,12}(?:gun|knife).{0,12}(?:at )?me|(?:strangling|choking|attacking|hitting|beating|stabbing|shooting)(?: at)? me/i,
+  /(?:pointing|aiming).{0,12}(?:gun|knife).{0,12}(?:at)?me|(?:strangling|choking|attacking|hitting|beating|stabbing|shooting)(?:at)?me/i,
+);
+const IMMEDIATE_THREAT_CORE = patterns(
+  /(?:my\s+)?(?:wife|husband|boyfriend|girlfriend|partner|ex|he|she|someone).{0,16}(?:has|holds|is holding).{0,6}(?:a\s+)?(?:gun|knife)|(?:threatening|threatens|threatened).{0,12}(?:me|my life)/i,
+  /(?:my)?(?:wife|husband|boyfriend|girlfriend|partner|ex|he|she|someone).{0,16}(?:has|holds|isholding)(?:a)?(?:gun|knife)|(?:threatening|threatens|threatened).{0,12}(?:me|mylife)/i,
+);
+const IMMEDIATE_RESTRAINT_CORE = patterns(
+  /(?:will not|won't|does not|doesn't|refuses? to)\s+let\s+me\s+leave|(?:locked|trapped|restrained)\s+me|blocking\s+(?:my\s+)?(?:exit|way out)/i,
+  /(?:willnot|wont|doesnot|doesnt|refusesto)letmeleave|(?:locked|trapped|restrained)me|blocking(?:my)?(?:exit|wayout)/i,
+);
+const WEAPON_CURRENT_ESCAPE_CUES = patterns(
+  /\b(?:gun|knife|weapon|right now|currently|is|are|will not|won't|leave|escape|exit|way out)\b/i,
+  /(?:gun|knife|weapon|rightnow|currently|willnot|wont|leave|escape|exit|wayout)/i,
 );
 
 const URGENT_MEDICAL_CORE = patterns(
@@ -211,8 +258,12 @@ const MANIPULATION_ACTIONS = patterns(
   /(?:stalk|track|monitor|spy|locate|control|manipulate|blackmail|retaliate)(?:s|ed|ing)?|跟踪|监控|监视|定位|操控|勒索|偷窥|控制/i,
 );
 const SURVEILLANCE_TARGETS = patterns(
-  /\b(?:my|your|the|his|her|their)?\s*(?:ex|partner|him|her|them|someone|anyone|person|people|third\s+party|phone|location|messages?|gps\s*tracker|spyware)\b|前任|伴侣|对方|第三方|别人|任何人|他|她|手机|位置|行踪|消息|聊天记录|GPS\s*追踪器|定位器|间谍软件/i,
-  /(?:my|your|the|his|her|their)?(?:ex|partner|him|her|them|someone|anyone|person|people|thirdparty|phone|location|messages?|gpstracker|spyware)|前任|伴侣|对方|第三方|别人|任何人|他|她|手机|位置|行踪|消息|聊天记录|gps追踪器|定位器|间谍软件/i,
+  /\b(?:my|your|the|his|her|their)?\s*(?:ex|partner|wife|husband|boyfriend|girlfriend|boss|neighbor|him|her|them|someone|anyone|person|people|unknown\s+person|third\s+party|phone|location|messages?|gps\s*tracker|spyware)\b|\b[A-Z][a-z]{1,24}\b|前任|伴侣|妻子|丈夫|女朋友|男朋友|对方|第三方|别人|任何人|陌生人|他|她|手机|位置|行踪|消息|聊天记录|GPS\s*追踪器|定位器|间谍软件/i,
+  /(?:my|your|the|his|her|their)?(?:ex|partner|wife|husband|boyfriend|girlfriend|boss|neighbor|him|her|them|someone|anyone|person|people|unknownperson|thirdparty|phone|location|messages?|gpstracker|spyware)|前任|伴侣|妻子|丈夫|女朋友|男朋友|对方|第三方|别人|任何人|陌生人|他|她|手机|位置|行踪|消息|聊天记录|gps追踪器|定位器|间谍软件/i,
+);
+const PRIVATE_RECORD_ACTIONS = patterns(
+  /\b(?:secretly\s+)?record(?:s|ed|ing)?\b|偷录|偷拍|秘密录音|秘密录像/i,
+  /(?:secretly)?record(?:s|ed|ing)?|偷录|偷拍|秘密录音|秘密录像/i,
 );
 const SURVEILLANCE_INSTALL_ACTIONS = patterns(
   /\binstall(?:s|ed|ing)?\b|安装/i,
@@ -231,30 +282,30 @@ const PRIVATE_MESSAGE_TARGETS = patterns(
   /(?:(?:my|your|the)(?:partner|ex)s?|(?:my|your|his|her|their|the))?(?:private)?messages?|聊天记录|私信|消息/i,
 );
 const LOCATION_LOOKUP_ACTIONS = patterns(
-  /\blook\s*up\b|查询|查找|查/i,
-  /lookup|查询|查找|查/i,
+  /\b(?:look\s*up|check|find)\b|查询|查找|查/i,
+  /(?:lookup|check|find)|查询|查找|查/i,
 );
 const LOCATION_LOOKUP_TARGETS = patterns(
-  /\b(?:phone|location|whereabouts)\b|手机|位置|行踪/i,
-  /(?:phone|location|whereabouts)|手机|位置|行踪/i,
+  /\b(?:(?:(?:my|your|his|her|their|the)\s+)?(?:wife|husband|boyfriend|girlfriend|partner|ex|someone|unknown person)(?:'s)?\s+|[A-Z][a-z]{1,24}(?:'s)?\s+|(?:his|her|their)\s+)?(?:phone|location|whereabouts)\b|手机|位置|行踪/i,
+  /(?:(?:(?:my|your|his|her|their|the))?(?:wife|husband|boyfriend|girlfriend|partner|ex|someone|unknownperson)s?|(?:his|her|their))?(?:phone|location|whereabouts)|手机|位置|行踪/i,
 );
 
 const TREATMENT_STOP_ACTIONS = patterns(
-  /\b(?:stop|quit|discontinue)(?:ping|ted|d)?\b|停止|停用|停服|停掉|停|别吃|拒绝/i,
-  /(?:stop|quit|discontinue)(?:ping|ted|d)?|停止|停用|停服|停掉|停|别吃|拒绝/i,
+  /\b(?:stop|quit|discontinue|skip|miss|discard|change|adjust)(?:ping|ped|sed|ted|d|ing)?\b|\bthrow\s+away\b|停止|停用|停服|停掉|停|别吃|拒绝|跳过|漏服|丢弃|扔掉|改变|调整/i,
+  /(?:stop|quit|discontinue|skip|miss|discard|change|adjust)(?:ping|ped|sed|ted|d|ing)?|throwaway|停止|停用|停服|停掉|停|别吃|拒绝|跳过|漏服|丢弃|扔掉|改变|调整/i,
 );
 const TREATMENT_ENTITIES = patterns(
-  /\b(?:medicine|medication|treatment|insulin|chemotherapy|antidepressants?|antibiotics?|heart\s+medication)\b|药物|药|服药|用药|治疗|胰岛素|化疗|抗抑郁药|抗生素|心脏药(?:物)?/i,
-  /(?:medicine|medication|treatment|insulin|chemotherapy|antidepressants?|antibiotics?|heartmedication)|药物|药|服药|用药|治疗|胰岛素|化疗|抗抑郁药|抗生素|心脏药(?:物)?/i,
+  /\b(?:(?:a|one)\s+)?(?:dose|dosage)(?:\s+of\s+(?:seizure|blood\s+pressure|heart)?\s*(?:medicine|medication))?|\b(?:medicine|medication|treatment|insulin|chemotherapy|antidepressants?|antibiotics?|(?:heart|blood\s+pressure|seizure)\s+medication)\b|药物|药|服药|用药|治疗|剂量|胰岛素|化疗|抗抑郁药|抗生素|心脏药|降压药|抗癫痫药/i,
+  /(?:(?:a|one))?(?:dose|dosage)(?:of(?:seizure|bloodpressure|heart)?(?:medicine|medication))?|(?:medicine|medication|treatment|insulin|chemotherapy|antidepressants?|antibiotics?|(?:heart|bloodpressure|seizure)medication)|药物|药|服药|用药|治疗|剂量|胰岛素|化疗|抗抑郁药|抗生素|心脏药|降压药|抗癫痫药/i,
 );
 
 const DIAGNOSIS_ASSERTIONS = patterns(
-  /\b(?:you|they|he|she)\s+(?:definitely\s+)?(?:have|has|are|is)\b|(?:你|他|她)(?:已经|肯定|确定)?(?:有|是|患有|得了|确诊为|怀孕)/i,
-  /(?:you|they|he|she)(?:definitely)?(?:have|has|are|is)|(?:你|他|她)(?:已经|肯定|确定)?(?:有|是|患有|得了|确诊为|怀孕)/i,
+  /\b(?:you|they|he|she)\s+(?:(?:definitely|likely|probably|possibly)\s+)?(?:have|has|are|is)\b|(?:你|他|她)(?:已经|肯定|确定|很可能)?(?:有|是|患有|得了|确诊为|怀孕)/i,
+  /(?:you|they|he|she)(?:definitely|likely|probably|possibly)?(?:have|has|are|is)|(?:你|他|她)(?:已经|肯定|确定|很可能)?(?:有|是|患有|得了|确诊为|怀孕)/i,
 );
 const DIAGNOSIS_ENTITIES = patterns(
-  /\b(?:pregnant|pregnancy|diabetes|cancer|leukemia|depression|depressed|heart\s+attack|a\s+disease|the\s+condition)\b|怀孕|糖尿病|癌症|白血病|抑郁症?|心脏病发作|心梗/i,
-  /(?:pregnant|pregnancy|diabetes|cancer|leukemia|depression|depressed|heartattack|adisease|thecondition)|怀孕|糖尿病|癌症|白血病|抑郁症?|心脏病发作|心梗/i,
+  /\b(?:pregnant|pregnancy|diabetes|cancer|leukemia|depression|depressed|bipolar\s+disorder|heart\s+attack|a\s+disease|the\s+condition)\b|怀孕|糖尿病|癌症|白血病|抑郁症?|双相情感障碍|心脏病发作|心梗/i,
+  /(?:pregnant|pregnancy|diabetes|cancer|leukemia|depression|depressed|bipolardisorder|heartattack|adisease|thecondition)|怀孕|糖尿病|癌症|白血病|抑郁症?|双相情感障碍|心脏病发作|心梗/i,
 );
 
 export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
@@ -275,7 +326,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
     ],
     outputRules: [{
       corePatterns: SELF_HARM_OUTPUT_CORE,
-      dangerCuePatterns: DIRECTIVE_CUES,
+      dangerCuePatterns: SELF_HARM_OUTPUT_ENCOURAGEMENT_CUES,
       safeContextPatterns: HARM_OUTPUT_SAFE_CONTEXTS,
       requireDangerCue: true,
       allowBareImperative: true,
@@ -296,6 +347,24 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       {
         corePatterns: IMMEDIATE_VICTIM_DANGER_CORE,
         dangerCuePatterns: IMMEDIATE_DANGER_CUES,
+        requireDangerCue: true,
+        cuePosition: "either",
+      },
+      {
+        corePatterns: IMMEDIATE_ASSAULT_CORE,
+        dangerCuePatterns: WEAPON_CURRENT_ESCAPE_CUES,
+        requireDangerCue: true,
+        cuePosition: "either",
+      },
+      {
+        corePatterns: IMMEDIATE_THREAT_CORE,
+        dangerCuePatterns: WEAPON_CURRENT_ESCAPE_CUES,
+        requireDangerCue: true,
+        cuePosition: "either",
+      },
+      {
+        corePatterns: IMMEDIATE_RESTRAINT_CORE,
+        dangerCuePatterns: WEAPON_CURRENT_ESCAPE_CUES,
         requireDangerCue: true,
         cuePosition: "either",
       },
@@ -354,6 +423,15 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
         bridgePattern: /^(?:the|private)?$/i,
       },
       {
+        actionPatterns: PRIVATE_RECORD_ACTIONS,
+        targetPatterns: SURVEILLANCE_TARGETS,
+        speechActs: ACTION_SPEECH_ACTS,
+        safeContextPatterns: MANIPULATION_SAFE_CONTEXTS,
+        requireSpeechAct: true,
+        allowBareDirective: true,
+        bridgePattern: /^(?:(?:secretly|my|your|his|her|their|the))*$/i,
+      },
+      {
         actionPatterns: LOCATION_LOOKUP_ACTIONS,
         targetPatterns: LOCATION_LOOKUP_TARGETS,
         speechActs: ACTION_SPEECH_ACTS,
@@ -392,6 +470,15 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
         bridgePattern: /^(?:the|private)?$/i,
       },
       {
+        actionPatterns: PRIVATE_RECORD_ACTIONS,
+        targetPatterns: SURVEILLANCE_TARGETS,
+        speechActs: ACTION_SPEECH_ACTS,
+        safeContextPatterns: MANIPULATION_SAFE_CONTEXTS,
+        requireSpeechAct: true,
+        allowBareDirective: true,
+        bridgePattern: /^(?:(?:secretly|my|your|his|her|their|the))*$/i,
+      },
+      {
         actionPatterns: LOCATION_LOOKUP_ACTIONS,
         targetPatterns: LOCATION_LOOKUP_TARGETS,
         speechActs: ACTION_SPEECH_ACTS,
@@ -411,7 +498,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       safeContextPatterns: TREATMENT_SAFE_CONTEXTS,
       requireSpeechAct: true,
       allowBareDirective: true,
-      bridgePattern: /^(?:(?:taking|using|my|your|the|his|her|their))*$/i,
+      bridgePattern: /^(?:(?:taking|using|a|one|dose|of|my|your|the|his|her|their))*$/i,
     }],
     outputRules: [{
       actionPatterns: TREATMENT_STOP_ACTIONS,
@@ -420,7 +507,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       safeContextPatterns: TREATMENT_SAFE_CONTEXTS,
       requireSpeechAct: true,
       allowBareDirective: true,
-      bridgePattern: /^(?:(?:taking|using|my|your|the|his|her|their))*$/i,
+      bridgePattern: /^(?:(?:taking|using|a|one|dose|of|my|your|the|his|her|their))*$/i,
     }],
   },
   {
@@ -430,6 +517,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       actionPatterns: DIAGNOSIS_ASSERTIONS,
       targetPatterns: DIAGNOSIS_ENTITIES,
       safeContextPatterns: DIAGNOSIS_SAFE_CONTEXTS,
+      bridgePattern: /^(?:(?:a|the|definitely|likely|probably|possibly))*$/i,
     }],
   },
 ] as const;

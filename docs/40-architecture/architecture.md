@@ -239,6 +239,8 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - Reading 与 Encyclopedia 必须共享同一输入分类；生成内容验证必须是不可跳过的 service node，而不是 agent 可选 tool
 - 共享分类器必须独立识别 cue-before、cue-after、裸祈使和即时受害者组合；恢复/教育/帮助他人的自伤引用由同一确定性策略分层，不得委托外部 LLM 充当唯一边界
 - Route 的 deterministic safety preflight 必须先于 reading/encyclopedia quota；Graph/service 内的独立强制边界继续保留，不能把 route 预检或外部 LLM 当作唯一防线
+- 确定性语法承担高置信 Hard Stop 与生成输出 replace 边界；外部 classifier/moderation 只能作为可升级的第二信号，不能降级确定性结果或成为唯一边界。未来若配置为必经信号，其 timeout/error 必须在 provider/tool/persistence 前 fail closed，并使用现有非成功错误包返回，不得静默 pass
+- 首发规则只声明覆盖受测试的简体中文、常见英文及基础中英混合，不声明穷尽自然语言；扩展语言必须带新的语义/property matrix
 - hard-stop 危机转介当前按中国大陆固定资源顺序提示：`120` -> `110` -> `12356`
 - 前端不再依赖 markdown 作为主协议
 - 历史记录只保存 completed reading，Standard/Sober initial 不入 history
@@ -251,6 +253,7 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 - `/new` 未提交问题草稿按身份分区：guest localStorage、账号 identity-controlled sessionStorage；旧全局 key 只删除不导入，任何草稿都不作为 reading draft、history、capsule、thread memory 或额外 provider context
 - `stored_readings` 是账号级 replay store，不是自动 memory 注入来源；同一 `user_id + reading_id` 必须幂等保存，列表必须安全限量
 - `session_capsule` 是 completed reading 的低优先级 continuity summary，不是长期画像或 thread checkpoint
+- Capsule 安全顺序固定为“完整文本 NFKC/Cf/全空白规范化与整体分类 -> 逐行 label 清理 -> 280 字截断”；整体危险时降为 `null`，outgoing/incoming 共用同一 sanitizer
 - P6 `SessionMemory` 是同一 `user_id + thread_id` 内的 Postgres 短期结构化摘要；它
   不是长期画像、LangGraph checkpoint 或跨 thread personalization
 - 线下塔罗模式不得新建第二套解读链路；它只能作为 `drawnCards[]` 输入来源进入同一 `POST /api/reading` contract

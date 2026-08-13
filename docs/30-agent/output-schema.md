@@ -181,7 +181,7 @@ Final 的安全分类不会信任 initial 时的旧结论：每次 provider 前�
 
 - provider 实际收到的是服务层净化后的 `prior_session_capsule`
 - `用户补充` 类原始细节不会被直接转发
-- 自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容若出现在 incoming capsule 中，会被移除；若移除后失去有效信息，则按 `null` 处理
+- incoming capsule 先整体执行 NFKC、Cf 清除、全空白折叠和分类，再做逐行 label 清理；自伤/他伤、操控、第三方意图猜测、紧急健康等受限内容在整体文本中命中时整份按 `null` 处理，280 字截断只能在整体判断之后发生
 
 ### `question_type`
 
@@ -250,7 +250,7 @@ Final 的安全分类不会信任 initial 时的旧结论：每次 provider 前�
 
 当问题涉及常规安全边界时返回，通常作为后置补充说明。
 
-它也用于标记生成内容被服务端限制或替换的结果。生成内容验证覆盖 `cards[].interpretation`、`themes[]`、`synthesis`、`reflective_guidance[]`、`follow_up_questions[]` 与 `confidence_note`；任何被拦截的 provider 原文都不能进入 `session_capsule`、thread memory 或 completed history。
+它也用于标记生成内容被服务端限制或替换的结果。生成内容验证覆盖 `cards[].interpretation`、`themes[]`、`synthesis`、`reflective_guidance[]`、`follow_up_questions[]` 与 `confidence_note`；严重输出按整份正文 replace，任何被拦截的 provider 原文都不能进入 response、grounding、`session_capsule`、thread memory、completed history、agent state 或 trace。
 
 当前前台补充：
 

@@ -6,6 +6,7 @@ import {
 } from "@/server/safety/text-normalization";
 import {
   findSafetySemanticFamilies,
+  SELF_HARM_REPORTED_CONTEXTS,
   SELF_HARM_SUPPORT_CONTEXTS,
   SUPPORT_REQUEST_CONTEXTS,
   VICTIM_REPORT_CONTEXTS,
@@ -120,6 +121,9 @@ export function assessSafetyText(text: string): SafetyAssessment {
   const matchedFamilyIds = new Set<SafetySemanticFamilyId>(
     findSafetySemanticFamilies(segments, "input").map((family) => family.id),
   );
+  const hasCrossSegmentSelfHarmSupport = matchesPatterns(
+    SELF_HARM_REPORTED_CONTEXTS,
+  ) && matchesPatterns(SUPPORT_REQUEST_CONTEXTS);
   const hasSelfHarm = matchedFamilyIds.has("self_harm_state");
   const hasUrgentHealth = matchedFamilyIds.has("urgent_medical_danger")
     || matchedFamilyIds.has("treatment_discontinuation");
@@ -130,7 +134,8 @@ export function assessSafetyText(text: string): SafetyAssessment {
   const hasAbuseSupport = matches(ABUSE_PATTERN)
     || matchesPatterns(VICTIM_SUPPORT_CONTEXTS)
     || hasCrossSegmentVictimSupport;
-  const hasSelfHarmSupport = matchesPatterns(SELF_HARM_SUPPORT_CONTEXTS);
+  const hasSelfHarmSupport = matchesPatterns(SELF_HARM_SUPPORT_CONTEXTS)
+    || hasCrossSegmentSelfHarmSupport;
   const hasHealth = matches(HEALTH_PATTERN)
     || matchedFamilyIds.has("treatment_discontinuation");
   const hasLegal = matches(LEGAL_PATTERN);

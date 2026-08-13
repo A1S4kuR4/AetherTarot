@@ -93,6 +93,7 @@
 - 六个高风险 semantic family 必须由 Reading 与 Encyclopedia 共用；新增 core/cue/context 变体时优先扩展 family 数据和 metamorphic 种子，不得回到两条 pipeline 分别追加整句 regex
 - 暴力/操控 family 必须分别覆盖 cue-before、cue-after 与 bare imperative，并用中英文动作和目标实体替换证明同一语义不变量；即时受害者由危险动作与当前性/武器 cue 组合升级，非即时受害者保持 bounded
 - 组合矩阵必须交叉生成 speech act、危险动作、目标/实体与 cue placement；至少覆盖礼貌祈使、情态问句、枪/刀/殴打/投毒、GPS/spyware/messages/location、具体治疗实体与系表诊断。安全前缀、否认或帮助语境不得覆盖后续独立 core，cue 也不得误绑到相邻安全动作
+- RC 残余矩阵必须覆盖关系/角色/姓名/未知人物槽与 benign collocation；当前/恢复/教育/助人自伤关系；stop/skip/miss/throw-away/change-dosage × 带修饰 medication；assault/threat/restraint × weapon/current/escape；秘密录制与位置查询；modal + negation + action + target 完整安全 scope。输出另行覆盖伤害鼓励、他伤指令、操控、停治/改剂量、概率式直接诊断与明确安全反例
 - 明确当前否认不得误报；恢复期、百科教育和帮助他人的自伤相关表达应按契约进入 standard 或 bounded，而不是统一放行或统一 hard-stop
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
@@ -143,7 +144,7 @@
 - `question_type` 是否合理
 - `cards[]` 顺序是否与牌阵位置一致
 - `prior_session_capsule` 是否只作为补充线索，不覆盖当前问题主轴
-- incoming `prior_session_capsule` 是否已剔除原始补充与高风险细节
+- incoming `prior_session_capsule` 是否在 split/label 清理/280 字截断前先完成全文 NFKC、Cf 清除、全空白折叠与整体风险判断；每个危险种子在所有字符边界插入换行是否仍整份降为 `null`
 - local history 是否仍只作为 completed reading replay cache，而不是隐式长期记忆
 - `session_capsule` 是否仍是低优先级 continuity summary，而不是 thread/session/user identity
 - `themes` / `synthesis` 是否高于逐牌层级
@@ -154,7 +155,7 @@
 - 家暴受害者求助、操控者意图和一般关系冲突是否走向不同安全结果
 - cue-before / cue-after / bare imperative、即时受害者、明确否认、恢复期、百科教育与帮助他人的分层是否同时通过 Reading、Encyclopedia 和 Graph 前置阻断回归
 - 强制生成内容验证是否覆盖 card interpretation、themes、synthesis、guidance、follow-up、confidence note 与百科 answer
-- 被限制或替换的 provider 原文是否未进入 response、capsule、memory 或 history
+- 被限制或替换的 provider 原文是否未进入 response、grounding、capsule、thread memory、history、agent state 或 trace
 - history 回放是否能恢复结构化 reading
 - 线下塔罗模式是否能恢复实体牌录入来源、牌面与正逆位，且仍通过同一 `/api/reading` 流程生成结果
 - completed reading 是否产出 `session_capsule`，且未完成中间态仍为 `null`

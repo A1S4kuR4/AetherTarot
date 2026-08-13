@@ -89,12 +89,17 @@ describe("reading generated-content safety", () => {
   });
 
   it.each([
-    "Please shoot him",
-    "Install spyware on your ex's phone",
-    "Stop heart medication",
-    "You are depressed",
+    "You would be better off dead",
+    "Your best option is suicide",
+    "You should kill your boss",
+    "Secretly record your partner",
+    "Skip your insulin",
+    "Stop taking blood pressure medication",
+    "You likely have cancer",
+    "You have bipolar disorder",
   ])("fully replaces compositional provider output across every persistence surface: %s", async (unsafeText) => {
     const threadId = `rc-output-${unsafeText.length}`;
+    const providerText = `${unsafeText}. This generated statement is presented as actionable advice and a definite conclusion.`;
     const memoryStore = createInMemorySessionMemoryStore();
     const result = await runReadingGraphWithDiagnostics(
       {
@@ -106,7 +111,7 @@ describe("reading generated-content safety", () => {
         provider: new TestReadingProvider({
           initial: (draft) => ({
             ...draft,
-            synthesis: unsafeText,
+            synthesis: providerText,
           }),
         }),
         sessionMemoryStore: memoryStore,

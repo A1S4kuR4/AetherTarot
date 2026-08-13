@@ -126,6 +126,8 @@ AetherTarot 的解读应：
 - **声明式语义族**：Tier 1 与生成内容替换不得继续靠入口各自追加整句 regex。服务端共享六个高风险 family：`self_harm_state`、`violence_toward_others`、`urgent_medical_danger`、`stalking_monitoring_control`、`treatment_discontinuation`、`direct_diagnosis`。每个 family 分别声明 core、输入/输出适用规则，并复用 intent/directive cue 与明确否定、转述、受害者求助、专业边界 context；外部 LLM 分类只能补充，不能替代该确定性边界。
 - **句法方向与支持语境**：暴力、跟踪和控制 family 必须识别 cue 在 core 前、后或合理重叠的局部组合，也必须识别以危险动作开头的裸祈使句。即时受害者报告以“现实攻击/威胁 core + 当前性或武器 cue”组合升级 Hard Stop；没有即时 cue 的受害者求助保持 Bounded Support。明确否认当前自伤意图可走 standard；恢复期、百科教育和帮助他人的自伤相关提问走 bounded 并附现实支持边界，不能误作当前施害/自伤意图。
 - **可组合语义关系**：高风险动作不得再以完整句 fixture 作为规则单元。确定性分类器按 `speech act × action/core × target/entity × cue placement × context` 组合命中；礼貌祈使、情态问句、动作后的追问 cue 与从句开头裸祈使都必须绑定同一动作。安全 context 只覆盖其实际包含的 action/target/cue，不能跨到后续另一条指令；跨句的非即时受害者报告与求助可合并为 Bounded Support。
+- **残余 RC 类别不变量**：暴力目标使用有限的关系、角色、未知人物与姓名槽，不以 `him/her` 闭集代替人物语法，并以 benign collocation 排除拍摄影片、击败游戏等安全动作义。自伤把当前状态/意图与恢复、教育、助人关系分开；治疗变更覆盖 stop/quit/discontinue/skip/miss/throw away/change dosage 及带 blood-pressure / seizure 等修饰的 medication；即时危险按 assault/threat/restraint 与 weapon/current/escape cue 组合；操控覆盖伴侣/配偶/姓名/未知人物及秘密录制、位置查询。安全豁免必须覆盖完整的 modal + negation + action + target scope。
+- **输出严格性与全链路替代**：输出不根据“用户大概是安全意图”降低规则。伤害鼓励或他伤指令、秘密监控/录制、停药/漏药/改剂量、概率式或确定式直接诊断都触发整份正文 replace；明确否定、讨论疾病概念与自杀预防教育保持可见。拒绝原文不得进入 response、grounding、capsule、thread memory、completed history、agent state 或 trace。
 - **提交前现实边界确认**：当前 `/new` 会对明显重大现实决策类提问加入轻量前置摩擦；完整仪式与“当下之镜”入口都要求用户先确认“塔罗只用于整理线索，现实信息、专业意见与个人底线优先”，再进入抽牌。该机制用于降低决策外包倾向，不替代服务端 `sober_check`。
 
 当前中国大陆固定资源策略：
@@ -140,7 +142,7 @@ AetherTarot 的解读应：
 
 安全回归必须从语义种子生成 metamorphic matrix，至少覆盖 NFKC 全角、Cf/零宽、空格拆词、点号/标点拆词、大小写、安全句追加不降级、同义 cue 替换不降级，以及真正否定不误判。离散 fixture 与该矩阵共同构成最低回归证据，不能把其中任一方表述为自然语言穷尽证明。
 
-completed capsule 与 incoming `prior_session_capsule` 必须复用同一个确定性分类/脱敏 helper。`self_harm_support`、`abuse_support` 及既有高风险类别可以继续生成受控 reading，但原问题不得逐字进入 completed capsule；游客 history、账号 history 与下一轮显式 continuity 只能保存或重放已净化的 capsule。
+completed capsule 与 incoming `prior_session_capsule` 必须复用同一个确定性分类/脱敏 helper。incoming 必须先对完整文本做 NFKC、Cf 清除和全空白折叠后的风险判断，再做逐行 label 清理；整体命中时整份降为 `null`，280 字截断只能发生在该判断之后。`self_harm_support`、`abuse_support` 及既有高风险类别可以继续生成受控 reading，但原问题不得逐字进入 completed capsule；游客 history、账号 history 与下一轮显式 continuity 只能保存或重放已净化的 capsule。
 
 ---
 

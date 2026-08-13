@@ -65,6 +65,11 @@ export function sanitizeIncomingSessionCapsule(
     return null;
   }
 
+  const normalizedWholeCapsule = normalizeSafetyText(priorSessionCapsule);
+  if (!normalizedWholeCapsule || isCapsuleRedFlag(normalizedWholeCapsule)) {
+    return null;
+  }
+
   const sanitizedLines = [...new Set(
     priorSessionCapsule
       .split(/\r?\n/)

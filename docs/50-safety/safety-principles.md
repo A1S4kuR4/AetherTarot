@@ -8,6 +8,8 @@
 
 > 独立 RC 审计收口：确定性规则进一步拆成 `speech act × action/core × target/entity × cue placement × context`。`please`、can/could/would/may/should、`is it safe`、`best option` 与中文“请”是可复用 speech act，不属于某个完整句 fixture；暴力、监控、停治与诊断实体独立声明。裸祈使由局部从句语法识别，不再以 core 是否位于字符串起点近似。completed/outgoing 与 incoming capsule 复用同一分类和脱敏 helper，受限支持问题原文不进入 capsule、history capsule 字段或下一轮 continuity。
 
+> 2026-08-13 RC 架构收口：确定性语法继续承担高置信硬边界；外部 moderation/classifier 只能作为第二信号，不能成为唯一边界或降级确定性结果，必经 classifier 的 timeout/error 必须在生成与持久化前 fail closed。游客首发只声明覆盖受测试的简体中文、常见英文与基础中英混合，不声称穷尽自然语言。Capsule 在逐行处理和 280 字截断前先做完整文本 NFKC/Cf/全空白规范化与整体分类，整体危险即整份降为 `null`。
+
 ## 1. 文档目的
 
 规定 AetherTarot 在表达方式、敏感场景与高风险主题上的安全边界，避免把塔罗解读演变成误导性建议或心理操控工具。
@@ -53,9 +55,10 @@ Reading 与 Encyclopedia 共用同一输入分类策略；Reading 再把分类�
 - **Ordinary Relationship Conflict / 一般关系冲突**：争吵、冷战、沟通困难和关系张力不自动升级安全等级；只有出现操控意图、现实暴力、即时危险或第三方确定性请求时才进入更高层级。
 - **Pre-ritual boundary confirmation / 提交前现实边界确认**：`/new` 的完整仪式与“当下之镜”入口在进入抽牌前都会对明显重大现实决策类提问加入轻量确认动作，要求用户先承认现实信息、专业意见与个人底线优先于塔罗结果。该前台摩擦只用于提前降低决策外包倾向，不能替代 reading graph 的 Tier 1 / Tier 2 服务端判断。
 - **Mandatory generated-content validation / 强制生成内容验证**：Reading 的所有用户可见生成字段和 Encyclopedia 的 `answer` 都必须独立扫描，并与输入策略复用同一 normalized/compact 与 core/cue/context span 合同。可收窄的绝对化/专业越界内容按字段替换；伤害鼓励、操控步骤、停药、直接诊断、合理化暴力或责怪受害者时，整份生成正文必须由服务端安全内容替代。安全句只能覆盖其明确修饰的同类别 core 与 cue，不能使同字段的另一条危险指令通过。
+- **Deterministic boundary / 确定性边界**：人物、治疗、即时危险和操控目标以有限类别语法组合，不以代词闭集或完整句 fixture 充当规则；benign collocation 与 modal + negation + action + target 的完整安全 scope 是同等重要的误报控制。输出验证比输入意图推断更严格，严重原文不得出现在 response、grounding、capsule、history、thread memory、agent state 或 trace。
 - 前端可以将 `safety_note` 视觉降温为 Safety Rose Clay / 暖色提示，但标题、正文和交互位置都不能把它降级为装饰性安慰；其语义仍是现实边界提醒。
 - 当前中国大陆固定 hard-stop 资源顺序为：`120`（急性医疗风险） -> `110`（现实危险 / 人身威胁） -> `12356`（立即心理支持）。
-- continuity 也受 safety layer 约束：incoming `prior_session_capsule` 在进入 provider 前会先剔除高风险细节与原始补充文本，避免把危机信息重新带回普通解读链路。
+- continuity 也受 safety layer 约束：incoming `prior_session_capsule` 在进入 provider 前先整体规范化和分类，整体命中高风险时直接降为 `null`；逐行 label 清理与 280 字截断都在整体判断之后。
 - completed capsule 的 outgoing build 使用与 incoming 相同的分类/脱敏 helper；允许继续生成的 `self_harm_support`、`abuse_support` 也只保留安全占位和受控主轴，不复制原始问题。
 ---
 

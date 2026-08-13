@@ -78,7 +78,7 @@ replay 与账号作用域的 thread 短期记忆，但仍未引入 LangGraph ses
 - P6 `SessionMemory` 只在同一 `thread_id` 内保存结构化短期摘要：topics、cards、constraints、open questions 与 last advice summary；它不保存完整用户原文，也不参与跨 session personalization
 - 登录用户的 `SessionMemory` 按 `{ user_id, thread_id }` 持久化到 Postgres 并原子合并；匿名用户不建立持久 thread identity，in-memory store 只用于测试与开发注入
 - `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
-- `prior_session_capsule` 在进入 provider 前会先做安全净化：移除 `用户补充` 类原始细节，以及自伤/他伤、操控、第三方意图猜测、紧急健康等高风险内容
+- `prior_session_capsule` 在进入 provider 前会先对完整文本做 NFKC、Cf 清除和全空白折叠后的整体分类，再做逐行 label 清理；整体出现自伤/他伤、操控、第三方意图猜测、紧急健康等受限内容时整份降为 `null`，不尝试从同一危险 capsule 中挑回“安全行”
 - 若净化后只剩噪音或空壳，`prior_session_capsule` 会在服务层降为 `null`
 
 ### 层 4：长期记忆层
@@ -114,7 +114,7 @@ replay 与账号作用域的 thread 短期记忆，但仍未引入 LangGraph ses
 - 下一轮必须由前端显式 opt-in，把 `prior_session_capsule` 带回 `POST /api/reading`
 - `prior_session_capsule` 的优先级低于当前问题、当前牌阵与本轮抽牌
 - completed `session_capsule` 当前固定收敛为“问题 / 牌阵 / 核心主题 / 1-2 条延续主轴 / 边界提醒”模板
-- `session_capsule` 不再直带 `用户补充` 或高风险细节，长度也会在服务层硬限制
+- `session_capsule` 不再直带 `用户补充` 或高风险细节；outgoing question fragment、最终 capsule 与 incoming capsule 复用同一分类式 sanitizer，且 280 字硬限制发生在完整风险判断之后
 - outgoing capsule build 与 incoming sanitize 复用同一分类/脱敏 helper；自伤恢复/教育/助人与非即时受害者支持即使允许完成 reading，也只在问题行保留安全占位，不复制原问题
 
 P2 设计边界：

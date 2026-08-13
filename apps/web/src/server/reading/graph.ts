@@ -735,14 +735,6 @@ function normalizeAndValidateDraftProse(
   } satisfies ReadingDraft;
 }
 
-function truncateCapsule(value: string, maxLength = MAX_SESSION_CAPSULE_LENGTH) {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 1)}…`;
-}
-
 function shouldAttachSessionCapsule(reading: StructuredReading) {
   return (
     reading.reading_phase === "final"
@@ -786,7 +778,10 @@ function buildSessionCapsule({
     "边界提醒：不延续急性情绪、未验证的第三方意图和高风险安全细节。",
   ];
 
-  return truncateCapsule(lines.join("\n"));
+  return sanitizeIncomingSessionCapsule(
+    lines.join("\n"),
+    MAX_SESSION_CAPSULE_LENGTH,
+  );
 }
 
 const classifyQuestionNode: ReadingGraphNode = (state) => {
