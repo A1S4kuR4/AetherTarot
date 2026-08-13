@@ -16,6 +16,7 @@
 - 两阶段 MVP 使用同一 API 入口：`initial` 返回牌面初读，`final` 返回整合深读
 - 高风险问题时允许补充 `safety_note`，并收敛 `reflective_guidance` / `follow_up_questions`
 - provider 生成内容在组装后必须经过强制安全验证；验证器与输入策略共享 Unicode/空格 normalized/compact 规则，以及 core / danger cue / context span 覆盖合同，可替换越界字段或整份用户可见正文，但必须保持同一 `StructuredReading` shape
+- 输入 classifier 与输出 validator 还共享一个全文标点/空白不敏感风险视图，用于升级被 `。！？；!?;` 拆开的高置信 core/action/target；常规分句视图仍独立处理局部安全 context，风险视图不得降级或扩大跨句豁免
 - 前端当前按“问题与阶段 metadata → 完整牌阵 → 当下的关键启示 → 逐牌展开 → 综合深读 → 可折叠证据路径 → 带回现实 → 继续理解 → 能量构成 → 反馈与边界 → 留下手记 → 页尾操作”的呈现顺序消费结果，不应把结构化结果重新折叠为单段长文。`/reading` 只为实际可见章节连续生成 Chapter 编号；快速解读复用的综合与指引组件默认不带 Chapter 标记。
 - 前端允许从既有字段派生“此刻的核心讯息”首屏摘要，但它不是协议字段：一句核心判断来自 `synthesis` 的安全截取，行动提醒来自 `reflective_guidance`，边界提醒来自 `confidence_note`
 - 前端允许展示可折叠的“解读依据”（用户输入、牌面线索、解释连接）来降低迎合错觉；该展示仍必须保留 `cards[]`、`spread` 与 `synthesis` 的结构边界，不能反向要求 provider 输出隐藏推理过程

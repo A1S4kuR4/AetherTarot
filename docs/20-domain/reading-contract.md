@@ -129,6 +129,7 @@ AetherTarot 的解读应：
 - **残余 RC 类别不变量**：暴力目标使用有限的关系、角色、未知人物与姓名槽，不以 `him/her` 闭集代替人物语法，并以 benign collocation 排除拍摄影片、击败游戏等安全动作义。自伤把当前状态/意图与恢复、教育、助人关系分开；治疗变更覆盖 stop/quit/discontinue/skip/miss/throw away/change dosage 及带 blood-pressure / seizure 等修饰的 medication；即时危险按 assault/threat/restraint 与 weapon/current/escape cue 组合；操控覆盖伴侣/配偶/姓名/未知人物及秘密录制、位置查询。安全豁免必须覆盖完整的 modal + negation + action + target scope。
 - **输出严格性与全链路替代**：输出不根据“用户大概是安全意图”降低规则。伤害鼓励或他伤指令、秘密监控/录制、停药/漏药/改剂量、概率式或确定式直接诊断都触发整份正文 replace；明确否定、讨论疾病概念与自杀预防教育保持可见。拒绝原文不得进入 response、grounding、capsule、thread memory、completed history、agent state 或 trace。
 - **游客 RC 已验证范围**：当前自动化证据覆盖简体中文、常见英文和基础中英混合中的自伤当前状态、恢复/教育/助人语境、对他人暴力、即时袭击/武器/限制离开、停止治疗与剂量变更、直接诊断，以及 AirTag / GPS / spyware / 私密消息与位置查询。`murder / strangle` 等内在伤害动作按动作与 speech act 组合，`shoot / beat` 等多义动作还要求人物/对象槽并排除影片、游戏等安全搭配。该范围是受测试的高置信语法，不是对自然语言或所有语言的穷尽证明。
+- **句读双视图边界**：正常分句视图继续负责局部否定、转述和支持语境；另一个全文 NFKC/Cf/标点空白不敏感视图只用于把共享高置信 semantic family 升级为风险，不能降低正常视图结果，也不能把一句中的安全 context 扩展为对后续独立危险指令的豁免。裸汉字“死”不再与泛化第一人称 cue 组合；当前自伤必须由独立状态/意图语法命中，死神牌、死海、作品名与生死观等领域表达保持普通语境。
 - **提交前现实边界确认**：当前 `/new` 会对明显重大现实决策类提问加入轻量前置摩擦；完整仪式与“当下之镜”入口都要求用户先确认“塔罗只用于整理线索，现实信息、专业意见与个人底线优先”，再进入抽牌。该机制用于降低决策外包倾向，不替代服务端 `sober_check`。
 
 当前中国大陆固定资源策略：

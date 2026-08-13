@@ -85,6 +85,16 @@ function compactSafetyText(normalized: string) {
   return { compact, compactOffsets };
 }
 
+function buildSafetySegment(normalized: string): SafetyTextSegment {
+  const { compact, compactOffsets } = compactSafetyText(normalized);
+  return {
+    normalized,
+    compact,
+    searchable: `${normalized}\n${compact}`,
+    compactOffsets,
+  };
+}
+
 function matchAll(pattern: RegExp, text: string) {
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
   return text.matchAll(new RegExp(pattern.source, flags));
@@ -340,13 +350,10 @@ export function segmentSafetyText(text: string): SafetyTextSegment[] {
     .flatMap((sentence) => sentence.split(CONTRAST_BOUNDARY))
     .map((segment) => segment.trim())
     .filter(Boolean)
-    .map((segment) => {
-      const { compact, compactOffsets } = compactSafetyText(segment);
-      return {
-        normalized: segment,
-        compact,
-        searchable: `${segment}\n${compact}`,
-        compactOffsets,
-      };
-    });
+    .map(buildSafetySegment);
+}
+
+export function segmentSafetyRiskText(text: string): SafetyTextSegment[] {
+  const riskView = normalizeSafetyRiskView(text);
+  return riskView ? [buildSafetySegment(riskView)] : [];
 }

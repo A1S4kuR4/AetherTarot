@@ -2,6 +2,7 @@ import { ReadingServiceError } from "@/server/reading/errors";
 import {
   hasSafetyMatch,
   segmentSafetyText,
+  segmentSafetyRiskText,
   type SafetyPattern,
 } from "@/server/safety/text-normalization";
 import {
@@ -111,6 +112,7 @@ function getPrimaryBoundedCategory(categories: SafetyCategory[]) {
 
 export function assessSafetyText(text: string): SafetyAssessment {
   const segments = segmentSafetyText(text);
+  const riskSegments = segmentSafetyRiskText(text);
   const matches = (pattern: RegExp) => segments.some((segment) =>
     pattern.test(segment.searchable)
   );
@@ -119,7 +121,9 @@ export function assessSafetyText(text: string): SafetyAssessment {
   );
   const categories: SafetyCategory[] = [];
   const matchedFamilyIds = new Set<SafetySemanticFamilyId>(
-    findSafetySemanticFamilies(segments, "input").map((family) => family.id),
+    [...findSafetySemanticFamilies(segments, "input"),
+      ...findSafetySemanticFamilies(riskSegments, "input")]
+      .map((family) => family.id),
   );
   const hasCrossSegmentSelfHarmSupport = matchesPatterns(
     SELF_HARM_REPORTED_CONTEXTS,

@@ -69,7 +69,7 @@ const ACTION_SPEECH_ACTS: readonly SafetySpeechActRule[] = [
 
 const SELF_HARM_DENIAL_CONTEXTS = patterns(
   /(?:我)?(?:不想|不会|不打算|没有|拒绝|避免)(?:去)?(?:自杀|自残|伤害自己|伤害我自己|结束生命)(?:的)?(?:打算|计划)?|我想(?:活着|活下去)/i,
-  /i(?:amnot|amnolonger)suicidal|(?:i(?:do)?notwantto|idontwantto|iwillnot|idonotplanto|irefuseto)(?:selfharm|suicide|die|killmyself|hurtmyself|endmylife)|iwanttobealive|iwanttolive/i,
+  /i(?:amnot|amnolonger)suicidal|(?:i(?:do)?notwantto|idontwantto|iwillnot|iwont|idonotplanto|irefuseto)(?:selfharm|suicide|die|killmyself|hurtmyself|endmylife|takemyownlife)|iwanttobealive|iwanttolive/i,
 );
 
 export const SELF_HARM_SUPPORT_CONTEXTS = patterns(
@@ -91,11 +91,11 @@ const SELF_HARM_SAFE_CONTEXTS: SafetyPattern[] = [
 const VIOLENCE_SAFE_CONTEXTS: SafetyPattern[] = [
   ...patterns(
     /(?:我)?(?:不想|不会|不打算|没有计划|拒绝|避免)(?:去)?(?:杀|伤害|袭击|殴打|弄死|枪击|刺|捅|毒)(?:他|她|对方|别人|他们|任何人)|(?:朋友|他|她|有人).{0,16}(?:说|问|提到).{0,16}(?:帮我|教我|如何|怎么)?.{0,8}(?:杀|伤害|袭击|殴打|枪击|刺|捅|毒)(?:他|她|别人|任何人).{0,16}(?:我拒绝|我劝阻|我没有同意)/i,
-    /i(?:do)?not(?:want|plan|intend)to(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|iwont(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|irefuseto(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone)|(?:afriend|friend|he|she|someone)(?:said|asked|mentioned).{0,20}(?:helpme|teachme|howto)?(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:him|her|them|someone|anyone).{0,20}(?:irefused|itriedtostop|ididnotagree)/i,
+    /i(?:do)?not(?:want|plan|intend)to(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:him|her|them|someone|anyone)|iwont(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:him|her|them|someone|anyone)|irefuseto(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:him|her|them|someone|anyone)|(?:afriend|friend|he|she|someone)(?:said|asked|mentioned).{0,20}(?:helpme|teachme|howto)?(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:him|her|them|someone|anyone).{0,20}(?:irefused|itriedtostop|ididnotagree)/i,
   ),
   ...patterns(
-    /(?:please\s+)?(?:can|could|would|should|may)\s+(?:you|i)\s+(?:please\s+)?not\s+(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\s+(?:(?:my|your|the|our|his|her|their)\s+)?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|please\s+do\s+not\s+(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\s+\S+/i,
-    /(?:please)?(?:can|could|would|should|may)(?:you|i)(?:please)?not(?:kill|hurt|attack|punch|shoot|stab|beat|poison)(?:(?:my|your|the|our|his|her|their))?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|pleasedonot(?:kill|hurt|attack|punch|shoot|stab|beat|poison)\p{L}+/iu,
+    /(?:please\s+)?(?:can|could|would|should|may)\s+(?:you|i)\s+(?:please\s+)?not\s+(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)\s+(?:(?:my|your|the|our|his|her|their)\s+)?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|please\s+do\s+not\s+(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)\s+(?:(?:my|your|the|our|his|her|their)\s+)?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)/i,
+    /(?:please)?(?:can|could|would|should|may)(?:you|i)(?:please)?not(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:(?:my|your|the|our|his|her|their))?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)|pleasedonot(?:kill|murder|hurt|attack|punch|shoot|stab|beat|poison|strangle|choke)(?:(?:my|your|the|our|his|her|their))?(?:boss|wife|husband|boyfriend|girlfriend|partner|ex|friend|neighbor|colleague|coworker|parent|mother|father|brother|sister|teacher|student|client|doctor|him|her|them|someone|anyone)/i,
   ),
   ...patterns(
     /\bshoot\s+(?:a|the)\s+(?:film|movie|photo|video)\b|\bbeat\s+(?:a|the)\s+(?:game|level|record)\b|\bKill\s+Bill\b.{0,20}\b(?:movie|film|title)\b/i,
@@ -178,12 +178,12 @@ const DIAGNOSIS_SAFE_CONTEXTS = patterns(
 );
 
 const SELF_HARM_EXPLICIT_CORE = patterns(
-  /自杀|自残|伤害自己|伤害我自己|结束生命|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
-  /自杀|自残|伤害自己|伤害我自己|结束生命|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)死|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)死|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
 );
 const SELF_HARM_STATE_CORE = patterns(
   /活着|活下去/i,
-  /死(?!他|她|对方|别人|他们|任何人)|dead|die|alive|liveanymore/i,
+  /dead|die|alive|liveanymore/i,
 );
 const SELF_HARM_STATE_CUES = patterns(
   /我(?:想|要|希望|需要|计划|准备|打算|感觉|不想继续|不想再)|I\s*(?:want|wish|need|feel|plan|intend|am\s+thinking\s+about)|I\s*(?:do not|don't)\s*want\s*to(?:\s*be)?/i,
@@ -287,12 +287,16 @@ const SURVEILLANCE_INSTALL_ACTIONS = patterns(
   /install(?:s|ed|ing)?|安装/i,
 );
 const SURVEILLANCE_INSTALL_TARGETS = patterns(
-  /\b(?:airtag|gps\s*tracker|spyware)\b|AirTag|GPS\s*追踪器|定位器|间谍软件/i,
-  /(?:airtag|gpstracker|spyware)|gps追踪器|定位器|间谍软件/i,
+  /\bspyware\b|间谍软件/i,
+  /spyware|间谍软件/i,
 );
 const SURVEILLANCE_PLACEMENT_ACTIONS = patterns(
-  /\b(?:put|place|hide)(?:s|d|ing)?\b|放置|藏|放/i,
-  /(?:put|place|hide)(?:s|d|ing)?|放置|藏|放/i,
+  /\b(?:put|place|hide|install)(?:s|d|ing|ed)?\b|放置|安装|藏|放/i,
+  /(?:put|place|hide|install)(?:s|d|ing|ed)?|放置|安装|藏|放/i,
+);
+const SURVEILLANCE_PLACEMENT_TARGETS = patterns(
+  /\b(?:airtag|gps\s*tracker)\b.{0,40}\b(?:(?:my|your|his|her|their|the)\s+)?(?:wife|husband|boyfriend|girlfriend|partner|ex|someone|neighbor|coworker)(?:'s)?\s+(?:car|vehicle|phone|bag|backpack)\b/i,
+  /(?:airtag|gpstracker).{0,40}(?:(?:my|your|his|her|their|the))?(?:wife|husband|boyfriend|girlfriend|partner|ex|someone|neighbor|coworker)s?(?:car|vehicle|phone|bag|backpack)/i,
 );
 const PRIVATE_MESSAGE_ACTIONS = patterns(
   /\b(?:read|view)(?:s|ing)?\b|读取|查看|偷看|查阅/i,
@@ -454,7 +458,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       },
       {
         actionPatterns: SURVEILLANCE_PLACEMENT_ACTIONS,
-        targetPatterns: SURVEILLANCE_INSTALL_TARGETS,
+        targetPatterns: SURVEILLANCE_PLACEMENT_TARGETS,
         speechActs: ACTION_SPEECH_ACTS,
         safeContextPatterns: MANIPULATION_SAFE_CONTEXTS,
         requireSpeechAct: true,
@@ -511,7 +515,7 @@ export const SAFETY_SEMANTIC_FAMILIES: readonly SafetySemanticFamily[] = [
       },
       {
         actionPatterns: SURVEILLANCE_PLACEMENT_ACTIONS,
-        targetPatterns: SURVEILLANCE_INSTALL_TARGETS,
+        targetPatterns: SURVEILLANCE_PLACEMENT_TARGETS,
         speechActs: ACTION_SPEECH_ACTS,
         safeContextPatterns: MANIPULATION_SAFE_CONTEXTS,
         requireSpeechAct: true,

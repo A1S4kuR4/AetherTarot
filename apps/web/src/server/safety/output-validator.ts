@@ -3,6 +3,7 @@ import {
   hasSafetyMatch,
   hasUncoveredSafetyMatch,
   segmentSafetyText,
+  segmentSafetyRiskText,
   type SafetyPattern,
 } from "@/server/safety/text-normalization";
 import { findSafetySemanticFamilies } from "@/server/safety/semantic-rules";
@@ -78,7 +79,10 @@ function appendUnique<T>(values: T[], value: T) {
 function inspectGeneratedText(text: string) {
   const violations: GeneratedContentViolation[] = [];
 
-  for (const segment of segmentSafetyText(text)) {
+  const segments = segmentSafetyText(text);
+  const semanticSegments = [...segments, ...segmentSafetyRiskText(text)];
+
+  for (const segment of semanticSegments) {
     for (const family of findSafetySemanticFamilies([segment], "output")) {
       switch (family.id) {
         case "self_harm_state":
@@ -98,6 +102,9 @@ function inspectGeneratedText(text: string) {
           break;
       }
     }
+  }
+
+  for (const segment of segments) {
     if (hasSafetyMatch(segment, ABUSE_MINIMIZATION)) {
       appendUnique(violations, "abuse_minimization");
     }
