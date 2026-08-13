@@ -68,13 +68,13 @@ const ACTION_SPEECH_ACTS: readonly SafetySpeechActRule[] = [
 ];
 
 const SELF_HARM_DENIAL_CONTEXTS = patterns(
-  /(?:我)?(?:不想|不会|不打算|没有|拒绝|避免)(?:去)?(?:自杀|自残|伤害自己|伤害我自己|结束生命)(?:的)?(?:打算|计划)?|我想(?:活着|活下去)/i,
-  /i(?:amnot|amnolonger)suicidal|(?:i(?:do)?notwantto|idontwantto|iwillnot|iwont|idonotplanto|irefuseto)(?:selfharm|suicide|die|killmyself|hurtmyself|endmylife|takemyownlife)|iwanttobealive|iwanttolive/i,
+  /(?:我)?(?:不想|不会|不打算|没有|拒绝|避免)(?:去)?(?:自杀|自残|轻生|寻死|一死了之|伤害自己|伤害我自己|结束生命)(?:的)?(?:打算|计划)?|我想(?:活着|活下去)/i,
+  /(?:我)?(?:不想|不会|不打算|没有|拒绝|避免)(?:去)?(?:自杀|自残|轻生|寻死|一死了之|伤害自己|伤害我自己|结束生命)(?:的)?(?:打算|计划)?|i(?:amnot|amnolonger)suicidal|(?:i(?:do)?notwantto|idontwantto|iwillnot|iwont|idonotplanto|irefuseto)(?:selfharm|suicide|die|killmyself|hurtmyself|endmylife|takemyownlife)|iwanttobealive|iwanttolive/i,
 );
 
 export const SELF_HARM_SUPPORT_CONTEXTS = patterns(
-  /我(?:以前|曾经).{0,12}(?:想自杀|有自杀念头|感到想死|想结束生命)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?/i,
-  /我(?:以前|曾经).{0,12}(?:想自杀|有自杀念头|感到想死|想结束生命)|(?:什么是|如何理解|是什么意思).{0,8}(?:自杀意念|自杀想法)|(?:如何|怎么)帮助.{0,12}(?:想自杀|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?|iamnolongersuicidal|iusedto(?:feel|thinkabout|consider|wantto)?(?:suicidal|suicide|dying|end(?:ing)?mylife)|isurvivedasuicideattempt.{0,32}(?:safe|recovered)|whatdoessuicidalideationmean|howcanihelpsomeonewhoissuicidal|(?:myfriend|afriend|friend|student|client|he|she|someone)(?:is|was|asked|said|mentioned).{0,24}(?:suicidal|suicide|wantstodie|endtheirlife|suicidalideation)/i,
+  /我(?:以前|曾经).{0,12}(?:想自杀|想轻生|想寻死|有自杀念头|感到想死|想结束生命).{0,20}(?:恢复|安全|活下来)?|(?:什么是|如何理解|是什么意思|教育材料如何解释).{0,8}(?:自杀意念|自杀想法|寻死念头)|(?:如何|怎么)帮助.{0,12}(?:想自杀|想轻生|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|想轻生|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?/i,
+  /我(?:以前|曾经).{0,12}(?:想自杀|想轻生|想寻死|有自杀念头|感到想死|想结束生命).{0,20}(?:恢复|安全|活下来)?|(?:什么是|如何理解|是什么意思|教育材料如何解释).{0,8}(?:自杀意念|自杀想法|寻死念头)|(?:如何|怎么)帮助.{0,12}(?:想自杀|想轻生|有自杀念头|自杀的人)|(?:朋友|学生|来访者|他|她|有人).{0,16}(?:问|说|提到).{0,16}(?:想自杀|想轻生|自杀|自杀意念).{0,20}(?:如何|怎么|帮助)?|iamnolongersuicidal|iusedto(?:feel|thinkabout|consider|wantto)?(?:suicidal|suicide|dying|end(?:ing)?mylife)|isurvivedasuicideattempt.{0,32}(?:safe|recovered)|whatdoessuicidalideationmean|howcanihelpsomeonewhoissuicidal|(?:myfriend|afriend|friend|student|client|he|she|someone)(?:is|was|asked|said|mentioned).{0,24}(?:suicidal|suicide|wantstodie|endtheirlife|suicidalideation)/i,
 );
 
 export const SELF_HARM_REPORTED_CONTEXTS = patterns(
@@ -107,8 +107,8 @@ const HARM_OUTPUT_SAFE_CONTEXTS: SafetyPattern[] = [
   ...SELF_HARM_SAFE_CONTEXTS,
   ...VIOLENCE_SAFE_CONTEXTS,
   ...patterns(
-    /(?:不要|不能|不应|不应该|不可|拒绝|避免)(?:去)?(?:死|自杀|自残|伤害自己|伤害他人|杀死自己|杀|袭击|殴打)(?:他|她|对方|别人|他们|任何人)?/i,
-    /(?:donot|dont|shouldnot|shouldnt|cannot|cant|youshouldnot)(?:die|selfharm|suicide|killyourself|hurtyourself|hurt|kill|attack|punch)(?:him|her|them|someone|anyone)?/i,
+    /(?:不要|不能|不应|不应该|不可|拒绝|避免)(?:去)?(?:死|轻生|寻死|一死了之|自杀|自残|伤害自己|伤害他人|杀死自己|杀|袭击|殴打)(?:他|她|对方|别人|他们|任何人)?/i,
+    /(?:不要|不能|不应|不应该|不可|拒绝|避免)(?:去)?(?:死|轻生|寻死|一死了之|自杀|自残|伤害自己|伤害他人|杀死自己|杀|袭击|殴打)(?:他|她|对方|别人|他们|任何人)?|(?:donot|dont|shouldnot|shouldnt|cannot|cant|youshouldnot)(?:die|selfharm|suicide|killyourself|hurtyourself|hurt|kill|attack|punch)(?:him|her|them|someone|anyone)?/i,
   ),
   ...patterns(
     /\b(?:suicide|self-harm)\s+prevention\b|\bprevention\s+of\s+(?:suicide|self-harm)\b/i,
@@ -178,8 +178,8 @@ const DIAGNOSIS_SAFE_CONTEXTS = patterns(
 );
 
 const SELF_HARM_EXPLICIT_CORE = patterns(
-  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就)?死(?:了|的|啊|呀|呢|吧|[\s，,。！？!?；;]|$)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
-  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就)?死(?:了|的|啊|呀|呢|吧|$)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就|早点|赶紧|马上去)?死(?:了|的|啊|呀|呢|吧|[\s，,。！？!?；;]|$)|(?:我|本人)?(?:想|要|希望|打算|计划|准备)(?:轻生|寻死|一死了之)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就|早点|赶紧|马上去)?死(?:了|的|啊|呀|呢|吧|$)|(?:我|本人)?(?:想|要|希望|打算|计划|准备)(?:轻生|寻死|一死了之)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
 );
 const SELF_HARM_STATE_CORE = patterns(
   /活着|活下去/i,
@@ -192,11 +192,11 @@ const SELF_HARM_STATE_CUES = patterns(
 const SELF_HARM_OUTPUT_CORE: SafetyPattern[] = [
   {
     form: "normalized",
-    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|\bdie\b|\bdead\b|\bself[ -]?harm\b|\bsuicide\b|\bkill(?:ing)? yourself\b|\bhurt yourself\b|\bend your life\b/i,
+    pattern: /去死|轻生|寻死|一死了之|早点死|赶紧死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|\bdie\b|\bdead\b|\bself[ -]?harm\b|\bsuicide\b|\bkill(?:ing)? yourself\b|\bhurt yourself\b|\bend your life\b/i,
   },
   {
     form: "compact",
-    pattern: /去死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|^(?:die|dead)$|(?:youshould|go)die|betteroffdead|selfharm|suicide|killyourself|killingyourself|hurtyourself|end(?:ing)?yourlife|tak(?:e|ing)yourownlife|hurtsomeone|hurtthem/i,
+    pattern: /去死|轻生|寻死|一死了之|早点死|赶紧死|自杀|自残|结束生命|伤害自己|伤害他人|杀死自己|实施暴力|^(?:die|dead)$|(?:youshould|go)die|betteroffdead|selfharm|suicide|killyourself|killingyourself|hurtyourself|end(?:ing)?yourlife|tak(?:e|ing)yourownlife|hurtsomeone|hurtthem/i,
   },
 ];
 
@@ -208,8 +208,8 @@ const SELF_HARM_OUTPUT_DEVALUATION = patterns(
 const SELF_HARM_OUTPUT_ENCOURAGEMENT_CUES: SafetyPattern[] = [
   ...DIRECTIVE_CUES,
   ...patterns(
-    /\b(?:better\s+off|best\s+option|recommend|encourage)\b/i,
-    /(?:betteroff|bestoption|recommend|encourage)/i,
+    /\b(?:better\s+off|best\s+option|recommend|encourage)\b|你最好/i,
+    /(?:betteroff|bestoption|recommend|encourage)|你最好/i,
   ),
 ];
 

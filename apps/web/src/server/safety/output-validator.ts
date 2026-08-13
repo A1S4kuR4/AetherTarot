@@ -104,10 +104,13 @@ function inspectGeneratedText(text: string) {
     }
   }
 
-  for (const segment of segments) {
+  for (const segment of semanticSegments) {
     if (hasSafetyMatch(segment, ABUSE_MINIMIZATION)) {
       appendUnique(violations, "abuse_minimization");
     }
+  }
+
+  for (const segment of segments) {
     if (hasUncoveredSafetyMatch(segment, DETERMINISTIC_CLAIM, SAFE_CERTAINTY_BOUNDARY)) {
       appendUnique(violations, "deterministic_claim");
     }
