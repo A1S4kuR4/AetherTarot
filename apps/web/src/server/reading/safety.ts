@@ -7,7 +7,10 @@ import {
   assessSafetyText,
   type SafetyCategory,
 } from "@/server/safety/policy";
-import { normalizeSafetyText } from "@/server/safety/text-normalization";
+import {
+  normalizeSafetyRiskView,
+  normalizeSafetyText,
+} from "@/server/safety/text-normalization";
 
 const USER_DETAIL_LINE_PATTERN = /^(用户补充|现实补充|followup|follow-up answers?)[:：]/i;
 const CAPSULE_REDACTED_CATEGORIES: SafetyCategory[] = [
@@ -29,10 +32,12 @@ function truncateText(value: string, maxLength: number) {
 }
 
 function isCapsuleRedFlag(value: string) {
-  const assessment = assessSafetyText(value);
-  return assessment.categories.some((category) =>
-    CAPSULE_REDACTED_CATEGORIES.includes(category)
-  );
+  return [value, normalizeSafetyRiskView(value)].some((candidate) => {
+    const assessment = assessSafetyText(candidate);
+    return assessment.categories.some((category) =>
+      CAPSULE_REDACTED_CATEGORIES.includes(category)
+    );
+  });
 }
 
 export function sanitizeSessionCapsuleFragment(

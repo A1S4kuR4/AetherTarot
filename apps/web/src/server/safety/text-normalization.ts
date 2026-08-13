@@ -40,6 +40,7 @@ export type SafetyCompositionRule = {
   requireSpeechAct?: boolean;
   allowBareDirective?: boolean;
   maxTargetDistance?: number;
+  targetPlacement?: "after" | "either";
   bridgePattern?: RegExp;
 };
 
@@ -55,6 +56,12 @@ export function normalizeSafetyText(text: string) {
     .replace(OBFUSCATED_ENGLISH_DOT, " ")
     .replace(/[\p{Z}\s]+/gu, " ")
     .trim();
+}
+
+export function normalizeSafetyRiskView(text: string) {
+  return normalizeSafetyText(text)
+    .replace(/[\s\p{P}\p{S}]+/gu, "")
+    .toLocaleLowerCase();
 }
 
 function compactSafetyText(normalized: string) {
@@ -164,6 +171,9 @@ function isBareDirectiveSpeechAct(
     "然后",
     "接着",
     "再",
+    "本轮问题",
+    "问题",
+    "question",
   ];
   return directPrefixes.includes(prefix)
     || ["andthen", "then", "然后", "接着", "再"].some((marker) =>
@@ -276,6 +286,7 @@ export function hasUnsafeSafetyComposition(
   return actions.some((action) => {
     const matchingTargets = targets.filter((target) =>
       spanDistance(action, target) <= maxTargetDistance
+      && (rule.targetPlacement !== "after" || target.start >= action.end)
       && matchesCompositionBridge(
         segment,
         action,

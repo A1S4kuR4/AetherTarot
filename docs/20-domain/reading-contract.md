@@ -128,6 +128,7 @@ AetherTarot 的解读应：
 - **可组合语义关系**：高风险动作不得再以完整句 fixture 作为规则单元。确定性分类器按 `speech act × action/core × target/entity × cue placement × context` 组合命中；礼貌祈使、情态问句、动作后的追问 cue 与从句开头裸祈使都必须绑定同一动作。安全 context 只覆盖其实际包含的 action/target/cue，不能跨到后续另一条指令；跨句的非即时受害者报告与求助可合并为 Bounded Support。
 - **残余 RC 类别不变量**：暴力目标使用有限的关系、角色、未知人物与姓名槽，不以 `him/her` 闭集代替人物语法，并以 benign collocation 排除拍摄影片、击败游戏等安全动作义。自伤把当前状态/意图与恢复、教育、助人关系分开；治疗变更覆盖 stop/quit/discontinue/skip/miss/throw away/change dosage 及带 blood-pressure / seizure 等修饰的 medication；即时危险按 assault/threat/restraint 与 weapon/current/escape cue 组合；操控覆盖伴侣/配偶/姓名/未知人物及秘密录制、位置查询。安全豁免必须覆盖完整的 modal + negation + action + target scope。
 - **输出严格性与全链路替代**：输出不根据“用户大概是安全意图”降低规则。伤害鼓励或他伤指令、秘密监控/录制、停药/漏药/改剂量、概率式或确定式直接诊断都触发整份正文 replace；明确否定、讨论疾病概念与自杀预防教育保持可见。拒绝原文不得进入 response、grounding、capsule、thread memory、completed history、agent state 或 trace。
+- **游客 RC 已验证范围**：当前自动化证据覆盖简体中文、常见英文和基础中英混合中的自伤当前状态、恢复/教育/助人语境、对他人暴力、即时袭击/武器/限制离开、停止治疗与剂量变更、直接诊断，以及 AirTag / GPS / spyware / 私密消息与位置查询。`murder / strangle` 等内在伤害动作按动作与 speech act 组合，`shoot / beat` 等多义动作还要求人物/对象槽并排除影片、游戏等安全搭配。该范围是受测试的高置信语法，不是对自然语言或所有语言的穷尽证明。
 - **提交前现实边界确认**：当前 `/new` 会对明显重大现实决策类提问加入轻量前置摩擦；完整仪式与“当下之镜”入口都要求用户先确认“塔罗只用于整理线索，现实信息、专业意见与个人底线优先”，再进入抽牌。该机制用于降低决策外包倾向，不替代服务端 `sober_check`。
 
 当前中国大陆固定资源策略：

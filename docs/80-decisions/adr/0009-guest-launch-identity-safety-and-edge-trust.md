@@ -26,3 +26,7 @@ Accepted — 2026-08-12
 确定性语法会保守阻断部分歧义表达，因此必须以 benign collocation、完整否定 scope、恢复/教育/助人 bounded context 和跨句局部性回归控制误报。外部 classifier 即使未来接入，也只能增加 defense in depth，不能成为删减这些确定性回归的理由。
 
 身份变化以 keyed remount、epoch 与 AbortSignal 取消旧 initial/final/history/notes/outbox 请求；账号保存失败进入 identity-scoped browser outbox 并明确显示待同步，不把 outbox 当成 canonical history。Guest history 与 account outbox 的多标签读合并写都使用 Web Locks 事务；锁不可用或本地写失败时明确告知用户，不用非事务 fallback 伪装成功。`/new` 草稿采用 guest localStorage / account sessionStorage 分区，旧全局 key 只删除不导入。
+
+## RC implementation evidence — 2026-08-13
+
+本决策的安全语法已用 taxonomy × speech act × action/state × target/entity × context × normalization mutation 矩阵验证到 Reading classifier/Route/Graph、Encyclopedia service/Route、generated-output validator、capsule、grounding、thread memory、completed history、agent state 与 trace。验证语言范围限于测试中的简体中文、常见英文与基础中英混合；fixture 和组合矩阵不构成自然语言穷尽证明。
