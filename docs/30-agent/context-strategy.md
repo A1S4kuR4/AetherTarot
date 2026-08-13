@@ -247,3 +247,9 @@ stage usage 与 failure subtype 只属于当前 Graph invocation。
   注入未来 Reading。
 - 2026-07-31 的正式 A/B、probe 与最终定向回放合计 200 次 Graph，没有发现中间失败写入
   persistence 的 fatal；这只验证了本轮样本，不改变“失败不得持久化”的确定性规则。
+
+## LLM Safety Reviewer 的最小上下文边界
+
+Reviewer 无工具、无记忆、无自治，也不进入 `agent_decider` 循环。输入审校只发送本轮 `question` 与按字段编号的 `followup_answers[].answer`；不发送 follow-up question、email、userId、IP、牌面、Wiki、history、prior/outgoing capsule、thread memory、agent state 或 trace。输出审校只发送即将对用户可见的生成字段文本，不发送 authority card metadata、grounding source 或内部 draft/repair 数据。
+
+禁止持久化 raw Reviewer prompt/completion、自由文本 rationale 和 invalid payload。可记录的结构化指标仅限 request/run ID、purpose、policy/model version、判定标签/类别、flag 类型、耗时、token、成本、错误与 circuit 状态。缓存只允许 request_id 幂等或短 TTL HMAC verdict；不建立跨用户原文或语义缓存。Reviewer 故障或 replace 发生在 capsule、thread memory、history 与 trace 写入之前。

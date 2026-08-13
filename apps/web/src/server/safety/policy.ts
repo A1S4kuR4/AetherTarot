@@ -57,20 +57,20 @@ const MAJOR_DECISION_SUBJECT_PATTERN =
 const DECISION_OUTSOURCING_PATTERN =
   /要不要|该不该|应不应该|是否应该|我应该|帮我决定|替我决定|告诉我该|should i|shouldi|decide for me|decideforme/i;
 
-const CRISIS_REFERRAL_LINKS = [
+export const CRISIS_REFERRAL_LINKS = [
   "https://english.beijing.gov.cn/travellinginbeijing/quickguideontravelservices/traveltips/202108/t20210811_2466839.html",
   "https://en.nhc.gov.cn/2025-02/14/c_86392.htm",
   "https://wjw.beijing.gov.cn/English/HealthServices/HealthIndications/201912/t20191216_1236363.html",
 ];
 
-const CRISIS_MESSAGE =
+export const CRISIS_MESSAGE =
   "系统检测到这次提问可能已经触及现实中的身体安全、紧急健康或心理危机风险。塔罗不能承担这类判断。请先按这个顺序寻求现实支持：如有急性医疗风险先拨打 120；如有人身威胁、暴力或现实危险先拨打 110；如你处在强烈绝望、崩溃或需要立即心理支持的状态，请尽快拨打 12356 心理援助热线。";
-const MANIPULATION_MESSAGE =
+export const MANIPULATION_MESSAGE =
   "AetherTarot 不提供跟踪、监控、报复、勒索或操控第三方的方法。请把关注点转回现实安全、个人边界与不伤害他人的沟通方式。";
-const SOBER_CHECK =
+export const SOBER_CHECK =
   "你的问题涉及重大的现实决定。在查看塔罗解读前，请先写下：如果不管塔罗怎么说，你目前最真实的顾虑、可核实事实和底线计划是什么？";
 
-const SAFETY_NOTES: Partial<Record<SafetyCategory, string>> = {
+export const SAFETY_NOTES: Partial<Record<SafetyCategory, string>> = {
   abuse_support:
     "如果这段关系中存在暴力、威胁、胁迫、跟踪或控制，现实安全应高于塔罗解释。请优先评估当下风险、联系可信任的人或合格支持资源，并避免独自承担或贸然对抗。",
   self_harm_support:

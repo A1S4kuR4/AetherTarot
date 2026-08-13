@@ -11,6 +11,7 @@ export interface LlmCallMetric {
   stage?: string;
   attempt?: number;
   kind?: "generate" | "retry" | "repair";
+  purpose?: "generation" | "safety_input" | "safety_output";
   subtype?: string;
   success: boolean;
   durationMs: number;
@@ -87,6 +88,9 @@ export function calculateLlmCostUsd(
 
 export function recordLlmCall(metric: LlmCallMetric) {
   llmUsageStorage.getStore()?.push(metric);
+  if (metric.purpose === "safety_input" || metric.purpose === "safety_output") {
+    console.info("[safety-reviewer-llm]", metric);
+  }
 }
 
 export function getCurrentLlmCalls() {

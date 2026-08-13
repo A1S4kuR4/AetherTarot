@@ -350,3 +350,11 @@ server-owned Initial + follow-up integration work order；normalizer 只对“�
 - I/O：所有 JSON 入站路由按实际字节流式限长并强制 `application/json`；共享 transport 的单一端到端 deadline 从排队前开始，覆盖 permit、reservation、headers/body 与 settlement，并有响应硬上限。
 - 舱壁：单 Node 进程共享 provider semaphore，permit 先于 token reservation；它只保护单实例，不是多实例全局并发控制。多实例仍需供应商硬预算、外部网关或共享协调层。
 - IP：应用只接受 Caddy 覆写的内部 IP + shared secret；CF/XFF/X-Real-IP 永不参与应用身份。生产缺失或错误时失败关闭，非生产只允许显式私网/回环 fallback。
+
+# LLM Safety Reviewer 上界架构（2026-08-13）
+
+`LLMSafetyReviewer` 是 stateless service，不是 Agent：无 tools、memory、planner 或 autonomous loop。Reading Route 在幂等 replay/claim 与 Final snapshot authority 校验之后调用 input review，再进入 quota；Graph 的 `llm_input_review` 是防绕过强制节点。输出端 `llm_output_review` 位于确定性 `validate_generated_content` 之后、`apply_safety_review` / grounding / capsule / memory 之前。Encyclopedia route/service 复用同一服务与上界 merge。
+
+Reviewer 使用独立 provider/model/API key、`safety_input` / `safety_output` metrics purpose、独立 token reservation 表/RPC 与日预算、全局每 purpose rate limit、独立 bulkhead namespace、queue timeout、input/output deadline 和 circuit breaker。共享 bulkhead cache key 已加入 namespace，正文 generation、Encyclopedia 与 Safety Reviewer 即使并发参数相同也不会误共享 semaphore。
+
+运行模式为 `off | shadow | enforce`：off 仅本地；shadow 记录判定但 `applied=false`；enforce 对 provider/transport/schema/circuit 故障 fail-closed 503。输出故障不会产生可持久化 Graph completion；Route 只允许安全指标与失败事件，不保存正文、grounding、capsule、memory、history、agent state 或 trace。

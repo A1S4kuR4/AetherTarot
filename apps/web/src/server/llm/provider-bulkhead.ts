@@ -1,6 +1,7 @@
 import { ReadingGenerationError } from "@/server/reading/errors";
 
 export type ProviderBulkheadConfig = {
+  namespace?: string;
   maxConcurrent: number;
   maxQueued: number;
   queueTimeoutMs: number;
@@ -101,7 +102,7 @@ export class ProviderBulkhead {
 const sharedBulkheads = new Map<string, ProviderBulkhead>();
 
 export function getSharedProviderBulkhead(config: ProviderBulkheadConfig) {
-  const key = `${config.maxConcurrent}:${config.maxQueued}:${config.queueTimeoutMs}`;
+  const key = `${config.namespace ?? "generation"}:${config.maxConcurrent}:${config.maxQueued}:${config.queueTimeoutMs}`;
   const existing = sharedBulkheads.get(key);
   if (existing) return existing;
   const created = new ProviderBulkhead(config);

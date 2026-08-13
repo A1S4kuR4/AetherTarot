@@ -184,3 +184,11 @@ monolithic 的 `85.9%`；修复后 Initial/preparation probe 为 `15 / 15`，但
 `0 / 5`。完整 payload repair 后的单例 Final 回放可恢复合同，但综合质量仍偏泛。
 因此 staged 仍是默认关闭的实验路径。该结果不改变本契约，也不授权用局部
 成功率降低公共 Reading 的结构、安全或连续性标准。
+
+## LLM Safety Reviewer 合同（2026-08-13）
+
+Reviewer 是确定性安全层之后的第二信号，不替代 classifier、generated-content validator 或服务端固定模板。输入只按 `hard_stop > abuse_support > sober_check > bounded > standard` 取上界；输出只按 `replace > restrict > pass` 取上界。Reviewer 不得降低确定性 hard-stop/bounded/sober-check/replace，不得让重大决定信号覆盖 `abuse_support`，也不得生成用户文案或热线链接。
+
+Reading 输入顺序固定为 `schema/access → deterministic preflight → execution 幂等/Final authority → LLM input review → quota → Graph tool/provider`。确定性 hard-stop 不调用 Reviewer；LLM 升级为 hard-stop 时不调用 quota、agent decider、tool、reading provider 或 reading persistence。Route 注入的是 server-only verdict；Graph 仍保留强制节点，直接调用且未注入时必须自行审校。
+
+Reading 输出顺序固定为 `draft contract → deterministic generated-content validation → LLM output review → server restrict/replace → input-driven safety → grounding → capsule → thread memory → response/history`。enforce 的输出审校故障必须丢弃正文并返回 `503 provider_unavailable`，不得把正文写入任何状态面。成功响应仍是原有公共 `StructuredReading`，不新增 Reviewer 字段。

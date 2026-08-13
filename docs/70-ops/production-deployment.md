@@ -406,3 +406,17 @@ order by grantee;
 ```
 
 PASS 仅允许 `service_role` 拥有 `EXECUTE`；`PUBLIC`、`anon`、`authenticated` 任一仍有 EXECUTE 即 FAIL。另行确认 `pg_cron` retention job 存在且最近运行成功。
+
+## 11. LLM Safety Reviewer 发布与运维
+
+生产必须配置独立的 `AETHERTAROT_SAFETY_REVIEWER_BASE_URL/MODEL/API_KEY`，不得复用正文 key 或 bulkhead。readiness 只接受 `MODE=shadow|enforce`；`off` 仅本地。默认约束为 temperature 0、strict JSON object、192 output tokens（允许 128–256）、32 KiB response cap（允许 16–32 KiB）、input 1800ms、output 2500ms、queue 300ms，且不做请求内无限重试。
+
+独立日预算依赖 migration `202608130001_safety_reviewer_token_budget.sql`，提供 `safety_input/safety_output` reservation source 与独立 usage/reservation 表。发布前只读核对 migration 已应用、两项 RPC 仅授予 `service_role`；本开发轮次不得自动执行生产 migration。
+
+发布顺序必须是：
+
+1. `shadow`：确认用户结果与旧策略一致，指标不含原文；
+2. 受控 canary：小流量/指定账号演练 fail-closed、429/5xx/schema/circuit-open；
+3. `enforce`：只有误升级、漏升级、P95、预算与故障演练达标后启用。
+
+enforce 输入故障发生在 Reading quota 与生成前；输出故障触发 initial 日额度退款，但实际使用的 Reviewer/正文 token 正常结算。不得把 503 改写成 safety 403，不得回退 deterministic-only。发布检查还需确认 Reviewer 与 generation 的 bulkhead namespace、API key、token budget、rate limit 和 circuit metrics 均能分别观测。

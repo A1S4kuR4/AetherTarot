@@ -16,11 +16,25 @@ import {
   assertSafetyAllowsGeneration,
   assessSafetyText,
 } from "@/server/safety/policy";
-import { reviewEncyclopediaGeneratedAnswer } from "@/server/safety/output-validator";
+import {
+  applyEncyclopediaGeneratedContentAction,
+  mergeGeneratedContentAction,
+  reviewEncyclopediaGeneratedAnswer,
+} from "@/server/safety/output-validator";
+import {
+  getLLMSafetyReviewer,
+  mergeInputSafetyAssessment,
+  type SafetyInputReviewVerdict,
+  type SafetyReviewExecution,
+  type SafetyReviewer,
+} from "@/server/safety/llm-reviewer";
 
 export interface GenerateEncyclopediaAnswerOptions {
   provider?: EncyclopediaProvider;
   loadPages?: typeof loadEncyclopediaWikiPages;
+  safetyReviewer?: SafetyReviewer;
+  inputSafetyReview?: SafetyReviewExecution<SafetyInputReviewVerdict>;
+  signal?: AbortSignal;
 }
 
 function uniqueStrings(values: string[]) {
@@ -48,7 +62,18 @@ export async function generateEncyclopediaAnswer({
   query: string;
   cardId?: string;
 }, options: GenerateEncyclopediaAnswerOptions = {}) {
-  const safetyAssessment = assessSafetyText(query);
+  const deterministicSafety = assessSafetyText(query);
+  assertSafetyAllowsGeneration(deterministicSafety);
+  const reviewer = options.safetyReviewer ?? getLLMSafetyReviewer();
+  const inputReview = options.inputSafetyReview ?? await reviewer.reviewInput({
+    question: query,
+    followupAnswers: [],
+    deterministic: deterministicSafety,
+    signal: options.signal,
+  });
+  const safetyAssessment = inputReview.applied
+    ? mergeInputSafetyAssessment(deterministicSafety, inputReview.verdict)
+    : deterministicSafety;
   assertSafetyAllowsGeneration(safetyAssessment);
   const boundaryNote = safetyAssessment.safetyNote;
   const pages = await (options.loadPages ?? loadEncyclopediaWikiPages)();
@@ -78,9 +103,27 @@ export async function generateEncyclopediaAnswer({
     answer: draft.answer,
     boundaryNote,
   });
+  const outputReview = await reviewer.reviewEncyclopediaOutput({
+    answer: draft.answer,
+    boundaryNote,
+    deterministicAction: generatedContentReview.action,
+    deterministicViolations: generatedContentReview.violations,
+    signal: options.signal,
+  });
+  const outputAction = outputReview.applied
+    ? mergeGeneratedContentAction(
+      generatedContentReview.action,
+      outputReview.verdict.action,
+    )
+    : generatedContentReview.action;
+  const reviewedOutput = applyEncyclopediaGeneratedContentAction({
+    answer: draft.answer,
+    boundaryNote,
+    action: outputAction,
+  });
 
   return encyclopediaQueryResponseSchema.parse({
-    answer: generatedContentReview.output.answer,
+    answer: reviewedOutput.answer,
     sources: sources.map((source) => ({
       title: source.title,
       path: source.path,
@@ -100,6 +143,6 @@ export async function generateEncyclopediaAnswer({
       ...draft.related_spreads,
       ...related.related_spreads,
     ]).slice(0, 5),
-    boundary_note: generatedContentReview.output.boundaryNote,
+    boundary_note: reviewedOutput.boundaryNote,
   });
 }

@@ -5,6 +5,7 @@ import type { FollowupAnswer } from "@aethertarot/shared-types";
 import {
   assessSafetyFields,
   assessSafetyText,
+  type SafetyAssessment,
   type SafetyCategory,
 } from "@/server/safety/policy";
 import {
@@ -115,7 +116,12 @@ export function buildSafetySubjects(
 }
 
 export function analyzeIntentFriction(subjects: readonly string[]): IntentFrictionResult {
-  const assessment = assessSafetyFields(subjects);
+  return buildIntentFrictionResult(assessSafetyFields(subjects));
+}
+
+export function buildIntentFrictionResult(
+  assessment: SafetyAssessment,
+): IntentFrictionResult {
   const diagnostics = {
     policy_version: "safety-rules-v1",
     rule_ids: assessment.categories.map((category) => `input.${category}`),
@@ -160,12 +166,14 @@ function withSafetyOverride(
 
 export function applySafetyReview({
   subjects,
+  assessment: providedAssessment,
   reading,
 }: {
   subjects: readonly string[];
+  assessment?: SafetyAssessment;
   reading: StructuredReading;
 }) {
-  const assessment = assessSafetyFields(subjects);
+  const assessment = providedAssessment ?? assessSafetyFields(subjects);
 
   if (assessment.level === "hard_stop" || !assessment.safetyNote) {
     return reading;

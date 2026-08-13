@@ -36,6 +36,11 @@ import {
   assertSafetyAllowsGeneration,
   assessSafetyText,
 } from "@/server/safety/policy";
+import {
+  defaultLLMSafetyReviewer,
+  mergeInputSafetyAssessment,
+  type SafetyReviewer,
+} from "@/server/safety/llm-reviewer";
 
 export const runtime = "nodejs";
 const MAX_ENCYCLOPEDIA_REQUEST_BYTES = 8 * 1024;
@@ -51,6 +56,7 @@ interface EncyclopediaRouteDependencies {
   generateAnswer: typeof generateEncyclopediaAnswer;
   collectUsage: typeof collectLlmUsage;
   recordEvent: (input: EncyclopediaEventInput) => Promise<void>;
+  safetyReviewer: SafetyReviewer;
 }
 
 const DEFAULT_DEPENDENCIES: EncyclopediaRouteDependencies = {
@@ -61,6 +67,7 @@ const DEFAULT_DEPENDENCIES: EncyclopediaRouteDependencies = {
   generateAnswer: generateEncyclopediaAnswer,
   collectUsage: collectLlmUsage,
   recordEvent: recordEncyclopediaEvent,
+  safetyReviewer: defaultLLMSafetyReviewer,
 };
 
 function buildErrorResponse(
@@ -168,10 +175,26 @@ export async function handleEncyclopediaQueryPost(
       );
     }
     actor = await deps.requireAccess();
-    assertSafetyAllowsGeneration(assessSafetyText(parsedPayload.query));
+    const deterministicSafety = assessSafetyText(parsedPayload.query);
+    assertSafetyAllowsGeneration(deterministicSafety);
+    const inputSafetyReview = await deps.safetyReviewer.reviewInput({
+      question: parsedPayload.query,
+      followupAnswers: [],
+      deterministic: deterministicSafety,
+      signal: request.signal,
+    });
+    if (inputSafetyReview.applied) {
+      assertSafetyAllowsGeneration(
+        mergeInputSafetyAssessment(deterministicSafety, inputSafetyReview.verdict),
+      );
+    }
     await deps.consumeQuota({ actor, ipHash });
     const { result, calls } = await deps.collectUsage(() =>
-      deps.generateAnswer(parsedPayload as EncyclopediaQueryRequest)
+      deps.generateAnswer(parsedPayload as EncyclopediaQueryRequest, {
+        safetyReviewer: deps.safetyReviewer,
+        inputSafetyReview,
+        signal: request.signal,
+      })
     );
     const usageSummary = summarizeLlmCalls(calls as LlmCallMetric[]);
 

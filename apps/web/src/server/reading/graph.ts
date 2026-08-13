@@ -57,14 +57,28 @@ import {
 } from "@/server/reading/reading-agent-core";
 import { structuredReadingSchema } from "@/server/reading/schemas";
 import {
-  analyzeIntentFriction,
   applySafetyReview,
+  buildIntentFrictionResult,
   buildSafetySubjects,
   sanitizeIncomingSessionCapsule,
   sanitizeSessionCapsuleFragment,
   type IntentFrictionResult,
 } from "@/server/reading/safety";
-import { reviewReadingGeneratedContent } from "@/server/safety/output-validator";
+import {
+  applyReadingGeneratedContentAction,
+  mergeGeneratedContentAction,
+  reviewReadingGeneratedContent,
+  type GeneratedContentAction,
+  type GeneratedContentViolation,
+} from "@/server/safety/output-validator";
+import { assessSafetyFields, type SafetyAssessment } from "@/server/safety/policy";
+import {
+  getLLMSafetyReviewer,
+  mergeInputSafetyAssessment,
+  type SafetyReviewExecution,
+  type SafetyInputReviewVerdict,
+  type SafetyReviewer,
+} from "@/server/safety/llm-reviewer";
 import { executeReadingTool } from "@/server/reading/tools/executor";
 import {
   readingToolRegistry,
@@ -113,6 +127,8 @@ const ReadingGraphState = new StateSchema({
   failureStage: z.custom<ReadingGenerationStage>().optional(),
   failureSubtype: z.custom<ReadingGenerationFailureSubtype>().optional(),
   provider: z.custom<ReadingProvider>().optional(),
+  safetyReviewer: z.custom<SafetyReviewer>().optional(),
+  injectedInputSafetyReview: z.custom<SafetyReviewExecution<SafetyInputReviewVerdict>>().optional(),
   agentDecider: z.custom<ReadingAgentDecider>().optional(),
   toolRegistry: z.custom<ReadingToolRegistry>().optional(),
   sessionMemoryStore: z.custom<SessionMemoryStore>().optional(),
@@ -130,6 +146,7 @@ const ReadingGraphState = new StateSchema({
   spread: z.custom<Spread>().optional(),
   drawnCards: z.custom<DrawnCard[]>().optional(),
   frictionResult: z.custom<IntentFrictionResult>().optional(),
+  inputSafetyAssessment: z.custom<SafetyAssessment>().optional(),
   agentStepCount: z.number().int().nonnegative().optional(),
   agentAction: z.custom<AgentAction>().optional(),
   agentActions: z.custom<AgentActionTrace[]>().optional(),
@@ -141,6 +158,8 @@ const ReadingGraphState = new StateSchema({
   sessionMemory: z.custom<SessionMemory>().nullable().optional(),
   draft: z.custom<ReadingDraft>().optional(),
   reading: z.custom<StructuredReading>().optional(),
+  generatedContentAction: z.custom<GeneratedContentAction>().optional(),
+  generatedContentViolations: z.custom<GeneratedContentViolation[]>().optional(),
 });
 
 type ReadingGraphNode = GraphNode<typeof ReadingGraphState>;
@@ -834,9 +853,33 @@ const analyzeIntentFrictionNode: ReadingGraphNode = (state) => {
     requireStateValue(state.question, "question"),
     state.followupAnswers,
   );
-  const frictionResult = analyzeIntentFriction(safetySubjects);
+  const inputSafetyAssessment = assessSafetyFields(safetySubjects);
+  const frictionResult = buildIntentFrictionResult(inputSafetyAssessment);
 
-  return { frictionResult };
+  return { frictionResult, inputSafetyAssessment };
+};
+
+const llmInputReviewNode: ReadingGraphNode = async (state) => {
+  const deterministic = requireStateValue(
+    state.inputSafetyAssessment,
+    "inputSafetyAssessment",
+  );
+  const review = state.injectedInputSafetyReview
+    ?? await (state.safetyReviewer ?? getLLMSafetyReviewer()).reviewInput({
+      requestId: state.payload.request_id,
+      runId: state.runId,
+      question: requireStateValue(state.question, "question"),
+      followupAnswers: state.followupAnswers ?? [],
+      deterministic,
+      signal: state.abortSignal,
+    });
+  const inputSafetyAssessment = review.applied
+    ? mergeInputSafetyAssessment(deterministic, review.verdict)
+    : deterministic;
+  return {
+    inputSafetyAssessment,
+    frictionResult: buildIntentFrictionResult(inputSafetyAssessment),
+  };
 };
 
 const agentDeciderNode: ReadingGraphNode = async (state) => {
@@ -1329,7 +1372,37 @@ const validateGeneratedContentNode: ReadingGraphNode = (state) => {
   );
 
   return {
-    reading: structuredReadingSchema.parse(review.output) as StructuredReading,
+    reading: requireStateValue(state.reading, "reading"),
+    generatedContentAction: review.action,
+    generatedContentViolations: review.violations,
+  };
+};
+
+const llmOutputReviewNode: ReadingGraphNode = async (state) => {
+  const deterministicAction = requireStateValue(
+    state.generatedContentAction,
+    "generatedContentAction",
+  );
+  const deterministicViolations = state.generatedContentViolations ?? [];
+  const reading = requireStateValue(state.reading, "reading");
+  const review = await (state.safetyReviewer ?? getLLMSafetyReviewer()).reviewOutput({
+    requestId: state.payload.request_id,
+    runId: state.runId,
+    reading,
+    deterministicAction,
+    deterministicViolations,
+    signal: state.abortSignal,
+  });
+  const action = review.applied
+    ? mergeGeneratedContentAction(deterministicAction, review.verdict.action)
+    : deterministicAction;
+  const output = applyReadingGeneratedContentAction(reading, action);
+  return {
+    reading: structuredReadingSchema.parse(output) as StructuredReading,
+    generatedContentAction: action,
+    generatedContentViolations: [
+      ...new Set([...deterministicViolations, ...review.verdict.violations]),
+    ],
   };
 };
 
@@ -1340,6 +1413,7 @@ const applySafetyReviewNode: ReadingGraphNode = (state) => {
         requireStateValue(state.question, "question"),
         state.followupAnswers,
       ),
+      assessment: state.inputSafetyAssessment,
       reading: requireStateValue(state.reading, "reading"),
     }),
   ) as StructuredReading;
@@ -1436,6 +1510,7 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addNode("hydrate_context", hydrateContextNode)
   .addNode("validate_final_phase", validateFinalPhaseNode)
   .addNode("analyze_intent_friction", analyzeIntentFrictionNode)
+  .addNode("llm_input_review", llmInputReviewNode)
   .addNode("agent_decider", agentDeciderNode)
   .addNode("retrieve_knowledge", retrieveKnowledgeNode)
   .addNode("get_session_memory", getSessionMemoryNode)
@@ -1446,6 +1521,7 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addNode("validate_draft_contract", validateDraftContractNode)
   .addNode("build_structured_reading", buildStructuredReadingNode)
   .addNode("validate_generated_content", validateGeneratedContentNode)
+  .addNode("llm_output_review", llmOutputReviewNode)
   .addNode("apply_safety_review", applySafetyReviewNode)
   .addNode("finalize_grounding", finalizeGroundingNode)
   .addNode("attach_session_capsule", attachSessionCapsuleNode)
@@ -1455,6 +1531,10 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addEdge("hydrate_context", "validate_final_phase")
   .addEdge("validate_final_phase", "analyze_intent_friction")
   .addConditionalEdges("analyze_intent_friction", routeAfterIntentFriction, {
+    agent_decider: "llm_input_review",
+    safety_stop: "safety_stop",
+  })
+  .addConditionalEdges("llm_input_review", routeAfterIntentFriction, {
     agent_decider: "agent_decider",
     safety_stop: "safety_stop",
   })
@@ -1473,7 +1553,8 @@ const readingGraph = new StateGraph(ReadingGraphState)
   .addEdge("generate_draft", "validate_draft_contract")
   .addEdge("validate_draft_contract", "build_structured_reading")
   .addEdge("build_structured_reading", "validate_generated_content")
-  .addEdge("validate_generated_content", "apply_safety_review")
+  .addEdge("validate_generated_content", "llm_output_review")
+  .addEdge("llm_output_review", "apply_safety_review")
   .addEdge("apply_safety_review", "finalize_grounding")
   .addEdge("finalize_grounding", "attach_session_capsule")
   .addEdge("attach_session_capsule", "write_session_memory")
@@ -1482,6 +1563,8 @@ const readingGraph = new StateGraph(ReadingGraphState)
 
 export interface RunReadingGraphOptions {
   provider?: ReadingProvider;
+  safetyReviewer?: SafetyReviewer;
+  inputSafetyReview?: SafetyReviewExecution<SafetyInputReviewVerdict>;
   agentDecider?: ReadingAgentDecider;
   toolRegistry?: ReadingToolRegistry;
   sessionMemoryStore?: SessionMemoryStore;
@@ -1514,6 +1597,8 @@ export async function runReadingGraphWithDiagnostics(
       generationMode:
         options?.generationMode ?? resolveReadingGenerationMode(),
       provider: options?.provider,
+      safetyReviewer: options?.safetyReviewer,
+      injectedInputSafetyReview: options?.inputSafetyReview,
       agentDecider: options?.agentDecider,
       toolRegistry: options?.toolRegistry,
       sessionMemoryStore: options?.sessionMemoryStore,

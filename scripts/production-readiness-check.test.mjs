@@ -26,7 +26,47 @@ const fullEnv = {
   AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP: "1",
   AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE: "6",
   AETHERTAROT_LLM_DAILY_TOKEN_LIMIT: "200000",
+  AETHERTAROT_SAFETY_REVIEWER_MODE: "shadow",
+  AETHERTAROT_SAFETY_REVIEWER_BASE_URL: "https://reviewer.example",
+  AETHERTAROT_SAFETY_REVIEWER_MODEL: "reviewer-model",
+  AETHERTAROT_SAFETY_REVIEWER_API_KEY: "$SAFETY_REVIEWER_KEY",
+  SAFETY_REVIEWER_KEY: "reviewer-secret-key",
+  AETHERTAROT_SAFETY_REVIEWER_POLICY_VERSION: "safety-reviewer-v1",
+  AETHERTAROT_SAFETY_REVIEWER_DAILY_TOKEN_LIMIT: "30000",
+  AETHERTAROT_SAFETY_REVIEWER_RATE_LIMIT_PER_MINUTE: "120",
+  AETHERTAROT_SAFETY_REVIEWER_MAX_CONCURRENCY: "2",
+  AETHERTAROT_SAFETY_REVIEWER_MAX_QUEUE: "4",
+  AETHERTAROT_SAFETY_REVIEWER_QUEUE_TIMEOUT_MS: "300",
+  AETHERTAROT_SAFETY_REVIEWER_INPUT_DEADLINE_MS: "1800",
+  AETHERTAROT_SAFETY_REVIEWER_OUTPUT_DEADLINE_MS: "2500",
+  AETHERTAROT_SAFETY_REVIEWER_MAX_OUTPUT_TOKENS: "192",
+  AETHERTAROT_SAFETY_REVIEWER_MAX_RESPONSE_BYTES: "32768",
+  AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_FAILURE_THRESHOLD: "3",
+  AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_RESET_MS: "30000",
+  AETHERTAROT_SAFETY_REVIEWER_CACHE_TTL_MS: "30000",
+  AETHERTAROT_SAFETY_REVIEWER_CACHE_HMAC_SECRET: "reviewer-cache-hmac-secret-123456789",
 };
+
+test("production readiness rejects off and unsafe Safety Reviewer bounds", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_SAFETY_REVIEWER_MODE: "off",
+      AETHERTAROT_SAFETY_REVIEWER_INPUT_DEADLINE_MS: "9000",
+      AETHERTAROT_SAFETY_REVIEWER_MAX_OUTPUT_TOKENS: "1024",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+
+  assert.equal(result.ok, false);
+  assert.match(report, /SAFETY_REVIEWER_MODE/);
+  assert.match(report, /shadow or enforce/);
+  assert.match(report, /SAFETY_REVIEWER_INPUT_DEADLINE_MS/);
+  assert.match(report, /SAFETY_REVIEWER_MAX_OUTPUT_TOKENS/);
+});
 
 test("missing required env reports variable names without values", async () => {
   const repoRoot = makeRepoFixture();
@@ -194,6 +234,23 @@ test("env validation rejects placeholder and reused proxy/IP secrets", async () 
   const report = formatReadinessReport(result);
   assert.equal(result.ok, false);
   assert.match(report, /placeholder/);
+  assert.match(report, /must be different/);
+});
+
+test("env validation rejects a generation API key reused by Safety Reviewer", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_LLM_API_KEY: "shared-provider-key",
+      AETHERTAROT_SAFETY_REVIEWER_API_KEY: "shared-provider-key",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+  assert.equal(result.ok, false);
+  assert.match(report, /generation\/reviewer API keys/);
   assert.match(report, /must be different/);
 });
 

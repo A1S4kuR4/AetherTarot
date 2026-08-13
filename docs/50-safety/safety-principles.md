@@ -142,3 +142,11 @@ success 或 thread memory。Repair 只能修复当前输出合同，不能绕过
 2026-07-31 的真实 paired A/B 与 probe 中，authority、grounding、正文泄漏和 safety
 禁止级 fatal 的观测数均为 0。这个结果说明新路径仍经过既有安全链，但不能抵消 staged
 合法率和 Final integration 的回退，也不能单独作为生产启用依据。
+
+## 10. LLM 第二审校信号
+
+Reviewer 永远只是第二信号：`deterministic rules → LLM verdict → upper bound`。它不能证明开放自然语言被完整覆盖，也不能作为删除规则、降低输出 validator 强度或改为 prompt-only safety 的依据。确定性 hard-stop/replace 永远优先；输入继续保护 abuse-support 优先级，输出继续按 replace > restrict > pass。
+
+Reviewer 只分类，不解释、不改写、不提供链接。所有用户可见 hard-stop、restrict 与 replace 文案及危机资源来自服务端固定常量。enforce 下任何 timeout、429、5xx、queue、circuit-open、非法 JSON 或 schema violation 都是系统 `503 provider_unavailable`，不能伪装成用户触发的 `403`，也不能静默退回 deterministic-only。
+
+发布必须依次经过 shadow、受控 canary、enforce。每阶段需要审阅误升级/漏升级、家暴受害者误路由、简中/英文/混合与 Unicode 变体、P95 延迟、失败率、circuit、独立 token 预算和原文泄漏。外部模型质量只能提供经验性第二证据，不构成完整覆盖证明。

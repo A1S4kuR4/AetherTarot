@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ProviderBulkhead } from "@/server/llm/provider-bulkhead";
+import {
+  getSharedProviderBulkhead,
+  ProviderBulkhead,
+} from "@/server/llm/provider-bulkhead";
 
 describe("provider bulkhead", () => {
   it("never grants more permits than configured", async () => {
@@ -35,5 +38,14 @@ describe("provider bulkhead", () => {
     await expect(pending).rejects.toMatchObject({ subtype: "cancelled" });
     release();
     expect(bulkhead.stats).toEqual({ active: 0, queued: 0 });
+  });
+
+  it("does not share a bulkhead across generation and safety purposes", () => {
+    const config = { maxConcurrent: 2, maxQueued: 2, queueTimeoutMs: 100 };
+    const reading = getSharedProviderBulkhead({ ...config, namespace: "reading" });
+    const safety = getSharedProviderBulkhead({ ...config, namespace: "safety-reviewer" });
+
+    expect(reading).not.toBe(safety);
+    expect(getSharedProviderBulkhead({ ...config, namespace: "reading" })).toBe(reading);
   });
 });

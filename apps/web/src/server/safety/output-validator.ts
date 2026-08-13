@@ -190,6 +190,27 @@ function replaceUnsafeReading(reading: StructuredReading): StructuredReading {
   };
 }
 
+export function mergeGeneratedContentAction(
+  deterministic: GeneratedContentAction,
+  reviewer: GeneratedContentAction,
+): GeneratedContentAction {
+  const rank: Record<GeneratedContentAction, number> = {
+    pass: 0,
+    restrict: 1,
+    replace: 2,
+  };
+  return rank[reviewer] > rank[deterministic] ? reviewer : deterministic;
+}
+
+export function applyReadingGeneratedContentAction(
+  reading: StructuredReading,
+  action: GeneratedContentAction,
+) {
+  if (action === "replace") return replaceUnsafeReading(reading);
+  if (action === "restrict") return restrictUnsafeReading(reading);
+  return reading;
+}
+
 function replaceRestrictedText(text: string, replacement: string) {
   return inspectGeneratedText(text).length > 0 ? replacement : text;
 }
@@ -258,6 +279,38 @@ export function reviewReadingGeneratedContent(
     action: "restrict",
     violations,
     output: restrictUnsafeReading(reading),
+  };
+}
+
+export function applyEncyclopediaGeneratedContentAction({
+  answer,
+  boundaryNote,
+  action,
+}: {
+  answer: string;
+  boundaryNote: string | null;
+  action: GeneratedContentAction;
+}) {
+  if (action === "pass") {
+    return {
+      answer: boundaryNote ? `${answer}\n\n边界提醒：${boundaryNote}` : answer,
+      boundaryNote,
+    };
+  }
+
+  const note = action === "replace"
+    ? boundaryNote
+      ? `${boundaryNote} ${ENCYCLOPEDIA_REPLACED_NOTE}`
+      : ENCYCLOPEDIA_REPLACED_NOTE
+    : boundaryNote
+      ? `${boundaryNote} ${ENCYCLOPEDIA_RESTRICTED_NOTE}`
+      : ENCYCLOPEDIA_RESTRICTED_NOTE;
+  const safeAnswer = action === "replace"
+    ? "原始回答触及安全边界，未予展示。这里仅保留百科范围内的原则：牌义不能授权伤害、操控或替代现实专业判断。"
+    : "这个问题更适合回到百科层面的牌义理解，而不是把塔罗语义当成现实结论。";
+  return {
+    answer: `${safeAnswer}\n\n边界提醒：${note}`,
+    boundaryNote: note,
   };
 }
 

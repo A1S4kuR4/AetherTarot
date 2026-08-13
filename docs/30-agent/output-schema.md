@@ -397,3 +397,9 @@ repair payload 永远不是 API envelope 的一部分。
 正文，不使用关键词包含来假装证明语义整合。Final integration work order、评测用 Initial
 对照和 conflict 标记都不进入 `StructuredReading`、API envelope、history、capsule 或
 thread memory。
+
+## 10. 内部 Safety Reviewer 协议（非公共 schema）
+
+输入 verdict 仅包含 `standard | bounded | sober_check | hard_stop`、`categories`、`referral_kind`、`policy_version` 与 `model_version`；输出 verdict 仅包含 `pass | restrict | replace`、`violations`、`flagged_paths` 和版本。两者均由严格 Zod object 校验，拒绝额外字段，因此 rationale、重写正文、用户文案或 URL 都是 schema violation。
+
+这些 verdict 只存在于服务端执行状态，不进入 `StructuredReading`、error 公共字段、history、capsule、thread memory、grounding 或 trace。`restrict` / `replace` 只能触发服务端固定模板。Reviewer 的非法 JSON/schema、timeout、429、5xx、queue 或 circuit-open 在 enforce 下统一为 `503 provider_unavailable`；initial 已扣日额度时按既有生成失败规则退款，实际 token 正常结算。

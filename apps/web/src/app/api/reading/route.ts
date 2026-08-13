@@ -56,6 +56,17 @@ import {
   recordReadingEvent,
   type ReadingEventInput,
 } from "@/server/observability/reading-events";
+import {
+  assertSafetyAllowsGeneration,
+  assessSafetyFields,
+} from "@/server/safety/policy";
+import {
+  defaultLLMSafetyReviewer,
+  mergeInputSafetyAssessment,
+  type SafetyReviewExecution,
+  type SafetyInputReviewVerdict,
+  type SafetyReviewer,
+} from "@/server/safety/llm-reviewer";
 
 export const runtime = "nodejs";
 const MAX_READING_REQUEST_BYTES = 64 * 1024;
@@ -82,6 +93,7 @@ interface ReadingRouteDependencies {
   recordEvent: (input: ReadingEventInput) => Promise<void>;
   executionStore?: ReadingRequestExecutionStore;
   snapshotStore?: InitialReadingSnapshotStore;
+  safetyReviewer: SafetyReviewer;
 }
 
 const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
@@ -93,6 +105,7 @@ const DEFAULT_DEPENDENCIES: ReadingRouteDependencies = {
   generateReading: generateStructuredReadingWithDiagnostics,
   collectUsage: collectLlmUsage,
   recordEvent: recordReadingEvent,
+  safetyReviewer: defaultLLMSafetyReviewer,
 };
 type ReadingResponseSnapshot = {
   payload: StructuredReading | ReadingErrorPayload;
@@ -265,6 +278,7 @@ async function executeReadingRequest({
   subjectKey,
   snapshotStore,
   initialSnapshot,
+  inputSafetyReview,
   signal,
 }: {
   deps: ReadingRouteDependencies;
@@ -277,6 +291,7 @@ async function executeReadingRequest({
   subjectKey: string;
   snapshotStore: InitialReadingSnapshotStore;
   initialSnapshot?: InitialReadingSnapshot;
+  inputSafetyReview?: SafetyReviewExecution<SafetyInputReviewVerdict>;
   signal?: AbortSignal;
 }): Promise<ReadingResponseSnapshot> {
   let dailyQuotaConsumed = false;
@@ -291,6 +306,8 @@ async function executeReadingRequest({
         initialReading: initialSnapshot?.initialReading,
         memoryUserId: actor.userId ?? undefined,
         signal,
+        safetyReviewer: deps.safetyReviewer,
+        inputSafetyReview,
       })
     );
     const generated = normalizeGenerationResult(result);
@@ -664,6 +681,70 @@ export async function handleReadingPost(
     }
   }
 
+  let inputSafetyReview: SafetyReviewExecution<SafetyInputReviewVerdict>;
+  try {
+    const subjects = buildSafetySubjects(
+      parsedPayload.question,
+      parsedPayload.followup_answers,
+    );
+    const deterministicSafety = assessSafetyFields(subjects);
+    inputSafetyReview = await deps.safetyReviewer.reviewInput({
+      requestId: parsedPayload.request_id,
+      question: parsedPayload.question,
+      followupAnswers: parsedPayload.followup_answers ?? [],
+      deterministic: deterministicSafety,
+      signal: request.signal,
+    });
+    if (inputSafetyReview.applied) {
+      assertSafetyAllowsGeneration(
+        mergeInputSafetyAssessment(deterministicSafety, inputSafetyReview.verdict),
+      );
+    }
+  } catch (error) {
+    if (initialSnapshot) {
+      await runtimeStores.snapshotStore.release({
+        subjectKey: identity.subjectKey,
+        initialReadingId: initialSnapshot.initialReadingId,
+        requestId: operationRequestId,
+      }).catch(() => undefined);
+    }
+    if (leaseOwner && parsedPayload.request_id) {
+      await runtimeStores.executionStore.release({
+        subjectKey: identity.subjectKey,
+        requestId: parsedPayload.request_id,
+        leaseOwner,
+      }).catch(() => undefined);
+    }
+    const actualError = isReadingServiceError(error)
+      ? error
+      : new ReadingServiceError(
+        "provider_unavailable",
+        "安全审校服务暂时不可用，请稍后重试。",
+        503,
+      );
+    await recordEvent({
+      ...getEventBase({ parsedPayload, actor, ipHash, provider, startedAt }),
+      readingId: null,
+      status: "failure",
+      errorCode: actualError.code,
+      llmDurationMs: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      estimatedCostUsd: 0,
+      completedInitial: false,
+      completedFinal: false,
+    });
+    return buildErrorResponse(
+      actualError.code,
+      actualError.message,
+      actualError.status,
+      actualError.intercept_reason,
+      actualError.referral_links,
+      actualError.details,
+    );
+  }
+
   const snapshot = await executeReadingRequest({
     deps,
     parsedPayload,
@@ -676,6 +757,7 @@ export async function handleReadingPost(
     snapshotStore: runtimeStores.snapshotStore,
     initialSnapshot,
     signal: request.signal,
+    inputSafetyReview,
   });
 
   if (snapshot.status === 200 && leaseOwner && parsedPayload.request_id) {

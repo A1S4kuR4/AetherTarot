@@ -719,6 +719,21 @@ export interface Database {
         };
         Returns: Json;
       };
+      reserve_daily_safety_reviewer_tokens: {
+        Args: {
+          p_source: "safety_input" | "safety_output";
+          p_requested_tokens: number;
+          p_daily_limit: number;
+        };
+        Returns: Json;
+      };
+      settle_daily_safety_reviewer_tokens: {
+        Args: {
+          p_reservation_id: string;
+          p_actual_tokens: number;
+        };
+        Returns: Json;
+      };
       consume_auth_email_quota: {
         Args: {
           p_email: string;

@@ -8,6 +8,7 @@ import {
 } from "@/server/reading/errors";
 import {
   databaseLlmTokenGate,
+  type LlmTokenSource,
   type LlmTokenGate,
 } from "@/server/beta/token-budget";
 import {
@@ -35,6 +36,7 @@ export interface LlmProviderConfig {
   maxConcurrentRequests?: number;
   maxQueuedRequests?: number;
   queueTimeoutMs?: number;
+  bulkheadNamespace?: string;
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -409,6 +411,7 @@ export class OpenAiCompatibleTransport {
     private readonly fetchImplementation: FetchImplementation = fetch,
     private readonly tokenGate: LlmTokenGate = databaseLlmTokenGate,
     private readonly bulkhead: ProviderBulkhead = getSharedProviderBulkhead({
+      namespace: config.bulkheadNamespace ?? "generation",
       maxConcurrent: config.maxConcurrentRequests ?? 4,
       maxQueued: config.maxQueuedRequests ?? 16,
       queueTimeoutMs: config.queueTimeoutMs ?? 15_000,
@@ -416,7 +419,7 @@ export class OpenAiCompatibleTransport {
   ) {}
 
   async request<T>(input: {
-    source: "reading" | "encyclopedia";
+    source: LlmTokenSource;
     prompt: { system: string; user: string };
     maxOutputTokens: number;
     parse: (payload: JsonRecord) => T;
@@ -429,6 +432,7 @@ export class OpenAiCompatibleTransport {
       stage?: string;
       attempt?: number;
       kind?: "generate" | "retry" | "repair";
+      purpose?: "generation" | "safety_input" | "safety_output";
     };
   }): Promise<T> {
     if (input.signal?.aborted) {

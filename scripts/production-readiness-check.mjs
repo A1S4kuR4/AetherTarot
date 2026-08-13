@@ -31,6 +31,24 @@ const requiredEnvNames = [
   "AETHERTAROT_ENCYCLOPEDIA_DAILY_LIMIT_PER_ANONYMOUS_IP",
   "AETHERTAROT_LLM_IP_LIMIT_PER_MINUTE",
   "AETHERTAROT_LLM_DAILY_TOKEN_LIMIT",
+  "AETHERTAROT_SAFETY_REVIEWER_MODE",
+  "AETHERTAROT_SAFETY_REVIEWER_BASE_URL",
+  "AETHERTAROT_SAFETY_REVIEWER_MODEL",
+  "AETHERTAROT_SAFETY_REVIEWER_API_KEY",
+  "AETHERTAROT_SAFETY_REVIEWER_POLICY_VERSION",
+  "AETHERTAROT_SAFETY_REVIEWER_DAILY_TOKEN_LIMIT",
+  "AETHERTAROT_SAFETY_REVIEWER_RATE_LIMIT_PER_MINUTE",
+  "AETHERTAROT_SAFETY_REVIEWER_MAX_CONCURRENCY",
+  "AETHERTAROT_SAFETY_REVIEWER_MAX_QUEUE",
+  "AETHERTAROT_SAFETY_REVIEWER_QUEUE_TIMEOUT_MS",
+  "AETHERTAROT_SAFETY_REVIEWER_INPUT_DEADLINE_MS",
+  "AETHERTAROT_SAFETY_REVIEWER_OUTPUT_DEADLINE_MS",
+  "AETHERTAROT_SAFETY_REVIEWER_MAX_OUTPUT_TOKENS",
+  "AETHERTAROT_SAFETY_REVIEWER_MAX_RESPONSE_BYTES",
+  "AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_FAILURE_THRESHOLD",
+  "AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_RESET_MS",
+  "AETHERTAROT_SAFETY_REVIEWER_CACHE_TTL_MS",
+  "AETHERTAROT_SAFETY_REVIEWER_CACHE_HMAC_SECRET",
 ];
 
 const llmEnvNames = [
@@ -61,6 +79,18 @@ const numericEnvRanges = {
   AETHERTAROT_LLM_MAX_CONCURRENCY: [1, 64],
   AETHERTAROT_LLM_MAX_QUEUE: [0, 512],
   AETHERTAROT_LLM_QUEUE_TIMEOUT_MS: [100, 120_000],
+  AETHERTAROT_SAFETY_REVIEWER_DAILY_TOKEN_LIMIT: [1000, 1_000_000_000],
+  AETHERTAROT_SAFETY_REVIEWER_RATE_LIMIT_PER_MINUTE: [1, 10_000],
+  AETHERTAROT_SAFETY_REVIEWER_MAX_CONCURRENCY: [1, 64],
+  AETHERTAROT_SAFETY_REVIEWER_MAX_QUEUE: [0, 512],
+  AETHERTAROT_SAFETY_REVIEWER_QUEUE_TIMEOUT_MS: [100, 2_000],
+  AETHERTAROT_SAFETY_REVIEWER_INPUT_DEADLINE_MS: [500, 5_000],
+  AETHERTAROT_SAFETY_REVIEWER_OUTPUT_DEADLINE_MS: [500, 5_000],
+  AETHERTAROT_SAFETY_REVIEWER_MAX_OUTPUT_TOKENS: [128, 256],
+  AETHERTAROT_SAFETY_REVIEWER_MAX_RESPONSE_BYTES: [16 * 1024, 32 * 1024],
+  AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_FAILURE_THRESHOLD: [1, 100],
+  AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_RESET_MS: [1_000, 600_000],
+  AETHERTAROT_SAFETY_REVIEWER_CACHE_TTL_MS: [1_000, 300_000],
 };
 
 const urlEnvNames = new Set([
@@ -68,6 +98,7 @@ const urlEnvNames = new Set([
   "AUTH_URL",
   "SUPABASE_URL",
   "AETHERTAROT_LLM_BASE_URL",
+  "AETHERTAROT_SAFETY_REVIEWER_BASE_URL",
 ]);
 
 const allowedEnvValues = {
@@ -76,6 +107,7 @@ const allowedEnvValues = {
   AETHERTAROT_READING_GENERATION_MODE: ["monolithic"],
   AETHERTAROT_LLM_THINKING_MODE: ["enabled", "disabled"],
   AETHERTAROT_LLM_RESPONSE_FORMAT: ["json_object"],
+  AETHERTAROT_SAFETY_REVIEWER_MODE: ["shadow", "enforce"],
 };
 
 const nextBuildArtifacts = [
@@ -238,14 +270,14 @@ function checkRequiredEnv(env) {
     }
 
     if (
-      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT")
+      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT" || name === "AETHERTAROT_SAFETY_REVIEWER_CACHE_HMAC_SECRET")
       && value.length < 32
     ) {
       return fail("env", name, "must contain at least 32 characters");
     }
 
     if (
-      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT")
+      (name === "AUTH_SECRET" || name === "AETHERTAROT_PROXY_SHARED_SECRET" || name === "AETHERTAROT_IP_HASH_SALT" || name === "AETHERTAROT_SAFETY_REVIEWER_CACHE_HMAC_SECRET")
       && placeholderSecretPattern.test(value)
     ) {
       return fail("env", name, "must not use an example or placeholder value");
@@ -258,7 +290,7 @@ function checkRequiredEnv(env) {
       }
     }
 
-    if (name === "AETHERTAROT_LLM_API_KEY") {
+    if (name === "AETHERTAROT_LLM_API_KEY" || name === "AETHERTAROT_SAFETY_REVIEWER_API_KEY") {
       const reference = /^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/.exec(value);
       if (reference && !env[reference[1] ?? reference[2]]?.trim()) {
         return fail("env", name, "references a missing or empty environment variable");
@@ -272,6 +304,16 @@ function checkRequiredEnv(env) {
   const ipSalt = env.AETHERTAROT_IP_HASH_SALT?.trim();
   if (proxySecret && ipSalt && proxySecret === ipSalt) {
     checks.push(fail("env", "proxy/IP secrets", "AETHERTAROT_PROXY_SHARED_SECRET and AETHERTAROT_IP_HASH_SALT must be different"));
+  }
+
+  const generationApiKey = env.AETHERTAROT_LLM_API_KEY?.trim();
+  const reviewerApiKey = env.AETHERTAROT_SAFETY_REVIEWER_API_KEY?.trim();
+  if (generationApiKey && reviewerApiKey && generationApiKey === reviewerApiKey) {
+    checks.push(fail(
+      "env",
+      "generation/reviewer API keys",
+      "AETHERTAROT_LLM_API_KEY and AETHERTAROT_SAFETY_REVIEWER_API_KEY must be different",
+    ));
   }
   if (readingProvider === "llm" || encyclopediaProvider === "llm") {
     const llmDeadlineMs = Number(env.AETHERTAROT_LLM_TIMEOUT_MS);

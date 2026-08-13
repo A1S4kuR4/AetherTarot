@@ -51,6 +51,10 @@ export function getReadingProviderName(env: RuntimeEnvironment = process.env) {
   return (env.AETHERTAROT_READING_PROVIDER ?? "placeholder").trim();
 }
 
+export interface SafetyReviewerTokenBudgetConfig {
+  dailyTokenLimit: number;
+}
+
 export function isEncyclopediaQueryEnabled(
   env: RuntimeEnvironment = process.env,
 ) {
@@ -109,6 +113,18 @@ export function getLlmTokenBudgetConfig(
       env,
       name: "AETHERTAROT_LLM_DAILY_TOKEN_LIMIT",
       fallback: 200_000,
+    }),
+  };
+}
+
+export function getSafetyReviewerTokenBudgetConfig(
+  env: RuntimeEnvironment = process.env,
+): SafetyReviewerTokenBudgetConfig {
+  return {
+    dailyTokenLimit: parsePositiveInteger({
+      env,
+      name: "AETHERTAROT_SAFETY_REVIEWER_DAILY_TOKEN_LIMIT",
+      fallback: 30_000,
     }),
   };
 }

@@ -17,6 +17,8 @@ export type ReadingServiceOptions = Pick<
   | "sessionMemoryStore"
   | "generationMode"
   | "signal"
+  | "safetyReviewer"
+  | "inputSafetyReview"
 >;
 
 export async function generateStructuredReadingWithDiagnostics(
