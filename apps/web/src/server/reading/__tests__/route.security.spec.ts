@@ -596,6 +596,125 @@ describe("reading route beta access and quota", () => {
     expect(JSON.stringify(finalCall)).not.toContain("客户端注入");
   });
 
+  it("persists only the sanitized continuity value received by the provider", async () => {
+    const runtimeStores = createInMemoryReadingRuntimeStores();
+    const saveSpy = vi.spyOn(runtimeStores.snapshotStore, "save");
+    let initialProviderContinuity: string | null | undefined;
+    let finalProviderContinuity: string | null | undefined;
+    const provider = new TestReadingProvider({
+      initial: (draft, context) => {
+        initialProviderContinuity = context.priorSessionCapsule;
+        return draft;
+      },
+      final: (draft, context) => {
+        finalProviderContinuity = context.priorSessionCapsule;
+        return draft;
+      },
+    });
+    const deps = buildDependencies({
+      ...runtimeStores,
+      generateReading: vi.fn((payload, options) =>
+        runReadingGraph(payload, { ...options, provider })
+      ),
+    });
+    const rawContinuity = [
+      "上一轮线索：先看清现实边界。",
+      "用户补充：这行原始细节不得保存。",
+    ].join("\n");
+    const initialRequest = {
+      ...buildSinglePayload("我该怎样稳住现在的节奏？"),
+      request_id: "30000000-0000-4000-8000-000000000001",
+      agent_profile: "standard" as const,
+      prior_session_capsule: rawContinuity,
+    };
+
+    const initialResponse = await handleReadingPost(buildRequest(initialRequest), deps);
+    const initial = await initialResponse.json();
+    const saved = saveSpy.mock.calls[0]?.[0];
+
+    expect(initialResponse.status).toBe(200);
+    expect(initialProviderContinuity).toBe("上一轮线索：先看清现实边界。");
+    expect(saved?.continuityContext).toBe(initialProviderContinuity);
+    expect(saved?.continuityContext).not.toContain("用户补充");
+
+    const finalResponse = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "30000000-0000-4000-8000-000000000002",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我会先观察现实信息。",
+      })),
+    }), deps);
+
+    expect(finalResponse.status).toBe(200);
+    expect(finalProviderContinuity).toBe(initialProviderContinuity);
+  });
+
+  it("sanitizes a legacy dirty snapshot again before Final graph input", async () => {
+    const runtimeStores = createInMemoryReadingRuntimeStores();
+    const baseClaim = runtimeStores.snapshotStore.claim.bind(runtimeStores.snapshotStore);
+    const legacyDirtyContinuity = "本轮问题：监。控前任";
+    const snapshotStore = {
+      ...runtimeStores.snapshotStore,
+      claim: vi.fn(async (input: Parameters<typeof baseClaim>[0]) => {
+        const claim = await baseClaim(input);
+        return claim.status === "claimed"
+          ? {
+              ...claim,
+              snapshot: {
+                ...claim.snapshot,
+                continuityContext: legacyDirtyContinuity,
+              },
+            }
+          : claim;
+      }),
+    };
+    let finalGraphContinuity: string | null | undefined = "not-called";
+    let finalProviderContinuity: string | null | undefined = "not-called";
+    const provider = new TestReadingProvider({
+      final: (draft, context) => {
+        finalProviderContinuity = context.priorSessionCapsule;
+        return draft;
+      },
+    });
+    const deps = buildDependencies({
+      ...runtimeStores,
+      snapshotStore,
+      generateReading: vi.fn((payload, options) => {
+        if (payload.phase === "final") {
+          finalGraphContinuity = payload.prior_session_capsule;
+        }
+        return runReadingGraph(payload, { ...options, provider });
+      }),
+    });
+    const initialRequest = {
+      ...buildSinglePayload("我该怎样稳住现在的节奏？"),
+      request_id: "40000000-0000-4000-8000-000000000001",
+      agent_profile: "standard" as const,
+      prior_session_capsule: "上一轮线索：保留现实边界。",
+    };
+    const initialResponse = await handleReadingPost(buildRequest(initialRequest), deps);
+    const initial = await initialResponse.json();
+
+    const finalResponse = await handleReadingPost(buildRequest({
+      ...initialRequest,
+      request_id: "40000000-0000-4000-8000-000000000002",
+      phase: "final",
+      initial_reading_id: initial.reading_id,
+      followup_answers: initial.follow_up_questions.map((question: string) => ({
+        question,
+        answer: "我会先观察现实信息。",
+      })),
+    }), deps);
+
+    expect(finalResponse.status).toBe(200);
+    expect(finalGraphContinuity).toBeNull();
+    expect(finalProviderContinuity).toBeNull();
+    expect(JSON.stringify(await finalResponse.json())).not.toContain(legacyDirtyContinuity);
+  });
+
   it("releases a safety-intercepted Final snapshot so corrected answers can retry", async () => {
     const deps = buildDependencies();
     const initialRequest = {

@@ -30,3 +30,5 @@ Accepted — 2026-08-12
 ## RC implementation evidence — 2026-08-13
 
 本决策的安全语法已用 taxonomy × speech act × action/state × target/entity × context × normalization mutation 矩阵验证到 Reading classifier/Route/Graph、Encyclopedia service/Route、generated-output validator、capsule、grounding、thread memory、completed history、agent state 与 trace。验证语言范围限于测试中的简体中文、常见英文与基础中英混合；fixture 和组合矩阵不构成自然语言穷尽证明。
+
+Initial snapshot 的 `continuity_context` 写入边界收紧为共享 sanitizer 的 provider-ready 结果；Final claim、数据库行解析和 Graph handoff 均再次净化，不信任历史存量。公共 snapshot/history/schema 不变。由于该字段已接入共享数据库，旧存量采用单独准备、受控执行的置空迁移，不在应用发布过程中隐式改写。

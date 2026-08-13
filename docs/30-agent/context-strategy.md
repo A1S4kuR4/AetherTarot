@@ -80,6 +80,7 @@ replay 与账号作用域的 thread 短期记忆，但仍未引入 LangGraph ses
 - `prior_session_capsule` 只带入上一轮紧凑摘要，不把整条 history 或原始 transcript 注入下一轮
 - `prior_session_capsule` 在进入 provider 前会先对完整文本做 NFKC、Cf 清除和全空白折叠后的整体分类，再做逐行 label 清理；整体出现自伤/他伤、操控、第三方意图猜测、紧急健康等受限内容时整份降为 `null`，不尝试从同一危险 capsule 中挑回“安全行”
 - 若净化后只剩噪音或空壳，`prior_session_capsule` 会在服务层降为 `null`
+- 两阶段 initial snapshot 的 `continuity_context` 只能写入与本轮 provider 实际收到的共享 sanitizer 结果；不得保存 request 原始 capsule。Final claim 后再次净化该字段，数据库历史脏值也只能以净化结果或 `null` 进入 Graph。生产表曾允许原值写入，因此仓库准备了只清空旧 `continuity_context` 的一次性迁移，不在本次代码交付中执行。
 
 ### 层 4：长期记忆层
 

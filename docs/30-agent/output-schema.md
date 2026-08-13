@@ -319,6 +319,7 @@ P2 边界补充：
 - 前端主展示应按字段分块渲染，而不是再把结构化结果重新拼回长 markdown
 - 当前 LangGraph 节点必须收敛到本协议，不创造第二套 reading shape
 - final 阶段只由前端提交 `initial_reading_id` 与答案；服务端按 subject claim 并恢复 canonical initial snapshot，客户端正文不具权威性
+- initial snapshot 只保存共享 sanitizer 后的 provider continuity；Final 恢复时对 `continuity_context` 再次净化，兼容历史脏数据而不改变 snapshot 或 `StructuredReading` shape
 - `prior_session_capsule` 只表示显式 opt-in 的 continuity summary，不承载账号级 history replay、thread memory 或 long-term memory 语义；登录用户的持久化 thread 摘要由独立 `{ user_id, thread_id }` 作用域处理
 - 前台展示 `question` 时应以“本次提问”呈现，不应把它高密度复述到 `themes`、`synthesis` 与 `guidance` 中，避免放大迎合错觉
 - 前台应保留“牌面较近的层”和“综合推断层”的区分，而不是把所有字段融合成单一论断。当前 reading 页已将逐牌展示显式拆为“牌面线索 / 位置语义 / 综合推断”：牌面线索来自权威抽牌、正逆位与关键词；位置语义来自 `spread.positions[]` / `cards[].position_meaning`；综合推断来自 `cards[].interpretation` 与 `synthesis`

@@ -15,6 +15,7 @@ import {
   readingRequestCardInputSchema,
   structuredReadingSchema,
 } from "@/server/reading/schemas";
+import { sanitizeIncomingSessionCapsule } from "@/server/reading/safety";
 
 export const READING_EXECUTION_LEASE_SECONDS = 180;
 export const READING_EXECUTION_WAIT_MS = 125_000;
@@ -72,7 +73,7 @@ function parseInitialSnapshot(value: unknown): InitialReadingSnapshot {
     agentProfile: row.profile,
     drawSource: row.draw_source,
     threadId: row.thread_id,
-    continuityContext: row.continuity_context,
+    continuityContext: sanitizeIncomingSessionCapsule(row.continuity_context),
     initialReading: row.initial_reading,
     followUpQuestions: row.follow_up_questions,
     expiresAt: row.expires_at,
@@ -152,6 +153,9 @@ InitialReadingSnapshotStore {
   return {
     async save(snapshot) {
       const expiresAt = new Date(Date.now() + SNAPSHOT_RETENTION_MS).toISOString();
+      const continuityContext = sanitizeIncomingSessionCapsule(
+        snapshot.continuityContext,
+      );
       const { data, error } = await requireAdminClient()
         .from("reading_initial_snapshots")
         .upsert({
@@ -164,7 +168,7 @@ InitialReadingSnapshotStore {
           profile: snapshot.agentProfile,
           draw_source: snapshot.drawSource,
           thread_id: snapshot.threadId,
-          continuity_context: snapshot.continuityContext,
+          continuity_context: continuityContext,
           initial_reading: snapshot.initialReading as unknown as Json,
           follow_up_questions: snapshot.followUpQuestions,
           expires_at: expiresAt,
@@ -411,6 +415,9 @@ export function createInMemoryReadingRuntimeStores(): {
     async save(snapshot) {
       const stored = {
         ...snapshot,
+        continuityContext: sanitizeIncomingSessionCapsule(
+          snapshot.continuityContext,
+        ),
         expiresAt: new Date(Date.now() + SNAPSHOT_RETENTION_MS).toISOString(),
       };
       snapshots.set(

@@ -31,6 +31,7 @@ import {
 import {
   analyzeIntentFriction,
   buildSafetySubjects,
+  sanitizeIncomingSessionCapsule,
 } from "@/server/reading/safety";
 import type { ReadingGraphDiagnostics } from "@/server/reading/graph";
 import {
@@ -312,7 +313,9 @@ async function executeReadingRequest({
           agentProfile: parsedPayload.agent_profile ?? "standard",
           drawSource: parsedPayload.draw_source ?? "digital_random",
           threadId: parsedPayload.thread_id ?? null,
-          continuityContext: parsedPayload.prior_session_capsule ?? null,
+          continuityContext: sanitizeIncomingSessionCapsule(
+            parsedPayload.prior_session_capsule ?? null,
+          ),
           initialReading: reading,
           followUpQuestions: reading.follow_up_questions,
         });
@@ -633,7 +636,9 @@ export async function handleReadingPost(
         ...parsedPayload,
         initial_reading: { reading_id: initialSnapshot.initialReadingId },
         initial_reading_id: initialSnapshot.initialReadingId,
-        prior_session_capsule: initialSnapshot.continuityContext,
+        prior_session_capsule: sanitizeIncomingSessionCapsule(
+          initialSnapshot.continuityContext,
+        ),
       };
     } catch (error) {
       await runtimeStores.snapshotStore.release({

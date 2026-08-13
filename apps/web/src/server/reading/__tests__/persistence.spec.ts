@@ -74,12 +74,17 @@ describe("durable reading runtime stores", () => {
       agentProfile: request.agent_profile,
       drawSource: request.draw_source,
       threadId: request.thread_id,
-      continuityContext: null,
+      continuityContext: [
+        "上一轮线索：先看清现实边界。",
+        "用户补充：这行原始细节不得保存。",
+      ].join("\n"),
       initialReading: reading,
       followUpQuestions: reading.follow_up_questions,
     });
 
     expect(snapshot.expiresAt).toBe(SUPABASE_TIMESTAMP);
+    expect(savedRow?.continuity_context).toBe("上一轮线索：先看清现实边界。");
+    expect(snapshot.continuityContext).toBe("上一轮线索：先看清现实边界。");
   });
 
   it("isolates thread memory by both user and thread and enforces merge caps", async () => {

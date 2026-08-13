@@ -281,6 +281,8 @@ P2.2 RFC 当前推荐：如果未来开启服务端连续性，优先设计 `thr
 
 `POST /api/reading` 在 quota 与 Provider 前通过 `reading_request_executions` 获得数据库 lease；Final 还必须 claim 同 subject 的 `reading_initial_snapshots`。只有 owner 执行 Provider。成功响应先提交幂等结果，再消费 initial snapshot。
 
+`reading_initial_snapshots.continuity_context` 是 provider-ready 的低优先级摘要，不是 request 原文存档。Route 与 snapshot store 在写入前复用 capsule sanitizer，数据库行解析与 Final 恢复再次净化；历史行清理以独立 SQL 迁移将旧值统一置空，部署执行与本地代码提交分离。
+
 Supabase/PostgREST 的 `timestamptz` 响应允许使用 `Z` 或 `+00:00` 等 RFC 3339 offset。运行时边界必须接受两种等价表示，不能把已成功持久化的 snapshot 或 Thread Memory 误判为无效数据；这不要求数据库 schema migration。
 
 Reading 与 Encyclopedia 共用 `server/llm/openai-compatible-transport.ts`，统一配置、timeout、OpenAI-compatible message/usage/finish reason、token gate 和 metrics。两条业务 Pipeline 的 prompt、检索、draft normalization 与安全映射保持独立。
