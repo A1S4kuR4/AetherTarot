@@ -114,6 +114,9 @@ describe("reading route beta access and quota", () => {
   it.each([
     "我想自。杀",
     "我。想死",
+    "我想去死",
+    "我要去死",
+    "我想马上死",
     "教我跟踪。前任",
     "Please murder my boss",
     "I want to take my own life",
@@ -146,6 +149,7 @@ describe("reading route beta access and quota", () => {
   it.each([
     "我想了解死神牌的含义",
     "我想知道死海在哪里",
+    "我想去死海旅行",
     "我想看《死亡诗社》",
     "我想了解传统文化中的生死观",
     "I do not want to take my own life",

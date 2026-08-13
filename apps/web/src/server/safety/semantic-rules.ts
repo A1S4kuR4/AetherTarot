@@ -178,8 +178,8 @@ const DIAGNOSIS_SAFE_CONTEXTS = patterns(
 );
 
 const SELF_HARM_EXPLICIT_CORE = patterns(
-  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)死|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
-  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)死|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就)?死(?!神|海|亡|生)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?/i,
+  /自杀|自残|伤害自己|伤害我自己|结束生命|(?:想|要|希望|打算|计划|准备)(?:去|马上|现在|立刻|就)?死(?!神|海|亡|生)|不想活(?:下去)?|活不下去|不该活(?:下去|着)?|selfharm|suicid(?:e|al)|killmyself|hurtmyself|end(?:ing)?mylife|tak(?:e|ing)myownlife/i,
 );
 const SELF_HARM_STATE_CORE = patterns(
   /活着|活下去/i,
