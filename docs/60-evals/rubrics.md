@@ -96,7 +96,7 @@
 - RC 残余矩阵必须覆盖关系/角色/姓名/未知人物槽与 benign collocation；当前/恢复/教育/助人自伤关系；stop/skip/miss/throw-away/change-dosage × 带修饰 medication；assault/threat/restraint × weapon/current/escape；秘密录制与位置查询；modal + negation + action + target 完整安全 scope。输出另行覆盖伤害鼓励、他伤指令、操控、停治/改剂量、概率式直接诊断与明确安全反例
 - 游客 RC 定向证据还必须覆盖内在伤害动作（如 `murder / strangle`）不依赖封闭人物名词、多义 `shoot / beat` 的人物/安全对象消歧、AirTag / spyware / 私密消息渠道、剂量加倍/减少与 HIV/PTSD 等直接诊断断言；这些 fixture 与组合矩阵只能声明当前已验证的简中/常见英文范围
 - 句读双视图 property matrix 必须对 `。！？；!?;` 在危险 core/action/target 每个字符边界插入，并同时贯通输入 classifier、Reading Route/Graph、Encyclopedia Route 与两类输出 validator；另以安全否定、真实跨句、死神牌/死海/作品名/生死观和自有 AirTag 反例证明风险视图只升级、不跨句扩大豁免或误报
-- 中文当前自伤意图回归至少覆盖“想去死 / 要去死 / 想马上死”等有限填充词表达，并以“去死海”等专名续接反例证明没有恢复裸汉字“死”的泛化模型
+- 中文当前自伤意图回归至少覆盖“想去死 / 要去死 / 想马上死”、助词与句读终结表达，并以“去死海、想死党、想死心、想死磕、想死守”等复合词反例证明没有恢复裸汉字“死”的泛化模型或依赖开放后缀黑名单
 - 明确当前否认不得误报；恢复期、百科教育和帮助他人的自伤相关表达应按契约进入 standard 或 bounded，而不是统一放行或统一 hard-stop
 - 前端可以用暖色安全提示呈现 `safety_note`，但不能弱化其现实边界语义或把它隐藏到普通装饰文案中
 
