@@ -430,6 +430,6 @@ saturation，不能只按 winner 宣称提升。完整 probe 证据与预算见
 
 ## 15. LLM Safety Reviewer 回归门槛
 
-自动回归至少证明：确定性 hard-stop 时 Reviewer/quota/tool/provider 为 0；Reviewer 可把 standard 升到 hard-stop 且后续生成/持久化为 0；任何 verdict 都不能降低 hard-stop、bounded、sober-check、restrict 或 replace；abuse-support 不被 sober-check 覆盖；enforce 的 timeout/429/5xx/schema/circuit-open 返回系统 503；输出 replace 后危险原文在 response、grounding、capsule、thread memory、history、agent state 与 trace 的出现次数均为 0；输出故障不返回或持久化正文；shadow 不改变结果且指标无原文；Reading Route/Graph 与 Encyclopedia route/service 边界一致；request_id replay 不重复审校成本。
+自动回归至少证明：确定性 hard-stop 时 Reviewer/quota/tool/provider 为 0；Reviewer 可把 standard 升到 hard-stop 且后续生成/持久化为 0；任何 verdict 都不能降低 hard-stop、bounded、sober-check、restrict 或 replace；abuse-support 不被 sober-check 覆盖；输出 `pass` 不含 violation/path，非 pass 的 path 必须真实存在，严重 violation 必须升级为 `replace`；Reviewer-only `restrict` 会替换其标记字段，原文在 response、grounding、capsule、thread memory、history、agent state 与 trace 的出现次数均为 0；enforce 的 timeout/429/5xx/schema/circuit-open 返回系统 503；输出故障不返回或持久化正文；shadow 不改变结果且指标无原文；Reading Route/Graph 与 Encyclopedia route/service 边界一致；request_id replay 不重复审校成本。
 
 语言矩阵继续覆盖简中、英文、中英混合、NFKC、Cf、空格、标点、否定、转述、恢复、助人和 benign collocation。资源矩阵独立验证 bulkhead namespace、input/output deadline、128–256 output token、16–32 KiB response cap、独立日预算、rate limit 与 circuit breaker。所有结果仍需通过公共 `StructuredReading` contract、Graph 完成顺序、身份隔离与持久化结构回归。真实外部模型只允许显式 canary；fixture/fake transport 通过不等于自然语言完整覆盖。

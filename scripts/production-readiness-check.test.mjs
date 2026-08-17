@@ -7,6 +7,9 @@ import {
   collectProductionReadinessChecks,
   formatReadinessReport,
 } from "./production-readiness-check.mjs";
+import {
+  collectSupabaseMigrationVersionChecks,
+} from "./check-supabase-migration-versions.mjs";
 
 const fullEnv = {
   NODE_ENV: "production",
@@ -66,6 +69,17 @@ test("production readiness rejects off and unsafe Safety Reviewer bounds", async
   assert.match(report, /shadow or enforce/);
   assert.match(report, /SAFETY_REVIEWER_INPUT_DEADLINE_MS/);
   assert.match(report, /SAFETY_REVIEWER_MAX_OUTPUT_TOKENS/);
+});
+
+test("migration version gate rejects duplicate versions before readiness or CI can pass", () => {
+  const repoRoot = makeRepoFixture();
+  const migrationsPath = path.join(repoRoot, "apps/web/supabase/migrations");
+  writeFile(path.join(migrationsPath, "202608130002_duplicate.sql"), "select 1;");
+
+  const checks = collectSupabaseMigrationVersionChecks({ repoRoot });
+
+  assert.equal(checks.some((check) => check.status === "fail"), true);
+  assert.match(checks.find((check) => check.status === "fail").message, /202608130002/);
 });
 
 test("missing required env reports variable names without values", async () => {
@@ -254,6 +268,25 @@ test("env validation rejects a generation API key reused by Safety Reviewer", as
   assert.match(report, /must be different/);
 });
 
+test("readiness resolves different API key references before comparing them", async () => {
+  const repoRoot = makeRepoFixture();
+  const result = await collectProductionReadinessChecks({
+    repoRoot,
+    env: {
+      ...fullEnv,
+      AETHERTAROT_LLM_API_KEY: "$GENERATION_KEY",
+      AETHERTAROT_SAFETY_REVIEWER_API_KEY: "${REVIEWER_KEY}",
+      GENERATION_KEY: "shared-provider-key",
+      REVIEWER_KEY: "shared-provider-key",
+    },
+    nodeVersion: "v22.11.0",
+  });
+  const report = formatReadinessReport(result);
+  assert.equal(result.ok, false);
+  assert.match(report, /generation\/reviewer API keys/);
+  assert.doesNotMatch(report, /shared-provider-key/);
+});
+
 test("env validation rejects weak AUTH_SECRET and an LLM deadline at the edge timeout", async () => {
   const repoRoot = makeRepoFixture();
   const result = await collectProductionReadinessChecks({
@@ -410,6 +443,7 @@ test("Web CI runs readiness and the complete three-browser Playwright gate", () 
   );
 
   assert.match(workflow, /node --test scripts\/production-readiness-check\.test\.mjs/);
+  assert.match(workflow, /node scripts\/check-supabase-migration-versions\.mjs/);
   assert.match(workflow, /timeout-minutes:\s*45/);
   assert.match(
     workflow,
@@ -466,6 +500,14 @@ function makeRepoFixture({ includeBuild = true, missingFiles = [] } = {}) {
   writeFile(path.join(cardsRoot, "major_0_fool.png"), "png");
   writeFile(path.join(revealRoot, "major_0_fool.webp"), "webp");
   writeFile(path.join(thumbsRoot, "major_0_fool.webp"), "webp");
+  writeFile(
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130001_snapshot.sql"),
+    "select 1;",
+  );
+  writeFile(
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130002_reviewer_budget.sql"),
+    "select 1;",
+  );
 
   if (includeBuild) {
     writeFile(path.join(repoRoot, "apps/web/.next/BUILD_ID"), "test-build");

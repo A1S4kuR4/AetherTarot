@@ -26,6 +26,14 @@ export interface GeneratedContentReview<T> {
   output: T;
 }
 
+const REPLACEMENT_VIOLATIONS = new Set<GeneratedContentViolation>([
+  "self_harm_or_violence_encouragement",
+  "manipulation_instruction",
+  "treatment_discontinuation",
+  "medical_diagnosis",
+  "abuse_minimization",
+]);
+
 const patterns = (
   normalized: RegExp,
   compact: RegExp,
@@ -128,13 +136,7 @@ function inspectGeneratedText(text: string) {
 }
 
 function isReplacementViolation(violation: GeneratedContentViolation) {
-  return (
-    violation === "self_harm_or_violence_encouragement"
-    || violation === "manipulation_instruction"
-    || violation === "treatment_discontinuation"
-    || violation === "medical_diagnosis"
-    || violation === "abuse_minimization"
-  );
+  return REPLACEMENT_VIOLATIONS.has(violation);
 }
 
 function mergeSafetyNote(existing: string | null, added: string) {
@@ -183,7 +185,7 @@ function replaceUnsafeReading(reading: StructuredReading): StructuredReading {
     follow_up_questions: [
       "此刻最需要优先确认的现实安全、事实或支持是什么？",
     ],
-    safety_note: mergeSafetyNote(reading.safety_note, REPLACED_SAFETY_NOTE),
+    safety_note: REPLACED_SAFETY_NOTE,
     confidence_note:
       "系统没有保留触及安全边界的生成结论；当前内容不构成预测、诊断或现实行动许可。",
     session_capsule: null,
@@ -202,12 +204,19 @@ export function mergeGeneratedContentAction(
   return rank[reviewer] > rank[deterministic] ? reviewer : deterministic;
 }
 
+export function minimumGeneratedContentAction(
+  violations: readonly GeneratedContentViolation[],
+): GeneratedContentAction {
+  return violations.some(isReplacementViolation) ? "replace" : "restrict";
+}
+
 export function applyReadingGeneratedContentAction(
   reading: StructuredReading,
   action: GeneratedContentAction,
+  flaggedPaths: readonly string[] = [],
 ) {
   if (action === "replace") return replaceUnsafeReading(reading);
-  if (action === "restrict") return restrictUnsafeReading(reading);
+  if (action === "restrict") return restrictUnsafeReading(reading, flaggedPaths);
   return reading;
 }
 
@@ -215,42 +224,56 @@ function replaceRestrictedText(text: string, replacement: string) {
   return inspectGeneratedText(text).length > 0 ? replacement : text;
 }
 
-function restrictUnsafeReading(reading: StructuredReading): StructuredReading {
+function restrictUnsafeReading(
+  reading: StructuredReading,
+  flaggedPaths: readonly string[] = [],
+): StructuredReading {
   const safeThemes = ["现实信息核验", "保留多种可能", "自主边界", "谨慎行动"];
+  const flagged = new Set(flaggedPaths);
+  const restrictText = (path: string, text: string, replacement: string) =>
+    flagged.has(path) ? replacement : replaceRestrictedText(text, replacement);
 
   return {
     ...reading,
-    cards: reading.cards.map((card) => ({
+    cards: reading.cards.map((card, index) => ({
       ...card,
-      interpretation: replaceRestrictedText(
+      interpretation: restrictText(
+        `cards.${index}.interpretation`,
         card.interpretation,
         "这张牌只能作为反思线索，不能证明必然结果、第三方真实想法或专业结论。",
       ),
     })),
     themes: reading.themes.map((theme, index) =>
-      replaceRestrictedText(theme, safeThemes[index] ?? "现实边界")
+      restrictText(`themes.${index}`, theme, safeThemes[index] ?? "现实边界")
     ),
-    synthesis: replaceRestrictedText(
+    synthesis: restrictText(
+      "synthesis",
       reading.synthesis,
       "这组牌更适合用来整理当前模式与待核实条件，而不能给出必然结果或替代现实专业判断。",
     ),
     reflective_guidance: reading.reflective_guidance.map((item, index) =>
-      replaceRestrictedText(
+      restrictText(
+        `reflective_guidance.${index}`,
         item,
         index === 0
           ? "先区分已经确认的事实、个人感受与仍待验证的推测。"
           : "在行动前核实现实信息，并保留调整与寻求专业意见的空间。",
       )
     ),
-    follow_up_questions: reading.follow_up_questions.map((item) =>
-      replaceRestrictedText(
+    follow_up_questions: reading.follow_up_questions.map((item, index) =>
+      restrictText(
+        `follow_up_questions.${index}`,
         item,
         "哪些可观察事实能帮助你校正当前的推测？",
       )
     ),
-    safety_note: mergeSafetyNote(reading.safety_note, RESTRICTED_SAFETY_NOTE),
+    safety_note: mergeSafetyNote(
+      flagged.has("safety_note") ? null : reading.safety_note,
+      RESTRICTED_SAFETY_NOTE,
+    ),
     confidence_note: reading.confidence_note
-      ? replaceRestrictedText(
+      ? restrictText(
+          "confidence_note",
           reading.confidence_note,
           "塔罗只能提供有限的反思角度，不能确认必然结果或专业结论。",
         )

@@ -183,6 +183,48 @@ describe("LLM Safety Reviewer integration boundaries", () => {
     expect(surfaces).not.toContain(unsafeText);
   });
 
+  it("replaces reviewer-only restricted fields before grounding, capsule, memory, state, or trace", async () => {
+    const unsafeText = "reviewer-only restricted original";
+    const memoryStore = createInMemorySessionMemoryStore();
+    const reviewer = buildReviewer({
+      reviewOutput: vi.fn(async () => ({
+        ...outputExecution("pass"),
+        verdict: {
+          action: "restrict" as const,
+          violations: ["deterministic_claim" as const],
+          flagged_paths: ["synthesis"],
+          policy_version: policyVersion,
+          model_version: modelVersion,
+        },
+      })),
+    });
+    const result = await runReadingGraphWithDiagnostics(
+      {
+        ...buildSinglePayload("普通问题"),
+        agent_profile: "lite",
+        thread_id: "reviewer-output-restrict",
+      },
+      {
+        safetyReviewer: reviewer,
+        provider: new TestReadingProvider({
+          initial: (draft) => ({ ...draft, synthesis: unsafeText }),
+        }),
+        sessionMemoryStore: memoryStore,
+      },
+    );
+    const surfaces = JSON.stringify({
+      response: result.reading,
+      grounding: result.reading.grounding,
+      capsule: result.reading.session_capsule,
+      memory: await memoryStore.get("reviewer-output-restrict"),
+      agentState: result.agentState,
+      trace: result.trace,
+    });
+
+    expect(result.reading.safety_note).toMatch(/移除/);
+    expect(surfaces).not.toContain(unsafeText);
+  });
+
   it("discards output and skips memory when output reviewer fails", async () => {
     const memoryStore = createInMemorySessionMemoryStore();
     const reviewer = buildReviewer({

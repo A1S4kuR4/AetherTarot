@@ -23,9 +23,11 @@ import {
   type SafetyCategory,
   type SafetyLevel,
 } from "@/server/safety/policy";
-import type {
+import {
   GeneratedContentAction,
   GeneratedContentViolation,
+  mergeGeneratedContentAction,
+  minimumGeneratedContentAction,
 } from "@/server/safety/output-validator";
 
 export type SafetyReviewerMode = "off" | "shadow" | "enforce";
@@ -113,6 +115,34 @@ export function outputSafetyReviewVerdictSchema({
 export type SafetyInputReviewVerdict = z.infer<ReturnType<typeof inputSafetyReviewVerdictSchema>>;
 export type SafetyOutputReviewVerdict = z.infer<ReturnType<typeof outputSafetyReviewVerdictSchema>>;
 
+export function validateSafetyOutputReviewVerdict(
+  verdict: SafetyOutputReviewVerdict,
+  availablePaths: ReadonlySet<string>,
+): SafetyOutputReviewVerdict {
+  if (verdict.action === "pass") {
+    if (verdict.violations.length > 0 || verdict.flagged_paths.length > 0) {
+      throw new Error("Safety Reviewer pass verdict 不能包含 violations 或 flagged_paths。");
+    }
+    return verdict;
+  }
+
+  if (verdict.violations.length === 0 || verdict.flagged_paths.length === 0) {
+    throw new Error("Safety Reviewer 非 pass verdict 必须包含 violations 和 flagged_paths。");
+  }
+
+  if (verdict.flagged_paths.some((path) => !availablePaths.has(path))) {
+    throw new Error("Safety Reviewer flagged_paths 必须指向本次实际输出字段。");
+  }
+
+  return {
+    ...verdict,
+    action: mergeGeneratedContentAction(
+      verdict.action,
+      minimumGeneratedContentAction(verdict.violations),
+    ),
+  };
+}
+
 const inputReviewProtocolSchema = z.object({
   protocol: z.literal("aethertarot_safety_input_v1"),
   question: z.string(),
@@ -192,6 +222,12 @@ function readString(env: ReviewerEnvironment, name: string, fallback = "") {
   return env[name]?.trim() || fallback;
 }
 
+export function resolveSecretReference(env: ReviewerEnvironment, name: string) {
+  const configured = readString(env, name);
+  const reference = /^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/.exec(configured);
+  return reference ? readString(env, reference[1] ?? reference[2]) : configured;
+}
+
 function readInteger(
   env: ReviewerEnvironment,
   name: string,
@@ -255,7 +291,7 @@ export function resolveSafetyReviewerConfig(
   if (mode === "off") return base;
 
   const baseUrl = readString(env, "AETHERTAROT_SAFETY_REVIEWER_BASE_URL");
-  const apiKey = readString(env, "AETHERTAROT_SAFETY_REVIEWER_API_KEY");
+  const apiKey = resolveSecretReference(env, "AETHERTAROT_SAFETY_REVIEWER_API_KEY");
   if (!baseUrl || !model || model === "off" || !apiKey) {
     throw new ReadingServiceError(
       "provider_unavailable",
@@ -263,7 +299,7 @@ export function resolveSafetyReviewerConfig(
       503,
     );
   }
-  if (apiKey === readString(env, "AETHERTAROT_LLM_API_KEY")) {
+  if (apiKey === resolveSecretReference(env, "AETHERTAROT_LLM_API_KEY")) {
     throw new ReadingServiceError(
       "provider_unavailable",
       "LLM Safety Reviewer 不得复用正文生成 API_KEY。",
@@ -473,16 +509,17 @@ class OpenAiSafetyReviewerProvider implements SafetyReviewerProvider {
 }
 
 class ReviewerRateLimiter {
-  private readonly calls = new Map<SafetyReviewerPurpose, number[]>();
+  private readonly calls = new Map<string, number[]>();
 
   constructor(private readonly limit: number, private readonly now = () => Date.now()) {}
 
-  take(purpose: SafetyReviewerPurpose) {
+  take(purpose: SafetyReviewerPurpose, subjectKey?: string) {
     const cutoff = this.now() - 60_000;
-    const recent = (this.calls.get(purpose) ?? []).filter((at) => at > cutoff);
+    const key = `${purpose}:${subjectKey ?? "unscoped"}`;
+    const recent = (this.calls.get(key) ?? []).filter((at) => at > cutoff);
     if (recent.length >= this.limit) throw new Error("rate_limit");
     recent.push(this.now());
-    this.calls.set(purpose, recent);
+    this.calls.set(key, recent);
   }
 }
 
@@ -721,6 +758,7 @@ export class LLMSafetyReviewer {
     question,
     followupAnswers,
     deterministic,
+    subjectKey,
     signal,
   }: {
     requestId?: string;
@@ -728,6 +766,7 @@ export class LLMSafetyReviewer {
     question: string;
     followupAnswers: readonly string[] | FollowupAnswer[];
     deterministic?: SafetyAssessment;
+    subjectKey?: string;
     signal?: AbortSignal;
   }): Promise<SafetyReviewExecution<SafetyInputReviewVerdict>> {
     const startedAt = Date.now();
@@ -774,7 +813,7 @@ export class LLMSafetyReviewer {
     }
 
     try {
-      this.rateLimiter.take("safety_input");
+      this.rateLimiter.take("safety_input", subjectKey);
       this.circuits.safety_input.beforeCall();
       const verdict = await this.provider?.reviewInput(protocol, signal);
       if (!verdict) throw new Error("provider_missing");
@@ -811,6 +850,7 @@ export class LLMSafetyReviewer {
     reading,
     deterministicAction,
     deterministicViolations,
+    subjectKey,
     signal,
   }: {
     requestId?: string;
@@ -818,6 +858,7 @@ export class LLMSafetyReviewer {
     reading: StructuredReading;
     deterministicAction: GeneratedContentAction;
     deterministicViolations: GeneratedContentViolation[];
+    subjectKey?: string;
     signal?: AbortSignal;
   }): Promise<SafetyReviewExecution<SafetyOutputReviewVerdict>> {
     const listFields = (values: string[], prefix: string) => values.map((text, index) => ({
@@ -841,6 +882,7 @@ export class LLMSafetyReviewer {
       ],
       deterministicAction,
       deterministicViolations,
+      subjectKey,
       signal,
     });
   }
@@ -852,6 +894,7 @@ export class LLMSafetyReviewer {
     boundaryNote,
     deterministicAction,
     deterministicViolations,
+    subjectKey,
     signal,
   }: {
     requestId?: string;
@@ -860,6 +903,7 @@ export class LLMSafetyReviewer {
     boundaryNote: string | null;
     deterministicAction: GeneratedContentAction;
     deterministicViolations: GeneratedContentViolation[];
+    subjectKey?: string;
     signal?: AbortSignal;
   }) {
     return this.reviewOutputFields({
@@ -871,6 +915,7 @@ export class LLMSafetyReviewer {
       ],
       deterministicAction,
       deterministicViolations,
+      subjectKey,
       signal,
     });
   }
@@ -881,6 +926,7 @@ export class LLMSafetyReviewer {
     fields,
     deterministicAction,
     deterministicViolations,
+    subjectKey,
     signal,
   }: {
     requestId?: string;
@@ -888,6 +934,7 @@ export class LLMSafetyReviewer {
     fields: Array<{ path: string; text: string }>;
     deterministicAction: GeneratedContentAction;
     deterministicViolations: GeneratedContentViolation[];
+    subjectKey?: string;
     signal?: AbortSignal;
   }): Promise<SafetyReviewExecution<SafetyOutputReviewVerdict>> {
     const startedAt = Date.now();
@@ -923,14 +970,18 @@ export class LLMSafetyReviewer {
     }
 
     try {
-      this.rateLimiter.take("safety_output");
+      this.rateLimiter.take("safety_output", subjectKey);
       this.circuits.safety_output.beforeCall();
       const verdict = await this.provider?.reviewOutput(protocol, signal);
       if (!verdict) throw new Error("provider_missing");
-      const validated = outputSafetyReviewVerdictSchema({
+      const parsed = outputSafetyReviewVerdictSchema({
         policyVersion: this.config.policyVersion,
         modelVersion: this.config.model,
       }).parse(verdict);
+      const validated = validateSafetyOutputReviewVerdict(
+        parsed,
+        new Set(fields.map((field) => field.path)),
+      );
       this.circuits.safety_output.success();
       this.writeCache(key, validated);
       this.metric("safety_output", { requestId, runId }, startedAt, validated.action, {

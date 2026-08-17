@@ -147,6 +147,6 @@ success 或 thread memory。Repair 只能修复当前输出合同，不能绕过
 
 Reviewer 永远只是第二信号：`deterministic rules → LLM verdict → upper bound`。它不能证明开放自然语言被完整覆盖，也不能作为删除规则、降低输出 validator 强度或改为 prompt-only safety 的依据。确定性 hard-stop/replace 永远优先；输入继续保护 abuse-support 优先级，输出继续按 replace > restrict > pass。
 
-Reviewer 只分类，不解释、不改写、不提供链接。所有用户可见 hard-stop、restrict 与 replace 文案及危机资源来自服务端固定常量。enforce 下任何 timeout、429、5xx、queue、circuit-open、非法 JSON 或 schema violation 都是系统 `503 provider_unavailable`，不能伪装成用户触发的 `403`，也不能静默退回 deterministic-only。
+Reviewer 只分类，不解释、不改写、不提供链接。所有用户可见 hard-stop、restrict 与 replace 文案及危机资源来自服务端固定常量。输出 `pass` 必须没有 violation/path；非 pass 必须给出本次真实存在的路径。服务端按 violation 推导下限，伤害鼓励、操控、停治、直接诊断和合理化暴力一律至少 `replace`；其余 `restrict` 逐路径用固定模板替换，绝不只附加 `safety_note` 后保留被标记原文。enforce 下任何 timeout、429、5xx、queue、circuit-open、非法 JSON 或 schema violation 都是系统 `503 provider_unavailable`，不能伪装成用户触发的 `403`，也不能静默退回 deterministic-only。
 
 发布必须依次经过 shadow、受控 canary、enforce。每阶段需要审阅误升级/漏升级、家暴受害者误路由、简中/英文/混合与 Unicode 变体、P95 延迟、失败率、circuit、独立 token 预算和原文泄漏。外部模型质量只能提供经验性第二证据，不构成完整覆盖证明。

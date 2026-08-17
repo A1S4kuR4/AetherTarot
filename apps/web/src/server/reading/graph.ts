@@ -75,6 +75,7 @@ import { assessSafetyFields, type SafetyAssessment } from "@/server/safety/polic
 import {
   getLLMSafetyReviewer,
   mergeInputSafetyAssessment,
+  validateSafetyOutputReviewVerdict,
   type SafetyReviewExecution,
   type SafetyInputReviewVerdict,
   type SafetyReviewer,
@@ -1393,15 +1394,33 @@ const llmOutputReviewNode: ReadingGraphNode = async (state) => {
     deterministicViolations,
     signal: state.abortSignal,
   });
+  const reviewerVerdict = review.applied
+    ? validateSafetyOutputReviewVerdict(
+        review.verdict,
+        new Set([
+          ...reading.cards.map((_, index) => `cards.${index}.interpretation`),
+          ...reading.themes.map((_, index) => `themes.${index}`),
+          "synthesis",
+          ...reading.reflective_guidance.map((_, index) => `reflective_guidance.${index}`),
+          ...reading.follow_up_questions.map((_, index) => `follow_up_questions.${index}`),
+          ...(reading.safety_note ? ["safety_note"] : []),
+          ...(reading.confidence_note ? ["confidence_note"] : []),
+        ]),
+      )
+    : review.verdict;
   const action = review.applied
-    ? mergeGeneratedContentAction(deterministicAction, review.verdict.action)
+    ? mergeGeneratedContentAction(deterministicAction, reviewerVerdict.action)
     : deterministicAction;
-  const output = applyReadingGeneratedContentAction(reading, action);
+  const output = applyReadingGeneratedContentAction(
+    reading,
+    action,
+    review.applied ? reviewerVerdict.flagged_paths : [],
+  );
   return {
     reading: structuredReadingSchema.parse(output) as StructuredReading,
     generatedContentAction: action,
     generatedContentViolations: [
-      ...new Set([...deterministicViolations, ...review.verdict.violations]),
+      ...new Set([...deterministicViolations, ...reviewerVerdict.violations]),
     ],
   };
 };

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildPrewarmUrls } from "./prewarm-production.mjs";
+import { collectSupabaseMigrationVersionChecks } from "./check-supabase-migration-versions.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = path.resolve(__dirname, "..");
@@ -131,6 +132,7 @@ export async function collectProductionReadinessChecks({
   const checks = [
     ...checkRequiredEnv(env),
     ...checkNodeVersion(nodeVersion),
+    ...checkSupabaseMigrationVersions(repoRoot),
     ...checkNextBuildArtifacts(repoRoot),
   ];
 
@@ -306,8 +308,8 @@ function checkRequiredEnv(env) {
     checks.push(fail("env", "proxy/IP secrets", "AETHERTAROT_PROXY_SHARED_SECRET and AETHERTAROT_IP_HASH_SALT must be different"));
   }
 
-  const generationApiKey = env.AETHERTAROT_LLM_API_KEY?.trim();
-  const reviewerApiKey = env.AETHERTAROT_SAFETY_REVIEWER_API_KEY?.trim();
+  const generationApiKey = resolveSecretReference(env, "AETHERTAROT_LLM_API_KEY");
+  const reviewerApiKey = resolveSecretReference(env, "AETHERTAROT_SAFETY_REVIEWER_API_KEY");
   if (generationApiKey && reviewerApiKey && generationApiKey === reviewerApiKey) {
     checks.push(fail(
       "env",
@@ -340,6 +342,19 @@ function checkRequiredEnv(env) {
     }
   }
   return checks;
+}
+
+function resolveSecretReference(env, name) {
+  const configured = env[name]?.trim() ?? "";
+  const reference = /^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/.exec(configured);
+  return reference ? env[reference[1] ?? reference[2]]?.trim() ?? "" : configured;
+}
+
+function checkSupabaseMigrationVersions(repoRoot) {
+  return collectSupabaseMigrationVersionChecks({ repoRoot }).map((check) => ({
+    ...check,
+    category: "migration",
+  }));
 }
 
 function checkNodeVersion(nodeVersion) {

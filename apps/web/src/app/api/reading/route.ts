@@ -693,6 +693,7 @@ export async function handleReadingPost(
       question: parsedPayload.question,
       followupAnswers: parsedPayload.followup_answers ?? [],
       deterministic: deterministicSafety,
+      subjectKey: identity.subjectKey,
       signal: request.signal,
     });
     if (inputSafetyReview.applied) {

@@ -180,6 +180,7 @@ export async function handleEncyclopediaQueryPost(
     const inputSafetyReview = await deps.safetyReviewer.reviewInput({
       question: parsedPayload.query,
       followupAnswers: [],
+      subjectKey: ipHash,
       deterministic: deterministicSafety,
       signal: request.signal,
     });

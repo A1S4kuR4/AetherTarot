@@ -51,6 +51,10 @@ jobs:
         run: npm run validate:assets
         working-directory: .
 
+      - name: Validate Supabase migration versions
+        run: node scripts/check-supabase-migration-versions.mjs
+        working-directory: .
+
       - name: Contract tests
         run: npm run test:contract
 

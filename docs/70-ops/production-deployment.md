@@ -411,7 +411,7 @@ PASS 仅允许 `service_role` 拥有 `EXECUTE`；`PUBLIC`、`anon`、`authentica
 
 生产必须配置独立的 `AETHERTAROT_SAFETY_REVIEWER_BASE_URL/MODEL/API_KEY`，不得复用正文 key 或 bulkhead。readiness 只接受 `MODE=shadow|enforce`；`off` 仅本地。默认约束为 temperature 0、strict JSON object、192 output tokens（允许 128–256）、32 KiB response cap（允许 16–32 KiB）、input 1800ms、output 2500ms、queue 300ms，且不做请求内无限重试。
 
-独立日预算依赖 migration `202608130001_safety_reviewer_token_budget.sql`，提供 `safety_input/safety_output` reservation source 与独立 usage/reservation 表。发布前只读核对 migration 已应用、两项 RPC 仅授予 `service_role`；本开发轮次不得自动执行生产 migration。
+独立日预算依赖 migration `202608130002_safety_reviewer_token_budget.sql`，提供 `safety_input/safety_output` reservation source 与独立 usage/reservation 表。发布前先执行 `node scripts/check-supabase-migration-versions.mjs`，再按唯一的向前顺序应用 `202608130001_clear_initial_snapshot_continuity_context.sql`、`202608130002_safety_reviewer_token_budget.sql`；只读核对两项 migration 已应用、两项 RPC 仅授予 `service_role`。本开发轮次不得自动执行生产 migration。
 
 发布顺序必须是：
 

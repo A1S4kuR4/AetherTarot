@@ -6,6 +6,7 @@ import {
   mergeInputSafetyAssessment,
   outputSafetyReviewVerdictSchema,
   resolveSafetyReviewerConfig,
+  validateSafetyOutputReviewVerdict,
   type SafetyReviewerMetric,
   type SafetyReviewerProvider,
 } from "@/server/safety/llm-reviewer";
@@ -39,10 +40,12 @@ function buildReviewer({
   mode = "enforce",
   provider = buildProvider(),
   metrics = [],
+  rateLimitPerMinute = 100,
 }: {
   mode?: "off" | "shadow" | "enforce";
   provider?: SafetyReviewerProvider;
   metrics?: SafetyReviewerMetric[];
+  rateLimitPerMinute?: number;
 } = {}) {
   return new LLMSafetyReviewer({
     config: {
@@ -51,7 +54,7 @@ function buildReviewer({
       model: "reviewer-test",
       cacheTtlMs: 30_000,
       cacheHmacSecret: "reviewer-test-secret-that-is-long-enough",
-      rateLimitPerMinute: 100,
+      rateLimitPerMinute,
       circuitFailureThreshold: 2,
       circuitResetMs: 30_000,
     },
@@ -79,6 +82,33 @@ describe("LLM safety reviewer contracts", () => {
     });
     expect(() => schema.parse({ ...outputPass, model_version: "other-model" })).toThrow();
     expect(() => schema.parse({ ...outputPass, flagged_paths: ["session_capsule"] })).toThrow();
+  });
+
+  it("requires coherent output verdicts and upgrades severe violations to replace", () => {
+    const availablePaths = new Set(["synthesis"]);
+
+    expect(() => validateSafetyOutputReviewVerdict({
+      ...outputPass,
+      violations: ["deterministic_claim"],
+    }, availablePaths)).toThrow(/pass/);
+    expect(() => validateSafetyOutputReviewVerdict({
+      ...outputPass,
+      action: "restrict",
+      violations: ["deterministic_claim"],
+      flagged_paths: [],
+    }, availablePaths)).toThrow(/非 pass/);
+    expect(() => validateSafetyOutputReviewVerdict({
+      ...outputPass,
+      action: "restrict",
+      violations: ["deterministic_claim"],
+      flagged_paths: ["themes.0"],
+    }, availablePaths)).toThrow(/实际输出字段/);
+    expect(validateSafetyOutputReviewVerdict({
+      ...outputPass,
+      action: "restrict",
+      violations: ["medical_diagnosis"],
+      flagged_paths: ["synthesis"],
+    }, availablePaths).action).toBe("replace");
   });
 });
 
@@ -126,6 +156,32 @@ describe("LLM safety reviewer upper-bound merge", () => {
 });
 
 describe("LLM safety reviewer failure and privacy semantics", () => {
+  it("rate-limits each subject independently without putting the key in reviewer payloads", async () => {
+    const provider = buildProvider();
+    const reviewer = buildReviewer({ provider, rateLimitPerMinute: 1 });
+
+    await reviewer.reviewInput({
+      requestId: "subject-a-1",
+      question: "问题一",
+      followupAnswers: [],
+      subjectKey: "hashed-subject-a",
+    });
+    await expect(reviewer.reviewInput({
+      requestId: "subject-a-2",
+      question: "问题二",
+      followupAnswers: [],
+      subjectKey: "hashed-subject-a",
+    })).rejects.toMatchObject({ code: "provider_unavailable", status: 503 });
+    await reviewer.reviewInput({
+      requestId: "subject-b-1",
+      question: "问题三",
+      followupAnswers: [],
+      subjectKey: "hashed-subject-b",
+    });
+
+    expect(JSON.stringify(vi.mocked(provider.reviewInput).mock.calls)).not.toContain("hashed-subject");
+  });
+
   it.each(["timeout", "schema_error", "circuit_open"])(
     "fails closed as provider_unavailable in enforce mode: %s",
     async (kind) => {
@@ -238,6 +294,13 @@ describe("LLM safety reviewer failure and privacy semantics", () => {
       ...baseEnv,
       AETHERTAROT_LLM_API_KEY: "shared-key",
       AETHERTAROT_SAFETY_REVIEWER_API_KEY: "shared-key",
+    })).toThrowError(/不得复用/);
+    expect(() => resolveSafetyReviewerConfig({
+      ...baseEnv,
+      AETHERTAROT_LLM_API_KEY: "$GENERATION_KEY",
+      AETHERTAROT_SAFETY_REVIEWER_API_KEY: "${REVIEWER_KEY}",
+      GENERATION_KEY: "shared-key",
+      REVIEWER_KEY: "shared-key",
     })).toThrowError(/不得复用/);
   });
 
