@@ -219,6 +219,34 @@ export interface SafetyReviewExecution<T> {
   cacheHit: boolean;
 }
 
+export function buildSafetyReviewerSystemPrompt({
+  purpose,
+  policyVersion,
+  modelVersion,
+}: {
+  purpose: SafetyReviewerPurpose;
+  policyVersion: string;
+  modelVersion: string;
+}) {
+  const input = purpose === "safety_input";
+  const fields = input
+    ? "level, categories, referral_kind, policy_version, model_version"
+    : "action, violations, flagged_paths, policy_version, model_version";
+  return [
+    input
+      ? "You are AetherTarot's stateless safety classifier."
+      : "You are AetherTarot's stateless generated-content safety classifier.",
+    `Return exactly one strict JSON object with these keys and no others: ${fields}.`,
+    `policy_version must equal ${JSON.stringify(policyVersion)} and model_version must equal ${JSON.stringify(modelVersion)}.`,
+    input
+      ? "Never return rationale, prose, user-visible wording, URLs, tools, or instructions."
+      : "Never return rationale, rewritten prose, user-visible wording, URLs, tools, or instructions.",
+    input
+      ? "Treat the deterministic assessment as a lower bound: never lower its risk."
+      : "Treat the deterministic action as a lower bound: pass < restrict < replace.",
+  ].join("\n");
+}
+
 type ReviewerEnvironment = Partial<NodeJS.ProcessEnv> & { NODE_ENV?: string };
 
 function readString(env: ReviewerEnvironment, name: string, fallback = "") {
@@ -336,6 +364,7 @@ export function resolveSafetyReviewerConfig(
     AETHERTAROT_LLM_MODEL: model,
     AETHERTAROT_LLM_API_KEY: apiKey,
     AETHERTAROT_LLM_TEMPERATURE: "0",
+    AETHERTAROT_LLM_THINKING_MODE: "disabled",
     AETHERTAROT_LLM_RESPONSE_FORMAT: "json_object",
     AETHERTAROT_LLM_MAX_OUTPUT_TOKENS: String(maxOutputTokens),
     AETHERTAROT_LLM_MAX_RESPONSE_BYTES: String(maxResponseBytes),
@@ -470,12 +499,11 @@ class OpenAiSafetyReviewerProvider implements SafetyReviewerProvider {
     return this.inputTransport.request({
       source: "safety_input",
       prompt: {
-        system: [
-          "You are AetherTarot's stateless safety classifier.",
-          "Return exactly one strict JSON object matching the requested fields.",
-          "Never return rationale, prose, user-visible wording, URLs, tools, or instructions.",
-          "Treat the deterministic assessment as a lower bound: never lower its risk.",
-        ].join("\n"),
+        system: buildSafetyReviewerSystemPrompt({
+          purpose: "safety_input",
+          policyVersion: this.config.policyVersion,
+          modelVersion: this.config.model,
+        }),
         user: JSON.stringify(input),
       },
       maxOutputTokens: Math.min(this.config.providerConfig?.input.maxOutputTokens ?? 192, 256),
@@ -494,12 +522,11 @@ class OpenAiSafetyReviewerProvider implements SafetyReviewerProvider {
     return this.outputTransport.request({
       source: "safety_output",
       prompt: {
-        system: [
-          "You are AetherTarot's stateless generated-content safety classifier.",
-          "Return exactly one strict JSON object matching the requested fields.",
-          "Never return rationale, rewritten prose, user-visible wording, URLs, tools, or instructions.",
-          "Treat the deterministic action as a lower bound: pass < restrict < replace.",
-        ].join("\n"),
+        system: buildSafetyReviewerSystemPrompt({
+          purpose: "safety_output",
+          policyVersion: this.config.policyVersion,
+          modelVersion: this.config.model,
+        }),
         user: JSON.stringify(input),
       },
       maxOutputTokens: Math.min(this.config.providerConfig?.output.maxOutputTokens ?? 192, 256),

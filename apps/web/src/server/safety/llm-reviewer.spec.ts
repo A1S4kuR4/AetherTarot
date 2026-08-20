@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { assessSafetyFields } from "@/server/safety/policy";
 import {
   LLMSafetyReviewer,
+  buildSafetyReviewerSystemPrompt,
   inputSafetyReviewVerdictSchema,
   mergeInputSafetyAssessment,
   outputSafetyReviewVerdictSchema,
@@ -28,6 +29,23 @@ const outputPass = {
   policy_version: "safety-reviewer-v1",
   model_version: "reviewer-test",
 };
+
+describe("Safety Reviewer prompt contract", () => {
+  it.each([
+    ["safety_input", "level, categories, referral_kind, policy_version, model_version"],
+    ["safety_output", "action, violations, flagged_paths, policy_version, model_version"],
+  ] as const)("requires exact %s fields and version literals", (purpose, fields) => {
+    const prompt = buildSafetyReviewerSystemPrompt({
+      purpose,
+      policyVersion: "policy-test",
+      modelVersion: "model-test",
+    });
+
+    expect(prompt).toContain(`keys and no others: ${fields}`);
+    expect(prompt).toContain('policy_version must equal "policy-test"');
+    expect(prompt).toContain('model_version must equal "model-test"');
+  });
+});
 
 function buildProvider(overrides: Partial<SafetyReviewerProvider> = {}): SafetyReviewerProvider {
   return {
@@ -324,6 +342,7 @@ describe("LLM safety reviewer failure and privacy semantics", () => {
       maxOutputTokens: 192,
       maxResponseBytes: 16384,
       temperature: 0,
+      thinkingMode: "disabled",
       bulkheadNamespace: "safety-reviewer:safety_input",
     });
     expect(config.providerConfig?.output.timeoutMs).toBe(2600);
