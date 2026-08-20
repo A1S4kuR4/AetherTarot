@@ -271,7 +271,7 @@ test("env validation rejects placeholder and reused proxy/IP secrets", async () 
   assert.match(report, /must be different/);
 });
 
-test("env validation rejects a generation API key reused by Safety Reviewer", async () => {
+test("env validation permits an explicitly shared generation and Reviewer API key", async () => {
   const repoRoot = makeRepoFixture();
   const result = await collectProductionReadinessChecks({
     repoRoot,
@@ -283,12 +283,11 @@ test("env validation rejects a generation API key reused by Safety Reviewer", as
     nodeVersion: "v22.11.0",
   });
   const report = formatReadinessReport(result);
-  assert.equal(result.ok, false);
-  assert.match(report, /generation\/reviewer API keys/);
-  assert.match(report, /must be different/);
+  assert.equal(result.ok, true);
+  assert.doesNotMatch(report, /shared-provider-key/);
 });
 
-test("readiness resolves different API key references before comparing them", async () => {
+test("readiness permits different references that resolve to the same provider key", async () => {
   const repoRoot = makeRepoFixture();
   const result = await collectProductionReadinessChecks({
     repoRoot,
@@ -302,8 +301,7 @@ test("readiness resolves different API key references before comparing them", as
     nodeVersion: "v22.11.0",
   });
   const report = formatReadinessReport(result);
-  assert.equal(result.ok, false);
-  assert.match(report, /generation\/reviewer API keys/);
+  assert.equal(result.ok, true);
   assert.doesNotMatch(report, /shared-provider-key/);
 });
 

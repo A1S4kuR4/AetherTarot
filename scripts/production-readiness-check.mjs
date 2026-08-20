@@ -310,15 +310,6 @@ function checkRequiredEnv(env) {
     checks.push(fail("env", "proxy/IP secrets", "AETHERTAROT_PROXY_SHARED_SECRET and AETHERTAROT_IP_HASH_SALT must be different"));
   }
 
-  const generationApiKey = resolveSecretReference(env, "AETHERTAROT_LLM_API_KEY");
-  const reviewerApiKey = resolveSecretReference(env, "AETHERTAROT_SAFETY_REVIEWER_API_KEY");
-  if (generationApiKey && reviewerApiKey && generationApiKey === reviewerApiKey) {
-    checks.push(fail(
-      "env",
-      "generation/reviewer API keys",
-      "AETHERTAROT_LLM_API_KEY and AETHERTAROT_SAFETY_REVIEWER_API_KEY must be different",
-    ));
-  }
   if (readingProvider === "llm" || encyclopediaProvider === "llm") {
     const llmDeadlineMs = Number(env.AETHERTAROT_LLM_TIMEOUT_MS);
     if (Number.isInteger(llmDeadlineMs) && llmDeadlineMs >= edgeResponseTimeoutMs) {
@@ -344,12 +335,6 @@ function checkRequiredEnv(env) {
     }
   }
   return checks;
-}
-
-function resolveSecretReference(env, name) {
-  const configured = env[name]?.trim() ?? "";
-  const reference = /^\$([A-Z0-9_]+)$|^\$\{([A-Z0-9_]+)\}$/.exec(configured);
-  return reference ? env[reference[1] ?? reference[2]]?.trim() ?? "" : configured;
 }
 
 function checkSupabaseMigrationVersions(repoRoot) {

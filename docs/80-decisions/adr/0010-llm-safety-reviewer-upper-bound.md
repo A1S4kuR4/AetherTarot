@@ -2,6 +2,7 @@
 
 - 状态：Accepted
 - 日期：2026-08-13
+- 修订：2026-08-20（允许显式共享 Provider API key）
 - 关联：ADR 0002、ADR 0005、ADR 0006、ADR 0007
 
 ## 背景
@@ -32,7 +33,7 @@ Reading Route 在 schema/access、deterministic preflight、request_id execution
 
 ## 独立资源与隐私
 
-Reviewer 使用独立 provider/model/API key、`safety_input` / `safety_output` token source、日预算表与 RPC、rate limit、bulkhead namespace、queue timeout、input/output deadline、circuit breaker 和 metrics purpose。通用 bulkhead cache key 必须包含 namespace，不能仅按并发参数共享。
+Reviewer 使用独立命名的 provider/model/API key 配置入口、`safety_input` / `safety_output` token source、日预算表与 RPC、rate limit、bulkhead namespace、queue timeout、input/output deadline、circuit breaker 和 metrics purpose。2026-08-20 起，Reviewer API key 允许显式引用正文生成 key，或与之解析为同一实际 Secret；runtime/readiness 仍验证 key 存在且引用可解析，但不再要求实际值不同。共享供应商凭据不得合并或移除上述容量、预算、限流、舱壁与指标隔离。通用 bulkhead cache key 必须包含 namespace，不能仅按并发参数共享。
 
 输入审校只发送 `question` 与逐字段 `followup_answers[].answer`；输出审校只发送最终用户可见生成字段。不得发送 email、userId、IP、牌面 authority、Wiki 原文、history、capsule、thread memory 或内部 trace。不得持久化 raw prompt、raw completion、rationale 或 invalid payload。日志只允许 request/run ID、purpose、版本、判定标签/类别、耗时、token、成本、错误与 circuit 状态。缓存仅允许 request_id 幂等或短 TTL HMAC verdict cache，不做跨用户原文或语义缓存。
 
@@ -44,4 +45,4 @@ Reviewer 使用独立 provider/model/API key、`safety_input` / `safety_output` 
 
 ## 后果
 
-优点是增加开放表达的风险发现能力，同时保持确定性 authority、固定响应文案和可测试的持久化边界。代价是 enforce 模式增加两次低延迟外部依赖、独立预算与运维复杂度；Reviewer 故障会按设计降低可用性而不是降低安全性。
+优点是增加开放表达的风险发现能力，同时保持确定性 authority、固定响应文案和可测试的持久化边界。代价是 enforce 模式增加两次低延迟外部依赖、独立预算与运维复杂度；Reviewer 故障会按设计降低可用性而不是降低安全性。共享 API key 时，凭据轮换、供应商账号级故障域和账号级账单边界也随之共享；如需 blast-radius 或账单隔离，可恢复独立凭据而无需修改公共协议。

@@ -305,14 +305,7 @@ export function resolveSafetyReviewerConfig(
   if (!baseUrl || !model || model === "off" || !apiKey) {
     throw new ReadingServiceError(
       "provider_unavailable",
-      "LLM Safety Reviewer 需要独立配置 BASE_URL、MODEL 和 API_KEY。",
-      503,
-    );
-  }
-  if (apiKey === resolveSecretReference(env, "AETHERTAROT_LLM_API_KEY")) {
-    throw new ReadingServiceError(
-      "provider_unavailable",
-      "LLM Safety Reviewer 不得复用正文生成 API_KEY。",
+      "LLM Safety Reviewer 需要配置独立的 BASE_URL、MODEL 和 API_KEY 环境变量。",
       503,
     );
   }

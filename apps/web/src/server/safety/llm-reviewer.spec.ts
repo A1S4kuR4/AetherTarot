@@ -331,7 +331,7 @@ describe("LLM safety reviewer failure and privacy semantics", () => {
       .toBe("safety-reviewer:safety_output");
   });
 
-  it("rejects a missing or reused reviewer API key", () => {
+  it("requires a reviewer API key and permits an explicitly shared provider key", () => {
     const baseEnv = {
       NODE_ENV: "production",
       AETHERTAROT_SAFETY_REVIEWER_MODE: "enforce",
@@ -340,18 +340,21 @@ describe("LLM safety reviewer failure and privacy semantics", () => {
     } as const;
 
     expect(() => resolveSafetyReviewerConfig(baseEnv)).toThrowError(/API_KEY/);
-    expect(() => resolveSafetyReviewerConfig({
+    const directShared = resolveSafetyReviewerConfig({
       ...baseEnv,
       AETHERTAROT_LLM_API_KEY: "shared-key",
       AETHERTAROT_SAFETY_REVIEWER_API_KEY: "shared-key",
-    })).toThrowError(/不得复用/);
-    expect(() => resolveSafetyReviewerConfig({
+    });
+    const referencedShared = resolveSafetyReviewerConfig({
       ...baseEnv,
       AETHERTAROT_LLM_API_KEY: "$GENERATION_KEY",
       AETHERTAROT_SAFETY_REVIEWER_API_KEY: "${REVIEWER_KEY}",
       GENERATION_KEY: "shared-key",
       REVIEWER_KEY: "shared-key",
-    })).toThrowError(/不得复用/);
+    });
+
+    expect(directShared.providerConfig?.input.apiKey).toBe("shared-key");
+    expect(referencedShared.providerConfig?.input.apiKey).toBe("shared-key");
   });
 
   it("opens the circuit after repeated failures without another provider call", async () => {
