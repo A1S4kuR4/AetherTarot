@@ -6,6 +6,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = path.resolve(__dirname, "..");
 const migrationsDirectory = "apps/web/supabase/migrations";
 const migrationNamePattern = /^(\d{12})_.+\.sql$/;
+const requiredSafetyReviewerMigrations = new Map([
+  ["202608130001_clear_initial_snapshot_continuity_context.sql", []],
+  ["202608130002_safety_reviewer_token_budget.sql", []],
+  ["202608130003_safety_reviewer_subject_rate_limit.sql", []],
+  ["202608130004_safety_reviewer_retention.sql", [
+    "public.safety_reviewer_token_reservations",
+    "public.safety_reviewer_daily_token_usage",
+    "public.safety_reviewer_subject_minute_usage",
+  ]],
+]);
 
 export function collectSupabaseMigrationVersionChecks({
   repoRoot = defaultRepoRoot,
@@ -40,6 +50,24 @@ export function collectSupabaseMigrationVersionChecks({
         version,
         `duplicate migration version: ${files.join(", ")}`,
       ));
+    }
+  }
+
+  for (const [migration, requiredFragments] of requiredSafetyReviewerMigrations) {
+    const migrationPath = path.join(migrationsPath, migration);
+    if (!fs.existsSync(migrationPath)) {
+      checks.push(fail(migration, "required Safety Reviewer migration is missing"));
+      continue;
+    }
+
+    const sql = fs.readFileSync(migrationPath, "utf8");
+    for (const fragment of requiredFragments) {
+      if (!sql.includes(fragment)) {
+        checks.push(fail(
+          migration,
+          `required retention target is missing: ${fragment}`,
+        ));
+      }
     }
   }
 

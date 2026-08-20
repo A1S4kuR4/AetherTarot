@@ -11,6 +11,7 @@ import {
   type SafetyReviewerProvider,
 } from "@/server/safety/llm-reviewer";
 import { mergeGeneratedContentAction } from "@/server/safety/output-validator";
+import type { SafetyReviewerSubjectGate } from "@/server/beta/token-budget";
 
 const inputPass = {
   level: "standard" as const,
@@ -41,11 +42,15 @@ function buildReviewer({
   provider = buildProvider(),
   metrics = [],
   rateLimitPerMinute = 100,
+  subjectRateLimitPerMinute = 12,
+  subjectGate = { consume: vi.fn(async () => undefined) },
 }: {
   mode?: "off" | "shadow" | "enforce";
   provider?: SafetyReviewerProvider;
   metrics?: SafetyReviewerMetric[];
   rateLimitPerMinute?: number;
+  subjectRateLimitPerMinute?: number;
+  subjectGate?: SafetyReviewerSubjectGate;
 } = {}) {
   return new LLMSafetyReviewer({
     config: {
@@ -55,10 +60,12 @@ function buildReviewer({
       cacheTtlMs: 30_000,
       cacheHmacSecret: "reviewer-test-secret-that-is-long-enough",
       rateLimitPerMinute,
+      subjectRateLimitPerMinute,
       circuitFailureThreshold: 2,
       circuitResetMs: 30_000,
     },
     provider,
+    subjectGate,
     recordMetric: (metric) => metrics.push(metric),
   });
 }
@@ -180,6 +187,49 @@ describe("LLM safety reviewer failure and privacy semantics", () => {
     });
 
     expect(JSON.stringify(vi.mocked(provider.reviewInput).mock.calls)).not.toContain("hashed-subject");
+  });
+
+  it("enforces a shared subject gate across reviewer instances before either provider call", async () => {
+    const seenKeys: string[] = [];
+    const sharedGate: SafetyReviewerSubjectGate = {
+      consume: vi.fn(async ({ subjectKey }) => {
+        seenKeys.push(subjectKey);
+        if (seenKeys.length > 1) throw new Error("subject_limit");
+      }),
+    };
+    const firstProvider = buildProvider();
+    const secondProvider = buildProvider();
+    const first = buildReviewer({ provider: firstProvider, subjectGate: sharedGate });
+    const second = buildReviewer({ provider: secondProvider, subjectGate: sharedGate });
+
+    await first.reviewInput({ requestId: "instance-a", question: "问题一", followupAnswers: [], subjectKey: "user:42" });
+    await expect(second.reviewInput({ requestId: "instance-b", question: "问题二", followupAnswers: [], subjectKey: "user:42" }))
+      .rejects.toMatchObject({ code: "provider_unavailable", status: 503 });
+
+    expect(firstProvider.reviewInput).toHaveBeenCalledTimes(1);
+    expect(secondProvider.reviewInput).not.toHaveBeenCalled();
+    expect(seenKeys).toHaveLength(2);
+    expect(seenKeys.every((key) => /^[0-9a-f]{64}$/.test(key))).toBe(true);
+    expect(JSON.stringify(vi.mocked(firstProvider.reviewInput).mock.calls)).not.toContain("user:42");
+  });
+
+  it("keeps a subject-gate failure non-enforcing in shadow mode", async () => {
+    const provider = buildProvider();
+    const reviewer = buildReviewer({
+      mode: "shadow",
+      provider,
+      subjectGate: { consume: vi.fn(async () => { throw new Error("subject_limit"); }) },
+    });
+
+    const result = await reviewer.reviewInput({
+      requestId: "shadow-subject-limit",
+      question: "普通问题",
+      followupAnswers: [],
+      subjectKey: "ip:hash",
+    });
+
+    expect(result).toMatchObject({ mode: "shadow", applied: false, verdict: { level: "standard" } });
+    expect(provider.reviewInput).not.toHaveBeenCalled();
   });
 
   it.each(["timeout", "schema_error", "circuit_open"])(

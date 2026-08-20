@@ -11,6 +11,7 @@ import {
 } from "@/server/reading/__tests__/fixtures";
 import type { SafetyReviewer } from "@/server/safety/llm-reviewer";
 import { collectLlmUsage } from "@/server/observability/llm-usage";
+import { generateEncyclopediaAnswer } from "@/server/encyclopedia/service";
 
 const policyVersion = "safety-reviewer-v1";
 const modelVersion = "reviewer-test";
@@ -248,6 +249,27 @@ describe("LLM Safety Reviewer integration boundaries", () => {
     expect(await memoryStore.get("reviewer-output-failure")).toBeNull();
   });
 
+  it("does not alter Graph output when a Shadow reviewer requests replacement", async () => {
+    const originalText = "shadow reviewer finding must not alter this benign draft";
+    const reviewer = buildReviewer({
+      reviewOutput: vi.fn(async () => ({
+        ...outputExecution("replace"),
+        mode: "shadow" as const,
+        applied: false,
+      })),
+    });
+    const result = await runReadingGraphWithDiagnostics(
+      { ...buildSinglePayload("普通问题"), agent_profile: "lite" },
+      {
+        safetyReviewer: reviewer,
+        provider: new TestReadingProvider({ initial: (draft) => ({ ...draft, synthesis: originalText }) }),
+      },
+    );
+
+    expect(result.reading.synthesis).toBe(originalText);
+    expect(result.reading.safety_note ?? "").not.toMatch(/替换|移除/);
+  });
+
   it("replays a completed request_id without paying reviewer cost twice", async () => {
     const reviewer = buildReviewer();
     const stores = createInMemoryReadingRuntimeStores();
@@ -302,5 +324,104 @@ describe("LLM Safety Reviewer integration boundaries", () => {
     expect(response.status).toBe(403);
     expect(consumeQuota).not.toHaveBeenCalled();
     expect(generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["restrict", "reviewer-only encyclopedia restrict", "这个问题更适合回到百科层面的牌义理解"],
+    ["replace", "reviewer-only encyclopedia replace", "原始回答触及安全边界，未予展示"],
+  ] as const)("removes reviewer-flagged Encyclopedia output for %s", async (action, unsafeText, expected) => {
+    const violation = action === "replace"
+      ? "self_harm_or_violence_encouragement" as const
+      : "deterministic_claim" as const;
+    const reviewer = buildReviewer({
+      reviewEncyclopediaOutput: vi.fn(async () => ({
+        ...outputExecution("pass"),
+        verdict: {
+          action,
+          violations: [violation],
+          flagged_paths: ["answer"],
+          policy_version: policyVersion,
+          model_version: modelVersion,
+        },
+      })),
+    });
+    const result = await generateEncyclopediaAnswer(
+      { query: "愚者" },
+      {
+        safetyReviewer: reviewer,
+        reviewerSubjectKey: "ip-hash",
+        provider: {
+          generateAnswer: vi.fn(async () => ({
+            answer: unsafeText,
+            related_cards: [],
+            related_concepts: [],
+            related_spreads: [],
+          })),
+        },
+      },
+    );
+
+    expect(JSON.stringify(result)).not.toContain(unsafeText);
+    expect(result.answer).toContain(expected);
+    expect(reviewer.reviewEncyclopediaOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ subjectKey: "ip-hash" }),
+    );
+  });
+
+  it("fails Encyclopedia closed when the output reviewer is unavailable", async () => {
+    const unsafeText = "reviewer-only encyclopedia failure";
+    const reviewer = buildReviewer({
+      reviewEncyclopediaOutput: vi.fn(async () => {
+        throw new ReadingServiceError("provider_unavailable", "review failed", 503);
+      }),
+    });
+
+    await expect(generateEncyclopediaAnswer(
+      { query: "愚者" },
+      {
+        safetyReviewer: reviewer,
+        provider: {
+          generateAnswer: vi.fn(async () => ({
+            answer: unsafeText,
+            related_cards: [],
+            related_concepts: [],
+            related_spreads: [],
+          })),
+        },
+      },
+    )).rejects.toMatchObject({ code: "provider_unavailable", status: 503 });
+  });
+
+  it("refunds an Initial quota and releases its execution lease when output review fails without persisting content", async () => {
+    const unsafeText = "reviewer-only failed generated content";
+    const stores = createInMemoryReadingRuntimeStores();
+    const save = vi.spyOn(stores.snapshotStore, "save");
+    const release = vi.spyOn(stores.executionStore, "release");
+    const refundQuota = vi.fn(async () => undefined);
+    const reviewer = buildReviewer({
+      reviewOutput: vi.fn(async () => {
+        throw new ReadingServiceError("provider_unavailable", "review failed", 503);
+      }),
+    });
+    const deps = routeDependencies(reviewer, {
+      ...stores,
+      refundQuota,
+      generateReading: vi.fn((payload, options) => runReadingGraphWithDiagnostics(payload, {
+        ...options,
+        provider: new TestReadingProvider({ initial: (draft) => ({ ...draft, synthesis: unsafeText }) }),
+      })),
+    });
+    const response = await handleReadingPost(request("http://localhost/api/reading", {
+      ...buildSinglePayload("普通问题"),
+      agent_profile: "lite",
+      request_id: "33333333-3333-4333-8333-333333333333",
+    }), deps);
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).not.toContain(unsafeText);
+    expect(refundQuota).toHaveBeenCalledTimes(1);
+    expect(save).not.toHaveBeenCalled();
+    expect(release).toHaveBeenCalledTimes(1);
   });
 });

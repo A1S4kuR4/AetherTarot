@@ -149,4 +149,4 @@ Reviewer 永远只是第二信号：`deterministic rules → LLM verdict → upp
 
 Reviewer 只分类，不解释、不改写、不提供链接。所有用户可见 hard-stop、restrict 与 replace 文案及危机资源来自服务端固定常量。输出 `pass` 必须没有 violation/path；非 pass 必须给出本次真实存在的路径。服务端按 violation 推导下限，伤害鼓励、操控、停治、直接诊断和合理化暴力一律至少 `replace`；其余 `restrict` 逐路径用固定模板替换，绝不只附加 `safety_note` 后保留被标记原文。enforce 下任何 timeout、429、5xx、queue、circuit-open、非法 JSON 或 schema violation 都是系统 `503 provider_unavailable`，不能伪装成用户触发的 `403`，也不能静默退回 deterministic-only。
 
-发布必须依次经过 shadow、受控 canary、enforce。每阶段需要审阅误升级/漏升级、家暴受害者误路由、简中/英文/混合与 Unicode 变体、P95 延迟、失败率、circuit、独立 token 预算和原文泄漏。外部模型质量只能提供经验性第二证据，不构成完整覆盖证明。
+发布必须依次经过 shadow、受控 canary、enforce。每阶段需要审阅误升级/漏升级、家暴受害者误路由、简中/英文/混合与 Unicode 变体、P95 延迟、失败率、circuit、独立 token 预算、跨实例 subject/IP 摘要门控和原文泄漏。主体门控只在确定性 hard-stop 之后、Reading quota 之前执行；hard-stop 不占用 Reviewer 容量，也不扣 Reading 日额度。外部模型质量只能提供经验性第二证据，不构成完整覆盖证明。

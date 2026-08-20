@@ -147,6 +147,13 @@ function createDatabaseLlmTokenGate(getDailyLimit: () => number): LlmTokenGate {
   };
 }
 
+export interface SafetyReviewerSubjectGate {
+  consume(input: {
+    subjectKey: string;
+    limitPerMinute: number;
+  }): Promise<void>;
+}
+
 export const databaseLlmTokenGate = createDatabaseLlmTokenGate(
   () => getLlmTokenBudgetConfig().dailyTokenLimit,
 );
@@ -223,6 +230,46 @@ export const databaseSafetyReviewerTokenGate: LlmTokenGate = {
         code: error.code,
         message: error.message,
       });
+    }
+  },
+};
+
+export const databaseSafetyReviewerSubjectGate: SafetyReviewerSubjectGate = {
+  async consume({ subjectKey, limitPerMinute }) {
+    const adminClient = createAdminClient();
+    if (!adminClient) {
+      throw new ReadingServiceError(
+        "provider_unavailable",
+        "Safety Reviewer 主体限流未配置 Supabase service role key。",
+        503,
+      );
+    }
+
+    const { data, error } = await adminClient.rpc(
+      "consume_safety_reviewer_subject_quota",
+      {
+        p_subject_key: subjectKey,
+        p_limit_per_minute: limitPerMinute,
+      },
+    );
+    if (error) {
+      throw new ReadingServiceError(
+        "provider_unavailable",
+        "Safety Reviewer 主体限流检查失败，请稍后再试。",
+        503,
+      );
+    }
+
+    const result = asReservationRpcResult(data);
+    if (result.allowed !== true) {
+      throw new ReadingServiceError(
+        "provider_unavailable",
+        "安全审校服务暂时不可用，请稍后重试。",
+        503,
+        undefined,
+        undefined,
+        { reason: "safety_reviewer_subject_rate_limit" },
+      );
     }
   },
 };

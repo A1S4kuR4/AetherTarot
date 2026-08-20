@@ -409,9 +409,9 @@ PASS 仅允许 `service_role` 拥有 `EXECUTE`；`PUBLIC`、`anon`、`authentica
 
 ## 11. LLM Safety Reviewer 发布与运维
 
-生产必须配置独立的 `AETHERTAROT_SAFETY_REVIEWER_BASE_URL/MODEL/API_KEY`，不得复用正文 key 或 bulkhead。readiness 只接受 `MODE=shadow|enforce`；`off` 仅本地。默认约束为 temperature 0、strict JSON object、192 output tokens（允许 128–256）、32 KiB response cap（允许 16–32 KiB）、input 1800ms、output 2500ms、queue 300ms，且不做请求内无限重试。
+生产必须配置独立的 `AETHERTAROT_SAFETY_REVIEWER_BASE_URL/MODEL/API_KEY`，不得复用正文 key 或 bulkhead。readiness 只接受 `MODE=shadow|enforce`；`off` 仅本地。默认约束为 temperature 0、strict JSON object、192 output tokens（允许 128–256）、32 KiB response cap（允许 16–32 KiB）、input 1800ms、output 2500ms、queue 300ms，且不做请求内无限重试。`AETHERTAROT_SAFETY_REVIEWER_SUBJECT_RATE_LIMIT_PER_MINUTE`（默认 12）在 Reviewer 调用且 Reading 配额扣减之前，对账号主体或 IP 摘要执行跨实例门控；原始主体/IP 不写入该表、不传给 Reviewer Provider。
 
-独立日预算依赖 migration `202608130002_safety_reviewer_token_budget.sql`，提供 `safety_input/safety_output` reservation source 与独立 usage/reservation 表。发布前先执行 `node scripts/check-supabase-migration-versions.mjs`，再按唯一的向前顺序应用 `202608130001_clear_initial_snapshot_continuity_context.sql`、`202608130002_safety_reviewer_token_budget.sql`；只读核对两项 migration 已应用、两项 RPC 仅授予 `service_role`。本开发轮次不得自动执行生产 migration。
+独立日预算依赖 migration `202608130002_safety_reviewer_token_budget.sql`，提供 `safety_input/safety_output` reservation source 与独立 usage/reservation 表；跨实例主体门控依赖 `202608130003_safety_reviewer_subject_rate_limit.sql`。`202608130004_safety_reviewer_retention.sql` 将已结算 Reviewer reservation、日汇总和主体分钟计数纳入既有 7 天清理函数。发布前先执行 `node scripts/check-supabase-migration-versions.mjs`，再按唯一的向前顺序应用 `202608130001_clear_initial_snapshot_continuity_context.sql`、`202608130002_safety_reviewer_token_budget.sql`、`202608130003_safety_reviewer_subject_rate_limit.sql`、`202608130004_safety_reviewer_retention.sql`；只读核对四项 migration 已应用、三个 Reviewer RPC 仅授予 `service_role`，并确认 `cleanup_beta_ops_retention()` 与 pg_cron 最近一次执行成功。本开发轮次不得自动执行生产 migration。
 
 发布顺序必须是：
 
@@ -420,3 +420,16 @@ PASS 仅允许 `service_role` 拥有 `EXECUTE`；`PUBLIC`、`anon`、`authentica
 3. `enforce`：只有误升级、漏升级、P95、预算与故障演练达标后启用。
 
 enforce 输入故障发生在 Reading quota 与生成前；输出故障触发 initial 日额度退款，但实际使用的 Reviewer/正文 token 正常结算。不得把 503 改写成 safety 403，不得回退 deterministic-only。发布检查还需确认 Reviewer 与 generation 的 bulkhead namespace、API key、token budget、rate limit 和 circuit metrics 均能分别观测。
+
+### 11.1 Reviewer 生产测试方案
+
+生产故障注入必须先在独立 Supabase staging 与 Reviewer stub 上完成；主生产只接受可回滚的 shadow/canary 验收，不直接注入 token 耗尽、非法 schema 或 provider 5xx。当前 `MODE` 是实例级全局开关，不具备按账号或百分比切流能力；指定账号 canary 必须使用独立实例或独立内测入口。
+
+发布分四阶段：
+
+1. **数据库验收**：确认 `001`–`004` 已应用；三张 Reviewer 表启用 RLS；三个 Reviewer RPC 仅授权 `service_role`；在事务回滚测试中验证 token reserve/settle 幂等、同主体分钟上限、不同主体隔离，以及两个并发客户端合计不能越过同一主体阈值。
+2. **隔离故障演练**：分别注入 input/output timeout、429、5xx、非法 schema、queue-full、预算耗尽与 circuit-open。input 故障必须发生在 Reading quota/provider 前；Initial output 故障必须退款并释放 execution lease；Final output 故障必须释放 snapshot claim；所有失败路径均不得持久化生成正文。Encyclopedia 必须覆盖 reviewer-only restrict、replace 与 fail-closed。
+3. **生产 shadow**：至少观察 24 小时，确认用户 HTTP status、公共 schema 与旧策略一致；指标不含问题原文、Secret、原始账号或 IP；Reviewer reservation 不长期停留在 `reserved`；正常流量下 circuit-open 与 queue-full 为 0，P95 低于 input/output deadline 且保留收尾余量。
+4. **独立 canary enforce → 主实例 enforce**：先在独立入口完成普通 Reading、hard-stop、sober-check、Reviewer-only restrict/replace、request_id replay、并发重复请求、subject 限流、quota refund、lease/snapshot release 和 Encyclopedia 全链路。随后切主实例，分别观察 15 分钟、1 小时和 24 小时。
+
+GO 条件：严重违规零泄漏；无 deterministic-only 降级；跨实例主体上限不超发；quota/refund/lease/snapshot 全部符合合同；Reviewer 与正文生成的 key、bulkhead、预算和指标可独立观测；三浏览器核心 Reading/Encyclopedia smoke 通过。任一条件失败即 NO-GO，先将生产实例从 `enforce` 回退到 `shadow` 并重启；migration 保持 forward-only，不删除表或 RPC。

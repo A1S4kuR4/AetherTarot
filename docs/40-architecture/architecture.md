@@ -355,6 +355,6 @@ server-owned Initial + follow-up integration work order；normalizer 只对“�
 
 `LLMSafetyReviewer` 是 stateless service，不是 Agent：无 tools、memory、planner 或 autonomous loop。Reading Route 在幂等 replay/claim 与 Final snapshot authority 校验之后调用 input review，再进入 quota；Graph 的 `llm_input_review` 是防绕过强制节点。输出端 `llm_output_review` 位于确定性 `validate_generated_content` 之后、`apply_safety_review` / grounding / capsule / memory 之前。Encyclopedia route/service 复用同一服务与上界 merge。
 
-Reviewer 使用独立 provider/model/API key、`safety_input` / `safety_output` metrics purpose、独立 token reservation 表/RPC 与日预算、全局每 purpose rate limit、独立 bulkhead namespace、queue timeout、input/output deadline 和 circuit breaker。共享 bulkhead cache key 已加入 namespace，正文 generation、Encyclopedia 与 Safety Reviewer 即使并发参数相同也不会误共享 semaphore。
+Reviewer 使用独立 provider/model/API key、`safety_input` / `safety_output` metrics purpose、独立 token reservation 表/RPC 与日预算、全局每 purpose rate limit、独立 bulkhead namespace、queue timeout、input/output deadline 和 circuit breaker。调用 Provider 前还通过 `consume_safety_reviewer_subject_quota` 对账号主体或 IP 的 SHA-256 摘要作跨实例原子限流；计数表和 RPC 不接收原始身份，摘要也不进入 Reviewer Provider 或 metrics。共享 bulkhead cache key 已加入 namespace，正文 generation、Encyclopedia 与 Safety Reviewer 即使并发参数相同也不会误共享 semaphore。
 
 运行模式为 `off | shadow | enforce`：off 仅本地；shadow 记录判定但 `applied=false`；enforce 对 provider/transport/schema/circuit 故障 fail-closed 503。输出故障不会产生可持久化 Graph completion；Route 只允许安全指标与失败事件，不保存正文、grounding、capsule、memory、history、agent state 或 trace。

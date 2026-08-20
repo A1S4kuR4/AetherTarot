@@ -18,6 +18,7 @@ export type ReadingServiceOptions = Pick<
   | "generationMode"
   | "signal"
   | "safetyReviewer"
+  | "reviewerSubjectKey"
   | "inputSafetyReview"
 >;
 

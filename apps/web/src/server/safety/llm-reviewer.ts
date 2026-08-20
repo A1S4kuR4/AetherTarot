@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { z } from "zod";
 import type { FollowupAnswer, StructuredReading } from "@aethertarot/shared-types";
 import {
@@ -10,7 +10,9 @@ import {
 } from "@/server/llm/openai-compatible-transport";
 import {
   databaseSafetyReviewerTokenGate,
+  databaseSafetyReviewerSubjectGate,
   type LlmTokenGate,
+  type SafetyReviewerSubjectGate,
 } from "@/server/beta/token-budget";
 import { ReadingServiceError } from "@/server/reading/errors";
 import {
@@ -185,6 +187,7 @@ export interface SafetyReviewerConfig {
   cacheTtlMs: number;
   cacheHmacSecret: string;
   rateLimitPerMinute: number;
+  subjectRateLimitPerMinute: number;
   circuitFailureThreshold: number;
   circuitResetMs: number;
   providerConfig?: {
@@ -285,6 +288,13 @@ export function resolveSafetyReviewerConfig(
     cacheTtlMs: readInteger(env, "AETHERTAROT_SAFETY_REVIEWER_CACHE_TTL_MS", 30_000, 1_000, 300_000),
     cacheHmacSecret,
     rateLimitPerMinute: readInteger(env, "AETHERTAROT_SAFETY_REVIEWER_RATE_LIMIT_PER_MINUTE", 120, 1, 10_000),
+    subjectRateLimitPerMinute: readInteger(
+      env,
+      "AETHERTAROT_SAFETY_REVIEWER_SUBJECT_RATE_LIMIT_PER_MINUTE",
+      12,
+      1,
+      1_000,
+    ),
     circuitFailureThreshold: readInteger(env, "AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_FAILURE_THRESHOLD", 3, 1, 100),
     circuitResetMs: readInteger(env, "AETHERTAROT_SAFETY_REVIEWER_CIRCUIT_RESET_MS", 30_000, 1_000, 600_000),
   };
@@ -670,14 +680,17 @@ export class LLMSafetyReviewer {
   constructor({
     config,
     provider,
+    subjectGate,
     recordMetric = (metric) => console.info("[safety-reviewer]", metric),
   }: {
     config: SafetyReviewerConfig;
     provider?: SafetyReviewerProvider;
+    subjectGate?: SafetyReviewerSubjectGate;
     recordMetric?: (metric: SafetyReviewerMetric) => void;
   }) {
     this.config = config;
     this.provider = provider ?? (config.mode === "off" ? null : new OpenAiSafetyReviewerProvider(config));
+    this.subjectGate = subjectGate ?? databaseSafetyReviewerSubjectGate;
     this.rateLimiter = new ReviewerRateLimiter(config.rateLimitPerMinute);
     this.circuits = {
       safety_input: new ReviewerCircuitBreaker(config.circuitFailureThreshold, config.circuitResetMs),
@@ -687,6 +700,17 @@ export class LLMSafetyReviewer {
   }
 
   private readonly config: SafetyReviewerConfig;
+  private readonly subjectGate: SafetyReviewerSubjectGate;
+
+  private async consumeSubjectCapacity(subjectKey: string | undefined) {
+    if (!subjectKey) return;
+    await this.subjectGate.consume({
+      // The database receives only a one-way digest; raw account and IP identifiers
+      // never leave the request boundary or enter reviewer/provider telemetry.
+      subjectKey: createHash("sha256").update(subjectKey).digest("hex"),
+      limitPerMinute: this.config.subjectRateLimitPerMinute,
+    });
+  }
 
   private cacheKey(purpose: SafetyReviewerPurpose, requestId: string | undefined, protocol: unknown) {
     if (!requestId) return null;
@@ -813,6 +837,7 @@ export class LLMSafetyReviewer {
     }
 
     try {
+      await this.consumeSubjectCapacity(subjectKey);
       this.rateLimiter.take("safety_input", subjectKey);
       this.circuits.safety_input.beforeCall();
       const verdict = await this.provider?.reviewInput(protocol, signal);
@@ -970,6 +995,7 @@ export class LLMSafetyReviewer {
     }
 
     try {
+      await this.consumeSubjectCapacity(subjectKey);
       this.rateLimiter.take("safety_output", subjectKey);
       this.circuits.safety_output.beforeCall();
       const verdict = await this.provider?.reviewOutput(protocol, signal);

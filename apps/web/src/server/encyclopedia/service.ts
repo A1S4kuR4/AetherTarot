@@ -34,6 +34,7 @@ export interface GenerateEncyclopediaAnswerOptions {
   loadPages?: typeof loadEncyclopediaWikiPages;
   safetyReviewer?: SafetyReviewer;
   inputSafetyReview?: SafetyReviewExecution<SafetyInputReviewVerdict>;
+  reviewerSubjectKey?: string;
   signal?: AbortSignal;
 }
 
@@ -69,6 +70,7 @@ export async function generateEncyclopediaAnswer({
     question: query,
     followupAnswers: [],
     deterministic: deterministicSafety,
+    subjectKey: options.reviewerSubjectKey,
     signal: options.signal,
   });
   const safetyAssessment = inputReview.applied
@@ -108,6 +110,7 @@ export async function generateEncyclopediaAnswer({
     boundaryNote,
     deterministicAction: generatedContentReview.action,
     deterministicViolations: generatedContentReview.violations,
+    subjectKey: options.reviewerSubjectKey,
     signal: options.signal,
   });
   const outputAction = outputReview.applied

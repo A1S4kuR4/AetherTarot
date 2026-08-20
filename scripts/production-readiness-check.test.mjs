@@ -37,6 +37,7 @@ const fullEnv = {
   AETHERTAROT_SAFETY_REVIEWER_POLICY_VERSION: "safety-reviewer-v1",
   AETHERTAROT_SAFETY_REVIEWER_DAILY_TOKEN_LIMIT: "30000",
   AETHERTAROT_SAFETY_REVIEWER_RATE_LIMIT_PER_MINUTE: "120",
+  AETHERTAROT_SAFETY_REVIEWER_SUBJECT_RATE_LIMIT_PER_MINUTE: "12",
   AETHERTAROT_SAFETY_REVIEWER_MAX_CONCURRENCY: "2",
   AETHERTAROT_SAFETY_REVIEWER_MAX_QUEUE: "4",
   AETHERTAROT_SAFETY_REVIEWER_QUEUE_TIMEOUT_MS: "300",
@@ -80,6 +81,25 @@ test("migration version gate rejects duplicate versions before readiness or CI c
 
   assert.equal(checks.some((check) => check.status === "fail"), true);
   assert.match(checks.find((check) => check.status === "fail").message, /202608130002/);
+});
+
+test("migration gate requires the complete Safety Reviewer retention chain", () => {
+  const repoRoot = makeRepoFixture();
+  const retentionPath = path.join(
+    repoRoot,
+    "apps/web/supabase/migrations/202608130004_safety_reviewer_retention.sql",
+  );
+  fs.rmSync(retentionPath);
+
+  const missingChecks = collectSupabaseMigrationVersionChecks({ repoRoot });
+  assert.equal(missingChecks.some((check) => check.name.endsWith("retention.sql")), true);
+
+  writeFile(retentionPath, "select 1;");
+  const incompleteChecks = collectSupabaseMigrationVersionChecks({ repoRoot });
+  assert.equal(
+    incompleteChecks.some((check) => /required retention target/.test(check.message)),
+    true,
+  );
 });
 
 test("missing required env reports variable names without values", async () => {
@@ -501,12 +521,24 @@ function makeRepoFixture({ includeBuild = true, missingFiles = [] } = {}) {
   writeFile(path.join(revealRoot, "major_0_fool.webp"), "webp");
   writeFile(path.join(thumbsRoot, "major_0_fool.webp"), "webp");
   writeFile(
-    path.join(repoRoot, "apps/web/supabase/migrations/202608130001_snapshot.sql"),
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130001_clear_initial_snapshot_continuity_context.sql"),
     "select 1;",
   );
   writeFile(
-    path.join(repoRoot, "apps/web/supabase/migrations/202608130002_reviewer_budget.sql"),
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130002_safety_reviewer_token_budget.sql"),
     "select 1;",
+  );
+  writeFile(
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130003_safety_reviewer_subject_rate_limit.sql"),
+    "select 1;",
+  );
+  writeFile(
+    path.join(repoRoot, "apps/web/supabase/migrations/202608130004_safety_reviewer_retention.sql"),
+    [
+      "public.safety_reviewer_token_reservations",
+      "public.safety_reviewer_daily_token_usage",
+      "public.safety_reviewer_subject_minute_usage",
+    ].join("\n"),
   );
 
   if (includeBuild) {

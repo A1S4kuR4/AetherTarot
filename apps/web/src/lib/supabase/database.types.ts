@@ -734,6 +734,13 @@ export interface Database {
         };
         Returns: Json;
       };
+      consume_safety_reviewer_subject_quota: {
+        Args: {
+          p_subject_key: string;
+          p_limit_per_minute: number;
+        };
+        Returns: Json;
+      };
       consume_auth_email_quota: {
         Args: {
           p_email: string;

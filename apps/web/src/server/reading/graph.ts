@@ -129,6 +129,7 @@ const ReadingGraphState = new StateSchema({
   failureSubtype: z.custom<ReadingGenerationFailureSubtype>().optional(),
   provider: z.custom<ReadingProvider>().optional(),
   safetyReviewer: z.custom<SafetyReviewer>().optional(),
+  reviewerSubjectKey: z.string().optional(),
   injectedInputSafetyReview: z.custom<SafetyReviewExecution<SafetyInputReviewVerdict>>().optional(),
   agentDecider: z.custom<ReadingAgentDecider>().optional(),
   toolRegistry: z.custom<ReadingToolRegistry>().optional(),
@@ -872,6 +873,7 @@ const llmInputReviewNode: ReadingGraphNode = async (state) => {
       question: requireStateValue(state.question, "question"),
       followupAnswers: state.followupAnswers ?? [],
       deterministic,
+      subjectKey: state.reviewerSubjectKey,
       signal: state.abortSignal,
     });
   const inputSafetyAssessment = review.applied
@@ -1392,6 +1394,7 @@ const llmOutputReviewNode: ReadingGraphNode = async (state) => {
     reading,
     deterministicAction,
     deterministicViolations,
+    subjectKey: state.reviewerSubjectKey,
     signal: state.abortSignal,
   });
   const reviewerVerdict = review.applied
@@ -1583,6 +1586,7 @@ const readingGraph = new StateGraph(ReadingGraphState)
 export interface RunReadingGraphOptions {
   provider?: ReadingProvider;
   safetyReviewer?: SafetyReviewer;
+  reviewerSubjectKey?: string;
   inputSafetyReview?: SafetyReviewExecution<SafetyInputReviewVerdict>;
   agentDecider?: ReadingAgentDecider;
   toolRegistry?: ReadingToolRegistry;
@@ -1617,6 +1621,7 @@ export async function runReadingGraphWithDiagnostics(
         options?.generationMode ?? resolveReadingGenerationMode(),
       provider: options?.provider,
       safetyReviewer: options?.safetyReviewer,
+      reviewerSubjectKey: options?.reviewerSubjectKey,
       injectedInputSafetyReview: options?.inputSafetyReview,
       agentDecider: options?.agentDecider,
       toolRegistry: options?.toolRegistry,

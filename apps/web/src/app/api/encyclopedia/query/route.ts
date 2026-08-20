@@ -194,6 +194,7 @@ export async function handleEncyclopediaQueryPost(
       deps.generateAnswer(parsedPayload as EncyclopediaQueryRequest, {
         safetyReviewer: deps.safetyReviewer,
         inputSafetyReview,
+        reviewerSubjectKey: ipHash,
         signal: request.signal,
       })
     );

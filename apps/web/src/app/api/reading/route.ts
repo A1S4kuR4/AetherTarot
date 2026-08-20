@@ -307,6 +307,7 @@ async function executeReadingRequest({
         memoryUserId: actor.userId ?? undefined,
         signal,
         safetyReviewer: deps.safetyReviewer,
+        reviewerSubjectKey: subjectKey,
         inputSafetyReview,
       })
     );
