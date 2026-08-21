@@ -1,0 +1,4 @@
+interface:
+  display_name: "AetherTarot Frontend Design"
+  short_description: "Paper/Midnight 双表面手稿语言下的 AetherTarot 前端设计与页面模式"
+  default_prompt: "Use $aethertarot-frontend-design to design or modify AetherTarot frontend surfaces within the Paper/Midnight manuscript design language."
