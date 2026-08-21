@@ -166,18 +166,26 @@ function CompactCardList({ cards }: { cards: ShareCardModel["cards"] }) {
       data-testid="reading-share-card-list"
       className="grid grid-cols-2 gap-x-4 gap-y-1.5"
     >
-      {cards.map((card) => (
+      {cards.map((card, index) => (
         <div
           key={card.positionId}
           data-testid="reading-share-card-item"
           className="flex items-baseline gap-1.5 text-[11px] leading-snug"
         >
+          <span className="shrink-0 font-mono text-[9px] font-semibold text-terracotta-ink">
+            {String(index + 1).padStart(2, "0")}
+          </span>
           <span className="shrink-0 font-sans text-text-muted">
             {card.position}
           </span>
           <span className="truncate font-aether-serif text-text-accent">
             {card.name}
-            <span className="ml-1 text-text-muted">
+            <span
+              className={cn(
+                "ml-1 font-mono text-[9px] tracking-[0.08em] text-text-muted",
+                card.orientation === "reversed" && "text-indigo-ink",
+              )}
+            >
               ·{" "}
               {card.orientation === "reversed"
                 ? SHARE_FIXED_COPY.positionReversed
@@ -211,6 +219,7 @@ function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
   const revealUrl = getRevealCardImageUrl(card.imageUrl);
   const label = getLabelClassName(width);
   const isDense = width < 100;
+  const isLarge = width >= 130;
 
   return (
     <div
@@ -219,8 +228,10 @@ function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-[10px] border border-[#D9CEBC] bg-paper-raised shadow-[0_5px_16px_rgba(24,23,19,0.10)]",
-          card.orientation === "reversed" && "rotate-180",
+          "relative overflow-hidden border border-[#D9CEBC] bg-paper-raised shadow-[0_5px_16px_rgba(24,23,19,0.10)]",
+          isLarge ? "rounded-2xl" : "rounded-[10px]",
+          card.isMajor
+            && "border-terracotta/55 shadow-[0_5px_16px_rgba(24,23,19,0.10),0_0_22px_rgba(201,100,66,0.18)]",
         )}
         style={{ width, height }}
       >
@@ -231,12 +242,27 @@ function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
             alt={card.name}
             loading="eager"
             decoding="sync"
-            className="h-full w-full object-cover"
+            className={cn(
+              "h-full w-full object-cover",
+              card.orientation === "reversed" && "rotate-180",
+            )}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-paper-muted text-text-muted text-xs">
             {card.name}
           </div>
+        )}
+        {card.orientation === "reversed" && (
+          <span
+            className={cn(
+              "absolute bottom-1.5 right-1.5 border border-indigo-ink/40 bg-paper-raised/90 px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-[0.1em] text-indigo-ink",
+              isDense && "px-1 py-px text-[8px]",
+            )}
+          >
+            {isDense
+              ? SHARE_FIXED_COPY.positionReversedShort
+              : SHARE_FIXED_COPY.positionReversed}
+          </span>
         )}
       </div>
       {showPositionLabel && !isDense && (
@@ -244,10 +270,17 @@ function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
           className={cn("mt-2 leading-snug text-text-muted", label)}
           style={{ width: Math.max(width, 108) }}
         >
-          <span className="block truncate font-sans">{card.position}</span>
-          <span className="mt-0.5 block truncate text-text-accent">
+          <span className="block truncate font-mono font-semibold tracking-[0.14em]">
+            {card.position}
+          </span>
+          <span className="mt-0.5 block truncate font-aether-serif text-text-accent">
             {card.name}
-            <span className="ml-1 text-text-muted">
+            <span
+              className={cn(
+                "ml-1 font-mono text-[9px] tracking-[0.08em] text-text-muted",
+                card.orientation === "reversed" && "text-indigo-ink",
+              )}
+            >
               ·{" "}
               {card.orientation === "reversed"
                 ? SHARE_FIXED_COPY.positionReversed
@@ -261,9 +294,22 @@ function CardFigure({ card, width, showPositionLabel }: CardFigureProps) {
           className={cn("mt-1.5 leading-tight text-text-muted", label)}
           style={{ width }}
         >
-          <span className="block truncate font-sans">{card.position}</span>
-          <span className="mt-0.5 block truncate text-text-accent">
-            {card.name} · {card.orientation === "reversed" ? "逆" : "正"}
+          <span className="block truncate font-mono font-semibold tracking-[0.14em]">
+            {card.position}
+          </span>
+          <span className="mt-0.5 block truncate font-aether-serif text-text-accent">
+            {card.name}
+            <span
+              className={cn(
+                "ml-1 font-mono tracking-[0.08em] text-text-muted",
+                card.orientation === "reversed" && "text-indigo-ink",
+              )}
+            >
+              ·{" "}
+              {card.orientation === "reversed"
+                ? SHARE_FIXED_COPY.positionReversedShort
+                : SHARE_FIXED_COPY.positionUprightShort}
+            </span>
           </span>
         </div>
       )}
@@ -290,29 +336,26 @@ function Themes({
     >
       <div className="flex w-full items-center justify-center gap-2">
         <span className="h-px w-8 bg-terracotta/25" />
-        <span className="font-sans text-[9px] font-medium tracking-[0.18em] text-text-muted">
-          本次主题
+        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-terracotta-ink">
+          {SHARE_FIXED_COPY.themesLabel}
         </span>
         <span className="h-px w-8 bg-terracotta/25" />
       </div>
-      <div
+      <p
         className={cn(
-          "flex flex-wrap justify-center",
-          compact ? "gap-1.5" : "gap-2",
+          "border-y border-paper-border px-3.5 text-center font-aether-serif text-text-body",
+          compact ? "py-1.5 text-[12px]" : "py-2 text-[13px]",
         )}
       >
-        {themes.map((theme) => (
-          <span
-            key={theme}
-            className={cn(
-              "inline-flex items-center rounded-full border border-paper-border bg-paper-raised/80 font-sans text-text-body",
-              compact ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]",
+        {themes.map((theme, index) => (
+          <span key={theme} className="text-text-accent">
+            {index > 0 && (
+              <span className="mx-2 text-text-muted">·</span>
             )}
-          >
             {theme}
           </span>
         ))}
-      </div>
+      </p>
     </div>
   );
 }
@@ -331,9 +374,8 @@ function QuestionBlock({
   const truncated = truncateByCharBudget(question, maxLines * charsPerLine);
 
   return (
-    <div className="rounded-2xl border border-paper-border bg-paper-raised/65 px-4 py-3 shadow-[0_2px_8px_rgba(24,23,19,0.03)]">
-      <p className="mb-1.5 flex items-center gap-2 font-sans text-[9px] font-medium tracking-[0.16em] text-text-muted">
-        <span className="h-1.5 w-1.5 rounded-full bg-terracotta/70" />
+    <div className="border-l-2 border-terracotta py-0.5 pl-4">
+      <p className="mb-1.5 font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-terracotta-ink">
         {SHARE_FIXED_COPY.questionLabel}
       </p>
       <blockquote
@@ -357,12 +399,14 @@ function TextSection({
   maxLines,
   fontSize = 15,
   lineHeight = 1.65,
+  emphasis = false,
 }: {
   label: string;
   text: string;
   maxLines: number;
   fontSize?: number;
   lineHeight?: number;
+  emphasis?: boolean;
 }) {
   const maxHeight = maxLines * fontSize * lineHeight;
   const charsPerLine = Math.floor(TEXT_CONTAINER_WIDTH / fontSize);
@@ -370,8 +414,13 @@ function TextSection({
   const truncated = truncateByCharBudget(text, maxChars);
 
   return (
-    <div className="border-t border-paper-border/70 px-4 py-2.5 first:border-t-0">
-      <p className="mb-1 font-sans text-[9px] font-medium tracking-[0.15em] text-text-muted">
+    <div
+      className={cn(
+        "border-b border-paper-border/70 px-1 py-2.5",
+        emphasis && "border-l-2 border-l-terracotta pl-3.5",
+      )}
+    >
+      <p className="mb-1 font-mono text-[9px] font-semibold uppercase tracking-[0.17em] text-terracotta-ink">
         {label}
       </p>
       <p
@@ -393,10 +442,10 @@ function SafetySection({ text }: { text: string }) {
   return (
     <div
       data-testid="reading-share-safety-note"
-      className="mx-2 mt-2 shrink-0 rounded-xl border border-safety/20 bg-safety-bg/40 px-4 py-2.5"
+      className="mx-1 mt-2 shrink-0 border-y border-safety/45 bg-safety-bg/55 px-0.5 py-2"
     >
-      <p className="mb-1 font-sans text-[9px] font-medium tracking-[0.15em] text-safety">
-        安全提醒
+      <p className="mb-1 font-mono text-[9px] font-semibold uppercase tracking-[0.17em] text-safety-ink">
+        {SHARE_FIXED_COPY.safetyLabel}
       </p>
       <p
         data-testid="reading-share-safety-note-text"
@@ -422,22 +471,24 @@ function GuidanceList({
   return (
     <div
       data-testid="reading-share-guidance"
-      className="border-t border-paper-border/70 px-4 py-2.5"
+      className="px-1 py-2.5"
     >
-      <p className="mb-1.5 font-sans text-[9px] font-medium tracking-[0.15em] text-text-muted">
+      <p className="mb-1.5 font-mono text-[9px] font-semibold uppercase tracking-[0.17em] text-terracotta-ink">
         {SHARE_FIXED_COPY.guidanceLabel}
       </p>
-      <ul className="space-y-1">
+      <ol className="space-y-1">
         {truncated.map((item, index) => (
           <li
             key={index}
             className="flex gap-2 text-[12px] leading-snug text-text-body"
           >
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-terracotta/70" />
+            <span className="shrink-0 pt-0.5 font-mono text-[10px] font-semibold text-terracotta-ink">
+              {String(index + 1).padStart(2, "0")}
+            </span>
             <span className="font-aether-serif">{item}</span>
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   );
 }
@@ -447,14 +498,14 @@ function BrandHeader({ exportedDate }: { exportedDate: string }) {
     <header className="px-10 pt-8">
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-aether-serif text-[23px] leading-none text-ink">
+          <div className="font-mono text-[9px] font-semibold uppercase tracking-[0.26em] text-terracotta-ink">
+            {SHARE_FIXED_COPY.brandKicker}
+          </div>
+          <div className="mt-1.5 font-aether-serif text-[23px] leading-none tracking-[0.02em] text-ink">
             {SHARE_FIXED_COPY.brand}
           </div>
-          <div className="mt-1.5 font-sans text-[8px] font-medium uppercase tracking-[0.28em] text-text-muted">
-            {SHARE_FIXED_COPY.brandEnglish}
-          </div>
         </div>
-        <span className="pt-1 font-sans text-[10px] tracking-[0.05em] text-text-muted">
+        <span className="pt-1 font-mono text-[10px] tracking-[0.08em] text-text-muted">
           {exportedDate}
         </span>
       </div>
@@ -467,15 +518,26 @@ function BrandHeader({ exportedDate }: { exportedDate: string }) {
   );
 }
 
-function SpreadHeading({ spreadName }: { spreadName: string }) {
+function SpreadHeading({
+  spreadName,
+  cardCount,
+}: {
+  spreadName: string;
+  cardCount: number;
+}) {
   return (
     <div className="text-center">
-      <p className="font-sans text-[9px] font-medium tracking-[0.2em] text-text-muted">
-        {SHARE_FIXED_COPY.spreadLabel}
+      <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-terracotta-ink">
+        {SHARE_FIXED_COPY.spreadKicker}
       </p>
       <h2 className="mt-1 font-aether-serif text-[18px] leading-tight text-ink">
         {spreadName}
       </h2>
+      <p className="mt-1 font-mono text-[9px] tracking-[0.14em] text-text-muted">
+        {String(cardCount).padStart(2, "0")} {SHARE_FIXED_COPY.cardCountUnit}
+        <span className="mx-1.5">·</span>
+        {spreadName}
+      </p>
     </div>
   );
 }
@@ -491,7 +553,7 @@ function ShareFooter({
     <footer className="px-10 pb-8 pt-4 text-center">
       <div className="mb-3 flex items-center justify-center gap-3">
         <span className="h-px w-10 bg-paper-border" />
-        <span className="h-1 w-1 rounded-full bg-terracotta/55" />
+        <span className="h-1 w-1 rotate-45 bg-terracotta/55" />
         <span className="h-px w-10 bg-paper-border" />
       </div>
       <p className="font-aether-serif text-[12px] italic tracking-[0.08em] text-text-muted">
@@ -500,13 +562,13 @@ function ShareFooter({
       {mode === "summary" ? (
         // Summary vertical space is tight; keep the URL on the date line so
         // the footer height (and the summary box budget) stays unchanged.
-        <p className="mt-1 font-sans text-[8px] tracking-[0.08em] text-text-muted/80">
+        <p className="mt-1 font-mono text-[8px] tracking-[0.08em] text-text-muted/80">
           {SHARE_FIXED_COPY.exportedLabel} {exportedDate}
           <span className="mx-1.5 text-text-muted/50">·</span>
           {SHARE_FIXED_COPY.brandUrl}
         </p>
       ) : (
-        <p className="mt-1.5 font-sans text-[9px] font-medium tracking-[0.22em] text-text-muted/70">
+        <p className="mt-1.5 font-mono text-[9px] font-medium tracking-[0.22em] text-text-muted/70">
           {SHARE_FIXED_COPY.brandUrl}
         </p>
       )}
@@ -528,6 +590,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
   const budget = getContentBudget(cards.length);
   const exportedDate = formatExportedDate(model.exportedAt);
   const isHighCardCount = cards.length >= 8;
+  const isDenseMinimal = mode === "minimal" && cards.length >= 9;
 
   // Summary mode competes for vertical space with the card grid.
   // Cap text aggressively so the summary box never needs overflow-hidden.
@@ -552,7 +615,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
           "radial-gradient(circle at 50% -8%, rgba(201,100,66,0.10), transparent 34%), linear-gradient(180deg, #F8F4EA 0%, #F5F2E8 48%, #F1EBDD 100%)",
       }}
     >
-      <div className="pointer-events-none absolute inset-[14px] rounded-[26px] border border-[#DDD4C5]/80" />
+      <div className="pointer-events-none absolute inset-[14px] rounded-[6px] border border-[#DDD4C5]/80" />
 
       <div className="relative flex h-full flex-col">
         <BrandHeader exportedDate={exportedDate} />
@@ -560,18 +623,29 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
         {mode === "minimal" ? (
           <div className="flex min-h-0 flex-1 flex-col justify-center px-8 pb-4 pt-3">
             <div className="flex flex-col items-center">
-              <SpreadHeading spreadName={model.spreadName} />
-              <div className="mt-6 w-full">
+              <SpreadHeading
+                spreadName={model.spreadName}
+                cardCount={cards.length}
+              />
+              <div className={cn("w-full", isDenseMinimal ? "mt-3" : "mt-6")}>
                 <CardGrid model={model} />
               </div>
-              <div className="mt-6 w-full max-w-[500px]">
+              <div
+                className={cn(
+                  "w-full max-w-[500px]",
+                  isDenseMinimal ? "mt-3" : "mt-6",
+                )}
+              >
                 <Themes themes={themes} />
               </div>
             </div>
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col px-8 pt-3">
-            <SpreadHeading spreadName={model.spreadName} />
+            <SpreadHeading
+              spreadName={model.spreadName}
+              cardCount={cards.length}
+            />
 
             {question && (
               <div className="mt-3">
@@ -596,7 +670,7 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
 
             <div
               data-testid="reading-share-summary"
-              className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-paper-border bg-paper-raised/60 shadow-[0_3px_12px_rgba(24,23,19,0.04)]"
+              className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-paper-border"
             >
               {safetyNote && (
                 <SafetySection text={safetyNote} />
@@ -608,11 +682,12 @@ export function ReadingShareCard({ model }: ReadingShareCardProps) {
                 maxLines={synthesisLines}
                 fontSize={14}
                 lineHeight={1.55}
+                emphasis
               />
 
               {confidenceNote && !safetyNote && (
                 <TextSection
-                  label="置信说明"
+                  label={SHARE_FIXED_COPY.confidenceLabel}
                   text={confidenceNote}
                   maxLines={confidenceLines}
                   fontSize={12}

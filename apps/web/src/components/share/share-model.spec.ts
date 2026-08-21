@@ -141,6 +141,7 @@ describe("buildShareCardModel", () => {
     expect(model.spreadName).toBe("圣三角牌阵");
     expect(model.cards).toHaveLength(3);
     expect(model.cards[0].name).toBe("愚人");
+    expect(model.cards[0].isMajor).toBe(true);
     expect(model.cards[1].orientation).toBe("reversed");
     expect(model.themes).toEqual(["转变", "行动", "新生"]);
     expect(model.synthesis).toBe("综合解读内容");
@@ -154,6 +155,26 @@ describe("buildShareCardModel", () => {
     });
 
     expect(model.cards[0].imageUrl).toBe("/cardsV2/thumbs/major_0_fool.webp");
+  });
+
+  it("derives the Major Arcana display flag from arcana metadata", () => {
+    const drawnCards = createMockDrawnCards();
+    drawnCards[0] = {
+      ...drawnCards[0],
+      card: {
+        ...drawnCards[0].card,
+        id: "major-looking-minor-card",
+        arcana: "Minor Arcana",
+      },
+    };
+
+    const model = buildShareCardModel({
+      reading: createMockReading(),
+      drawnCards,
+      mode: "minimal",
+    });
+
+    expect(model.cards[0].isMajor).toBe(false);
   });
 
   it("excludes sensitive fields from the projection", () => {

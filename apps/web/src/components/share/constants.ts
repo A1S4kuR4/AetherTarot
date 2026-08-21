@@ -33,15 +33,20 @@ export function getContentBudget(cardCount: number): ContentBudget {
 
 export const SHARE_FIXED_COPY = {
   brand: "灵语塔罗",
-  brandEnglish: "AetherTarot",
+  brandKicker: "AETHER TAROT · READING FOLIO",
   brandUrl: "aethertarot.cn",
-  spreadLabel: "牌阵",
+  spreadKicker: "牌阵 · SPREAD",
+  cardCountUnit: "张",
   positionUpright: "正位",
   positionReversed: "逆位",
-  themesLabel: "主题",
+  positionUprightShort: "正",
+  positionReversedShort: "逆",
+  themesLabel: "本次主题",
   questionLabel: "我的问题",
   synthesisLabel: "综合解读",
+  confidenceLabel: "置信说明",
   guidanceLabel: "可以带走的思考",
+  safetyLabel: "安全提醒",
   exportedLabel: "导出于",
   footerSlogan: "每张牌都是当下的镜子",
 } as const;

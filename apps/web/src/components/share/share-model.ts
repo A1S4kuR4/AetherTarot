@@ -5,6 +5,7 @@ export interface ShareCardItem {
   positionId: string;
   position: string;
   cardId: string;
+  isMajor: boolean;
   name: string;
   englishName: string;
   orientation: "upright" | "reversed";
@@ -47,6 +48,7 @@ export function buildShareCardModel({
       positionId: card.position_id,
       position: card.position,
       cardId: card.card_id,
+      isMajor: drawn?.card.arcana.toLowerCase().startsWith("major") ?? false,
       name: card.name,
       englishName: card.english_name,
       orientation: card.orientation,
