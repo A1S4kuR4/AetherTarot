@@ -56,6 +56,12 @@ export default defineConfig({
       AETHERTAROT_ENCYCLOPEDIA_PROVIDER: "llm",
       AETHERTAROT_LLM_BASE_URL: "http://127.0.0.1:9/v1",
       AETHERTAROT_LLM_API_KEY: "",
+      // The empty LLM key above intentionally shadows .env.local so tests never
+      // reach a real provider; the safety reviewer would otherwise fail config
+      // resolution (its $AETHERTAROT_LLM_API_KEY reference resolves to "").
+      // "off" is only permitted outside production, matching the placeholder
+      // provider contract for local e2e.
+      AETHERTAROT_SAFETY_REVIEWER_MODE: "off",
       AUTH_SECRET: "aethertarot-local-e2e-auth-secret",
     },
     url: baseURL,
