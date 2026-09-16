@@ -222,6 +222,58 @@ test.describe("mobile UX regressions", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("keeps the mobile action bar usable at 320x568 and under 200% zoom", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await gotoAppRoute(page, "/new");
+
+    const actions = page.getByTestId("new-reading-mobile-actions");
+    await expect(actions).toBeInViewport();
+
+    const measure = () =>
+      actions.evaluate((element) => {
+        const start = element.querySelector<HTMLButtonElement>(".new-reading-start-button");
+        const quick = element.querySelector<HTMLButtonElement>(".new-reading-quick-button");
+        if (!start || !quick) {
+          throw new Error("Mobile action buttons are missing");
+        }
+        const startRect = start.getBoundingClientRect();
+        const quickRect = quick.getBoundingClientRect();
+        return {
+          barHeight: element.getBoundingClientRect().height,
+          startHeight: startRect.height,
+          startWidth: startRect.width,
+          quickHeight: quickRect.height,
+        };
+      });
+
+    // Native 320x568: one compact row; the primary CTA keeps usable width.
+    const unzoomed = await measure();
+    expect(unzoomed.barHeight).toBeLessThanOrEqual(98);
+    expect(unzoomed.startWidth).toBeGreaterThanOrEqual(150);
+    expect(unzoomed.startHeight).toBeLessThanOrEqual(60);
+    await expectNoHorizontalOverflow(page);
+
+    // 200% CSS zoom on the smallest supported phone: the secondary entry
+    // must wrap below instead of squeezing the primary CTA into a tall
+    // multi-line sliver (regression: the bar once covered ~69% of the
+    // viewport with an 85px-wide primary button).
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = "200%";
+    });
+    await expect
+      .poll(async () => (await measure()).barHeight, { timeout: 5000 })
+      .toBeLessThanOrEqual(568 * 0.45);
+
+    const zoomed = await measure();
+    expect(zoomed.barHeight).toBeLessThanOrEqual(568 * 0.45);
+    expect(zoomed.startWidth).toBeGreaterThanOrEqual(200);
+    expect(zoomed.startHeight).toBeLessThanOrEqual(160);
+    expect(zoomed.quickHeight).toBeGreaterThanOrEqual(80);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("keeps search and selection intact when returning from an encyclopedia detail", async ({
     page,
   }) => {
