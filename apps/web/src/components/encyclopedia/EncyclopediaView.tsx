@@ -241,16 +241,34 @@ export default function EncyclopediaView({
 
     if (isMobileViewport()) {
       scrollTimeoutRef.current = setTimeout(() => {
-        const title =
-          detailRef.current?.querySelector("[data-wiki-detail-title]")
+        const detailTop =
+          detailRef.current?.querySelector("[data-testid='encyclopedia-back-to-grid']")
           ?? detailRef.current?.querySelector("[data-card-detail-title]");
-        (title ?? detailRef.current)?.scrollIntoView({
+        (detailTop ?? detailRef.current)?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
       }, LAYOUT_TRANSITION_MS);
     }
   }, [syncCardQuery]);
+
+  // Return to the card grid while keeping search, filter, selection, and a
+  // sensible list position; focus follows the selected card so keyboard and
+  // screen-reader users resume where they left off.
+  const handleBackToGrid = useCallback(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    const selectedButton = grid.querySelector<HTMLButtonElement>(
+      `button[data-card-id="${CSS.escape(activeCard.id)}"]`,
+    );
+    const target = selectedButton ?? grid;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({
+      behavior: shouldReduceMotion ? "auto" : "smooth",
+      block: "center",
+    });
+  }, [activeCard.id, shouldReduceMotion]);
 
   const handleToggleImagePane = useCallback(() => {
     setImagePaneMode(isImageCollapsed ? "manual-expanded" : "manual-collapsed");
@@ -368,7 +386,8 @@ export default function EncyclopediaView({
         <div
           ref={gridRef}
           data-testid="runtime-card-grid"
-          className="custom-scrollbar shrink-0 overflow-visible border-y border-paper-border py-4 lg:h-[240px] lg:overflow-y-auto"
+          tabIndex={-1}
+          className="custom-scrollbar shrink-0 overflow-visible border-y border-paper-border py-4 outline-none lg:h-[240px] lg:overflow-y-auto"
         >
           {visibleCards.length > 0 ? (
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
@@ -397,6 +416,7 @@ export default function EncyclopediaView({
                       <button
                         key={card.id}
                         type="button"
+                        data-card-id={card.id}
                         onClick={() => handleSelectCard(card)}
                         className={cn(
                           "relative aspect-[1/1.7] cursor-pointer overflow-hidden border-l-2 border-transparent transition-colors duration-200",
@@ -436,6 +456,23 @@ export default function EncyclopediaView({
           {isQuestionEnabled ? (
             <EncyclopediaQuestionPanel activeCard={activeCard} />
           ) : null}
+
+          <div
+            data-testid="encyclopedia-back-to-grid"
+            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 scroll-mt-20"
+          >
+            <button
+              type="button"
+              onClick={handleBackToGrid}
+              className="inline-flex min-h-11 items-center gap-2 text-sm text-text-muted underline decoration-paper-border underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
+            >
+              <LegacyIcon name="arrow_back" className="text-base" />
+              返回选牌
+            </button>
+            <p className="text-xs text-text-muted">
+              当前查看：{activeCard.name} · {activeCard.englishName}
+            </p>
+          </div>
 
           <div>
             <span className="manuscript-label">

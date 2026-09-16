@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   ArrowDownToLine,
+  ArrowLeft,
   ArrowRight,
   ArrowRightFromLine,
   BookOpen,
@@ -52,6 +53,7 @@ import { cn } from "@/lib/utils";
 const icons = {
   account_tree: GitBranch,
   add: Plus,
+  arrow_back: ArrowLeft,
   arrow_forward: ArrowRight,
   arrow_right_alt: ArrowRightFromLine,
   auto_awesome: Sparkles,

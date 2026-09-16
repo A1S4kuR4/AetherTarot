@@ -324,7 +324,7 @@ function QuickDrawOverlayContent({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="text-sm text-text-muted underline decoration-paper-border underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
+                      className="inline-flex min-h-11 items-center text-sm text-text-muted underline decoration-paper-border underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo"
                     >
                       先停在这里
                     </button>

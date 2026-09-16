@@ -156,4 +156,93 @@ test.describe("mobile UX regressions", () => {
     await gotoAppRoute(page, "/encyclopedia");
     await expect(page.locator(".lucide-circle-help:visible")).toHaveCount(0);
   });
+
+  test("keeps the quick draw stop entry at a 44px touch target", async ({ page }) => {
+    await gotoAppRoute(page, "/new");
+
+    await page
+      .getByTestId("new-reading-mobile-actions")
+      .getByRole("button", { name: "当下之镜 →" })
+      .click();
+    const dialog = page.getByRole("dialog", { name: "当下之镜" });
+    const flipButton = dialog.getByRole("button", { name: "点击卡牌，翻开牌面", exact: true });
+    await expect(flipButton).toBeVisible();
+    await flipButton.click();
+    await expect(dialog.locator("#quick-draw-card-title")).toBeVisible();
+
+    const stopButton = dialog.getByRole("button", { name: "先停在这里" });
+    await expect(stopButton).toBeVisible();
+    const stopRect = await stopButton.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { height: Math.round(rect.height), width: Math.round(rect.width) };
+    });
+    expect(stopRect.height).toBeGreaterThanOrEqual(44);
+    expect(stopRect.width).toBeGreaterThanOrEqual(44);
+  });
+
+  test("keeps the mobile reading action bar compact with one primary CTA", async ({
+    page,
+  }) => {
+    await gotoAppRoute(page, "/new");
+
+    const actions = page.getByTestId("new-reading-mobile-actions");
+    const startButton = actions.getByRole("button", { name: /^按住确认，进入抽牌 →$/ });
+    const quickButton = actions.getByRole("button", { name: "当下之镜 →" });
+
+    await expect(startButton).toBeVisible();
+    await expect(quickButton).toBeVisible();
+
+    const barMetrics = await actions.evaluate((element) => {
+      const start = element.querySelector<HTMLButtonElement>(".new-reading-start-button");
+      const quick = element.querySelector<HTMLButtonElement>(".new-reading-quick-button");
+      if (!start || !quick) {
+        throw new Error("Mobile action buttons are missing");
+      }
+      const pageEl = document.querySelector(".new-reading-page");
+      if (!pageEl) {
+        throw new Error("New reading page container is missing");
+      }
+      return {
+        barHeight: element.getBoundingClientRect().height,
+        paddingBottom: Number.parseFloat(getComputedStyle(pageEl).paddingBottom),
+        quickBorderTopWidth: getComputedStyle(quick).borderTopWidth,
+        startBorderTopWidth: getComputedStyle(start).borderTopWidth,
+        startHeight: start.getBoundingClientRect().height,
+      };
+    });
+
+    // Compact bar target (~96-112px, excluding the safe area), with enough
+    // page reserve that no content hides behind the fixed bar.
+    expect(barMetrics.barHeight).toBeLessThanOrEqual(125);
+    expect(barMetrics.barHeight).toBeGreaterThanOrEqual(85);
+    expect(barMetrics.paddingBottom).toBeGreaterThanOrEqual(barMetrics.barHeight + 20);
+    expect(barMetrics.quickBorderTopWidth).toBe("0px");
+    expect(barMetrics.startBorderTopWidth).not.toBe("0px");
+    expect(barMetrics.startHeight).toBeGreaterThanOrEqual(44);
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("keeps search and selection intact when returning from an encyclopedia detail", async ({
+    page,
+  }) => {
+    await gotoAppRoute(page, "/encyclopedia");
+
+    const searchInput = page.getByLabel("搜索卡牌");
+    await searchInput.fill("宝剑二");
+    const grid = page.getByTestId("runtime-card-grid");
+    const selectedCardButton = grid.getByRole("button", { name: "宝剑二" });
+    await expect(selectedCardButton).toBeVisible();
+    await selectedCardButton.click();
+
+    const backEntry = page.getByTestId("encyclopedia-back-to-grid");
+    await expect(backEntry).toBeInViewport();
+    await expect(backEntry).toContainText("宝剑二");
+
+    await backEntry.getByRole("button", { name: "返回选牌" }).click();
+    await expect(selectedCardButton).toBeFocused();
+    await expect(selectedCardButton).toBeInViewport();
+    await expect(searchInput).toHaveValue("宝剑二");
+    await expect(page).toHaveURL(/card=two-of-swords/);
+    await expectNoHorizontalOverflow(page);
+  });
 });

@@ -1988,7 +1988,10 @@ test.describe("AetherTarot smoke flow", () => {
     await expect(swordsTwoButton).toBeVisible();
     await swordsTwoButton.click();
     await expectEncyclopediaImagePaneWidth(page, { max: 120 });
-    await expect(page.getByRole("heading", { name: "深度百科" })).toBeInViewport();
+    await expect(
+      page.getByTestId("encyclopedia-back-to-grid"),
+    ).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "宝剑二", exact: true })).toBeInViewport();
 
     await page.getByRole("button", { name: "展开牌图" }).click();
     await expectEncyclopediaImagePaneWidth(page, { min: 160 });
@@ -2071,6 +2074,8 @@ test.describe("AetherTarot smoke flow", () => {
 
     await mobileNav.getByText("思考").click();
     await expect(page.locator("#reading-guidance")).toBeInViewport();
+
+    await expect(mobileNav.locator('a[aria-current="location"]')).toHaveText(/思考/);
 
     await expect(page.locator("#reading-feedback")).toHaveCount(0);
     await completeFollowup(page);
